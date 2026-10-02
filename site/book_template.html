@@ -192,7 +192,8 @@ renderer.heading = function(a, b){
   return `<h${depth} data-key="${key}">${text}</h${depth}>`;
 };
 marked.use({renderer});
-const md2html = md => marked.parse(md.replace(/^# .*\n/,''));   // page head renders the H1 itself
+// page head renders the title and meta, so drop the file's H1 and its italic meta line
+const md2html = md => marked.parse(md.replace(/^# .*\n(\s*\n)*(\*[^\n]*\*\s*\n)?/,''));   // page head renders the H1 itself
 
 function go(id){ location.hash=id; }
 function route(){
@@ -202,7 +203,7 @@ function route(){
   const ch=BOOK.chapters.find(c=>c.topic===h); if(ch) return renderChapter(ch);
   renderHome();
 }
-window.addEventListener('hashchange',()=>{route(); main.scrollTop=0;});
+window.addEventListener('hashchange',()=>{main.scrollTop=0; window.scrollTo(0,0); route();});
 main.addEventListener('scroll',()=>{ const p=main.scrollTop/Math.max(1,main.scrollHeight-main.clientHeight); $('#progress').style.width=(100*p)+'%'; });
 
 function renderNav(active){
@@ -224,12 +225,12 @@ $('#toctoggle').addEventListener('click',()=>{ const t=$('#toc'); t.classList.to
 
 function tools(id){
   return `<div class="tools"><button id="mark" class="${read.has(id)?'on':''}">${read.has(id)?'✓ Read':'Mark as read'}</button>
-    <button id="fs-">A−</button><button id="fs+">A+</button></div>`;
+    <button id="fs-dec" aria-label="Smaller text">A−</button><button id="fs-inc" aria-label="Larger text">A+</button></div>`;
 }
 function wireTools(id){
   $('#mark').onclick=()=>{ read.has(id)?read.delete(id):read.add(id); store.set('book.read',[...read]); route(); };
-  $('#fs-').onclick=()=>{ fs=Math.max(14,fs-1); store.set('book.fs',fs); document.documentElement.style.setProperty('--fs',fs+'px'); };
-  $('#fs+').onclick=()=>{ fs=Math.min(22,fs+1); store.set('book.fs',fs); document.documentElement.style.setProperty('--fs',fs+'px'); };
+  $('#fs-dec').onclick=()=>{ fs=Math.max(14,fs-1); store.set('book.fs',fs); document.documentElement.style.setProperty('--fs',fs+'px'); };
+  $('#fs-inc').onclick=()=>{ fs=Math.min(22,fs+1); store.set('book.fs',fs); document.documentElement.style.setProperty('--fs',fs+'px'); };
 }
 
 function renderHome(){
@@ -263,7 +264,7 @@ function renderItem(it){
   const chIdx=BOOK.chapters.indexOf(it.ch);
   const head = it.kind==='bg'
     ? `<div class="crumbs"><a href="#">Contents</a><span>›</span><a href="#${it.ch.topic}">Chapter ${chIdx+1} · ${esc(it.ch.title)}</a></div><h1>${esc(it.ch.title)}: from zero</h1><div class="meta"><span>Background reading</span><span>·</span><span>~${mins(it.md)} min</span></div>`
-    : `<div class="crumbs"><a href="#">Contents</a><span>›</span><a href="#${it.ch.topic}">Chapter ${chIdx+1} · ${esc(it.ch.title)}</a><span>›</span><span>${it.ch.sections.indexOf(it)+1} of ${it.ch.sections.length}</span></div>
+    : `<div class="crumbs"><a href="#">Contents</a><span>›</span><a href="#${it.ch.topic}">Chapter ${chIdx+1} · ${esc(it.ch.title)}</a><span>›</span><span>${it.ch.sections.findIndex(x=>x.slug===it.slug)+1} of ${it.ch.sections.length}</span></div>
        <h1>${esc(it.title)}</h1><div class="meta"><span class="pill ${it.difficulty}">${it.difficulty}</span><span>${it.leetcode?'LeetCode '+it.leetcode:'warm-up'}</span><span>·</span><span>${esc(it.pattern)}</span><span>·</span><span>~${mins(it.md)} min</span></div>`;
   const sol = it.kind==='sec' ? `<details class="solution"><summary><span>Solution code (after you have read the journey)</span></summary><div class="body">
       ${it.brute_code?`<div><div class="lab">First honest attempt · ${esc(it.brute_time)} time · ${esc(it.brute_space)} space</div><pre><code class="language-python">${esc(it.brute_code)}</code></pre></div>`:''}
