@@ -6,10 +6,10 @@
 
 | Site | What it is | Link |
 |---|---|---|
-| **Pattern Board** | Short form. One page per problem: problem → visual explanation & thinking process → hints → brute-force code → optimal code → pitfalls. Filter by topic/difficulty, practice mode with a 25-minute clock. | [claude.ai artifact](https://claude.ai/artifact/SNmABicy9ZmJ7fGcDXFrdE) · [local](site/index.html) |
-| **Intuition Journey** | Long form: a book. 18 chapters, each starting from zero (what the structure is, what it costs, the invariant, how to picture it), then every problem in teaching order explained at length with frame-by-frame drawings. | [local](site/book_index.html) |
+| **Pattern Board** | Short form. One page per problem: problem → visual explanation & thinking process → hints → brute-force code → optimal code → pitfalls. Filter by topic/difficulty, practice mode with a 25-minute clock. | [jawwada.github.io/leetcode-patterns/site/index.html](https://jawwada.github.io/leetcode-patterns/site/index.html) |
+| **Intuition Journey** | Long form: a book. 18 chapters, each starting from zero (what the structure is, what it costs, the invariant, how to picture it), then every problem in teaching order explained at length with frame-by-frame drawings. | [jawwada.github.io/leetcode-patterns/site/book_index.html](https://jawwada.github.io/leetcode-patterns/site/book_index.html) |
 
-Both sites are single self-contained HTML files; open them in a browser.
+Both sites are single self-contained HTML files (served by GitHub Pages; also open fine locally). Reading progress is saved in your browser.
 
 ## Layout
 

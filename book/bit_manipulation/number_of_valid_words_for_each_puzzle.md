@@ -22,6 +22,7 @@ word     letters      inside puzzle?  has 'a'?  valid
 aaaa     {a}          yes             yes       yes
 asas     {a,s}        yes             yes       yes
 able     {a,b,l,e}    no (b,l)        yes       no
+ability  {a,b,i,l,t,y} no (b,i,l,y)  yes       no
 actt     {a,c,t}      yes             yes       yes
 actor    {a,c,t,o,r}  no (o)          yes       no
 access   {a,c,e,s}    yes             yes       yes

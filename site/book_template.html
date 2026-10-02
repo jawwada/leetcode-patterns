@@ -233,7 +233,7 @@ function renderHome(){
     <div class="eyebrow">A book, not a list</div>
     <h1>Intuition Journey</h1>
     <p class="lede">Each chapter starts from zero: what the structure is, how it sits in memory, what it costs, the one invariant it protects, and how to picture it. Then a sequence of problems in teaching order, each one explained the long way: do it by hand, try the obvious thing, feel where it hurts, find the turning point, watch the real algorithm run frame by frame, and argue why it is right. By the end of a chapter the hardest problem should feel like a variation, not a surprise.</p>
-    <p class="muted" style="font-family:var(--display);font-size:14px">Reading progress is saved in this browser. Full solutions sit folded at the end of each reading; the companion <a href="https://claude.ai/artifact/SNmABicy9ZmJ7fGcDXFrdE" target="_blank" rel="noopener">Pattern Board</a> has the short form, hints and practice mode.</p>
+    <p class="muted" style="font-family:var(--display);font-size:14px">Reading progress is saved in this browser. Full solutions sit folded at the end of each reading; the companion <a href="https://jawwada.github.io/leetcode-patterns/site/index.html" target="_blank" rel="noopener">Pattern Board</a> has the short form, hints and practice mode.</p>
     <div class="chapters">${BOOK.chapters.map((ch,i)=>{
       const n=ch.sections.filter(s=>read.has(s.slug)).length; const m=mins(ch.background)+ch.sections.reduce((a,s)=>a+mins(s.md),0);
       return `<a href="#${ch.topic}"><div class="eyebrow">Chapter ${i+1}</div><h3>${esc(ch.title)}</h3><div class="s">${ch.sections.length} problems · ~${m} min · ${ch.sections.filter(s=>s.difficulty==='Hard').length} hard</div><div class="bar"><div style="width:${100*n/Math.max(1,ch.sections.length)}%"></div></div></a>`;}).join('')}</div>
@@ -263,7 +263,7 @@ function renderItem(it){
   const sol = it.kind==='sec' ? `<details class="solution"><summary><span>Solution code (after you have read the journey)</span></summary><div class="body">
       ${it.brute_code?`<div><div class="lab">First honest attempt · ${esc(it.brute_time)} time · ${esc(it.brute_space)} space</div><pre><code class="language-python">${esc(it.brute_code)}</code></pre></div>`:''}
       <div><div class="lab">Optimal · ${esc(it.time)} time · ${esc(it.space)} space · <code>${esc(it.file)}</code></div><pre><code class="language-python">${esc(it.code)}</code></pre></div>
-      <div class="lab">Short form, hints and practice: <a href="https://claude.ai/artifact/SNmABicy9ZmJ7fGcDXFrdE#${it.slug}" target="_blank" rel="noopener">Pattern Board › ${esc(it.title)}</a></div></div></details>` : '';
+      <div class="lab">Short form, hints and practice: <a href="https://jawwada.github.io/leetcode-patterns/site/index.html#${it.slug}" target="_blank" rel="noopener">Pattern Board › ${esc(it.title)}</a></div></div></details>` : '';
   main.innerHTML=`<article class="page"><div class="pagehead">${head}${tools(it.id)}</div>
     <div class="prose">${md2html(it.md)}</div>${sol}
     <nav class="pager">${prev?`<a href="#${prev.id}"><span>Previous</span><span>${esc(prev.title)}</span></a>`:'<span></span>'}${next?`<a class="next" href="#${next.id}"><span>Next</span><span>${esc(next.title)}</span></a>`:'<span></span>'}</nav></article>`;

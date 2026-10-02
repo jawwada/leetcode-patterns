@@ -62,6 +62,9 @@ code,pre,.mono{font-family:var(--mono)}
 .nav button.on{background:var(--marker-soft);color:var(--marker);font-weight:700}
 .nav .count{font:600 12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
 .nav .group{padding:12px 10px 4px}
+.nav .booklink{display:block;padding:8px 10px;border-radius:var(--radius);text-decoration:none;font-weight:700;color:var(--opt)}
+.nav .booklink:hover{background:var(--opt-soft)}
+
 
 .main{min-width:0;overflow:auto;padding-block:20px 48px;padding-inline:clamp(16px,4vw,48px)}
 .topbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
@@ -254,6 +257,7 @@ function renderNav(){
   const h = decodeURIComponent(location.hash.slice(1));
   const views=[['board','Pattern board'],['list','All problems'],['hard','Hard problems'],['practice','Practice mode']];
   let html = views.map(([k,l])=>`<button data-go="${k}" class="${h===k||(k==='board'&&!h)?'on':''}">${l}</button>`).join('');
+  html += `<div class="ch"><a class="booklink" href="https://jawwada.github.io/leetcode-patterns/site/book_index.html" target="_blank" rel="noopener">Intuition Journey (the book) ↗</a></div>`;
   html += `<div class="group eyebrow">Topics</div>`;
   for(const t of ORDER){
     const ps = DATA.filter(p=>p.topic===t); if(!ps.length) continue;
@@ -276,7 +280,7 @@ function renderBoard(){
   const patterns = new Map();
   for(const p of DATA){ const k=p.topic+'|'+p.pattern; if(!patterns.has(k)) patterns.set(k,[]); patterns.get(k).push(p); }
   let html = `<div class="topbar"><div><div class="eyebrow">Patterns</div><h2 style="font-size:26px">${patterns.size} patterns across ${ORDER.filter(t=>DATA.some(p=>p.topic===t)).length} topics</h2></div></div>
-  <p class="muted" style="max-width:68ch;margin:0 0 20px">Each card is one reusable idea. Open a problem to see the brute force, the reasoning that removes its wasted work, the optimal solution, and a picture of the data structure mid-run. Progress is saved in this browser.</p>`;
+  <p class="muted" style="max-width:68ch;margin:0 0 20px">Each card is one reusable idea. Open a problem to see the brute force, the reasoning that removes its wasted work, the optimal solution, and a picture of the data structure mid-run. Progress is saved in this browser. For the long-form, from-zero version of every chapter read the <a href="https://jawwada.github.io/leetcode-patterns/site/book_index.html" target="_blank" rel="noopener">Intuition Journey</a>.</p>`;
   for(const t of ORDER){
     const cards=[...patterns.entries()].filter(([k])=>k.startsWith(t+'|'));
     if(!cards.length) continue;
