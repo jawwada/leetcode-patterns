@@ -177,13 +177,18 @@ const words = md => md.replace(/```[\s\S]*?```/g,'').split(/\s+/).filter(Boolean
 const mins = md => Math.max(2,Math.round(words(md)/210));
 
 marked.setOptions({gfm:true, breaks:false});
+// marked <13 passes positional strings to renderer callbacks; >=13 passes a token object. Accept both.
 const renderer = new marked.Renderer();
-renderer.code = ({text,lang}) => {
-  if(!lang || lang==='text' || lang==='txt') return `<pre class="drawing"><code>${esc(text)}</code></pre>`;
-  return `<pre><code class="language-${esc(lang)}">${esc(text)}</code></pre>`;
+renderer.code = function(a, b){
+  const text = typeof a==='string' ? a : (a.text||''), lang = typeof a==='string' ? (b||'') : (a.lang||'');
+  const l = String(lang).trim().toLowerCase();
+  if(!l || l==='text' || l==='txt') return `<pre class="drawing"><code>${esc(text)}</code></pre>`;
+  return `<pre><code class="language-${esc(l)}">${esc(text)}</code></pre>`;
 };
-renderer.heading = ({text,depth}) => {
-  const key=text.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^the-|^-|-$/g,'');
+renderer.heading = function(a, b){
+  const raw = typeof a==='string' ? a : (a.text||''), depth = typeof a==='string' ? b : a.depth;
+  const text = typeof a==='string' ? raw : (this.parser ? this.parser.parseInline(a.tokens) : raw);
+  const key = raw.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^the-|^-|-$/g,'');
   return `<h${depth} data-key="${key}">${text}</h${depth}>`;
 };
 marked.use({renderer});
