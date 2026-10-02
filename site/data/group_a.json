@@ -1,0 +1,1052 @@
+[
+  {
+    "slug": "two_sum",
+    "title": "Two Sum",
+    "leetcode": 1,
+    "difficulty": "Easy",
+    "topic": "arrays_hashing",
+    "pattern": "Hash map complement lookup",
+    "file": "arrays_hashing/two_sum.py",
+    "problem": "Given an integer array nums and an integer target, return the indices of the two numbers that add up to target. Exactly one answer exists and you may not use the same element twice. Example: nums = [2, 7, 11, 15], target = 9 returns [0, 1] because 2 + 7 = 9.",
+    "brute_force": {
+      "approach": "For every index i, scan every j > i and test nums[i] + nums[j] == target. The inner scan is the waste: for a fixed nums[i] we already know the single value we want (target - nums[i]), yet we re-read the whole suffix to look for it.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int], target: int) -> List[int]:\n    n = len(nums)\n    for i in range(n):\n        for j in range(i + 1, n):\n            if nums[i] + nums[j] == target:\n                return [i, j]\n    return []"
+    },
+    "optimization": "The inner loop is really a membership question: is target - nums[i] somewhere in the array, and at which index? Membership plus lookup-by-value is exactly what a hash map does in O(1), so replace the scan with a dict from value to index. Build the dict lazily, checking for the complement before inserting the current element, which both respects the no-reuse rule and avoids a second pass. Any valid pair (i, j) with i < j is caught when we reach j, because nums[i] was inserted earlier.",
+    "intuition": "Each number has exactly one partner that completes the sum. Remember every number you have seen so far keyed by value; when the current number's partner is among them, you are done. One pass suffices because every pair is discovered by whichever member comes second, and at that moment the first member is already in the map.",
+    "geometric": "Picture a cursor sweeping left to right over the array. Everything left of the cursor sits in a bag keyed by value. At each step the cursor asks the bag one question (is my complement here?) and then drops its own value in. The bag grows by one per step and no element is visited twice.",
+    "visual": "nums = [ 2, 7, 11, 15 ]   target = 9\n         ^                need 7  seen={}      store 2->0\n            ^             need 2  seen={2:0}   FOUND [0,1]\n\nseen holds every value LEFT of ^, keyed by value",
+    "steps": [
+      "Create an empty dict seen mapping value -> index.",
+      "For each index i with value v, compute need = target - v.",
+      "If need is in seen, return [seen[need], i].",
+      "Otherwise store seen[v] = i and continue."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "One pass with an O(1) dict lookup and insert per element; the dict holds at most n entries."
+    },
+    "pitfalls": [
+      "Inserting before checking pairs an element with itself (e.g. target 6, nums [3, ...]).",
+      "Returning values instead of indices.",
+      "Assuming the array is sorted and reaching for two pointers (that loses the original indices)."
+    ],
+    "hints": [
+      "For a fixed nums[i], there is exactly one value that would complete the pair. Can you look it up instead of searching for it?",
+      "A dict from value to index answers 'have I seen this value, and where?' in O(1).",
+      "Walk once; before inserting nums[i], check whether target - nums[i] is already in the dict. If so you have both indices."
+    ],
+    "code": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        seen = {}  # value -> index of an earlier element\n        for i, v in enumerate(nums):\n            need = target - v\n            if need in seen:\n                return [seen[need], i]\n            seen[v] = i\n        return []",
+    "related": [
+      "two_sum_ii_input_array_is_sorted",
+      "three_sum",
+      "subarray_sum_equals_k",
+      "contains_duplicate_ii"
+    ]
+  },
+  {
+    "slug": "group_anagrams",
+    "title": "Group Anagrams",
+    "leetcode": 49,
+    "difficulty": "Medium",
+    "topic": "arrays_hashing",
+    "pattern": "Canonical key bucketing",
+    "file": "arrays_hashing/group_anagrams.py",
+    "problem": "Given a list of lowercase strings, group the anagrams together in any order. Two strings are anagrams if they contain the same letters with the same counts. Example: [\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"] -> [[\"eat\",\"tea\",\"ate\"],[\"tan\",\"nat\"],[\"bat\"]].",
+    "brute_force": {
+      "approach": "Keep a list of groups. For each word, compare it against the representative of every existing group with an anagram test (sort both strings). The pairwise test is the waste: a word is compared against every group even though the answer depends only on the word's own letter multiset, which never changes.",
+      "time": "O(n^2 * k log k)",
+      "space": "O(n * k)",
+      "code": "def brute_force(strs: List[str]) -> List[List[str]]:\n    groups: List[List[str]] = []\n    for word in strs:\n        for g in groups:\n            if sorted(g[0]) == sorted(word):\n                g.append(word)\n                break\n        else:\n            groups.append([word])\n    return groups"
+    },
+    "optimization": "Pairwise comparison is redundant because 'is an anagram of' is an equivalence relation: compute a canonical form of each word once and let equal canonical forms meet in the same bucket. A hash map keyed by the canonical form turns n^2 comparisons into n insertions. The sorted string works as a key in O(k log k); for lowercase letters a tuple of 26 counts is an O(k) key and is the true optimum.",
+    "intuition": "Anagrams are the same multiset of letters. Any function that depends only on that multiset and not on letter order assigns identical keys to anagrams and different keys to non-anagrams. Hashing by that key groups them for free, with no comparisons between words at all.",
+    "geometric": "Imagine 26 counters forming a fingerprint vector for each word. Words that are anagrams map to the same point in this 26-dimensional space. A dict is a set of labelled bins placed at those points; each word is dropped into the bin at its own point.",
+    "visual": "word    letter counts (a..z)        bucket after insert\n\"eat\"   a1 e1 t1  -> key K1         K1: [eat]\n\"tea\"   a1 e1 t1  -> key K1 again   K1: [eat, tea]\n\"tan\"   a1 n1 t1  -> key K2         K2: [tan]\n\"ate\"   a1 e1 t1  -> key K1 again   K1: [eat, tea, ate]\n\"nat\"   a1 n1 t1  -> key K2 again   K2: [tan, nat]\n\"bat\"   a1 b1 t1  -> key K3         K3: [bat]\n\nkey = tuple of 26 counts; anagrams collide on purpose",
+    "steps": [
+      "Create a defaultdict(list) keyed by fingerprint.",
+      "For each word, build a 26-entry count list, one slot per letter.",
+      "Convert the list to a tuple (hashable) and append the word to that bucket.",
+      "Return the list of bucket values."
+    ],
+    "complexity": {
+      "time": "O(n * k)",
+      "space": "O(n * k)",
+      "why": "Each word is scanned once to build its 26-count key and stored once; the sorted-key variant is O(n * k log k)."
+    },
+    "pitfalls": [
+      "Using a list as a dict key (unhashable); convert to a tuple or a string.",
+      "Assuming equal length implies anagram.",
+      "Sorting each word is fine but is O(k log k); the interviewer may ask for the O(k) counting key."
+    ],
+    "hints": [
+      "What single value could you compute from a word so that all its anagrams produce the same value?",
+      "Use that value as a dict key and append each word to the key's list.",
+      "For lowercase letters, a tuple of 26 letter counts is a hashable key built in O(k) without sorting."
+    ],
+    "code": "class Solution:\n    def groupAnagrams(self, strs: List[str]) -> List[List[str]]:\n        buckets = defaultdict(list)\n        for word in strs:\n            counts = [0] * 26\n            for ch in word:\n                counts[ord(ch) - ord(\"a\")] += 1\n            buckets[tuple(counts)].append(word)  # tuple is hashable, list is not\n        return list(buckets.values())",
+    "related": [
+      "valid_anagram",
+      "top_k_frequent_elements",
+      "encode_and_decode_strings"
+    ]
+  },
+  {
+    "slug": "top_k_frequent_elements",
+    "title": "Top K Frequent Elements",
+    "leetcode": 347,
+    "difficulty": "Medium",
+    "topic": "arrays_hashing",
+    "pattern": "Frequency count + bucket sort",
+    "file": "arrays_hashing/top_k_frequent_elements.py",
+    "problem": "Given an integer array nums and an integer k, return the k most frequent elements in any order; the answer is guaranteed to be unique. Example: nums = [1,1,1,2,2,3], k = 2 -> [1, 2].",
+    "brute_force": {
+      "approach": "Count frequencies with a dict, sort the distinct values by frequency descending, and take the first k. The full sort is the waste: we only need the top k, yet sorting totally orders every distinct value including the ones we discard.",
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "code": "def brute_force(nums: List[int], k: int) -> List[int]:\n    freq = Counter(nums)\n    ordered = sorted(freq, key=lambda v: freq[v], reverse=True)\n    return ordered[:k]"
+    },
+    "optimization": "Sorting is overkill because the sort keys (frequencies) live in a tiny known range: every frequency is an integer between 1 and n. Whenever keys are small bounded integers, bucket instead of compare-sort. Make n + 1 buckets where buckets[f] holds every value occurring exactly f times, then walk the buckets from the highest frequency downward collecting values until you have k. That is O(n) with no comparisons; a size-k min-heap is the O(n log k) middle ground worth mentioning.",
+    "intuition": "Frequencies are counting numbers bounded by n, so they can be used directly as array indices. Placing each value at the index equal to its frequency sorts the values by frequency for free; reading the array from the back yields the most frequent values first. Because the answer is unique, there is no tie to resolve when a bucket pushes you past k.",
+    "geometric": "Picture a row of n + 1 shelves labelled 0..n. Each distinct value is placed on the shelf whose label equals its count. The algorithm sweeps the shelves from the right end (highest counts) leftwards, scooping values into the answer until k have been collected.",
+    "visual": "nums = [1,1,1,2,2,3]   k = 2      Counter: 1->3  2->2  3->1\n\nbuckets (index = frequency)\n  [0]   [1]   [2]   [3]   [4]   [5]   [6]\n   -    {3}   {2}   {1}    -     -     -\n                      <----------- sweep from the right\ntake 1 (freq 3), then 2 (freq 2)   len == k  ->  [1, 2]",
+    "steps": [
+      "Count occurrences with Counter.",
+      "Create buckets = [[] for _ in range(len(nums) + 1)].",
+      "For each (value, freq) pair, append value to buckets[freq].",
+      "Iterate freq from len(nums) down to 1, appending that bucket's values to the answer.",
+      "Return as soon as the answer holds k values."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "Counting is one pass, bucketing is one pass over distinct values, and the backward sweep touches each bucket once."
+    },
+    "pitfalls": [
+      "Buckets must have size n + 1 because a value can appear n times.",
+      "Forgetting to stop at exactly k when a bucket holds several values.",
+      "Sorting the whole Counter when the interviewer asks to beat O(n log n)."
+    ],
+    "hints": [
+      "Counting is the easy half. What is the range of possible frequencies, and is it small enough to index by?",
+      "A frequency is between 1 and n, so it can be an index into an array of buckets.",
+      "Put each value in buckets[its frequency], then read the buckets from index n downward until you have k values."
+    ],
+    "code": "class Solution:\n    def topKFrequent(self, nums: List[int], k: int) -> List[int]:\n        freq = Counter(nums)\n        buckets: List[List[int]] = [[] for _ in range(len(nums) + 1)]\n        for value, count in freq.items():\n            buckets[count].append(value)\n        result: List[int] = []\n        for count in range(len(nums), 0, -1):  # highest frequency first\n            for value in buckets[count]:\n                result.append(value)\n                if len(result) == k:\n                    return result\n        return result",
+    "related": [
+      "kth_largest_element_in_an_array",
+      "group_anagrams",
+      "sort_colors"
+    ]
+  },
+  {
+    "slug": "product_of_array_except_self",
+    "title": "Product of Array Except Self",
+    "leetcode": 238,
+    "difficulty": "Medium",
+    "topic": "arrays_hashing",
+    "pattern": "Prefix and suffix accumulation",
+    "file": "arrays_hashing/product_of_array_except_self.py",
+    "problem": "Given an integer array nums, return answer where answer[i] is the product of all elements except nums[i], without using division and in O(n) time. Example: nums = [1, 2, 3, 4] -> [24, 12, 8, 6].",
+    "brute_force": {
+      "approach": "For each index i, multiply every other element in a nested loop. Compare two neighbouring answers: answer[i] and answer[i+1] share n - 2 identical factors, yet the brute force recomputes that shared product from scratch for every i.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> List[int]:\n    n = len(nums)\n    answer = []\n    for i in range(n):\n        prod = 1\n        for j in range(n):\n            if j != i:\n                prod *= nums[j]\n        answer.append(prod)\n    return answer"
+    },
+    "optimization": "The product of everything except i equals (product of everything left of i) times (product of everything right of i). Both are running products that build incrementally: prefix[i] = prefix[i-1] * nums[i-1] in a left-to-right pass, and the suffix likewise right-to-left, so two passes replace n^2 multiplications. To reach O(1) extra space, write the prefix products straight into the output array, then sweep right-to-left carrying the suffix product in one variable and multiplying it in.",
+    "intuition": "Splitting 'all but one' into a left part and a right part turns an exclusion problem into two inclusion problems, and inclusion problems are prefix sums (here prefix products). Division is never needed because nums[i] is never multiplied in rather than removed afterwards; this is also why zeros need no special handling.",
+    "geometric": "Picture two arrows sweeping toward each other over the array. The left arrow drags a growing product of everything behind it and stamps that product into each cell. The right arrow then drags its own product leftward and multiplies it into the stamped value. Every cell ends up holding (product of its left) * (product of its right).",
+    "visual": "nums   = [  1,   2,   3,   4 ]\nleft pass  (prefix carried  -> )\nanswer = [  1,   1,   2,   6 ]     prefix: 1,1,2,6,(24)\nright pass (suffix carried <-  )\n         * [ 24,  12,   4,   1 ]   suffix: 1,4,12,24\nanswer = [ 24,  12,   8,   6 ]\nanswer[i] = product(left of i) * product(right of i)",
+    "steps": [
+      "Initialise answer = [1] * n.",
+      "Left pass with prefix = 1: for i in 0..n-1 set answer[i] = prefix, then prefix *= nums[i].",
+      "Right pass with suffix = 1: for i in n-1..0 set answer[i] *= suffix, then suffix *= nums[i].",
+      "Return answer."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "Two linear passes with one scalar carry each; the output array does not count as extra space."
+    },
+    "pitfalls": [
+      "Multiplying nums[i] into the carry before stamping it (includes the element itself).",
+      "Using division, which violates the constraint and breaks on zeros.",
+      "Over-engineering zero handling; the two-pass method handles any number of zeros automatically."
+    ],
+    "hints": [
+      "How much do answer[i] and answer[i+1] have in common? Can you avoid recomputing the shared part?",
+      "Everything except i = (everything left of i) * (everything right of i). Each of those is a running product.",
+      "Write the left products into the output in one pass, then sweep right-to-left multiplying in a single running suffix variable."
+    ],
+    "code": "class Solution:\n    def productExceptSelf(self, nums: List[int]) -> List[int]:\n        n = len(nums)\n        answer = [1] * n\n        prefix = 1\n        for i in range(n):\n            answer[i] = prefix          # product of everything left of i\n            prefix *= nums[i]\n        suffix = 1\n        for i in range(n - 1, -1, -1):\n            answer[i] *= suffix         # times product of everything right of i\n            suffix *= nums[i]\n        return answer",
+    "related": [
+      "subarray_sum_equals_k",
+      "trapping_rain_water",
+      "maximum_product_subarray"
+    ]
+  },
+  {
+    "slug": "longest_consecutive_sequence",
+    "title": "Longest Consecutive Sequence",
+    "leetcode": 128,
+    "difficulty": "Medium",
+    "topic": "arrays_hashing",
+    "pattern": "Hash set with sequence-start detection",
+    "file": "arrays_hashing/longest_consecutive_sequence.py",
+    "problem": "Given an unsorted integer array, return the length of the longest run of consecutive integer values, in O(n) time. Example: nums = [100, 4, 200, 1, 3, 2] -> 4, from the run 1, 2, 3, 4.",
+    "brute_force": {
+      "approach": "For every element x, count upward checking whether x+1, x+2, ... are in the array, each check a linear scan of the list. Two kinds of repeated work: the membership scans, and re-walking the same run from every one of its members (1-2-3-4 is counted starting from 1, from 2, from 3 and from 4).",
+      "time": "O(n^3)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> int:\n    best = 0\n    for x in nums:\n        length = 1\n        while x + length in nums:      # list membership is a linear scan\n            length += 1\n        best = max(best, length)\n    return best"
+    },
+    "optimization": "First redundancy: linear membership scans. Put everything in a hash set so 'is x+1 present?' costs O(1). Second redundancy: re-walking a run from each of its members. A run has exactly one natural starting point, the element x such that x-1 is not in the set, so only start counting from those. Every element then belongs to exactly one walk (the one started at its run's minimum), so the total number of probes across all walks is at most n; that amortisation is the whole trick. Sorting first would give O(n log n), which violates the required bound.",
+    "intuition": "A run of consecutive values is fully determined by its smallest element. Identify the smallest elements (those with no left neighbour in the set) and measure each run once from its bottom. The set gives O(1) neighbour checks, so measuring all runs costs O(n) in total despite the nested loop.",
+    "geometric": "Lay the distinct values on an integer number line as dots. Runs are maximal unbroken stretches of dots. The algorithm looks at each dot, keeps only those whose left neighbour is empty (the left end of a stretch), and from each such left end walks right until it hits a gap, recording the stretch length.",
+    "visual": "nums = [100, 4, 200, 1, 3, 2]     set = {1,2,3,4,100,200}\n\nline:  1 2 3 4 . . . 100 . . . 200\n       ^             ^         ^    run starts (x-1 absent)\nstart 1:   1 -> 2 -> 3 -> 4 -> 5?no  length 4\nstart 100: 101? no                   length 1\nstart 200: 201? no                   length 1\n2, 3, 4 skipped: x-1 is in the set    ->  best = 4",
+    "steps": [
+      "Build a set from nums (this also removes duplicates).",
+      "For each x in the set, skip it if x - 1 is in the set (not a run start).",
+      "Otherwise walk y = x, x+1, x+2, ... while y is in the set, counting the length.",
+      "Keep the maximum length seen and return it (0 for an empty array)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "Each element starts at most one walk and is visited inside at most one walk; set operations are O(1)."
+    },
+    "pitfalls": [
+      "Iterating over the original list instead of the set; duplicates re-walk the same run.",
+      "Omitting the x - 1 check turns the algorithm into O(n^2).",
+      "Sorting first violates the stated O(n) requirement."
+    ],
+    "hints": [
+      "A hash set makes 'is x+1 in the array?' O(1). What is still wasteful if you count upward from every element?",
+      "Each run should be counted exactly once. Which element of a run is special enough to be its unique starting point?",
+      "Only start counting from x when x - 1 is absent from the set; then every element is probed at most once across all walks."
+    ],
+    "code": "class Solution:\n    def longestConsecutive(self, nums: List[int]) -> int:\n        values = set(nums)\n        best = 0\n        for x in values:\n            if x - 1 in values:        # not the start of a run; its run is counted elsewhere\n                continue\n            length = 1\n            while x + length in values:\n                length += 1\n            best = max(best, length)\n        return best",
+    "related": [
+      "contains_duplicate",
+      "first_missing_positive",
+      "two_sum"
+    ]
+  },
+  {
+    "slug": "valid_sudoku",
+    "title": "Valid Sudoku",
+    "leetcode": 36,
+    "difficulty": "Medium",
+    "topic": "arrays_hashing",
+    "pattern": "Hash set per row/column/box",
+    "file": "arrays_hashing/valid_sudoku.py",
+    "problem": "Given a 9x9 board with digits '1'-'9' and '.' for empty cells, decide whether the filled cells are valid: no digit repeats in any row, any column, or any of the nine 3x3 boxes. Solvability is not required. Example: a board whose first row contains two '5's returns False.",
+    "brute_force": {
+      "approach": "For each of the 81 cells, scan its entire row, its entire column and its 3x3 box looking for the same digit elsewhere. Each row is re-scanned by all nine of its cells (likewise columns and boxes), so every pair of cells in a unit is compared twice and every unit is read nine times instead of once.",
+      "time": "O(81 * 27) = O(1)",
+      "space": "O(1)",
+      "code": "def brute_force(board: List[List[str]]) -> bool:\n    for r in range(9):\n        for c in range(9):\n            d = board[r][c]\n            if d == \".\":\n                continue\n            for k in range(9):\n                if k != c and board[r][k] == d:\n                    return False\n                if k != r and board[k][c] == d:\n                    return False\n            br, bc = 3 * (r // 3), 3 * (c // 3)\n            for i in range(br, br + 3):\n                for j in range(bc, bc + 3):\n                    if (i, j) != (r, c) and board[i][j] == d:\n                        return False\n    return True"
+    },
+    "optimization": "The brute force asks 'does this digit appear elsewhere in my row?' by scanning; that is a membership question, which a set answers in O(1). Give each row, each column and each box its own set so one pass over the board performs all 27 checks at once: for each filled cell, test-and-insert its digit into the three sets it belongs to, and a repeat is detected the moment the second copy arrives. The only non-obvious piece is addressing the box: (r // 3) * 3 + c // 3 identifies which of the 9 boxes a cell is in.",
+    "intuition": "Validity is 27 independent 'all distinct' constraints. 'All distinct' over a stream is checked by inserting into a set and watching for a collision. Running all 27 sets simultaneously in one sweep is just bookkeeping, and each cell participates in exactly three of them.",
+    "geometric": "Picture the 9x9 grid with three overlays: 9 horizontal bands, 9 vertical bands, and a 3x3 tiling of boxes. Every cell lies under exactly one band of each kind. The sweep moves row by row; each filled cell lights up its digit in the three overlays it sits under, and a cell that finds its digit already lit in any overlay fails the board.",
+    "visual": "     c0 c1 c2 | c3 c4 c5 | c6 c7 c8\nr0    5  3  . |  .  7  . |  .  .  .    rows[0] = {5,3,7}\nr1    6  .  . |  1  9  5 |  .  .  .    rows[1] = {6,1,9,5}\nr2    .  9  8 |  .  .  . |  .  6  .    cols[0] = {5,6,8,...}\n     ---------+----------+---------    boxes[0]= {5,3,6,9,8}\nr3    8  .  . |  .  6  . |  .  .  3\n...\ncell (r,c) -> box (r//3)*3 + c//3     e.g. (4,7) -> box 5\nfail when d already in rows[r] or cols[c] or boxes[b]",
+    "steps": [
+      "Create three lists of 9 empty sets: rows, cols, boxes.",
+      "For each cell (r, c) with digit d != '.', compute b = (r // 3) * 3 + c // 3.",
+      "If d is already in rows[r], cols[c] or boxes[b], return False.",
+      "Otherwise add d to all three sets.",
+      "Return True after the sweep completes."
+    ],
+    "complexity": {
+      "time": "O(1)",
+      "space": "O(1)",
+      "why": "The board is fixed at 81 cells with O(1) set operations each; for a general n x n board it is O(n^2) time and O(n^2) space."
+    },
+    "pitfalls": [
+      "Computing the box index with only one of r // 3 or c // 3.",
+      "Treating '.' as a digit and flagging empty cells as duplicates.",
+      "Trying to check that the puzzle is solvable; only the filled cells matter."
+    ],
+    "hints": [
+      "There are 27 groups (rows, columns, boxes) and each must contain distinct digits. How do you check 'all distinct' in one pass?",
+      "Keep a set for each group; a duplicate is detected when you try to insert a digit that is already present.",
+      "A cell at (r, c) belongs to row r, column c and box (r // 3) * 3 + c // 3; check and insert into all three sets as you sweep."
+    ],
+    "code": "class Solution:\n    def isValidSudoku(self, board: List[List[str]]) -> bool:\n        rows = [set() for _ in range(9)]\n        cols = [set() for _ in range(9)]\n        boxes = [set() for _ in range(9)]\n        for r in range(9):\n            for c in range(9):\n                d = board[r][c]\n                if d == \".\":\n                    continue\n                b = (r // 3) * 3 + c // 3   # which of the nine 3x3 boxes\n                if d in rows[r] or d in cols[c] or d in boxes[b]:\n                    return False\n                rows[r].add(d)\n                cols[c].add(d)\n                boxes[b].add(d)\n        return True",
+    "related": [
+      "sudoku_solver",
+      "contains_duplicate",
+      "set_matrix_zeroes"
+    ]
+  },
+  {
+    "slug": "encode_and_decode_strings",
+    "title": "Encode and Decode Strings",
+    "leetcode": 271,
+    "difficulty": "Medium",
+    "topic": "arrays_hashing",
+    "pattern": "Length-prefixed serialization",
+    "file": "arrays_hashing/encode_and_decode_strings.py",
+    "problem": "Design encode(list of strings) -> single string and decode(string) -> list, so that decode(encode(strs)) == strs for any strings, including empty strings and strings containing any character such as commas or '#'. Example: [\"lint\", \"code\", \"love\", \"you\"] -> \"4#lint4#code4#love3#you\" -> back to the original list.",
+    "brute_force": {
+      "approach": "Join with a delimiter and split on it, then patch the obvious failure (payloads containing the delimiter) with backslash escaping and a character-by-character decoder that tracks an escape flag. It is correct, but every single character must be inspected on both encode and decode just to locate boundaries, and the output size depends on how many delimiters the data happens to contain.",
+      "time": "O(total length)",
+      "space": "O(total length)",
+      "code": "class BruteForce:\n    \"\"\"Delimiter with backslash escaping: must inspect every character.\"\"\"\n\n    def encode(self, strs: List[str]) -> str:\n        escaped = [s.replace(\"\\\\\", \"\\\\\\\\\").replace(\",\", \"\\\\,\") for s in strs]\n        return \",\".join(escaped) + (\",\" if strs else \"\")\n\n    def decode(self, s: str) -> List[str]:\n        out, cur, i = [], [], 0\n        while i < len(s):\n            ch = s[i]\n            if ch == \"\\\\\":\n                cur.append(s[i + 1])\n                i += 2\n            elif ch == \",\":\n                out.append(\"\".join(cur))\n                cur = []\n                i += 1\n            else:\n                cur.append(ch)\n                i += 1\n        return out"
+    },
+    "optimization": "The character-by-character scan exists only because the decoder does not know where a string ends. Tell it explicitly: write each string's length before it, followed by one terminator '#' so the digits of the length are unambiguous even when the payload starts with a digit. Decoding then never looks inside a string; it reads digits up to '#' and jumps forward exactly that many characters. No escaping, no restrictions on content, and the per-string overhead is O(log length) digits. Content-agnostic framing (the same idea as TCP or Protobuf length prefixes) removes the dependence on the alphabet entirely.",
+    "intuition": "A delimiter is ambiguous because the payload might contain it. A length is never ambiguous because the decoder is told how many characters to consume rather than asked to search for a boundary. The '#' after the length separates the length digits from a payload that may itself begin with a digit.",
+    "geometric": "The encoded string is a sequence of frames [len]#[payload][len]#[payload]... Decoding is a pointer that hops: read digits, land on '#', step over it, then leap exactly len characters to the start of the next frame. The pointer never examines payload bytes, so payload content is irrelevant.",
+    "visual": "strs   = [\"lint\", \"code\", \"\", \"a#b\"]\nencode = \"4#lint4#code0#3#a#b\"\n          ^^^^^^  frame = length '#' payload\n\ndecode: i=0   read \"4\" -> '#' -> take \"lint\"   i -> 6\n        i=6   read \"4\" -> '#' -> take \"code\"   i -> 12\n        i=12  read \"0\" -> '#' -> take \"\"       i -> 14\n        i=14  read \"3\" -> '#' -> take \"a#b\"    i -> 19 end\npayload bytes are skipped by length, never inspected",
+    "steps": [
+      "encode: for each string s, append f\"{len(s)}#{s}\" to the output.",
+      "decode: start with i = 0 and an empty list.",
+      "While i < len(data): find j = data.index('#', i) and read length = int(data[i:j]).",
+      "Append data[j+1 : j+1+length] and set i = j + 1 + length.",
+      "Return the collected list."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "Each character is written once by encode and read or skipped once by decode, where n is the total length."
+    },
+    "pitfalls": [
+      "Using a bare delimiter that may appear inside a string.",
+      "Omitting the '#' so \"12\" + \"3abc\" and \"1\" + \"23abc\" become ambiguous.",
+      "Mishandling empty strings; they must encode as \"0#\" so decode returns them."
+    ],
+    "hints": [
+      "Any delimiter you choose could appear inside a string. What information would let the decoder skip a string without reading it?",
+      "Prefix each string with its length. What separates the length digits from a payload that starts with a digit?",
+      "Encode as f\"{len(s)}#{s}\"; decode by reading digits up to '#', then slicing exactly that many characters and jumping past them."
+    ],
+    "code": "class Codec:\n    def encode(self, strs: List[str]) -> str:\n        return \"\".join(f\"{len(s)}#{s}\" for s in strs)\n\n    def decode(self, s: str) -> List[str]:\n        out: List[str] = []\n        i = 0\n        while i < len(s):\n            j = s.index(\"#\", i)          # digits of the length end here\n            length = int(s[i:j])\n            out.append(s[j + 1:j + 1 + length])\n            i = j + 1 + length           # leap over the payload\n        return out",
+    "related": [
+      "serialize_and_deserialize_binary_tree",
+      "group_anagrams",
+      "string_compression"
+    ]
+  },
+  {
+    "slug": "subarray_sum_equals_k",
+    "title": "Subarray Sum Equals K",
+    "leetcode": 560,
+    "difficulty": "Medium",
+    "topic": "arrays_hashing",
+    "pattern": "Prefix sum + hash map of counts",
+    "file": "arrays_hashing/subarray_sum_equals_k.py",
+    "problem": "Given an integer array nums (which may contain negatives and zeros) and an integer k, return the number of contiguous subarrays whose elements sum to k. Example: nums = [1, 1, 1], k = 2 -> 2 (the subarrays at indices 0..1 and 1..2).",
+    "brute_force": {
+      "approach": "For every start i, extend an end j to the right while accumulating the running sum and count each time it equals k. The accumulation is the repeated work: the sum of nums[i..j] equals prefix[j+1] - prefix[i], two numbers that could be computed once, yet the brute force rebuilds it for every i.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int], k: int) -> int:\n    n = len(nums)\n    answer = 0\n    for i in range(n):\n        running = 0\n        for j in range(i, n):\n            running += nums[j]\n            if running == k:\n                answer += 1\n    return answer"
+    },
+    "optimization": "Rewrite the condition sum(i..j) == k as prefix[j+1] - prefix[i] == k, i.e. prefix[i] == prefix[j+1] - k. For a fixed right end j the question becomes 'how many earlier prefix sums equal exactly this value?', which is a count lookup that a hash map answers in O(1). Sweep j left to right, maintaining the running prefix sum and a dict of counts of prefix sums seen so far, seeded with {0: 1} for the empty prefix. Each step adds counts[prefix - k] to the answer and then records the current prefix. A sliding window fails here because negatives break monotonicity; the hash map does not need monotonicity.",
+    "intuition": "Every subarray is a difference of two prefix sums. Counting subarrays with sum k is therefore counting pairs of prefix sums that differ by exactly k with the smaller index first, and pairs with a fixed difference are counted in one pass by a frequency map of values seen so far. The seed {0: 1} represents the empty prefix so that subarrays starting at index 0 are counted.",
+    "geometric": "Plot the prefix sum as a staircase over positions 0..n. A subarray summing to k is a pair of points on this staircase exactly k apart vertically, with the left point earlier. Walking right along the staircase, at each point look down by k and count how many earlier points sit at that height.",
+    "visual": "nums   = [ 1,  2,  3, -2,  2 ]        k = 3\nprefix =  0   1   3   6   4   6\nanswer += counts[prefix - k], then record prefix\nstep  prefix  need  counts so far     hit\n 1      1     -2    {0:1}              -\n 2      3      0    {0:1,1:1}         +1  [1,2]\n 3      6      3    {..,3:1}          +1  [3]\n 4      4      1    {..,6:1}          +1  [2,3,-2]\n 5      6      3    {..,4:1}          +1  [3,-2,2]   => 4",
+    "steps": [
+      "Initialise counts = {0: 1}, prefix = 0, answer = 0.",
+      "For each value v, update prefix += v.",
+      "Add counts.get(prefix - k, 0) to answer.",
+      "Increment counts[prefix].",
+      "Return answer."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "One pass with O(1) dict operations; the dict holds at most n + 1 distinct prefix sums."
+    },
+    "pitfalls": [
+      "Forgetting to seed counts[0] = 1, which misses subarrays starting at index 0.",
+      "Recording the current prefix before querying, which counts the empty subarray when k == 0.",
+      "Attempting a sliding window; negative numbers make the running sum non-monotonic."
+    ],
+    "hints": [
+      "sum(i..j) = prefix[j+1] - prefix[i]. Can you rewrite the condition sum == k in terms of a single lookup for a fixed j?",
+      "For each right end, you need the number of earlier prefix sums equal to prefix - k. A dict from prefix sum to count gives that in O(1).",
+      "Seed the dict with {0: 1}, sweep once, add counts[prefix - k] to the answer, then increment counts[prefix]."
+    ],
+    "code": "class Solution:\n    def subarraySum(self, nums: List[int], k: int) -> int:\n        counts = {0: 1}  # prefix sum -> how many times seen; empty prefix counts once\n        prefix = 0\n        answer = 0\n        for v in nums:\n            prefix += v\n            answer += counts.get(prefix - k, 0)  # earlier prefixes that make a k-sum\n            counts[prefix] = counts.get(prefix, 0) + 1\n        return answer",
+    "related": [
+      "two_sum",
+      "product_of_array_except_self",
+      "continuous_subarray_sum",
+      "contiguous_array"
+    ]
+  },
+  {
+    "slug": "first_missing_positive",
+    "title": "First Missing Positive",
+    "leetcode": 41,
+    "difficulty": "Hard",
+    "topic": "arrays_hashing",
+    "pattern": "Index as hash (in-place cyclic placement)",
+    "file": "arrays_hashing/first_missing_positive.py",
+    "problem": "Given an unsorted integer array nums, return the smallest positive integer not present, in O(n) time and O(1) auxiliary space. Examples: [3, 4, -1, 1] -> 2; [1, 2, 0] -> 3; [7, 8, 9] -> 1.",
+    "brute_force": {
+      "approach": "Try candidate = 1, 2, 3, ... and for each candidate scan the whole array to see whether it is present; the first absent candidate is the answer. The repeated membership scan is the waste: the array is re-read from scratch for every candidate. A hash set fixes the time but spends O(n) extra space, which the problem forbids.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> int:\n    candidate = 1\n    while candidate in nums:\n        candidate += 1\n    return candidate"
+    },
+    "optimization": "The key observation bounds the answer: with n elements the answer lies in 1..n+1, because if all of 1..n are present the answer is n+1 and otherwise something in 1..n is missing. So only values 1..n matter, and there are exactly n slots in the array, so the array itself can serve as the hash set with value v stored at index v - 1. One pass swaps each in-range value into its home slot; each swap places at least one value permanently, so total swaps are at most n. A second pass finds the first index i whose slot does not hold i + 1, and the answer is i + 1, or n + 1 if every slot is correct.",
+    "intuition": "If every value 1..n were present, placing each at index value - 1 would be a perfect fit. Values out of range or duplicates have nowhere to go and are left behind wherever the swapping dumps them; the first slot whose occupant is wrong points directly at the missing number. The array doubles as its own presence table.",
+    "geometric": "Picture n numbered parking bays. Each car numbered 1..n drives to bay number - 1, evicting whoever is there, who then drives to their own bay, and so on around a cycle. Cars with numbers outside 1..n, or duplicate numbers, never get a bay and are abandoned where they stand. Walk the bays in order; the first bay without its matching car is the answer.",
+    "visual": "nums = [ 3,  4, -1,  1 ]     n = 4, answer in 1..5\nslot:    0   1   2   3       value v belongs at slot v-1\ni=0: 3 -> slot 2   swap  -> [-1,  4,  3,  1 ]\n     -1 out of range, stop\ni=1: 4 -> slot 3   swap  -> [-1,  1,  3,  4 ]\n     1 -> slot 0   swap  -> [ 1, -1,  3,  4 ]\n     -1 out of range, stop\ni=2, i=3: already home\nscan: slot 0 holds 1 ok ; slot 1 holds -1 != 2  -> 2",
+    "steps": [
+      "Let n = len(nums).",
+      "For each index i: while 1 <= nums[i] <= n and nums[nums[i] - 1] != nums[i], swap nums[i] into slot nums[i] - 1.",
+      "Scan again: the first index i with nums[i] != i + 1 gives the answer i + 1.",
+      "If every slot is correct, return n + 1."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "Each swap puts one value in its final slot, so there are at most n swaps across all the while loops, plus two linear scans."
+    },
+    "pitfalls": [
+      "Omitting the duplicate guard nums[nums[i] - 1] != nums[i], which loops forever on duplicates.",
+      "Using if instead of while; the swapped-in value also needs to be placed.",
+      "Mutating the input without asking whether that is acceptable."
+    ],
+    "hints": [
+      "With n elements, what is the largest the answer could possibly be? Which values can you therefore ignore entirely?",
+      "The answer is in 1..n+1, so only values 1..n matter, and there are exactly n slots. Could the array itself act as the hash set?",
+      "Swap each in-range value v into index v - 1 (repeat for the value swapped in), then the first index i with nums[i] != i + 1 gives the answer i + 1."
+    ],
+    "code": "class Solution:\n    def firstMissingPositive(self, nums: List[int]) -> int:\n        n = len(nums)\n        for i in range(n):\n            # keep swapping until slot i holds a value that is out of range or already home\n            while 1 <= nums[i] <= n and nums[nums[i] - 1] != nums[i]:\n                home = nums[i] - 1\n                nums[i], nums[home] = nums[home], nums[i]\n        for i in range(n):\n            if nums[i] != i + 1:\n                return i + 1\n        return n + 1",
+    "related": [
+      "missing_number",
+      "find_the_duplicate_number",
+      "find_all_numbers_disappeared_in_an_array",
+      "longest_consecutive_sequence"
+    ]
+  },
+  {
+    "slug": "majority_element",
+    "title": "Majority Element",
+    "leetcode": 169,
+    "difficulty": "Easy",
+    "topic": "arrays_hashing",
+    "pattern": "Boyer-Moore voting",
+    "file": "arrays_hashing/majority_element.py",
+    "problem": "Given an array of size n, return the element that appears more than n / 2 times; a majority element always exists. Follow-up: O(n) time and O(1) space. Example: nums = [2, 2, 1, 1, 1, 2, 2] -> 2.",
+    "brute_force": {
+      "approach": "For each element, count its occurrences with a full scan and return it when the count exceeds n / 2. The re-counting is the waste: the same value is counted from scratch every time it reappears, and candidates that could never win are counted too. A Counter dict reduces time to O(n) but uses O(n) space.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> int:\n    n = len(nums)\n    for v in nums:\n        occurrences = 0\n        for w in nums:\n            if w == v:\n                occurrences += 1\n        if occurrences > n // 2:\n            return v\n    return -1"
+    },
+    "optimization": "We do not need the exact count of every value, only the identity of the one value in strict majority. If you pair each majority element with a distinct non-majority element and cancel both, the majority still has leftovers because it holds more than half. Boyer-Moore implements this cancellation in one pass with two variables, a candidate and a count: matching elements increment the count, non-matching ones decrement it (cancelling against the candidate), and when the count reaches zero the next element becomes the new candidate. The majority survives every cancellation, so whatever is the candidate at the end is the answer.",
+    "intuition": "Think of the array as a vote. Every non-majority vote can knock out at most one majority vote, and there are strictly fewer non-majority votes, so the majority candidate is left standing. The count is a tally of unanswered votes for the current candidate, and a count of zero just means the current candidate has been fully cancelled, not that it lost.",
+    "geometric": "Draw the array as a sequence of coloured blocks. Walk left to right carrying a stack of blocks of one colour: same colour means push, different colour means pop one (they annihilate). An empty stack takes the next block's colour. Since the majority colour has more than half the blocks, it cannot be fully annihilated and it tops the stack at the end.",
+    "visual": "nums  = [ 2,  2,  1,  1,  1,  2,  2 ]\nv        2   2   1   1   1   2   2\ncand     2   2   2   2   1   1   2\ncount    1   2   1   0   1   0   1\n                     ^           ^  count 0 -> new cand\neach (2,1) pair cancels; the majority has leftovers  -> 2",
+    "steps": [
+      "Set candidate = nums[0] and count = 0.",
+      "For each v: if count == 0, set candidate = v.",
+      "Add 1 to count if v == candidate, otherwise subtract 1.",
+      "Return candidate (guaranteed correct by the majority assumption)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "One pass maintaining two scalars."
+    },
+    "pitfalls": [
+      "Using Boyer-Moore when a majority is not guaranteed; a second verification pass is then required.",
+      "Thinking a zero count mid-array means something went wrong; it is normal and expected.",
+      "Reaching for sorting (O(n log n)) or a Counter (O(n) space) when the follow-up asks for O(1) space."
+    ],
+    "hints": [
+      "You do not need every element's exact count, only the one in the strict majority. What happens if you cancel each majority element against a different element?",
+      "Keep a candidate and a counter; equal elements add a vote, different elements remove one, and a zero counter means pick a new candidate.",
+      "Because the majority has more than half the votes, it cannot be fully cancelled, so the candidate left at the end is the answer."
+    ],
+    "code": "class Solution:\n    def majorityElement(self, nums: List[int]) -> int:\n        candidate = nums[0]\n        count = 0\n        for v in nums:\n            if count == 0:\n                candidate = v           # previous candidate fully cancelled out\n            count += 1 if v == candidate else -1\n        return candidate",
+    "related": [
+      "majority_element_ii",
+      "top_k_frequent_elements",
+      "contains_duplicate"
+    ]
+  },
+  {
+    "slug": "contains_duplicate_ii",
+    "title": "Contains Duplicate II",
+    "leetcode": 219,
+    "difficulty": "Easy",
+    "topic": "arrays_hashing",
+    "pattern": "Hash map of last-seen index",
+    "file": "arrays_hashing/contains_duplicate_ii.py",
+    "problem": "Given an integer array nums and an integer k, return True if there are two distinct indices i and j with nums[i] == nums[j] and |i - j| <= k. Examples: nums = [1, 2, 3, 1], k = 3 -> True (indices 0 and 3); nums = [1, 2, 3, 1, 2, 3], k = 2 -> False.",
+    "brute_force": {
+      "approach": "For each index i, compare nums[i] against the next k elements nums[i+1..i+k]. The window scan is the waste: for a given value only its most recent earlier occurrence can be within k (older copies are farther away), yet we re-scan k elements for every index.",
+      "time": "O(n * k)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int], k: int) -> bool:\n    n = len(nums)\n    for i in range(n):\n        for j in range(i + 1, min(n, i + k + 1)):\n            if nums[i] == nums[j]:\n                return True\n    return False"
+    },
+    "optimization": "The brute force asks 'did this value appear in the previous k positions?' by searching backwards. Instead, remember forwards: keep a dict from value to the index of its most recent occurrence. When v appears at index i, check whether i - last[v] <= k; the most recent occurrence is the only one worth checking because any older copy is even farther away. Then overwrite last[v] = i. One dict lookup replaces the k-element scan. Equivalently, maintain a set of the last k values as a sliding window, which uses O(min(n, k)) space.",
+    "intuition": "A duplicate within distance k always involves the nearest previous copy of the same value. Track exactly one piece of information per value, where it was last seen, and compare distances in O(1). Overwriting the stored index keeps it pointing at the nearest copy.",
+    "geometric": "Picture a cursor sweeping right over the array, dragging a shadow of length k behind it. Each value has a flag planted at its most recent position. When the cursor lands on a value it looks back at that value's flag: a flag inside the shadow means True; either way the flag is moved up to the cursor.",
+    "visual": "nums = [ 1,  2,  3,  1,  2,  3 ]    k = 2\ni=0 v=1  last={}             store 1->0\ni=1 v=2  last={1:0}          store 2->1\ni=2 v=3  last={1:0,2:1}      store 3->2\ni=3 v=1  last[1]=0  3-0=3 > k  no  update 1->3\ni=4 v=2  last[2]=1  4-1=3 > k  no  update 2->4\ni=5 v=3  last[3]=2  5-2=3 > k  no  -> False\n       [ 1   2   3   1   2   3 ]\n                     <-k-->  ^   window of k behind ^",
+    "steps": [
+      "Create last = {} mapping value -> most recent index.",
+      "For each index i with value v, if v is in last and i - last[v] <= k, return True.",
+      "Set last[v] = i.",
+      "Return False after the sweep."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "One pass with O(1) dict operations; the dict stores at most one index per distinct value."
+    },
+    "pitfalls": [
+      "Storing the first occurrence instead of the most recent one.",
+      "Off-by-one between <= k and < k.",
+      "k == 0 must return False because the indices must be distinct."
+    ],
+    "hints": [
+      "If the same value appears several times before index i, which earlier copy is the only one that matters for the distance check?",
+      "Keep a dict from value to the index where it was most recently seen.",
+      "At each index, check i - last[v] <= k, then overwrite last[v] = i so it always points at the nearest copy."
+    ],
+    "code": "class Solution:\n    def containsNearbyDuplicate(self, nums: List[int], k: int) -> bool:\n        last = {}  # value -> most recent index; only the nearest copy can be within k\n        for i, v in enumerate(nums):\n            if v in last and i - last[v] <= k:\n                return True\n            last[v] = i\n        return False",
+    "related": [
+      "contains_duplicate",
+      "two_sum",
+      "longest_substring_without_repeating_characters"
+    ]
+  },
+  {
+    "slug": "valid_palindrome",
+    "title": "Valid Palindrome",
+    "leetcode": 125,
+    "difficulty": "Easy",
+    "topic": "two_pointers",
+    "pattern": "Converging two pointers",
+    "file": "two_pointers/valid_palindrome.py",
+    "problem": "A phrase is a palindrome if, after lowercasing and removing every non-alphanumeric character, it reads the same forwards and backwards. Return True if s is a palindrome. Example: \"A man, a plan, a canal: Panama\" -> True (\"amanaplanacanalpanama\"); \"race a car\" -> False.",
+    "brute_force": {
+      "approach": "Build a cleaned string of lowercase alphanumerics and compare it with its reverse (cleaned == cleaned[::-1]). It is already linear time, but it materialises two full copies of the string when all we need is to compare mirrored characters pairwise, and it cannot exit early on the first mismatch.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "code": "def brute_force(s: str) -> bool:\n    cleaned = \"\".join(ch.lower() for ch in s if ch.isalnum())\n    return cleaned == cleaned[::-1]"
+    },
+    "optimization": "The comparison cleaned == reversed checks position i against position len-1-i for every i. We can do that directly on the original string with two indices walking inward from both ends. The only wrinkle is the filter: when a pointer rests on a non-alphanumeric character, advance it past, applying the filter lazily on the fly. Compare lowercase forms and return False at the first mismatch. No copies, O(1) space, and early exit.",
+    "intuition": "A palindrome is symmetric about its centre, so the first character must match the last, the second must match the second-to-last, and so on. Two pointers converging from the ends check exactly these mirror pairs. Skipping non-alphanumerics is just 'ignore this cell and keep walking', which costs nothing extra because each cell is still visited once.",
+    "geometric": "Picture the string as a row of tiles with two fingers on the outermost tiles. Each step both fingers slide inward over any punctuation or space tiles until they rest on letters or digits, then compare. The fingers meet in the middle; every tile is visited once by exactly one finger.",
+    "visual": "s = \"A man, a plan, a canal: Panama\"\n     L                            R    a vs a   ok\n      L                          R     ' ' skip, m vs m  ok\n        L                       R      a vs a   ok\n         L                     R       n vs n   ok\n          L                   R        ',' skip ... a vs a\n                 ...  L and R keep closing in  ...\n                   LR                  pointers meet -> True",
+    "steps": [
+      "Set left = 0 and right = len(s) - 1.",
+      "While left < right: advance left past non-alphanumerics and retreat right past non-alphanumerics.",
+      "If s[left].lower() != s[right].lower(), return False.",
+      "Move both pointers inward by one.",
+      "Return True when the pointers meet or cross."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "Each index is touched by exactly one pointer once; no copies of the string are made."
+    },
+    "pitfalls": [
+      "Forgetting the left < right guard inside the skip loops, which runs off the end on strings like \".,\".",
+      "Comparing without lowercasing.",
+      "Treating digits as non-alphanumeric; '0P' must return False, not skip the 0."
+    ],
+    "hints": [
+      "A palindrome mirrors around its centre. Which pairs of characters must match?",
+      "Walk two indices inward from both ends, comparing as you go.",
+      "When a pointer sits on a character that is not a letter or digit, just advance it; compare lowercase forms and stop at the first mismatch."
+    ],
+    "code": "class Solution:\n    def isPalindrome(self, s: str) -> bool:\n        left, right = 0, len(s) - 1\n        while left < right:\n            while left < right and not s[left].isalnum():\n                left += 1\n            while left < right and not s[right].isalnum():\n                right -= 1\n            if s[left].lower() != s[right].lower():\n                return False\n            left += 1\n            right -= 1\n        return True",
+    "related": [
+      "valid_palindrome_ii",
+      "longest_palindromic_substring",
+      "two_sum_ii_input_array_is_sorted"
+    ]
+  },
+  {
+    "slug": "two_sum_ii_input_array_is_sorted",
+    "title": "Two Sum II - Input Array Is Sorted",
+    "leetcode": 167,
+    "difficulty": "Medium",
+    "topic": "two_pointers",
+    "pattern": "Converging two pointers on sorted input",
+    "file": "two_pointers/two_sum_ii_input_array_is_sorted.py",
+    "problem": "Given a 1-indexed array sorted in non-decreasing order and a target, return the 1-based indices [i, j] with i < j of the two numbers that sum to target. Exactly one solution exists and you must use O(1) extra space. Example: numbers = [2, 7, 11, 15], target = 9 -> [1, 2].",
+    "brute_force": {
+      "approach": "Check every pair (i, j) with i < j for numbers[i] + numbers[j] == target. The waste is ignoring the sort order: once numbers[i] + numbers[j] exceeds target, every j' > j is also too big, yet the brute force keeps testing them. A hash map gives O(n) time but O(n) space, which the problem forbids.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(numbers: List[int], target: int) -> List[int]:\n    n = len(numbers)\n    for i in range(n):\n        for j in range(i + 1, n):\n            if numbers[i] + numbers[j] == target:\n                return [i + 1, j + 1]\n    return []"
+    },
+    "optimization": "Because the array is sorted, the sum of the current pair tells us which way to move. Start with the smallest and largest elements. If the sum is too small, the only way to increase it is to move the left pointer right; if too big, move the right pointer left. Each move permanently discards one element as a possible partner: a too-small left element cannot pair with anything smaller than the current right (those sums are even smaller), and symmetrically for the right. At most n - 1 moves, so O(n) time and O(1) space.",
+    "intuition": "Sorted order lets a single comparison eliminate an entire element from consideration, not just one pair. Two pointers converging from the ends therefore examine O(n) pairs instead of O(n^2) while never skipping the unique answer, because the discarded element could not have been part of it.",
+    "geometric": "Imagine the n x n grid of pairs (i, j) above the diagonal. Sorted order means sums increase to the right and downward. The two-pointer walk starts at the top-right corner (smallest i, largest j) and at each step moves either down (i += 1) or left (j -= 1), tracing a staircase that cuts the grid; every cell off the staircase has been proven too small or too large.",
+    "visual": "numbers = [ 2,  7, 11, 15 ]    target = 9\n            L           R      2 + 15 = 17 > 9   -> R--\n            L       R          2 + 11 = 13 > 9   -> R--\n            L   R              2 +  7 =  9  hit  -> [1, 2]\n\ntoo big  : shrink from the right (R--)\ntoo small: grow from the left   (L++)",
+    "steps": [
+      "Set left = 0 and right = n - 1.",
+      "While left < right, compute total = numbers[left] + numbers[right].",
+      "If total == target, return [left + 1, right + 1].",
+      "If total < target, increment left; otherwise decrement right."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "Each iteration moves one pointer inward, so at most n - 1 iterations with two scalars of state."
+    },
+    "pitfalls": [
+      "Returning 0-based indices; the problem wants 1-based.",
+      "Using a hash map and violating the O(1) space constraint.",
+      "Not being able to explain why the answer is never skipped; practise the discard argument aloud."
+    ],
+    "hints": [
+      "The array is sorted. If the current pair's sum is too large, what do you know about every pair that uses the same right element and a larger left element?",
+      "Start with the smallest and the largest numbers and move one pointer inward based on whether the sum is too small or too large.",
+      "Sum < target means left += 1, sum > target means right -= 1; return [left + 1, right + 1] on a hit."
+    ],
+    "code": "class Solution:\n    def twoSum(self, numbers: List[int], target: int) -> List[int]:\n        left, right = 0, len(numbers) - 1\n        while left < right:\n            total = numbers[left] + numbers[right]\n            if total == target:\n                return [left + 1, right + 1]   # 1-indexed answer\n            if total < target:\n                left += 1                      # need a bigger sum\n            else:\n                right -= 1                     # need a smaller sum\n        return []",
+    "related": [
+      "two_sum",
+      "three_sum",
+      "container_with_most_water",
+      "squares_of_a_sorted_array"
+    ]
+  },
+  {
+    "slug": "three_sum",
+    "title": "3Sum",
+    "leetcode": 15,
+    "difficulty": "Medium",
+    "topic": "two_pointers",
+    "pattern": "Sort + fixed element + converging two pointers",
+    "file": "two_pointers/three_sum.py",
+    "problem": "Given an integer array nums, return all unique triplets [a, b, c] with a + b + c == 0; the result must not contain duplicate triplets. Example: nums = [-1, 0, 1, 2, -1, -4] -> [[-1, -1, 2], [-1, 0, 1]].",
+    "brute_force": {
+      "approach": "Three nested loops over i < j < k test every triplet's sum and insert the sorted triplet into a set to kill duplicates. For every fixed pair (i, j) the required third value is already known, -(nums[i] + nums[j]), yet a whole loop searches for it, and duplicate triplets are generated many times only to be thrown away by the set.",
+      "time": "O(n^3)",
+      "space": "O(#answers)",
+      "code": "def brute_force(nums: List[int]) -> List[List[int]]:\n    n = len(nums)\n    found = set()\n    for i in range(n):\n        for j in range(i + 1, n):\n            for k in range(j + 1, n):\n                if nums[i] + nums[j] + nums[k] == 0:\n                    found.add(tuple(sorted((nums[i], nums[j], nums[k]))))\n    return [list(t) for t in found]"
+    },
+    "optimization": "Fix the first element nums[i]; the remainder is Two Sum with target -nums[i]. A hash set makes that O(n) per i but deduplication stays messy. Sorting first solves both problems at once: on a sorted suffix the two-sum is a converging two-pointer walk (O(n) per i, O(1) extra space), and duplicates become adjacent, so they are skipped by advancing past equal neighbours, both for the anchor i and for left/right after a hit. Sorting costs O(n log n), dominated by the O(n^2) scan.",
+    "intuition": "Reduce the dimension: 3Sum is n copies of 2Sum. Sorting turns each 2Sum into a two-pointer sweep and, crucially, makes duplicate values contiguous so skipping them is a local check against the neighbour rather than a global set lookup. Each anchor only looks to its right, so every triplet is generated from its smallest element exactly once.",
+    "geometric": "Picture the sorted array as a number line. A fixed anchor i sits on the left; two pointers L (just right of i) and R (far right) move toward each other. Sum too small moves L right, too big moves R left, exact records the triplet and both pointers slide past any clones of their current values. Then the anchor steps right, skipping its own clones, and the sweep repeats on the shorter suffix.",
+    "visual": "sorted = [-4, -1, -1,  0,  1,  2]\n           i   L               R   -4-1+2 = -3 < 0  L++\n           i       L           R   -4-1+2 = -3 < 0  L++\n           i           L       R   -4+0+2 = -2 < 0  L++\n           i               L   R   -4+1+2 = -1 < 0  L++ stop\n               i   L           R   -1-1+2 =  0 HIT [-1,-1,2]\n               i       L   R        -1+0+1 =  0 HIT [-1,0,1]\n                   i               skip: nums[i]==nums[i-1]\n                       i   L   R    0+1+2 = 3 > 0  R-- stop",
+    "steps": [
+      "Sort nums.",
+      "For each anchor i in range(n - 2): break if nums[i] > 0; skip if nums[i] == nums[i - 1].",
+      "Set left = i + 1 and right = n - 1; while left < right compute total.",
+      "If total < 0 move left right; if total > 0 move right left.",
+      "If total == 0, record the triplet, move both pointers, then skip past duplicate values on each side.",
+      "Return the collected triplets."
+    ],
+    "complexity": {
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "why": "n anchors, each with an O(n) two-pointer sweep; sorting is O(n log n) and the output is not counted."
+    },
+    "pitfalls": [
+      "Skipping anchors when nums[i] == nums[i + 1] instead of nums[i - 1]; that loses valid triplets like [-1, -1, 2].",
+      "Forgetting to move both pointers after a hit, or moving them without skipping clones.",
+      "Falling back to a set of tuples when the interviewer wants the adjacency-based deduplication."
+    ],
+    "hints": [
+      "If you fix one element, what well-known problem is left over on the remaining elements?",
+      "Sort first. Then for each anchor, run the sorted Two Sum with two converging pointers on the suffix to its right.",
+      "Deduplicate by skipping an anchor equal to the previous anchor, and after each hit advancing left and right past values equal to the ones just used."
+    ],
+    "code": "class Solution:\n    def threeSum(self, nums: List[int]) -> List[List[int]]:\n        nums.sort()\n        n = len(nums)\n        result: List[List[int]] = []\n        for i in range(n - 2):\n            if nums[i] > 0:\n                break                              # all later values are positive too\n            if i > 0 and nums[i] == nums[i - 1]:\n                continue                           # same anchor as before -> same triplets\n            left, right = i + 1, n - 1\n            while left < right:\n                total = nums[i] + nums[left] + nums[right]\n                if total < 0:\n                    left += 1\n                elif total > 0:\n                    right -= 1\n                else:\n                    result.append([nums[i], nums[left], nums[right]])\n                    left += 1\n                    right -= 1\n                    while left < right and nums[left] == nums[left - 1]:\n                        left += 1                  # skip clones of the value just used\n                    while left < right and nums[right] == nums[right + 1]:\n                        right -= 1\n        return result",
+    "related": [
+      "two_sum",
+      "two_sum_ii_input_array_is_sorted",
+      "three_sum_closest",
+      "four_sum"
+    ]
+  },
+  {
+    "slug": "container_with_most_water",
+    "title": "Container With Most Water",
+    "leetcode": 11,
+    "difficulty": "Medium",
+    "topic": "two_pointers",
+    "pattern": "Converging two pointers, move the limiting side",
+    "file": "two_pointers/container_with_most_water.py",
+    "problem": "Given heights of n vertical lines at x = 0..n-1, choose two lines that together with the x-axis form the container holding the most water; the area is min(h[i], h[j]) * (j - i). Return the maximum area. Example: height = [1, 8, 6, 2, 5, 4, 8, 3, 7] -> 49 (indices 1 and 8).",
+    "brute_force": {
+      "approach": "Evaluate min(h[i], h[j]) * (j - i) for every pair i < j and keep the maximum. Once we know the shorter of two walls, every pair that keeps that shorter wall and brings the other wall closer is provably worse (narrower, and no taller than the short wall), yet the brute force still evaluates all of them.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(height: List[int]) -> int:\n    n = len(height)\n    best = 0\n    for i in range(n):\n        for j in range(i + 1, n):\n            best = max(best, min(height[i], height[j]) * (j - i))\n    return best"
+    },
+    "optimization": "Start with the widest container (left = 0, right = n - 1); its height is capped by the shorter wall. Any other container that still uses that shorter wall is narrower and no taller, so it is strictly worse, meaning the shorter wall can be discarded from all future consideration. Move the pointer on the shorter side inward. Each step eliminates one wall, so n - 1 steps examine everything that could beat the best so far. Ties can move either side.",
+    "intuition": "Area is width times the smaller height. Moving inward always costs width, so the only move worth making is one that could raise the height, and only moving the short side can do that; moving the tall side keeps the height capped by the same short wall while losing width. Greedy elimination of the limiting wall is therefore safe.",
+    "geometric": "Picture the skyline of bars with two walls L and R at the extremes. The water level is set by the shorter wall. Each step, demolish the shorter wall and slide that pointer inward; the water level may rise while the width shrinks by one. Track the best rectangle seen as the two walls approach each other.",
+    "visual": "height = [1, 8, 6, 2, 5, 4, 8, 3, 7]\n          L                       R   min(1,7)*8 = 8\n             L                    R   min(8,7)*7 = 49 *\n             L                 R      min(8,3)*6 = 18\n             L              R         min(8,8)*5 = 40\n             L           R            min(8,4)*4 = 16\n         ...  shorter wall is discarded each step  ...\nbest = 49   (h[L] < h[R] -> L++, else R--)",
+    "steps": [
+      "Set left = 0, right = n - 1, best = 0.",
+      "While left < right, update best with min(h[left], h[right]) * (right - left).",
+      "If h[left] < h[right], increment left; otherwise decrement right.",
+      "Return best."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "Each iteration moves one pointer inward, so at most n - 1 iterations with constant state."
+    },
+    "pitfalls": [
+      "Moving the taller side, which can never improve the area.",
+      "Computing area with the max height instead of the min.",
+      "Stopping or special-casing when the two heights are equal; just move either side."
+    ],
+    "hints": [
+      "Start with the widest container. If you move a pointer inward you lose width, so what must happen to the height for that move to be worthwhile?",
+      "Only moving the shorter wall can increase the limiting height; the taller wall's move is wasted.",
+      "Two pointers from the ends; each step record the area and move the shorter side inward until they meet."
+    ],
+    "code": "class Solution:\n    def maxArea(self, height: List[int]) -> int:\n        left, right = 0, len(height) - 1\n        best = 0\n        while left < right:\n            best = max(best, min(height[left], height[right]) * (right - left))\n            if height[left] < height[right]:\n                left += 1          # shorter wall can never be part of a better pair\n            else:\n                right -= 1\n        return best",
+    "related": [
+      "trapping_rain_water",
+      "two_sum_ii_input_array_is_sorted",
+      "largest_rectangle_in_histogram"
+    ]
+  },
+  {
+    "slug": "trapping_rain_water",
+    "title": "Trapping Rain Water",
+    "leetcode": 42,
+    "difficulty": "Hard",
+    "topic": "two_pointers",
+    "pattern": "Converging two pointers with running maxima",
+    "file": "two_pointers/trapping_rain_water.py",
+    "problem": "Given an elevation map height[i] with bars of width 1, compute how much water it traps after raining. The water above bar i is min(maxLeft(i), maxRight(i)) - height[i] when that is positive. Example: height = [0,1,0,2,1,0,1,3,2,1,2,1] -> 6.",
+    "brute_force": {
+      "approach": "For every index i, scan left to find the tallest bar, scan right to find the tallest bar, and add min(maxL, maxR) - height[i]. The two scans are the repeated work: maxLeft(i+1) is just max(maxLeft(i), height[i]), so recomputing it from scratch for each i repeats nearly the same scan n times.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(height: List[int]) -> int:\n    water = 0\n    for i in range(len(height)):\n        max_left = max(height[:i + 1])\n        max_right = max(height[i:])\n        water += min(max_left, max_right) - height[i]\n    return water"
+    },
+    "optimization": "Step one: precompute two arrays, maxLeft and maxRight, each in one pass, then sum the water in a third pass, O(n) time and O(n) space. Step two removes the arrays: the water at i depends on min(maxLeft, maxRight), so we only need to know which side's maximum is the smaller one. Walk two pointers inward keeping leftMax and rightMax. If height[left] < height[right], the right side already contains a bar at least as tall as height[right] > height[left], so the water at left is fixed by leftMax alone regardless of what lies between; settle it and advance left. Symmetrically for the right. Each index is settled exactly once with O(1) state.",
+    "intuition": "The water level at a bar is set by the lower of the tallest bars on each side. When you know the left-side maximum is lower than something already seen on the right, the exact right-side maximum is irrelevant for that bar because the left maximum is the binding constraint. That one-sided certainty is what lets two pointers replace two arrays, and it holds for whichever side currently has the smaller boundary bar.",
+    "geometric": "Picture the skyline with two walls, L on the left and R on the right, each carrying the tallest bar it has passed. Water fills from the lower wall's side: the pointer on the side with the smaller boundary steps inward and pours water up to its running maximum. The two running maxima only increase as the walls close in, and the settled region grows from both ends.",
+    "visual": "height = [0,1,0,2,1,0,1,3,2,1,2,1]        ~ = trapped water\n3 |        #\n2 |    #~~~##~#\n1 |  #~##~######\n  +--------------\n     0123456789..\nL=0,R=11: h[L]=0 < h[R]=1 -> settle L: leftMax 0, +0\nL=1,R=11: 1 < 1? no       -> settle R: rightMax 1, +0\nL=1,R=10: 1 < 2           -> settle L: leftMax 1, +0\nL=2,R=10: 0 < 2           -> settle L: +(1-0) = 1\n... side with the smaller boundary bar is settled; total 6",
+    "steps": [
+      "Set left = 0, right = n - 1, leftMax = rightMax = 0, water = 0.",
+      "While left < right: if height[left] < height[right], update leftMax, add leftMax - height[left] to water, advance left.",
+      "Otherwise update rightMax, add rightMax - height[right] to water, retreat right.",
+      "Return water."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "Each iteration settles one index permanently; only two running maxima are stored."
+    },
+    "pitfalls": [
+      "Adding water before updating the running max, which can produce negative contributions.",
+      "Comparing leftMax to rightMax instead of height[left] to height[right] (also works but needs a different argument; be consistent).",
+      "Settling on the two-array solution without being ready to explain the O(1) space refinement."
+    ],
+    "hints": [
+      "Water above bar i is min(tallest to its left, tallest to its right) minus its height. How can you get those two maxima for every i without rescanning?",
+      "Two prefix arrays (max from the left, max from the right) give O(n) time with O(n) space. Which side's max actually matters for a given bar?",
+      "Two pointers with running maxima: whichever side has the smaller boundary bar can be settled immediately, because the other side is guaranteed to have something taller."
+    ],
+    "code": "class Solution:\n    def trap(self, height: List[int]) -> int:\n        left, right = 0, len(height) - 1\n        left_max = right_max = 0\n        water = 0\n        while left < right:\n            if height[left] < height[right]:\n                # right side has a bar >= height[right] > height[left], so the\n                # water above `left` is bounded by the left maximum alone\n                left_max = max(left_max, height[left])\n                water += left_max - height[left]\n                left += 1\n            else:\n                right_max = max(right_max, height[right])\n                water += right_max - height[right]\n                right -= 1\n        return water",
+    "related": [
+      "container_with_most_water",
+      "product_of_array_except_self",
+      "largest_rectangle_in_histogram"
+    ]
+  },
+  {
+    "slug": "sort_colors",
+    "title": "Sort Colors",
+    "leetcode": 75,
+    "difficulty": "Medium",
+    "topic": "two_pointers",
+    "pattern": "Dutch national flag (three-way partition)",
+    "file": "two_pointers/sort_colors.py",
+    "problem": "Given an array containing only 0s, 1s and 2s, sort it in place so all 0s come first, then 1s, then 2s, without the library sort. Aim for one pass with O(1) space. Example: nums = [2, 0, 2, 1, 1, 0] -> [0, 0, 1, 1, 2, 2].",
+    "brute_force": {
+      "approach": "Count how many 0s, 1s and 2s there are in one pass, then overwrite the array with that many of each in a second pass (counting sort). It is linear and correct, but the second pass rewrites every cell including those already in place, and it does not generalise to records that carry data along with their key.",
+      "time": "O(n)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> None:\n    counts = [0, 0, 0]\n    for v in nums:\n        counts[v] += 1\n    i = 0\n    for colour in range(3):\n        for _ in range(counts[colour]):\n            nums[i] = colour\n            i += 1"
+    },
+    "optimization": "Instead of counting then rewriting, partition in a single pass by maintaining three regions with invariants: nums[:low] are all 0, nums[low:mid] are all 1, nums[high+1:] are all 2, and nums[mid:high+1] is unexplored. Examine nums[mid]: a 0 is swapped to the low boundary (both low and mid advance), a 1 is already in place (mid advances), a 2 is swapped to the high boundary (high retreats, mid stays because the swapped-in value is unexplored). Each step shrinks the unexplored region by one, so one pass and each element moves at most twice.",
+    "intuition": "Three-way partitioning is quicksort's partition step with two pivots at once. The invariants make the array self-describing: whatever lands in the 0-zone or 2-zone is final and only the middle frontier needs inspection. The asymmetry (mid advances on a 0-swap but not on a 2-swap) comes from the fact that the element swapped in from the left was already examined while the one from the right was not.",
+    "geometric": "Picture the array as four coloured bands: [0 0 0 | 1 1 | ? ? ? | 2 2]. low marks the end of the red band, mid the end of the white band and the start of the unknown band, high the start of the blue band. The unknown band is eaten from the left by mid and from the right by high until they cross.",
+    "visual": "nums = [2, 0, 2, 1, 1, 0]      L=M=0, H=5\n        LM             H       2 -> swap(M,H), H=4\n       [0, 0, 2, 1, 1, 2]\n        LM          H          0 -> swap(L,M), L=M=1\n       [0, 0, 2, 1, 1, 2]\n           LM       H          0 -> swap(L,M), L=M=2\n       [0, 0, 2, 1, 1, 2]\n              M     H          2 -> swap(M,H), H=3\n       [0, 0, 1, 1, 2, 2]\n              M  H             1, 1 -> M++ twice, done\nzones: [0,L) = 0s | [L,M) = 1s | [M,H] = ? | (H,n) = 2s",
+    "steps": [
+      "Set low = mid = 0 and high = n - 1.",
+      "While mid <= high, look at nums[mid].",
+      "If it is 0, swap nums[low] and nums[mid], then advance both low and mid.",
+      "If it is 1, advance mid only.",
+      "If it is 2, swap nums[mid] and nums[high], then retreat high (do not advance mid)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "Each iteration shrinks the unknown region by one cell; three indices of state."
+    },
+    "pitfalls": [
+      "Advancing mid after swapping with high; the swapped-in element is still unexamined.",
+      "Using mid < high instead of mid <= high, which skips the last unknown element.",
+      "Mixing up which pointer moves for which value."
+    ],
+    "hints": [
+      "Counting sort works in two passes. Can you place elements in a single pass by growing a 0-region from the left and a 2-region from the right?",
+      "Keep three indices: the end of the 0s, the current element, and the start of the 2s, with everything between the current element and the 2s unexplored.",
+      "On 0 swap to the left boundary and advance both; on 1 just advance; on 2 swap to the right boundary and retreat it without advancing the current index."
+    ],
+    "code": "class Solution:\n    def sortColors(self, nums: List[int]) -> None:\n        low, mid, high = 0, 0, len(nums) - 1\n        # invariant: nums[:low] == 0s, nums[low:mid] == 1s, nums[high+1:] == 2s\n        while mid <= high:\n            if nums[mid] == 0:\n                nums[low], nums[mid] = nums[mid], nums[low]\n                low += 1\n                mid += 1\n            elif nums[mid] == 1:\n                mid += 1\n            else:\n                nums[mid], nums[high] = nums[high], nums[mid]\n                high -= 1              # nums[mid] is new and unexamined, so mid stays",
+    "related": [
+      "remove_duplicates_from_sorted_array_ii",
+      "move_zeroes",
+      "top_k_frequent_elements"
+    ]
+  },
+  {
+    "slug": "remove_duplicates_from_sorted_array_ii",
+    "title": "Remove Duplicates from Sorted Array II",
+    "leetcode": 80,
+    "difficulty": "Medium",
+    "topic": "two_pointers",
+    "pattern": "Slow/fast pointers with look-back",
+    "file": "two_pointers/remove_duplicates_from_sorted_array_ii.py",
+    "problem": "Given a sorted array, remove duplicates in place so each value appears at most twice while keeping relative order, and return the new length k; the first k slots must hold the result and extra space must be O(1). Example: nums = [1, 1, 1, 2, 2, 3] -> k = 5 with nums[:5] = [1, 1, 2, 2, 3].",
+    "brute_force": {
+      "approach": "Walk the array and, whenever a value has already appeared twice, delete that element with list deletion, which shifts the entire tail left by one. The shifting is the waste: each deletion re-moves every element behind it, so a tail element may be moved many times instead of once to its final position.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> int:\n    i = 0\n    while i < len(nums):\n        if i >= 2 and nums[i] == nums[i - 1] == nums[i - 2]:\n            del nums[i]                # shifts the whole tail left\n        else:\n            i += 1\n    return len(nums)"
+    },
+    "optimization": "Deleting in place shifts the tail repeatedly because we decide element by element. Flip it around: instead of removing bad elements, copy good elements forward to a write pointer. A slow pointer write marks the next free output slot and a fast pointer read scans the input. An element is good if it does not create a third copy, and because the array is sorted a third copy is detectable locally: nums[read] is a third copy exactly when it equals nums[write - 2]. Each element is read once and written at most once, with no counter needed.",
+    "intuition": "In a sorted array equal values are contiguous, so 'appears more than twice so far' is the same as 'equals the element two slots back in the output'. The output prefix is always valid, so the look-back is into trusted territory. The same idea with write - k keeps at most k copies.",
+    "geometric": "Two fingers on one row: write lags behind read. The region before write is the finished, compacted output; between them is discarded junk; from read onward is unread input. Each step read advances by one, and write advances only when the value passes the look-back test, so the junk gap grows by the number of rejected copies.",
+    "visual": "nums = [1, 1, 1, 2, 2, 3]   write=2, read=2\n              W             nums[R]=1 == nums[W-2]=1  skip\n              R\n       [1, 1, 1, 2, 2, 3]\n              W  R          2 != nums[W-2]=1 -> write, W++\n       [1, 1, 2, 2, 2, 3]\n                 W  R       2 != nums[W-2]=1 -> write, W++\n       [1, 1, 2, 2, 2, 3]\n                    W  R    3 != nums[W-2]=2 -> write, W++\n       [1, 1, 2, 2, 3, 3]   return W = 5 ; nums[:5] valid\nlook-back reads the OUTPUT (W-2), never the input",
+    "steps": [
+      "If n <= 2, return n.",
+      "Set write = 2 (the first two elements are always kept).",
+      "For read from 2 to n - 1: if nums[read] != nums[write - 2], copy nums[read] to nums[write] and advance write.",
+      "Return write."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "One pass with two indices; each element is read once and written at most once."
+    },
+    "pitfalls": [
+      "Comparing against nums[read - 2] (input) instead of nums[write - 2] (output).",
+      "Starting write at 0 or 1 instead of 2.",
+      "Off-by-one on arrays of length <= 2."
+    ],
+    "hints": [
+      "Deleting shifts the tail each time. What if you build the answer by copying kept elements forward instead?",
+      "Use a write pointer for the next output slot and a read pointer scanning the input; the array is sorted, so duplicates are adjacent.",
+      "Keep nums[read] if it differs from nums[write - 2]; that single look-back into the output enforces 'at most twice'."
+    ],
+    "code": "class Solution:\n    def removeDuplicates(self, nums: List[int]) -> int:\n        if len(nums) <= 2:\n            return len(nums)\n        write = 2                      # first two elements are always kept\n        for read in range(2, len(nums)):\n            if nums[read] != nums[write - 2]:   # not a third copy in the OUTPUT\n                nums[write] = nums[read]\n                write += 1\n        return write",
+    "related": [
+      "remove_duplicates_from_sorted_array",
+      "sort_colors",
+      "move_zeroes"
+    ]
+  },
+  {
+    "slug": "squares_of_a_sorted_array",
+    "title": "Squares of a Sorted Array",
+    "leetcode": 977,
+    "difficulty": "Easy",
+    "topic": "two_pointers",
+    "pattern": "Two pointers merging from both ends",
+    "file": "two_pointers/squares_of_a_sorted_array.py",
+    "problem": "Given an integer array sorted in non-decreasing order (possibly with negatives), return the squares of each number in non-decreasing order, in O(n) time. Example: nums = [-4, -1, 0, 3, 10] -> [0, 1, 9, 16, 100].",
+    "brute_force": {
+      "approach": "Square every element and sort the result. The sort is the waste: it ignores that the input is already sorted, which means the squares already come in two sorted pieces (the negatives' squares decreasing, the non-negatives' squares increasing).",
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "code": "def brute_force(nums: List[int]) -> List[int]:\n    return sorted(x * x for x in nums)"
+    },
+    "optimization": "Squaring folds the number line: |x| is largest at both ends of a sorted array and smallest somewhere in the middle, so the biggest square is either nums[0]^2 or nums[-1]^2. Compare the two ends, write the larger square to the end of the output, and move that pointer inward. This is a merge of two sorted sequences (the negative part read right-to-left and the non-negative part read left-to-right) done without ever locating the split point; filling the output from the back makes the split irrelevant.",
+    "intuition": "Sorted input plus a V-shaped transform (x^2) means the output's maximum is always at one of the two current ends. Repeatedly peel off the larger end into the output from the back; what remains is still sorted with the same property, so the argument repeats until the pointers meet.",
+    "geometric": "Picture the parabola y = x^2 over the sorted inputs: a V shape. The two pointers L and R sit on the arms of the V and descend toward the bottom, always lowering the higher one. Each step emits the current higher point into the output array, which fills from its right end toward the left.",
+    "visual": "nums = [-4, -1, 0, 3, 10]\n         L             R     |-4|<|10|  res[4]=100  R--\n         L         R         |-4|>|3|   res[3]=16   L++\n             L     R         |-1|<|3|   res[2]=9    R--\n             L  R            |-1|>|0|   res[1]=1    L++\n                LR           res[0]=0\nres = [0, 1, 9, 16, 100]     filled right-to-left",
+    "steps": [
+      "Allocate result = [0] * n and set left = 0, right = n - 1.",
+      "For write from n - 1 down to 0, compare abs(nums[left]) with abs(nums[right]).",
+      "Write the larger square to result[write] and move that pointer inward.",
+      "Return result."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "One pass placing one value per step; the output array is the only allocation."
+    },
+    "pitfalls": [
+      "Filling the output front to back; the smallest square is not at an end.",
+      "Comparing values instead of absolute values.",
+      "Loop bounds that skip the final element when left == right."
+    ],
+    "hints": [
+      "Where in a sorted array (with negatives) is the element with the largest absolute value?",
+      "The largest square is always at one of the two ends. What does that suggest about the order in which to fill the output?",
+      "Two pointers at the ends; compare absolute values, write the larger square to the back of the result, and move that pointer inward."
+    ],
+    "code": "class Solution:\n    def sortedSquares(self, nums: List[int]) -> List[int]:\n        n = len(nums)\n        result = [0] * n\n        left, right = 0, n - 1\n        for write in range(n - 1, -1, -1):          # fill from the largest square down\n            if abs(nums[left]) > abs(nums[right]):\n                result[write] = nums[left] * nums[left]\n                left += 1\n            else:\n                result[write] = nums[right] * nums[right]\n                right -= 1\n        return result",
+    "related": [
+      "merge_sorted_array",
+      "two_sum_ii_input_array_is_sorted",
+      "sort_colors"
+    ]
+  },
+  {
+    "slug": "rotate_image",
+    "title": "Rotate Image",
+    "leetcode": 48,
+    "difficulty": "Medium",
+    "topic": "math_geometry",
+    "pattern": "Transpose + reverse rows (in-place matrix rotation)",
+    "file": "math_geometry/rotate_image.py",
+    "problem": "Rotate an n x n matrix by 90 degrees clockwise in place, without allocating a second matrix. Example: [[1,2,3],[4,5,6],[7,8,9]] -> [[7,4,1],[8,5,2],[9,6,3]].",
+    "brute_force": {
+      "approach": "Allocate a new n x n matrix and copy each cell to its rotated position new[c][n-1-r] = old[r][c], then copy the result back. The second matrix is the waste: every cell is written twice, and the copy exists only because we did not know how to move cells without overwriting ones still needed.",
+      "time": "O(n^2)",
+      "space": "O(n^2)",
+      "code": "def brute_force(matrix: List[List[int]]) -> None:\n    n = len(matrix)\n    rotated = [[0] * n for _ in range(n)]\n    for r in range(n):\n        for c in range(n):\n            rotated[c][n - 1 - r] = matrix[r][c]\n    for r in range(n):\n        matrix[r] = rotated[r]"
+    },
+    "optimization": "The rotation maps (r, c) -> (c, n-1-r). Decompose it into two simpler moves that are easy to do in place: the transpose (r, c) -> (c, r) swaps pairs of cells across the main diagonal and never overwrites anything unsaved; then reversing each row maps (c, r) -> (c, n-1-r). Composing the two gives exactly the clockwise rotation, and both steps are swap-based so no scratch matrix is needed. The alternative of rotating 4-cell cycles ring by ring also works but is fiddlier to index correctly.",
+    "intuition": "A 90-degree rotation is a reflection across the main diagonal followed by a horizontal flip. Reflections are trivially in place because they pair cells up and swap them. Two reflections compose into the rotation, and the order matters: transpose then reverse rows is clockwise, transpose then reverse columns is counter-clockwise.",
+    "geometric": "Hold a square card. Step one (transpose): flip it over along the top-left to bottom-right diagonal so the first row becomes the first column. Step two (reverse rows): flip it left-to-right like turning a page. The picture now sits rotated 90 degrees clockwise.",
+    "visual": "original       transpose        reverse each row\n1 2 3          1 4 7            7 4 1\n4 5 6    ->    2 5 8     ->     8 5 2\n7 8 9          3 6 9            9 6 3\n(r,c)->(c,r)   swap across      (r,c)->(r,n-1-c)\n               main diagonal    = 90 deg clockwise",
+    "steps": [
+      "Let n = len(matrix).",
+      "Transpose: for r in range(n), for c in range(r + 1, n), swap matrix[r][c] with matrix[c][r].",
+      "Reverse each row in place."
+    ],
+    "complexity": {
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "why": "Each cell is swapped at most twice (once in the transpose, once in the row reversal) with no extra storage."
+    },
+    "pitfalls": [
+      "Transposing with the full inner range, which swaps every pair twice and restores the original.",
+      "Reversing columns instead of rows, which produces the counter-clockwise rotation.",
+      "Returning a new matrix when the problem demands in place."
+    ],
+    "hints": [
+      "Can you express a 90-degree rotation as a composition of two simpler transformations that are each easy to do in place?",
+      "Transposing a matrix swaps cells across the diagonal and needs no extra space. What does the transposed matrix still need?",
+      "Transpose (swap matrix[r][c] with matrix[c][r] for c > r), then reverse every row."
+    ],
+    "code": "class Solution:\n    def rotate(self, matrix: List[List[int]]) -> None:\n        n = len(matrix)\n        for r in range(n):                      # transpose across the main diagonal\n            for c in range(r + 1, n):\n                matrix[r][c], matrix[c][r] = matrix[c][r], matrix[r][c]\n        for row in matrix:                      # then mirror each row left<->right\n            row.reverse()",
+    "related": [
+      "spiral_matrix",
+      "set_matrix_zeroes",
+      "transpose_matrix"
+    ]
+  },
+  {
+    "slug": "spiral_matrix",
+    "title": "Spiral Matrix",
+    "leetcode": 54,
+    "difficulty": "Medium",
+    "topic": "math_geometry",
+    "pattern": "Shrinking boundary traversal",
+    "file": "math_geometry/spiral_matrix.py",
+    "problem": "Given an m x n matrix, return all its elements in clockwise spiral order starting at the top-left and moving right. Example: [[1,2,3],[4,5,6],[7,8,9]] -> [1, 2, 3, 6, 9, 8, 7, 4, 5].",
+    "brute_force": {
+      "approach": "Simulate a walker with a visited matrix, a direction and a position: step forward while the next cell is in bounds and unvisited, otherwise turn clockwise. The visited grid and the per-step checks are the waste: the spiral's turning points are fully predictable from four boundary numbers, so tracking visitation cell by cell is unnecessary.",
+      "time": "O(m * n)",
+      "space": "O(m * n)",
+      "code": "def brute_force(matrix: List[List[int]]) -> List[int]:\n    m, n = len(matrix), len(matrix[0])\n    visited = [[False] * n for _ in range(m)]\n    directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]\n    r = c = d = 0\n    result = []\n    for _ in range(m * n):\n        result.append(matrix[r][c])\n        visited[r][c] = True\n        nr, nc = r + directions[d][0], c + directions[d][1]\n        if not (0 <= nr < m and 0 <= nc < n and not visited[nr][nc]):\n            d = (d + 1) % 4\n            nr, nc = r + directions[d][0], c + directions[d][1]\n        r, c = nr, nc\n    return result"
+    },
+    "optimization": "The walker only turns when it hits the edge of the not-yet-visited rectangle, and that rectangle is always described by four numbers: top, bottom, left, right. Replace the visited grid with those four bounds and peel one layer per loop iteration: walk the top row left to right, the right column top to bottom, then (if a row remains) the bottom row right to left, then (if a column remains) the left column bottom to top, moving each bound inward after its side. The two guards handle the remaining rectangle collapsing to a single row or column, which would otherwise be emitted twice.",
+    "intuition": "A spiral is the outer ring of the rectangle followed by the spiral of the rectangle one size smaller. Four bounds capture all the state the walker needs, and cells are never revisited because the bounds only move inward. The guards exist because after consuming the top row and right column, the remaining region may have no bottom row or left column distinct from what was already emitted.",
+    "geometric": "Picture an onion of rectangular rings. Four fences (top, bottom, left, right) mark the current ring. The traversal runs along the top fence, down the right fence, back along the bottom fence, up the left fence, and then each fence steps inward by one cell. When the fences cross, every cell has been emitted exactly once.",
+    "visual": " 1  2  3  4     top=0 bottom=2 left=0 right=3\n 5  6  7  8     -> 1 2 3 4       top row,    top=1\n 9 10 11 12     -> 8 12          right col,  right=2\n                -> 11 10 9       bottom row, bottom=1\n                -> 5             left col,   left=1\n    6  7        top=1 bottom=1 left=1 right=2\n                -> 6 7           top row,    top=2\n                top > bottom: guards skip the bottom row\norder: 1 2 3 4 8 12 11 10 9 5 6 7",
+    "steps": [
+      "Set top = 0, bottom = m - 1, left = 0, right = n - 1.",
+      "While top <= bottom and left <= right: emit the top row from left to right, then top += 1.",
+      "Emit the right column from top to bottom, then right -= 1.",
+      "If top <= bottom, emit the bottom row from right to left, then bottom -= 1.",
+      "If left <= right, emit the left column from bottom to top, then left += 1.",
+      "Return the collected list."
+    ],
+    "complexity": {
+      "time": "O(m * n)",
+      "space": "O(1)",
+      "why": "Each cell is emitted exactly once; only four boundary indices are stored beyond the output."
+    },
+    "pitfalls": [
+      "Omitting the two re-checks after shrinking top and right, which duplicates cells on a 1xN or Nx1 remainder.",
+      "Getting inclusive/exclusive range ends wrong on the reversed sides.",
+      "Testing only on square matrices and missing the rectangular edge cases."
+    ],
+    "hints": [
+      "Where does a spiral walker turn? Can those turning points be described by a few numbers instead of a visited grid?",
+      "Keep four bounds (top, bottom, left, right) and walk the four sides of the current rectangle, shrinking a bound after each side.",
+      "After finishing the top row and right column, re-check top <= bottom and left <= right before the bottom row and left column, or a single remaining row/column gets emitted twice."
+    ],
+    "code": "class Solution:\n    def spiralOrder(self, matrix: List[List[int]]) -> List[int]:\n        result: List[int] = []\n        top, bottom = 0, len(matrix) - 1\n        left, right = 0, len(matrix[0]) - 1\n        while top <= bottom and left <= right:\n            for c in range(left, right + 1):            # top row ->\n                result.append(matrix[top][c])\n            top += 1\n            for r in range(top, bottom + 1):            # right column v\n                result.append(matrix[r][right])\n            right -= 1\n            if top <= bottom:                           # a row still remains\n                for c in range(right, left - 1, -1):    # bottom row <-\n                    result.append(matrix[bottom][c])\n                bottom -= 1\n            if left <= right:                           # a column still remains\n                for r in range(bottom, top - 1, -1):    # left column ^\n                    result.append(matrix[r][left])\n                left += 1\n        return result",
+    "related": [
+      "rotate_image",
+      "spiral_matrix_ii",
+      "set_matrix_zeroes"
+    ]
+  },
+  {
+    "slug": "set_matrix_zeroes",
+    "title": "Set Matrix Zeroes",
+    "leetcode": 73,
+    "difficulty": "Medium",
+    "topic": "math_geometry",
+    "pattern": "In-place markers (reuse first row/column as flags)",
+    "file": "math_geometry/set_matrix_zeroes.py",
+    "problem": "Given an m x n matrix, if a cell is 0, set its entire row and column to 0, in place. Follow-up: use O(1) extra space. Example: [[1,1,1],[1,0,1],[1,1,1]] -> [[1,0,1],[0,0,0],[1,0,1]].",
+    "brute_force": {
+      "approach": "Copy the matrix; for every zero in the copy, zero out that row and column in the original. The copy exists only to distinguish original zeros from zeros we just wrote, and a row containing k zeros is cleared k times. (Recording the zero rows and columns in two sets is the better O(m + n) space version.)",
+      "time": "O(m * n * (m + n))",
+      "space": "O(m * n)",
+      "code": "def brute_force(matrix: List[List[int]]) -> None:\n    m, n = len(matrix), len(matrix[0])\n    snapshot = [row[:] for row in matrix]\n    for r in range(m):\n        for c in range(n):\n            if snapshot[r][c] == 0:\n                for k in range(n):\n                    matrix[r][k] = 0\n                for k in range(m):\n                    matrix[k][c] = 0"
+    },
+    "optimization": "The O(m + n) sets are the right idea: all we need is two bit-vectors, 'row r has a zero' and 'column c has a zero'. The matrix already contains two unused vectors of exactly that size: its first row and first column. Store the column flags in row 0 and the row flags in column 0. The only conflict is cell (0, 0), which would have to carry both the row-0 flag and the column-0 flag; resolve it with one extra boolean for 'column 0 must be zeroed' and let (0, 0) represent row 0. Process the interior cells using the flags, then fix row 0 and column 0 last because they are the flag storage.",
+    "intuition": "The information needed is just m + n bits. Any cell in row r that is zero means the whole row will be zeroed anyway, so writing a flag into matrix[r][0] destroys nothing of value: row r and column c are doomed regardless. The first row and column become a scratchpad because their final contents are fully determined by the flags themselves, which is why they must be resolved after the interior.",
+    "geometric": "Picture the grid with its first row and first column highlighted as a header strip. Pass one scans the body and, for each zero, paints a marker on the header strip in that row and in that column. Pass two scans the body again and zeroes any cell whose row header or column header is marked. Pass three handles the header strip itself: row 0 via the (0, 0) flag, column 0 via the separate boolean.",
+    "visual": "input         after marking            after applying flags\n1 1 1 1       1 0 1 0  <- column flags  1 0 1 0\n1 0 1 1  ->   0 0 1 1  <- row 1 flag    0 0 0 0\n1 1 1 0       0 1 1 0  <- row 2 flag    0 0 0 0\n              ^ row flags live in column 0\nrow 0 zeroed only if (0,0)==0 ; col 0 only if first_col_zero\nflags are written into cells that are doomed to be 0 anyway",
+    "steps": [
+      "Record first_col_zero = any(matrix[r][0] == 0 for r in range(m)).",
+      "Marking pass: for each cell with c >= 1 that is 0, set matrix[r][0] = 0 and matrix[0][c] = 0.",
+      "Interior pass: for r in 1..m-1 and c in 1..n-1, zero the cell if matrix[r][0] == 0 or matrix[0][c] == 0.",
+      "If matrix[0][0] == 0, zero all of row 0.",
+      "If first_col_zero, zero all of column 0."
+    ],
+    "complexity": {
+      "time": "O(m * n)",
+      "space": "O(1)",
+      "why": "Two sweeps over the matrix plus two line clears, with a single boolean of extra state."
+    },
+    "pitfalls": [
+      "Zeroing row 0 or column 0 before processing the interior destroys the flags.",
+      "Letting (0, 0) do double duty without the separate column-0 boolean.",
+      "Including c == 0 in the marking loop, which overwrites row flags with column information."
+    ],
+    "hints": [
+      "What is the minimum information you need to decide every cell's final value? How many bits is that?",
+      "You need m + n flags. Is there already somewhere in the matrix you could store them without losing information you still need?",
+      "Use row 0 for column flags and column 0 for row flags, with one extra boolean for column 0 itself; apply to the interior first and fix row 0 and column 0 last."
+    ],
+    "code": "class Solution:\n    def setZeroes(self, matrix: List[List[int]]) -> None:\n        m, n = len(matrix), len(matrix[0])\n        first_col_zero = any(matrix[r][0] == 0 for r in range(m))\n        # mark: matrix[r][0] flags row r, matrix[0][c] flags column c (c >= 1)\n        for r in range(m):\n            for c in range(1, n):\n                if matrix[r][c] == 0:\n                    matrix[r][0] = 0\n                    matrix[0][c] = 0\n        # apply flags to the interior (everything except row 0 / column 0)\n        for r in range(1, m):\n            for c in range(1, n):\n                if matrix[r][0] == 0 or matrix[0][c] == 0:\n                    matrix[r][c] = 0\n        if matrix[0][0] == 0:            # row-0 flag lives in (0, 0)\n            for c in range(n):\n                matrix[0][c] = 0\n        if first_col_zero:               # column 0 handled by the separate boolean\n            for r in range(m):\n                matrix[r][0] = 0",
+    "related": [
+      "rotate_image",
+      "spiral_matrix",
+      "game_of_life",
+      "valid_sudoku"
+    ]
+  }
+]

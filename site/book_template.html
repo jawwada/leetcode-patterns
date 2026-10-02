@@ -1,0 +1,275 @@
+<title>Intuition Journey</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a book. Left table of contents (chapters -> sections), one reading column of ~68ch in the middle,
+   a thin progress line at the top. Drawings sit in boxed monospace frames inside the text. */
+:root{
+  --paper:#fbfbf8; --panel:#ffffff; --ink:#1d2024; --ink-soft:#5a6068; --rule:#dcdcd4;
+  --accent:#0e6b65; --accent-soft:#e1f0ee;        /* deep teal: links, active, "turning point" */
+  --mark:#b5731a; --mark-soft:#f8ecd6;            /* ochre: highlights, hand-tracing callouts */
+  --easy:#1d7a4a; --medium:#b07a12; --hard:#b8282f;
+  --display:"Bricolage Grotesque",system-ui,sans-serif;
+  --body:"Literata",Georgia,serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --measure:68ch; --fs:17px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#15171a; --panel:#1c1f23; --ink:#e8e6df; --ink-soft:#a0a6ad; --rule:#2e3237;
+  --accent:#6fc8c0; --accent-soft:#163331; --mark:#e0a94f; --mark-soft:#3a2d16;
+  --easy:#6fd39a; --medium:#e2b655; --hard:#ff7b82; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#15171a; --panel:#1c1f23; --ink:#e8e6df; --ink-soft:#a0a6ad; --rule:#2e3237;
+  --accent:#6fc8c0; --accent-soft:#163331; --mark:#e0a94f; --mark-soft:#3a2d16;
+  --easy:#6fd39a; --medium:#e2b655; --hard:#ff7b82; color-scheme:dark }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:var(--fs)/1.65 var(--body)}
+a{color:var(--accent)}
+button{font:14px var(--display);color:inherit;background:none;border:1px solid var(--rule);border-radius:6px;padding:6px 10px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.on{background:var(--accent-soft);border-color:var(--accent)}
+button:focus-visible,[tabindex]:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3,h4{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+code,pre{font-family:var(--mono)}
+.eyebrow{font:600 11px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+.muted{color:var(--ink-soft)}
+[hidden]{display:none!important}
+
+.progress{position:fixed;top:env(safe-area-inset-top,0px);left:0;height:3px;background:var(--accent);width:0;z-index:5;transition:width .15s}
+.app{display:grid;grid-template-columns:300px minmax(0,1fr);height:100%}
+.toc{border-right:1px solid var(--rule);background:var(--panel);overflow:auto;display:flex;flex-direction:column}
+.toc-head{padding:20px 18px 14px;border-bottom:1px solid var(--rule)}
+.toc-head h1{font-size:24px;font-weight:800;letter-spacing:-.01em}
+.toc-head .sub{font-size:13px;color:var(--ink-soft);margin-top:4px;font-family:var(--display)}
+.toc nav{padding:8px 8px 20px;font-family:var(--display)}
+.toc .ch{margin:4px 0}
+.toc .ch>button{display:flex;width:100%;justify-content:space-between;align-items:center;border:0;padding:8px 10px;border-radius:6px;text-align:left;font-weight:700;font-size:14px}
+.toc .ch>button:hover{background:var(--accent-soft)}
+.toc .ch.open>button{color:var(--accent)}
+.toc .ch .n{font:600 12px var(--mono);color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.toc .secs{display:none;flex-direction:column;padding:2px 0 6px 10px;border-left:2px solid var(--rule);margin-left:14px}
+.toc .ch.open .secs{display:flex}
+.toc .secs a{display:flex;gap:8px;align-items:baseline;text-decoration:none;color:var(--ink);font-size:13.5px;padding:5px 8px;border-radius:5px}
+.toc .secs a:hover{background:var(--accent-soft)}
+.toc .secs a.on{color:var(--accent);font-weight:700}
+.toc .secs a .d{width:7px;height:7px;border-radius:50%;flex:none;background:var(--rule)}
+.toc .secs a .d.Easy{background:var(--easy)}.toc .secs a .d.Medium{background:var(--medium)}.toc .secs a .d.Hard{background:var(--hard)}
+.toc .secs a .d.read{box-shadow:0 0 0 2px var(--accent)}
+.toc .secs a.bg{font-style:italic}
+.toctoggle{display:none;margin-top:10px}
+
+.main{min-width:0;overflow:auto;padding-block:28px 72px;padding-inline:clamp(16px,5vw,64px)}
+.page{max-width:var(--measure);margin:0 auto}
+.pagehead{margin-bottom:26px}
+.pagehead .crumbs{font-family:var(--display);font-size:13px;color:var(--ink-soft);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pagehead .crumbs a{text-decoration:none}
+.pagehead h1{font-size:clamp(28px,4vw,40px);letter-spacing:-.015em;margin:8px 0 10px}
+.pagehead .meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-family:var(--display);font-size:14px;color:var(--ink-soft)}
+.pill{display:inline-block;font:600 11px/1 var(--display);letter-spacing:.04em;padding:4px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.pill.Easy{color:var(--easy)}.pill.Medium{color:var(--medium)}.pill.Hard{color:var(--hard)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 0}
+
+/* prose */
+.prose>*{max-width:var(--measure)}
+.prose h2{font-size:24px;margin:40px 0 12px;padding-top:14px;border-top:1px solid var(--rule)}
+.prose h2:first-of-type{border-top:0;padding-top:0;margin-top:26px}
+.prose h3{font-size:19px;margin:26px 0 8px}
+.prose p{margin:0 0 14px}
+.prose em{font-style:italic}
+.prose ul,.prose ol{padding-left:24px;margin:0 0 14px}.prose li{margin:4px 0}
+.prose table{border-collapse:collapse;font-family:var(--display);font-size:14.5px;margin:0 0 16px;display:block;overflow-x:auto;max-width:100%}
+.prose th,.prose td{border:1px solid var(--rule);padding:6px 10px;text-align:left;vertical-align:top}
+.prose th{background:var(--accent-soft)}
+.prose pre{margin:0 0 16px;padding:14px 16px;background:var(--panel);border:1px solid var(--rule);border-radius:8px;overflow-x:auto;font-size:13.5px;line-height:1.45}
+.prose pre.drawing{background-image:linear-gradient(var(--rule) 1px,transparent 1px),linear-gradient(90deg,var(--rule) 1px,transparent 1px);background-size:16px 16px;background-position:-1px -1px}
+.prose code:not(pre code){background:var(--accent-soft);padding:1px 5px;border-radius:4px;font-size:.9em}
+.prose blockquote{margin:0 0 14px;padding:10px 16px;border-left:4px solid var(--mark);background:var(--mark-soft);border-radius:0 8px 8px 0}
+.prose blockquote p:last-child{margin:0}
+.prose h2[data-key="turning-point"],.prose h2[data-key="the-invariant"]{color:var(--accent)}
+.prose h2[data-key="turning-point"]::before,.prose h2[data-key="the-invariant"]::before{content:"◆ ";font-size:.7em;vertical-align:middle}
+
+.solution{margin:40px 0 0;border:1px solid var(--rule);border-radius:8px;background:var(--panel)}
+.solution summary{cursor:pointer;padding:12px 16px;font-family:var(--display);font-weight:700;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.solution summary::-webkit-details-marker{display:none}
+.solution summary::after{content:"+";font-size:18px;color:var(--ink-soft)}
+.solution[open] summary::after{content:"–"}
+.solution .body{padding:0 16px 16px;display:flex;flex-direction:column;gap:14px}
+.solution pre{margin:0;padding:14px 16px;background:var(--paper);border:1px solid var(--rule);border-radius:8px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+.solution .lab{font-family:var(--display);font-size:13px;color:var(--ink-soft);margin-bottom:6px}
+
+.pager{display:flex;justify-content:space-between;gap:16px;margin:48px 0 0;padding-top:18px;border-top:1px solid var(--rule);font-family:var(--display);flex-wrap:wrap}
+.pager a{text-decoration:none;max-width:48%;display:flex;flex-direction:column;gap:2px}
+.pager a span:first-child{font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em}
+.pager a.next{text-align:right;margin-left:auto}
+
+/* chapter overview */
+.overview{display:flex;flex-direction:column;gap:0;border:1px solid var(--rule);border-radius:8px;background:var(--panel);overflow:hidden;font-family:var(--display)}
+.overview a{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 16px;border-bottom:1px solid var(--rule);text-decoration:none;color:inherit}
+.overview a:last-child{border-bottom:0}
+.overview a:hover{background:var(--accent-soft)}
+.overview .k{font:600 13px var(--mono);color:var(--ink-soft);font-variant-numeric:tabular-nums;padding-top:3px}
+.overview .t{font-weight:700}
+.overview .w{font-size:13.5px;color:var(--ink-soft);margin-top:2px;font-family:var(--body)}
+
+/* home */
+.home h1{font-size:clamp(34px,5vw,54px);letter-spacing:-.02em;margin:0 0 12px}
+.lede{font-size:19px;max-width:60ch;margin:0 0 26px}
+.chapters{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.chapters a{text-decoration:none;color:inherit;border:1px solid var(--rule);border-radius:8px;background:var(--panel);padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.chapters a:hover{border-color:var(--accent)}
+.chapters h3{font-size:17px}
+.chapters .s{font-size:14px;color:var(--ink-soft)}
+.chapters .bar{height:4px;background:var(--rule);border-radius:2px;overflow:hidden}.chapters .bar>div{height:100%;background:var(--accent)}
+
+/* highlight.js tokens */
+.hljs-keyword,.hljs-built_in{color:var(--accent);font-weight:600}
+.hljs-string{color:var(--mark)}.hljs-number{color:var(--hard)}
+.hljs-comment{color:var(--ink-soft);font-style:italic}
+
+@media (max-width:860px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .toc{border-right:0;border-bottom:1px solid var(--rule);max-height:50vh}
+  .toc nav{display:none}.toc.open nav{display:block}
+  .toctoggle{display:inline-block}
+  .main{padding-block:18px 56px}
+  .pager a{max-width:100%}
+}
+@media (prefers-reduced-motion:reduce){ .progress{transition:none} }
+</style>
+
+<div class="progress" id="progress"></div>
+<div class="app">
+  <aside class="toc" id="toc">
+    <div class="toc-head">
+      <h1>Intuition Journey</h1>
+      <div class="sub" id="subtitle"></div>
+      <button class="toctoggle" id="toctoggle" aria-expanded="false">Contents</button>
+    </div>
+    <nav id="nav" aria-label="Contents"></nav>
+  </aside>
+  <main class="main" id="main" tabindex="-1"></main>
+</div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(() => {
+const BOOK = JSON.parse(document.getElementById('data').textContent);   // {chapters:[{topic,title,background,sections:[...]}]}
+const $ = (s,el=document)=>el.querySelector(s);
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store = { get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v);}catch{ return d;} },
+                set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch{} } };
+let read = new Set(store.get('book.read',[]));
+let fs = store.get('book.fs',17); document.documentElement.style.setProperty('--fs',fs+'px');
+const main=$('#main'), nav=$('#nav');
+
+// flat reading order: for each chapter, background then sections
+const FLAT=[]; const BYID={};
+for(const ch of BOOK.chapters){
+  const bg={id:ch.topic+'/background', kind:'bg', ch, title:ch.title+': background', md:ch.background};
+  FLAT.push(bg); BYID[bg.id]=bg;
+  for(const s of ch.sections){ const it={id:s.slug, kind:'sec', ch, ...s}; FLAT.push(it); BYID[it.id]=it; }
+}
+const total=FLAT.length;
+const words = md => md.replace(/```[\s\S]*?```/g,'').split(/\s+/).filter(Boolean).length;
+const mins = md => Math.max(2,Math.round(words(md)/210));
+
+marked.setOptions({gfm:true, breaks:false});
+const renderer = new marked.Renderer();
+renderer.code = ({text,lang}) => {
+  if(!lang || lang==='text' || lang==='txt') return `<pre class="drawing"><code>${esc(text)}</code></pre>`;
+  return `<pre><code class="language-${esc(lang)}">${esc(text)}</code></pre>`;
+};
+renderer.heading = ({text,depth}) => {
+  const key=text.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^the-|^-|-$/g,'');
+  return `<h${depth} data-key="${key}">${text}</h${depth}>`;
+};
+marked.use({renderer});
+const md2html = md => marked.parse(md.replace(/^# .*\n/,''));   // page head renders the H1 itself
+
+function go(id){ location.hash=id; }
+function route(){
+  const h=decodeURIComponent(location.hash.slice(1));
+  if(!h) return renderHome();
+  if(BYID[h]) return renderItem(BYID[h]);
+  const ch=BOOK.chapters.find(c=>c.topic===h); if(ch) return renderChapter(ch);
+  renderHome();
+}
+window.addEventListener('hashchange',()=>{route(); main.scrollTop=0;});
+main.addEventListener('scroll',()=>{ const p=main.scrollTop/Math.max(1,main.scrollHeight-main.clientHeight); $('#progress').style.width=(100*p)+'%'; });
+
+function renderNav(active){
+  const n=FLAT.filter(x=>read.has(x.id)).length;
+  $('#subtitle').textContent=`${BOOK.chapters.length} chapters · ${total} readings · ${n} read`;
+  nav.innerHTML = `<div class="ch"><button data-go="">Start here</button></div>` + BOOK.chapters.map(ch=>{
+    const open = active && active.ch===ch;
+    const items=[{id:ch.topic+'/background',title:'Background',bg:true}, ...ch.sections];
+    return `<div class="ch ${open?'open':''}" data-ch="${ch.topic}"><button data-toggle="${ch.topic}"><span>${esc(ch.title)}</span><span class="n">${ch.sections.filter(s=>read.has(s.slug)).length}/${ch.sections.length}</span></button>
+      <div class="secs">${items.map(s=>`<a href="#${s.bg?s.id:s.slug}" class="${s.bg?'bg':''} ${active&&active.id===(s.bg?s.id:s.slug)?'on':''}"><span class="d ${s.difficulty||''} ${read.has(s.bg?s.id:s.slug)?'read':''}"></span><span>${esc(s.title)}</span></a>`).join('')}</div></div>`;
+  }).join('');
+}
+nav.addEventListener('click',e=>{
+  const t=e.target.closest('button[data-toggle]'); if(t){ t.parentElement.classList.toggle('open'); return; }
+  const g=e.target.closest('button[data-go]'); if(g){ go(g.dataset.go); $('#toc').classList.remove('open'); return; }
+  if(e.target.closest('a')) $('#toc').classList.remove('open');
+});
+$('#toctoggle').addEventListener('click',()=>{ const t=$('#toc'); t.classList.toggle('open'); $('#toctoggle').setAttribute('aria-expanded',t.classList.contains('open')); });
+
+function tools(id){
+  return `<div class="tools"><button id="mark" class="${read.has(id)?'on':''}">${read.has(id)?'✓ Read':'Mark as read'}</button>
+    <button id="fs-">A−</button><button id="fs+">A+</button></div>`;
+}
+function wireTools(id){
+  $('#mark').onclick=()=>{ read.has(id)?read.delete(id):read.add(id); store.set('book.read',[...read]); route(); };
+  $('#fs-').onclick=()=>{ fs=Math.max(14,fs-1); store.set('book.fs',fs); document.documentElement.style.setProperty('--fs',fs+'px'); };
+  $('#fs+').onclick=()=>{ fs=Math.min(22,fs+1); store.set('book.fs',fs); document.documentElement.style.setProperty('--fs',fs+'px'); };
+}
+
+function renderHome(){
+  renderNav(null);
+  main.innerHTML=`<div class="page home">
+    <div class="eyebrow">A book, not a list</div>
+    <h1>Intuition Journey</h1>
+    <p class="lede">Each chapter starts from zero: what the structure is, how it sits in memory, what it costs, the one invariant it protects, and how to picture it. Then a sequence of problems in teaching order, each one explained the long way: do it by hand, try the obvious thing, feel where it hurts, find the turning point, watch the real algorithm run frame by frame, and argue why it is right. By the end of a chapter the hardest problem should feel like a variation, not a surprise.</p>
+    <p class="muted" style="font-family:var(--display);font-size:14px">Reading progress is saved in this browser. Full solutions sit folded at the end of each reading; the companion <a href="https://claude.ai/artifact/SNmABicy9ZmJ7fGcDXFrdE" target="_blank" rel="noopener">Pattern Board</a> has the short form, hints and practice mode.</p>
+    <div class="chapters">${BOOK.chapters.map((ch,i)=>{
+      const n=ch.sections.filter(s=>read.has(s.slug)).length; const m=mins(ch.background)+ch.sections.reduce((a,s)=>a+mins(s.md),0);
+      return `<a href="#${ch.topic}"><div class="eyebrow">Chapter ${i+1}</div><h3>${esc(ch.title)}</h3><div class="s">${ch.sections.length} problems · ~${m} min · ${ch.sections.filter(s=>s.difficulty==='Hard').length} hard</div><div class="bar"><div style="width:${100*n/Math.max(1,ch.sections.length)}%"></div></div></a>`;}).join('')}</div>
+  </div>`;
+}
+
+function renderChapter(ch){
+  renderNav({ch, id:null});
+  const i=BOOK.chapters.indexOf(ch);
+  main.innerHTML=`<div class="page">
+    <div class="pagehead"><div class="crumbs"><a href="#">Contents</a><span>›</span><span>Chapter ${i+1}</span></div>
+      <h1>${esc(ch.title)}</h1><div class="meta"><span>${ch.sections.length} problems</span><span>·</span><span>~${mins(ch.background)+ch.sections.reduce((a,s)=>a+mins(s.md),0)} min total</span></div></div>
+    <div class="overview">
+      <a href="#${ch.topic}/background"><span class="k">0</span><span><div class="t">Background: ${esc(ch.title)} from zero</div><div class="w">What it is, what it costs, the invariant, how to picture it, the signals that point here.</div></span><span class="pill" style="color:var(--ink-soft)">~${mins(ch.background)} min</span></a>
+      ${ch.sections.map((s,k)=>`<a href="#${s.slug}"><span class="k">${k+1}</span><span><div class="t">${esc(s.title)}</div><div class="w">${esc(s.why_here||'')}</div></span><span class="pill ${s.difficulty}">${s.difficulty}</span></a>`).join('')}
+    </div></div>`;
+}
+
+function renderItem(it){
+  renderNav(it);
+  const idx=FLAT.indexOf(it), prev=FLAT[idx-1], next=FLAT[idx+1];
+  const chIdx=BOOK.chapters.indexOf(it.ch);
+  const head = it.kind==='bg'
+    ? `<div class="crumbs"><a href="#">Contents</a><span>›</span><a href="#${it.ch.topic}">Chapter ${chIdx+1} · ${esc(it.ch.title)}</a></div><h1>${esc(it.ch.title)}: from zero</h1><div class="meta"><span>Background reading</span><span>·</span><span>~${mins(it.md)} min</span></div>`
+    : `<div class="crumbs"><a href="#">Contents</a><span>›</span><a href="#${it.ch.topic}">Chapter ${chIdx+1} · ${esc(it.ch.title)}</a><span>›</span><span>${it.ch.sections.indexOf(it)+1} of ${it.ch.sections.length}</span></div>
+       <h1>${esc(it.title)}</h1><div class="meta"><span class="pill ${it.difficulty}">${it.difficulty}</span><span>${it.leetcode?'LeetCode '+it.leetcode:'warm-up'}</span><span>·</span><span>${esc(it.pattern)}</span><span>·</span><span>~${mins(it.md)} min</span></div>`;
+  const sol = it.kind==='sec' ? `<details class="solution"><summary><span>Solution code (after you have read the journey)</span></summary><div class="body">
+      ${it.brute_code?`<div><div class="lab">First honest attempt · ${esc(it.brute_time)} time · ${esc(it.brute_space)} space</div><pre><code class="language-python">${esc(it.brute_code)}</code></pre></div>`:''}
+      <div><div class="lab">Optimal · ${esc(it.time)} time · ${esc(it.space)} space · <code>${esc(it.file)}</code></div><pre><code class="language-python">${esc(it.code)}</code></pre></div>
+      <div class="lab">Short form, hints and practice: <a href="https://claude.ai/artifact/SNmABicy9ZmJ7fGcDXFrdE#${it.slug}" target="_blank" rel="noopener">Pattern Board › ${esc(it.title)}</a></div></div></details>` : '';
+  main.innerHTML=`<article class="page"><div class="pagehead">${head}${tools(it.id)}</div>
+    <div class="prose">${md2html(it.md)}</div>${sol}
+    <nav class="pager">${prev?`<a href="#${prev.id}"><span>Previous</span><span>${esc(prev.title)}</span></a>`:'<span></span>'}${next?`<a class="next" href="#${next.id}"><span>Next</span><span>${esc(next.title)}</span></a>`:'<span></span>'}</nav></article>`;
+  if(window.hljs) main.querySelectorAll('code.language-python').forEach(el=>hljs.highlightElement(el));
+  wireTools(it.id);
+}
+route();
+})();
+</script>

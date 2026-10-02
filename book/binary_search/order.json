@@ -1,0 +1,18 @@
+{"topic": "binary_search", "title": "Binary Search", "order": [
+ {"slug": "binary_search", "why_here": "The base case: a closed window [lo, hi] that traps the target and halves on every comparison."},
+ {"slug": "search_insert_position", "why_here": "Drops the equality check and searches for a border, the first F of nums[i] < target, which may be n."},
+ {"slug": "find_first_and_last_position", "why_here": "Two borders from one half-open lower-bound helper: lower(t) and lower(t+1) - 1."},
+ {"slug": "search_2d_matrix", "why_here": "The candidates become virtual positions; divmod folds a flat index back into the grid."},
+ {"slug": "find_min_rotated_sorted_array", "why_here": "Sortedness breaks into two runs; the predicate compares mid with the right end, not with a target."},
+ {"slug": "search_rotated_sorted_array", "why_here": "Searches a target in the same rotated array by testing whichever half is a clean sorted ramp."},
+ {"slug": "find_peak_element", "why_here": "The predicate becomes a slope sign that is only locally monotone; a T at the left edge and F at the right edge suffice."},
+ {"slug": "find_in_mountain_array", "why_here": "Composes a summit search and two slope searches under a 100-read budget; search order picks the smaller index."},
+ {"slug": "koko_eating_bananas", "why_here": "First binary search on the answer: candidates are speeds and P is a greedy hours count."},
+ {"slug": "magnetic_force_between_two_balls", "why_here": "Maximize the minimum gap: the answer is the last T, checked by greedy placement."},
+ {"slug": "split_array_largest_sum", "why_here": "Minimize the maximum piece sum: the same answer search with a greedy piece-count check."},
+ {"slug": "maximum_running_time_of_n_computers", "why_here": "The feasibility check becomes a capped sum instead of a simulation."},
+ {"slug": "kth_smallest_number_in_multiplication_table", "why_here": "Binary search on a value and count entries at most the guess to find the k-th smallest."},
+ {"slug": "find_kth_smallest_pair_distance", "why_here": "Same k-th-by-counting idea, with the count done by two pointers over a sorted array."},
+ {"slug": "maximum_average_subarray_ii", "why_here": "A real-valued answer: subtract the guess and test a prefix-sum condition, iterate to precision."},
+ {"slug": "median_of_two_sorted_arrays", "why_here": "The candidates are cut positions in the shorter array; P compares values across the cut."}
+]}

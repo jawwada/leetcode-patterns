@@ -1,0 +1,436 @@
+<title>Pattern Board</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard. Fixed left rail of topics/patterns; main column reads like a worked interview answer:
+   problem -> brute force -> reasoning -> optimal -> picture -> code. Phone: rail becomes a top sheet. */
+:root{
+  --bg:#f6f7f4; --panel:#ffffff; --fg:#16202a; --muted:#5b6672; --line:#d9ded8;
+  --marker:#1d5fc2; --marker-soft:#e4ecfa;          /* blue whiteboard marker: optimal, links, active */
+  --brute:#b8431b; --brute-soft:#f8e6df;            /* red marker: brute force */
+  --opt:#1d7a4a;   --opt-soft:#dff1e6;              /* green marker: optimal / done */
+  --easy:#1d7a4a; --medium:#b07a12; --hard:#b8282f;
+  --grid:rgba(29,95,194,.07);
+  --display:"Archivo",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --radius:6px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#14181c; --panel:#1b2026; --fg:#e7eae4; --muted:#9aa5b0; --line:#2d353d;
+  --marker:#7fb0ff; --marker-soft:#1f2c40; --brute:#ff9a74; --brute-soft:#3a251c;
+  --opt:#6fd39a; --opt-soft:#1c3327; --easy:#6fd39a; --medium:#e2b655; --hard:#ff7b82;
+  --grid:rgba(127,176,255,.07); color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#14181c; --panel:#1b2026; --fg:#e7eae4; --muted:#9aa5b0; --line:#2d353d;
+  --marker:#7fb0ff; --marker-soft:#1f2c40; --brute:#ff9a74; --brute-soft:#3a251c;
+  --opt:#6fd39a; --opt-soft:#1c3327; --easy:#6fd39a; --medium:#e2b655; --hard:#ff7b82;
+  --grid:rgba(127,176,255,.07); color-scheme:dark }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--body);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px}
+a{color:var(--marker)}
+button{font:inherit;color:inherit;background:none;border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px;cursor:pointer}
+button:hover{border-color:var(--marker)}
+button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--marker);outline-offset:2px}
+button.primary{background:var(--marker);border-color:var(--marker);color:#fff}
+button.on{background:var(--marker-soft);border-color:var(--marker);color:var(--fg)}
+input,select,textarea{font:inherit;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:7px 10px}
+h1,h2,h3,h4{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+code,pre,.mono{font-family:var(--mono)}
+.eyebrow{font:600 11px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+[hidden]{display:none!important}
+
+.app{display:grid;grid-template-columns:270px minmax(0,1fr);height:100%}
+.rail{border-right:1px solid var(--line);background:var(--panel);overflow:auto;display:flex;flex-direction:column}
+.rail-head{padding:18px 16px 12px;border-bottom:1px solid var(--line)}
+.rail-head h1{font-size:22px;font-weight:800;letter-spacing:-.01em}
+.rail-head .sub{font-size:13px;color:var(--muted);margin-top:4px}
+.progress{margin-top:12px;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.progress>div{height:100%;background:var(--opt);width:0}
+.nav{padding:8px 8px 16px}
+.nav button{display:flex;width:100%;justify-content:space-between;align-items:center;border:0;padding:8px 10px;border-radius:var(--radius);text-align:left}
+.nav button:hover{background:var(--marker-soft)}
+.nav button.on{background:var(--marker-soft);color:var(--marker);font-weight:700}
+.nav .count{font:600 12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.nav .group{padding:12px 10px 4px}
+
+.main{min-width:0;overflow:auto;padding-block:20px 48px;padding-inline:clamp(16px,4vw,48px)}
+.topbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.topbar input[type=search]{flex:1 1 220px;min-width:0}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;flex-wrap:wrap}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;padding:8px 12px;margin-bottom:-1px}
+.tabs button.on{border-bottom-color:var(--marker);color:var(--marker);font-weight:700}
+
+/* pattern board */
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card h3{font-size:17px}
+.card .shape{font-size:14px;color:var(--muted)}
+.card ul{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
+.card li a{text-decoration:none;color:var(--fg);display:flex;gap:8px;align-items:baseline;padding:3px 0;font-size:14px}
+.card li a:hover{color:var(--marker)}
+.card li .n{font:12px var(--mono);color:var(--muted);min-width:34px;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font:600 11px/1 var(--body);letter-spacing:.04em;padding:4px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill.Easy{color:var(--easy);border-color:currentColor}.pill.Medium{color:var(--medium);border-color:currentColor}.pill.Hard{color:var(--hard);border-color:currentColor}
+.done-dot{width:8px;height:8px;border-radius:50%;background:var(--line);flex:none}
+.done-dot.on{background:var(--opt)}
+
+/* problem list */
+.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);overflow:hidden}
+.row{display:grid;grid-template-columns:18px 48px minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
+.row:last-child{border-bottom:0}
+.row:hover{background:var(--marker-soft)}
+.row .n{font:13px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.row .t{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .p{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* problem detail */
+.detail{max-width:860px}
+.detail header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:6px}
+.detail h2{font-size:clamp(24px,3.4vw,34px);letter-spacing:-.01em}
+.meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 18px;font-size:14px;color:var(--muted)}
+.meta a{text-decoration:none}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+.sec{margin:0 0 22px}
+.sec h3{font-size:15px;letter-spacing:.02em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:700}
+.sec p{margin:0 0 10px;max-width:68ch}
+.stage{border-left:4px solid var(--line);padding:10px 16px;margin:0 0 14px;background:var(--panel);border-radius:0 var(--radius) var(--radius) 0}
+.stage.brute{border-left-color:var(--brute)}.stage.opt{border-left-color:var(--opt)}.stage.reason{border-left-color:var(--marker)}
+.label{display:flex;gap:10px;align-items:baseline;margin-bottom:6px}
+.stage .label b{font-family:var(--display);font-size:16px}
+.stage.brute .label b{color:var(--brute)}.stage.opt .label b{color:var(--opt)}.stage.reason .label b{color:var(--marker)}
+.cx{font:600 13px var(--mono);padding:2px 8px;border-radius:4px;background:var(--marker-soft)}
+.stage.brute .cx{background:var(--brute-soft)}.stage.opt .cx{background:var(--opt-soft)}
+ol.steps{margin:0;padding-left:22px;max-width:68ch}ol.steps li{margin:4px 0}
+ul.plain{margin:0;padding-left:20px;max-width:68ch}ul.plain li{margin:4px 0}
+pre.visual{margin:0;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow-x:auto;font-size:13.5px;line-height:1.45;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:16px 16px}
+pre.code{margin:0;padding:14px 16px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow-x:auto;font-size:13.5px;line-height:1.5}
+.codewrap{position:relative}
+.codewrap .copy{position:absolute;top:8px;right:8px;font-size:12px;padding:4px 8px;background:var(--panel)}
+.hint{border:1px dashed var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px;background:var(--panel)}
+.hint summary{cursor:pointer;font-weight:700}
+.hint p{margin:8px 0 0}
+.cover{position:relative}
+.cover.hidden-sol>*:not(.reveal){filter:blur(7px);pointer-events:none;user-select:none}
+.reveal{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2}
+.related{display:flex;gap:8px;flex-wrap:wrap}
+.related a{text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px;background:var(--panel)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:28px;flex-wrap:wrap}
+.pager a{text-decoration:none;font-size:14px}
+textarea.notes{width:100%;min-height:80px;resize:vertical}
+
+/* practice */
+.practice{max-width:860px}
+.timer{font:700 40px/1 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.timer.over{color:var(--hard)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{padding:4px 10px;font-size:13px;border-radius:999px}
+
+/* highlight.js tokens mapped to theme */
+.hljs-keyword,.hljs-built_in{color:var(--marker);font-weight:600}
+.hljs-string{color:var(--opt)}.hljs-number{color:var(--brute)}
+.hljs-comment{color:var(--muted);font-style:italic}
+.hljs-title,.hljs-class .hljs-title{color:var(--fg);font-weight:600}
+.hljs-params{color:var(--fg)}
+
+/* thinking panel: first thing to read */
+.think{margin:0 0 26px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);overflow:hidden}
+.think-head{padding:14px 18px 10px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+.think-head h3{font-size:20px}
+.think-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:0}
+.picture{padding:16px 18px;border-right:1px solid var(--line);min-width:0}
+.picture p{margin:0 0 10px;max-width:60ch}
+.picture .label b,.chain .label b{font-family:var(--display);font-size:15px}
+.chain{list-style:none;margin:0;padding:6px 0;display:flex;flex-direction:column}
+.chain li{padding:12px 18px 12px 22px;border-left:4px solid var(--line);position:relative;min-width:0}
+.chain li+li{border-top:1px solid var(--line)}
+.chain li.brute{border-left-color:var(--brute)}.chain li.reason{border-left-color:var(--marker)}.chain li.opt{border-left-color:var(--opt)}.chain li.pattern{border-left-color:var(--muted)}
+.chain li.brute .label b{color:var(--brute)}.chain li.reason .label b{color:var(--marker)}.chain li.opt .label b{color:var(--opt)}
+.chain li.brute .cx{background:var(--brute-soft)}.chain li.opt .cx{background:var(--opt-soft)}
+.chain p{margin:0 0 6px;max-width:62ch}
+.chain .label{display:flex;gap:10px;align-items:baseline;margin-bottom:4px;flex-wrap:wrap}
+@media (max-width:1000px){.think-grid{grid-template-columns:1fr}.picture{border-right:0;border-bottom:1px solid var(--line)}}
+
+.railtoggle{display:none}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .rail{border-right:0;border-bottom:1px solid var(--line);max-height:48vh}
+  .rail .nav{display:none}.rail.open .nav{display:block}
+  .railtoggle{display:inline-block;margin-top:10px}
+  .row{grid-template-columns:18px 40px minmax(0,1fr) auto}.row .p{display:none}
+  .main{padding-block:16px 40px}
+}
+@media (prefers-reduced-motion:no-preference){ .row,.card li a,button{transition:background .12s,color .12s,border-color .12s} }
+</style>
+
+<div class="app">
+  <aside class="rail" id="rail">
+    <div class="rail-head">
+      <h1>Pattern Board</h1>
+      <div class="sub" id="subtitle">brute force first, then the reasoning to optimal · no DP</div>
+      <div class="progress" title="solved"><div id="prog"></div></div>
+      <div class="sub" id="progtxt"></div>
+      <button class="railtoggle" id="railtoggle" aria-expanded="false">Browse topics</button>
+    </div>
+    <nav class="nav" id="nav" aria-label="Topics"></nav>
+  </aside>
+  <main class="main" id="main" tabindex="-1"></main>
+</div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(() => {
+const TOPICS = {
+  arrays_hashing:["Arrays & Hashing","Trade memory for time: a hash map turns “have I seen X?” into O(1)."],
+  two_pointers:["Two Pointers","Two indices moving under a monotonic rule shrink an O(n²) pair search to O(n)."],
+  sliding_window:["Sliding Window","A contiguous interval whose edges only move right; keep a running summary of what is inside."],
+  stack:["Stack","Last-in-first-out memory for the nearest unresolved thing: matching, monotonic sequences, nesting."],
+  binary_search:["Binary Search","Halve a monotonic search space, on the indices or on the answer itself."],
+  linked_list:["Linked List","Pointer surgery: dummy heads, fast/slow runners, in-place reversal."],
+  trees:["Trees","Recursion mirrors the shape: solve for the children, combine at the parent; BFS goes level by level."],
+  tries:["Tries","A tree of characters: shared prefixes become shared paths."],
+  heap:["Heap / Priority Queue","A partially ordered array that hands you the min or max in O(log n): top-k and next-smallest problems."],
+  backtracking:["Backtracking","Walk a decision tree depth-first, undo on the way back, prune as early as possible."],
+  graphs:["Graphs","BFS for fewest steps, DFS for reachability, topological order for dependencies, union-find for components."],
+  intervals:["Intervals","Sort by start, then sweep; overlap becomes one comparison with the previous end."],
+  greedy:["Greedy","Take the locally best choice when an exchange argument proves it never hurts."],
+  bit_manipulation:["Bit Manipulation","An integer is 32 parallel booleans; XOR cancels pairs, shifts walk the columns."],
+  math_geometry:["Math & Geometry","Matrix walks, coordinate transforms and arithmetic identities."],
+  design:["Design (trackers)","Implement a tracker: pick the structures that let every operation meet its time budget."],
+  strings:["Strings","Scanning, parsing and canonical forms; most reduce to a counter, a two-pointer scan or a stack."],
+  dynamic_programming:["Dynamic Programming (outside the brief)","Kept from the old repo. Overlapping subproblems: define the state, write the recurrence, pick an evaluation order."],
+};
+const ORDER = Object.keys(TOPICS);
+const DATA = JSON.parse(document.getElementById('data').textContent);
+DATA.sort((a,b)=>ORDER.indexOf(a.topic)-ORDER.indexOf(b.topic) || a.title.localeCompare(b.title));
+const BY = Object.fromEntries(DATA.map(p=>[p.slug,p]));
+document.getElementById('subtitle').textContent = `${DATA.length} problems · ${DATA.filter(p=>p.difficulty==='Hard').length} hard · brute force first, then the reasoning to optimal · no DP`;
+
+// per-viewer progress (localStorage is a convenience; page works without it)
+const store = { get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v);}catch{ return d;} },
+                set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch{} } };
+let done = new Set(store.get('done',[]));
+let review = new Set(store.get('review',[]));
+let notes = store.get('notes',{});
+let filter = { topic:'all', q:'', diff:'all', hideDone:false };
+let practiceTopics = new Set(store.get('practiceTopics',[]));
+
+const $ = (s,el=document)=>el.querySelector(s);
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const main = $('#main'), nav = $('#nav');
+
+function route(){
+  const h = decodeURIComponent(location.hash.slice(1));
+  if(!h || h==='board') return renderBoard();
+  if(h==='list') return renderList();
+  if(h==='hard'){ filter.diff='Hard'; filter.topic='all'; return renderList(); }
+  if(h==='practice') return renderPractice();
+  if(BY[h]) return renderProblem(BY[h]);
+  if(TOPICS[h]){ filter.topic=h; return renderList(); }
+  renderBoard();
+}
+window.addEventListener('hashchange',()=>{route(); main.scrollTop=0;});
+
+function go(h){ location.hash = h; }
+
+function updateProgress(){
+  const n = DATA.filter(p=>done.has(p.slug)).length;
+  $('#prog').style.width = (100*n/DATA.length)+'%';
+  $('#progtxt').textContent = `${n} / ${DATA.length} solved${review.size?` · ${review.size} marked for review`:''}`;
+}
+
+function renderNav(){
+  const h = decodeURIComponent(location.hash.slice(1));
+  const views=[['board','Pattern board'],['list','All problems'],['hard','Hard problems'],['practice','Practice mode']];
+  let html = views.map(([k,l])=>`<button data-go="${k}" class="${h===k||(k==='board'&&!h)?'on':''}">${l}</button>`).join('');
+  html += `<div class="group eyebrow">Topics</div>`;
+  for(const t of ORDER){
+    const ps = DATA.filter(p=>p.topic===t); if(!ps.length) continue;
+    const d = ps.filter(p=>done.has(p.slug)).length;
+    html += `<button data-go="${t}" class="${h===t||(BY[h]&&BY[h].topic===t)?'on':''}"><span>${TOPICS[t][0]}</span><span class="count">${d}/${ps.length}</span></button>`;
+  }
+  nav.innerHTML = html;
+  updateProgress();
+}
+nav.addEventListener('click',e=>{ const b=e.target.closest('button[data-go]'); if(!b) return;
+  const k=b.dataset.go; if(TOPICS[k]){ filter.topic=k; filter.diff='all'; } if(k==='list'){ filter.diff='all'; filter.topic='all'; } go(k); $('#rail').classList.remove('open'); });
+$('#railtoggle').addEventListener('click',()=>{ const r=$('#rail'); r.classList.toggle('open'); $('#railtoggle').setAttribute('aria-expanded',r.classList.contains('open')); });
+
+const pill = p=>`<span class="pill ${p.difficulty}">${p.difficulty}</span>`;
+const lc = p=>p.leetcode?`LC ${p.leetcode}`:'warm-up';
+
+/* ---------- Pattern board ---------- */
+function renderBoard(){
+  renderNav();
+  const patterns = new Map();
+  for(const p of DATA){ const k=p.topic+'|'+p.pattern; if(!patterns.has(k)) patterns.set(k,[]); patterns.get(k).push(p); }
+  let html = `<div class="topbar"><div><div class="eyebrow">Patterns</div><h2 style="font-size:26px">${patterns.size} patterns across ${ORDER.filter(t=>DATA.some(p=>p.topic===t)).length} topics</h2></div></div>
+  <p class="muted" style="max-width:68ch;margin:0 0 20px">Each card is one reusable idea. Open a problem to see the brute force, the reasoning that removes its wasted work, the optimal solution, and a picture of the data structure mid-run. Progress is saved in this browser.</p>`;
+  for(const t of ORDER){
+    const cards=[...patterns.entries()].filter(([k])=>k.startsWith(t+'|'));
+    if(!cards.length) continue;
+    html += `<section class="sec"><div class="eyebrow" style="margin-bottom:4px">${TOPICS[t][0]}</div><p class="muted" style="margin:0 0 10px">${TOPICS[t][1]}</p><div class="board">`;
+    for(const [k,ps] of cards){
+      const name=k.split('|')[1]; const d=ps.filter(p=>done.has(p.slug)).length;
+      html += `<article class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><h3>${esc(name)}</h3><span class="count mono muted" style="font-size:12px">${d}/${ps.length}</span></div>
+        <div class="shape">${esc(ps[0].geometric.split(/(?<=\.)\s/)[0])}</div>
+        <ul>${ps.map(p=>`<li><a href="#${p.slug}"><span class="done-dot ${done.has(p.slug)?'on':''}"></span><span class="n">${p.leetcode||'—'}</span><span>${esc(p.title)}</span>${pill(p)}</a></li>`).join('')}</ul></article>`;
+    }
+    html += `</div></section>`;
+  }
+  main.innerHTML = html;
+}
+
+/* ---------- Problem list ---------- */
+function renderList(){
+  renderNav();
+  const t = filter.topic;
+  main.innerHTML = `<div class="topbar">
+    <div style="flex:1 1 100%"><div class="eyebrow">${t==='all'?'All topics':TOPICS[t][0]}</div>
+    <h2 style="font-size:26px">${t==='all'?'All problems':TOPICS[t][0]}</h2>${t!=='all'?`<p class="muted" style="margin:6px 0 0;max-width:68ch">${TOPICS[t][1]}</p>`:''}</div>
+    <input type="search" id="q" placeholder="Search title, pattern, LC number" value="${esc(filter.q)}" aria-label="Search">
+    <select id="diff" aria-label="Difficulty"><option value="all">Any difficulty</option><option>Easy</option><option>Medium</option><option>Hard</option></select>
+    <select id="topicsel" aria-label="Topic"><option value="all">All topics</option>${ORDER.map(k=>`<option value="${k}">${TOPICS[k][0]}</option>`).join('')}</select>
+    <button id="hidedone" class="${filter.hideDone?'on':''}">Hide solved</button>
+  </div><div class="list" id="rows"></div>`;
+  $('#diff').value=filter.diff; $('#topicsel').value=filter.topic;
+  const draw=()=>{
+    const q=filter.q.toLowerCase();
+    const rows=DATA.filter(p=>(filter.topic==='all'||p.topic===filter.topic)&&(filter.diff==='all'||p.difficulty===filter.diff)&&(!filter.hideDone||!done.has(p.slug))
+      &&(!q||p.title.toLowerCase().includes(q)||p.pattern.toLowerCase().includes(q)||String(p.leetcode)===q));
+    $('#rows').innerHTML = rows.length? rows.map(p=>`<a class="row" href="#${p.slug}"><span class="done-dot ${done.has(p.slug)?'on':''}"></span><span class="n">${p.leetcode||'—'}</span><span class="t">${esc(p.title)}</span><span class="p">${esc(p.pattern)}</span>${pill(p)}</a>`).join('')
+      : `<div style="padding:24px;color:var(--muted)">No problems match. Clear a filter or the search box.</div>`;
+  };
+  $('#q').addEventListener('input',e=>{filter.q=e.target.value;draw();});
+  $('#diff').addEventListener('change',e=>{filter.diff=e.target.value;draw();});
+  $('#topicsel').addEventListener('change',e=>{filter.topic=e.target.value;renderNav();draw();});
+  $('#hidedone').addEventListener('click',e=>{filter.hideDone=!filter.hideDone;e.target.classList.toggle('on',filter.hideDone);draw();});
+  draw();
+}
+
+/* ---------- Problem detail ---------- */
+function codeBlock(src,id){ return `<div class="codewrap"><button class="copy" data-copy="${id}">Copy</button><pre class="code"><code id="${id}" class="language-python">${esc(src)}</code></pre></div>`; }
+
+function renderProblem(p, opts={}){
+  renderNav();
+  const sameTopic = DATA.filter(x=>x.topic===p.topic); const i=sameTopic.indexOf(p);
+  const prev=sameTopic[i-1], next=sameTopic[i+1];
+  const bf=p.brute_force||{};
+  const hidden = opts.hideSolution;
+  main.innerHTML = `<article class="detail">
+    <div class="eyebrow"><a href="#${p.topic}" style="text-decoration:none">${TOPICS[p.topic][0]}</a> · ${esc(p.pattern)}</div>
+    <header><h2>${esc(p.title)}</h2>${pill(p)}</header>
+    <div class="meta"><span>${lc(p)}</span><span>·</span><code>${esc(p.file)}</code>${p.leetcode?`<span>·</span><a href="https://leetcode.com/problems/${p.slug.replace(/_/g,'-')}/" target="_blank" rel="noopener">open on LeetCode</a>`:''}</div>
+    <div class="actions">
+      <button id="btn-done" class="${done.has(p.slug)?'on':''}">${done.has(p.slug)?'✓ Solved':'Mark solved'}</button>
+      <button id="btn-review" class="${review.has(p.slug)?'on':''}">${review.has(p.slug)?'★ For review':'Mark for review'}</button>
+      <button id="btn-hide">${hidden?'Show solution':'Hide solution (practice)'}</button>
+    </div>
+
+    <section class="sec"><h3>Problem</h3><p>${esc(p.problem)}</p></section>
+
+    <div class="cover ${hidden?'hidden-sol':''}" id="cover">
+      ${hidden?`<div class="reveal"><button class="primary" id="btn-reveal">Reveal explanation</button></div>`:''}
+      <section class="think">
+        <div class="think-head"><span class="eyebrow">Read this first</span><h3>Visual explanation &amp; thinking process</h3></div>
+        <div class="think-grid">
+          <div class="picture">
+            <div class="label"><b>Picture it</b></div>
+            <p>${esc(p.geometric)}</p>
+            <pre class="visual">${esc(p.visual)}</pre>
+          </div>
+          <ol class="chain">
+            <li class="brute"><div class="label"><b>First idea</b><span class="cx">${esc(bf.time||'?')} · ${esc(bf.space||'?')}</span></div><p>${esc(bf.approach||'')}</p></li>
+            <li class="reason"><div class="label"><b>Spot the waste, find the observation</b></div><p>${esc(p.optimization||'')}</p></li>
+            <li class="opt"><div class="label"><b>The insight</b><span class="cx">${esc(p.complexity.time)} · ${esc(p.complexity.space)}</span></div><p>${esc(p.intuition)}</p><p class="muted" style="font-size:14px;margin:0">${esc(p.complexity.why||'')}</p></li>
+            <li class="pattern"><div class="label"><b>Pattern to remember</b></div><p><a href="#board">${esc(p.pattern)}</a> — <span class="muted">${TOPICS[p.topic][1]}</span></p></li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="sec"><h3>Hints, one at a time</h3>
+        ${(p.hints||[]).map((h,k)=>`<details class="hint"><summary>Hint ${k+1}${k===0?' · nudge':k===1?' · structure':' · nearly there'}</summary><p>${esc(h)}</p></details>`).join('')}
+      </section>
+
+      <section class="sec"><h3>Steps</h3><ol class="steps">${p.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol></section>
+
+      <section class="sec"><h3>Brute force code</h3>
+        <div class="stage brute"><div class="label"><b>${esc(bf.time||'?')} time · ${esc(bf.space||'?')} space</b></div>${bf.code?codeBlock(bf.code,'bf-code'):''}</div>
+      </section>
+
+      <section class="sec"><h3>Optimal solution</h3>
+        <div class="stage opt"><div class="label"><b>${esc(p.complexity.time)} time · ${esc(p.complexity.space)} space</b></div>${codeBlock(p.code,'sol-code')}</div>
+      </section>
+
+      <section class="sec"><h3>Pitfalls</h3><ul class="plain">${(p.pitfalls||[]).map(s=>`<li>${esc(s)}</li>`).join('')}</ul></section>
+    </div>
+
+    <section class="sec"><h3>Your notes</h3><textarea class="notes" id="notes" placeholder="What tripped you up? What's the one-line idea you want to remember?">${esc(notes[p.slug]||'')}</textarea></section>
+
+    ${(p.related||[]).filter(r=>BY[r]).length?`<section class="sec"><h3>Related</h3><div class="related">${p.related.filter(r=>BY[r]).map(r=>`<a href="#${r}">${esc(BY[r].title)}</a>`).join('')}</div></section>`:''}
+
+    <nav class="pager">${prev?`<a href="#${prev.slug}">← ${esc(prev.title)}</a>`:'<span></span>'}${next?`<a href="#${next.slug}">${esc(next.title)} →</a>`:'<span></span>'}</nav>
+  </article>`;
+
+  if(window.hljs) main.querySelectorAll('code.language-python').forEach(el=>hljs.highlightElement(el));
+  $('#btn-done').onclick=()=>{ done.has(p.slug)?done.delete(p.slug):done.add(p.slug); store.set('done',[...done]); renderProblem(p,opts); };
+  $('#btn-review').onclick=()=>{ review.has(p.slug)?review.delete(p.slug):review.add(p.slug); store.set('review',[...review]); renderProblem(p,opts); };
+  $('#btn-hide').onclick=()=>renderProblem(p,{hideSolution:!hidden});
+  const rv=$('#btn-reveal'); if(rv) rv.onclick=()=>renderProblem(p,{hideSolution:false});
+  $('#notes').addEventListener('input',e=>{ notes[p.slug]=e.target.value; store.set('notes',notes); });
+  main.querySelectorAll('button[data-copy]').forEach(b=>b.onclick=async()=>{
+    const txt=document.getElementById(b.dataset.copy).textContent;
+    try{ await navigator.clipboard.writeText(txt); b.textContent='Copied'; }
+    catch{ const r=document.createRange(); r.selectNodeContents(document.getElementById(b.dataset.copy)); const s=getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent='Selected'; }
+    setTimeout(()=>b.textContent='Copy',1200);
+  });
+}
+
+/* ---------- Practice mode ---------- */
+let timerId=null, timerStart=null, current=null;
+function renderPractice(){
+  renderNav();
+  if(timerId){ clearInterval(timerId); timerId=null; }
+  const pool=()=>DATA.filter(p=>(practiceTopics.size===0||practiceTopics.has(p.topic))&&!done.has(p.slug));
+  main.innerHTML = `<section class="practice">
+    <div class="eyebrow">Practice mode</div><h2 style="font-size:26px;margin-bottom:6px">Interview rehearsal</h2>
+    <p class="muted" style="max-width:68ch">One random unsolved problem, a 25-minute clock, solution hidden. Say the brute force out loud and its complexity, then reason to the optimal, then code it. Open hints only when stuck.</p>
+    <div class="eyebrow" style="margin:16px 0 6px">Topics in the pool (none selected = all)</div>
+    <div class="chips" id="chips">${ORDER.filter(t=>DATA.some(p=>p.topic===t)).map(t=>`<button data-t="${t}" class="${practiceTopics.has(t)?'on':''}">${TOPICS[t][0]}</button>`).join('')}</div>
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:18px 0">
+      <button class="primary" id="draw">Draw a problem</button><span class="muted" id="poolsize"></span><div class="timer" id="timer">25:00</div>
+    </div>
+    <div id="stage"></div>
+  </section>`;
+  const sizeTxt=()=>$('#poolsize').textContent=`${pool().length} unsolved in pool`;
+  sizeTxt();
+  $('#chips').addEventListener('click',e=>{ const b=e.target.closest('button[data-t]'); if(!b) return; const t=b.dataset.t;
+    practiceTopics.has(t)?practiceTopics.delete(t):practiceTopics.add(t); b.classList.toggle('on'); store.set('practiceTopics',[...practiceTopics]); sizeTxt(); });
+  $('#draw').onclick=()=>{
+    const ps=pool(); if(!ps.length){ $('#stage').innerHTML='<p class="muted">Everything in this pool is solved. Widen the pool or un-mark something.</p>'; return; }
+    current=ps[Math.floor(Math.random()*ps.length)];
+    timerStart=Date.now(); if(timerId) clearInterval(timerId);
+    const tick=()=>{ const left=25*60-Math.floor((Date.now()-timerStart)/1000); const el=$('#timer'); if(!el){clearInterval(timerId);return;}
+      const a=Math.abs(left); el.textContent=`${left<0?'-':''}${String(Math.floor(a/60)).padStart(2,'0')}:${String(a%60).padStart(2,'0')}`; el.classList.toggle('over',left<0); };
+    tick(); timerId=setInterval(tick,1000);
+    const p=current;
+    $('#stage').innerHTML=`<article class="detail"><div class="eyebrow">${TOPICS[p.topic][0]}</div><header><h2>${esc(p.title)}</h2>${pill(p)}</header>
+      <div class="meta"><span>${lc(p)}</span></div>
+      <section class="sec"><h3>Problem</h3><p>${esc(p.problem)}</p></section>
+      <section class="sec"><h3>Checklist to say out loud</h3><ol class="steps"><li>Restate the problem and confirm one example.</li><li>Brute force: what is it, and what is its time and space?</li><li>Name the repeated work. What observation removes it?</li><li>Which data structure or invariant exploits that? New complexity?</li><li>Code it, then trace one example and one edge case.</li></ol></section>
+      <section class="sec"><h3>Hints</h3>${p.hints.map((h,k)=>`<details class="hint"><summary>Hint ${k+1}</summary><p>${esc(h)}</p></details>`).join('')}</section>
+      <div class="actions"><button class="primary" id="open">Open full solution</button><button id="skip">Skip, draw another</button></div></article>`;
+    $('#open').onclick=()=>go(p.slug);
+    $('#skip').onclick=()=>$('#draw').click();
+  };
+}
+
+route();
+})();
+</script>

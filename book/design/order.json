@@ -1,0 +1,94 @@
+{
+  "topic": "design",
+  "title": "Design: Implement a Tracker",
+  "order": [
+    {
+      "slug": "moving_average_from_data_stream",
+      "why_here": "Smallest tracker there is: a queue plus a running sum, and the habit of updating state by what enters and what leaves."
+    },
+    {
+      "slug": "logger_rate_limiter",
+      "why_here": "Same stream, now keyed: one hash map entry per message holding the only fact that matters, its next allowed time."
+    },
+    {
+      "slug": "design_hit_counter",
+      "why_here": "Back to the queue, but the window is measured in time not count, so eviction becomes a while-loop and same-time hits get merged."
+    },
+    {
+      "slug": "design_hashmap",
+      "why_here": "Opens the box we have been using: buckets, chaining and load-factor resizing explain why a dict lookup is O(1) on average."
+    },
+    {
+      "slug": "insert_delete_getrandom_o1",
+      "why_here": "First true combination of two parts: an array for random access plus an index map, joined by swap-with-last deletion."
+    },
+    {
+      "slug": "design_browser_history",
+      "why_here": "An array and a cursor; teaches that clearing data can be a bound you move instead of work you do."
+    },
+    {
+      "slug": "design_underground_system",
+      "why_here": "Two maps with two lifetimes: short-lived in-flight state and forever-aggregated statistics compressed to (sum, count)."
+    },
+    {
+      "slug": "time_based_key_value_store",
+      "why_here": "Keep every version instead of the latest one; a sorted list per key plus bisect answers 'value as of time t'."
+    },
+    {
+      "slug": "snapshot_array",
+      "why_here": "Same versioned-list idea applied per index, with snapshot ids as the clock, so a snapshot costs O(1) instead of O(n)."
+    },
+    {
+      "slug": "design_bitset",
+      "why_here": "Lazy global flag: record a flip instead of performing it, and maintain the count so every query is O(1)."
+    },
+    {
+      "slug": "lru_cache",
+      "why_here": "The classic combination: hash map for lookup plus doubly linked list for recency order, every operation O(1)."
+    },
+    {
+      "slug": "lfu_cache",
+      "why_here": "LRU inside each frequency bucket plus a min-frequency pointer; the hardest bookkeeping of the hash-map-plus-list family."
+    },
+    {
+      "slug": "all_oone_data_structure",
+      "why_here": "Buckets of keys by count chained in a linked list so both the max and the min key are always at the ends."
+    },
+    {
+      "slug": "maximum_frequency_stack",
+      "why_here": "Frequency buckets as stacks with a max pointer; ties broken by recency for free because a key lives in every lower bucket too."
+    },
+    {
+      "slug": "dinner_plate_stacks",
+      "why_here": "List of stacks plus a min-heap of indices with room, using lazy deletion to skip heap entries that went stale."
+    },
+    {
+      "slug": "data_stream_as_disjoint_intervals",
+      "why_here": "Sorted disjoint intervals maintained with bisect; inserting a point may extend or merge neighbours."
+    },
+    {
+      "slug": "range_module",
+      "why_here": "Same sorted-interval structure but with range add and range remove that split and swallow intervals."
+    },
+    {
+      "slug": "range_sum_query_2d_mutable",
+      "why_here": "When updates and range sums interleave, a 2D Fenwick tree turns both into O(log m * log n)."
+    },
+    {
+      "slug": "online_majority_element_in_subarray",
+      "why_here": "Value to sorted positions plus bisect counts occurrences in any range; random sampling finds the candidate."
+    },
+    {
+      "slug": "design_movie_rental_system",
+      "why_here": "Several ordered views of the same records kept as heaps, with lazy deletion by version stamp to stay consistent."
+    },
+    {
+      "slug": "design_in_memory_file_system",
+      "why_here": "A trie of path components: the tracker is a tree whose edges are directory names."
+    },
+    {
+      "slug": "design_skiplist",
+      "why_here": "Build the ordered structure itself: sorted linked lists stacked into random express lanes for expected O(log n) search."
+    }
+  ]
+}

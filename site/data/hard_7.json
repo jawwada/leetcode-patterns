@@ -1,0 +1,580 @@
+[
+  {
+    "slug": "range_module",
+    "title": "Range Module",
+    "leetcode": 715,
+    "difficulty": "Hard",
+    "topic": "design",
+    "pattern": "Sorted disjoint intervals with bisect",
+    "file": "design/range_module.py",
+    "problem": "Track half-open ranges [left, right) of numbers. addRange(l, r) marks the range tracked, removeRange(l, r) untracks it, and queryRange(l, r) returns True iff every point of [l, r) is currently tracked; the three operations interleave arbitrarily. Example: addRange(10,20); removeRange(14,16); queryRange(10,14) -> True; queryRange(13,15) -> False; queryRange(16,17) -> True.",
+    "brute_force": {
+      "approach": "Keep every tracked integer point in a set. addRange inserts r - l points, removeRange deletes them, queryRange checks them one by one. The wasted work: a tracked region is a handful of contiguous blocks, yet every single point inside a block is touched instead of just its two boundaries, and coordinates up to 1e9 make this hopeless.",
+      "time": "O(r - l) per operation",
+      "space": "O(coordinate range)",
+      "code": "class BruteForce:\n    \"\"\"Set of every tracked integer point; O(right - left) per operation.\"\"\"\n\n    def __init__(self):\n        self.points = set()\n\n    def addRange(self, left: int, right: int) -> None:\n        self.points.update(range(left, right))\n\n    def queryRange(self, left: int, right: int) -> bool:\n        return all(x in self.points for x in range(left, right))\n\n    def removeRange(self, left: int, right: int) -> None:\n        self.points.difference_update(range(left, right))"
+    },
+    "optimization": "The redundancy is representing a contiguous block point by point. The tracked set is always a union of disjoint intervals, so it is fully described by its sorted boundaries [l0, r0, l1, r1, ...] stored as one flat list. Parity then tells you what the line looks like at any index: an even index opens a block, an odd one closes it, and a point whose bisect position is odd lies inside a block. addRange(l, r) finds the slice of boundaries inside [l, r] with two bisects, deletes it, and re-inserts l only if l was in a gap (even position) and r only if r was in a gap; removeRange is the mirror image (re-insert when the position is odd). queryRange is 'both ends fall inside the same block': bisect_right(l) == bisect_left(r) and that index is odd. Two binary searches plus one slice assignment per operation.",
+    "intuition": "A union of disjoint intervals on a line is just an alternating sequence of open/close boundaries. Adding or removing a range can only destroy the boundaries strictly inside it and create at most two new ones at its ends. The parity of each end's insertion position says whether that end sits in tracked or untracked territory, which decides whether it becomes a new boundary. Everything else is a slice delete.",
+    "geometric": "Picture the number line with tracked blocks as solid segments. addRange lays a new solid segment on top: everything under it merges into one block, so all interior boundaries vanish; the merged block starts at l if l was in a gap, otherwise at the start of the block l already lies in. removeRange cuts the same slice out and leaves a boundary at l or r only when that end was inside a block.",
+    "visual": "ends = [1, 5, 10, 14, 20, 25]  blocks [1,5) [10,14) [20,25)\nidx     0  1   2   3   4   5   even = opens, odd = closes\n\naddRange(3, 12):\n  i = bisect_left(3)   = 1  odd  -> 3 is inside [1,5)\n  j = bisect_right(12) = 3  odd  -> 12 is inside [10,14)\n  ends[1:3] = []  ->  [1, 14, 20, 25]     [1,14) [20,25)\n\nremoveRange(22, 30):\n  i = bisect_left(22)  = 3  odd  -> 22 becomes a new close\n  j = bisect_right(30) = 4  even -> nothing reopens at 30\n  ends[3:4] = [22] ->  [1, 14, 20, 22]     [1,14) [20,22)",
+    "steps": [
+      "ends = flat sorted list [l0, r0, l1, r1, ...]; even index = block start, odd = block end.",
+      "addRange: i = bisect_left(ends, l), j = bisect_right(ends, r); new = [l if i even] + [r if j even]; ends[i:j] = new.",
+      "removeRange: same i, j; new = [l if i odd] + [r if j odd]; ends[i:j] = new.",
+      "queryRange: i = bisect_right(ends, l), j = bisect_left(ends, r); return i == j and i is odd."
+    ],
+    "complexity": {
+      "time": "O(log n) search + O(n) splice per op",
+      "space": "O(n)",
+      "why": "two bisects locate the affected slice; one slice assignment rewrites it"
+    },
+    "pitfalls": [
+      "Mixing up bisect_left and bisect_right at the ends: touching blocks must merge on add, and queryRange must accept a block ending exactly at r.",
+      "Forgetting half-open semantics: removeRange(14,16) must leave 16 tracked.",
+      "Storing [start, end] pairs and hand-merging neighbours instead of using the parity trick; the case analysis balloons."
+    ],
+    "hints": [
+      "The tracked set is always a union of disjoint intervals. What minimal data describes it?",
+      "Store the sorted boundaries in one flat list; the parity of a bisect position tells whether a point is inside a block or in a gap.",
+      "addRange: i = bisect_left(l), j = bisect_right(r), replace ends[i:j] with [l if i even] + [r if j even]. removeRange uses odd instead. queryRange: bisect_right(l) == bisect_left(r) and odd."
+    ],
+    "code": "class RangeModule:\n    def __init__(self):\n        self.ends = []   # sorted boundaries [l0, r0, l1, r1, ...] of disjoint half-open ranges\n\n    def addRange(self, left: int, right: int) -> None:\n        i = bisect_left(self.ends, left)      # left == existing end -> i odd, blocks merge\n        j = bisect_right(self.ends, right)    # right == existing start -> j odd, blocks merge\n        new = []\n        if i % 2 == 0:                        # left falls in a gap: it opens the merged block\n            new.append(left)\n        if j % 2 == 0:                        # right falls in a gap: it closes the merged block\n            new.append(right)\n        self.ends[i:j] = new                  # every boundary strictly inside is swallowed\n\n    def queryRange(self, left: int, right: int) -> bool:\n        i = bisect_right(self.ends, left)\n        j = bisect_left(self.ends, right)\n        return i == j and i % 2 == 1          # both ends inside the same tracked block\n\n    def removeRange(self, left: int, right: int) -> None:\n        i = bisect_left(self.ends, left)\n        j = bisect_right(self.ends, right)\n        new = []\n        if i % 2 == 1:                        # left was inside a block: that block now ends here\n            new.append(left)\n        if j % 2 == 1:                        # right was inside a block: a block restarts here\n            new.append(right)\n        self.ends[i:j] = new",
+    "related": [
+      "data_stream_as_disjoint_intervals",
+      "insert_interval",
+      "merge_intervals",
+      "my_calendar_iii"
+    ]
+  },
+  {
+    "slug": "data_stream_as_disjoint_intervals",
+    "title": "Data Stream as Disjoint Intervals",
+    "leetcode": 352,
+    "difficulty": "Hard",
+    "topic": "design",
+    "pattern": "Sorted disjoint intervals with bisect",
+    "file": "design/data_stream_as_disjoint_intervals.py",
+    "problem": "Non-negative integers arrive one at a time. Implement SummaryRanges with addNum(value) and getIntervals(), which returns the values seen so far as a sorted list of disjoint closed intervals, with consecutive integers merged. Example: add 1 -> [[1,1]]; add 3 -> [[1,1],[3,3]]; add 7 -> [[1,1],[3,3],[7,7]]; add 2 -> [[1,3],[7,7]]; add 6 -> [[1,3],[6,7]].",
+    "brute_force": {
+      "approach": "Keep every value in a set. getIntervals sorts the set and walks it once, starting a new interval whenever the next value is not previous + 1. The wasted work: every getIntervals call re-sorts and re-merges the whole stream from scratch, even though a new value can change at most two neighbouring intervals.",
+      "time": "O(1) addNum, O(n log n) getIntervals",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    \"\"\"Set of seen values; getIntervals re-sorts and re-merges everything, O(n log n).\"\"\"\n\n    def __init__(self):\n        self.seen = set()\n\n    def addNum(self, value: int) -> None:\n        self.seen.add(value)\n\n    def getIntervals(self) -> List[List[int]]:\n        out = []\n        for v in sorted(self.seen):\n            if out and out[-1][1] == v - 1:\n                out[-1][1] = v\n            else:\n                out.append([v, v])\n        return out"
+    },
+    "optimization": "The redundancy is rebuilding the merged structure on every query. If the intervals are kept disjoint and sorted at all times, a new value v interacts only with the interval whose start is the largest start <= v (does it contain v, or end at exactly v-1?) and the next one (does it start at exactly v+1?). Keep starts and ends as parallel sorted lists and find that neighbour with bisect_right(starts, v). Four cases follow: already covered -> nothing; touches both neighbours -> glue them into one; touches the left one -> extend its end; touches the right one -> lower its start; otherwise insert [v, v]. getIntervals just zips the lists. The insert is an O(n) memmove in Python (O(log n) with a balanced tree), still far cheaper than an O(n log n) re-sort per query.",
+    "intuition": "Maintain the answer incrementally. Because the intervals are disjoint and sorted, a new value can only fall inside one of them, extend one by one unit, bridge a gap of exactly one between two of them, or start a fresh singleton. Binary search finds the only candidate neighbours, so each addNum does constant work beyond the search.",
+    "geometric": "Picture the number line with intervals as solid segments. A new point lands on a segment (ignore), directly against the right end of one (it grows right), directly against the left end of one (it grows left), against both (two segments fuse), or in open space (new dot).",
+    "visual": "starts [1, 6, 10]  ends [3, 7, 12]   = [1,3] [6,7] [10,12]\n\naddNum(8): i = bisect_right(starts, 8) = 2\n   ends[1] = 7 == 8-1          -> touches [6,7] on the left\n   starts[2] = 10 != 9         -> no right neighbour\n   ends[1] = 8                 -> [1,3] [6,8] [10,12]\n\naddNum(9): i = 2; ends[1] == 8 and starts[2] == 10\n   bridge: ends[1] = 12, delete index 2 -> [1,3] [6,12]\n\naddNum(2): i = 1; ends[0] = 3 >= 2 -> already covered",
+    "steps": [
+      "starts, ends: parallel sorted lists of disjoint closed intervals.",
+      "addNum(v): i = bisect_right(starts, v); interval i-1 is the candidate on the left.",
+      "If i > 0 and ends[i-1] >= v: already covered, return.",
+      "touch_left = ends[i-1] == v-1; touch_right = starts[i] == v+1 (with bounds checks).",
+      "Both: ends[i-1] = ends[i] and delete interval i. Left only: ends[i-1] = v. Right only: starts[i] = v. Neither: insert v into both lists at i.",
+      "getIntervals: zip starts and ends."
+    ],
+    "complexity": {
+      "time": "O(log n) search + O(n) shift per addNum, O(k) getIntervals",
+      "space": "O(k)",
+      "why": "bisect locates the only two intervals a new value can touch"
+    },
+    "pitfalls": [
+      "Skipping the 'already covered' check produces overlapping intervals.",
+      "Handling 'touches both neighbours' as two separate extensions and leaving [1,3],[4,7] unmerged.",
+      "Using bisect_left and reading the wrong neighbour when v equals an existing start."
+    ],
+    "hints": [
+      "A new value can affect at most two existing intervals. Which two?",
+      "Keep the intervals sorted and disjoint; bisect on the starts to find the interval just left of v, then check whether it or its right neighbour touches v.",
+      "Cases: covered -> nothing; ends[i-1] == v-1 and starts[i] == v+1 -> merge; only left -> ends[i-1] = v; only right -> starts[i] = v; else insert [v, v]."
+    ],
+    "code": "class SummaryRanges:\n    def __init__(self):\n        self.starts: List[int] = []   # sorted interval starts\n        self.ends: List[int] = []     # parallel inclusive ends\n\n    def addNum(self, value: int) -> None:\n        i = bisect_right(self.starts, value)          # interval i-1 has the largest start <= value\n        if i and self.ends[i - 1] >= value:           # already inside an interval\n            return\n        touch_left = i > 0 and self.ends[i - 1] == value - 1\n        touch_right = i < len(self.starts) and self.starts[i] == value + 1\n        if touch_left and touch_right:                # bridge a gap of exactly one\n            self.ends[i - 1] = self.ends[i]\n            del self.starts[i], self.ends[i]\n        elif touch_left:\n            self.ends[i - 1] = value\n        elif touch_right:\n            self.starts[i] = value\n        else:\n            self.starts.insert(i, value)\n            self.ends.insert(i, value)\n\n    def getIntervals(self) -> List[List[int]]:\n        return [[s, e] for s, e in zip(self.starts, self.ends)]",
+    "related": [
+      "range_module",
+      "merge_intervals",
+      "insert_interval",
+      "time_based_key_value_store"
+    ]
+  },
+  {
+    "slug": "rectangle_area_ii",
+    "title": "Rectangle Area II",
+    "leetcode": 850,
+    "difficulty": "Hard",
+    "topic": "intervals",
+    "pattern": "Sweep line over sorted events",
+    "file": "intervals/rectangle_area_ii.py",
+    "problem": "Given n axis-aligned rectangles [x1, y1, x2, y2] with coordinates up to 1e9, return the total area covered by their union modulo 1e9+7; overlapping regions count once. Example: [[0,0,2,2],[1,0,2,3],[1,0,3,1]] -> 6 (the 2x2 square plus one cell above it and one cell to its right).",
+    "brute_force": {
+      "approach": "Painting unit cells is hopeless at 1e9 coordinates, so compress: the distinct x's and y's cut the plane into at most (2n-1)^2 cells, and each rectangle covers a whole block of them. Paint each rectangle's cells into a boolean grid and sum the true areas of painted cells. The wasted work: a rectangle is painted cell by cell even though inside one vertical strip it covers a single contiguous y-interval that could be handled as one object.",
+      "time": "O(n^3)",
+      "space": "O(n^2)",
+      "code": "def brute_force(rectangles: List[List[int]]) -> int:\n    \"\"\"Compress coordinates, paint every cell of every rectangle, sum painted cells. O(n^3).\"\"\"\n    xs = sorted({x for x1, _, x2, _ in rectangles for x in (x1, x2)})\n    ys = sorted({y for _, y1, _, y2 in rectangles for y in (y1, y2)})\n    xi = {x: i for i, x in enumerate(xs)}\n    yi = {y: i for i, y in enumerate(ys)}\n    painted = [[False] * (len(ys) - 1) for _ in range(len(xs) - 1)]\n    for x1, y1, x2, y2 in rectangles:\n        for i in range(xi[x1], xi[x2]):\n            for j in range(yi[y1], yi[y2]):\n                painted[i][j] = True\n    area = 0\n    for i, (xa, xb) in enumerate(pairwise(xs)):\n        for j, (ya, yb) in enumerate(pairwise(ys)):\n            if painted[i][j]:\n                area += (xb - xa) * (yb - ya)\n    return area % (10**9 + 7)"
+    },
+    "optimization": "First reduction: coverage only changes at rectangle edges, so sweep a vertical line through the 2n sorted x-events (x1 = rectangle enters, x2 = rectangle leaves). Between consecutive events the active set is fixed, so the strip's area is width times the length of the union of the active y-intervals. Second reduction: that union length is the classic sort-and-merge of intervals, O(k log k) for k active rectangles, instead of O(n^2) cell painting per strip. Total O(n^2 log n) with O(n) extra space and no grid. The remaining per-strip re-sort is the only slack left; a segment tree over compressed y's with cover counts brings it to O(n log n) and is the expected follow-up.",
+    "intuition": "Area is an integral: slide a vertical line across the plane and add up (how much of the line is covered) x (how far the line moved). The covered length is piecewise constant and changes only at rectangle edges, so it only needs evaluating 2n times, once per event, and each evaluation is a merge of sorted intervals.",
+    "geometric": "A vertical line sweeps rightwards. Each rectangle switches on at x1 and off at x2. Between consecutive switch points the line carries a fixed set of y-intervals; project them onto the y-axis, merge overlaps, and multiply the merged length by the distance to the next switch point to get one slab of the union.",
+    "visual": "A=[0,0,2,2]  B=[1,0,2,3]  C=[1,0,3,1]   (schematic)\nevents by x:  0:+A   1:+B,+C   2:-A,-B   3:-C\n\n  3      +-+          sweep line between x=1 and x=2:\n  2  +---+B+          active y-intervals [0,2] [0,3] [0,1]\n  1  | A |B|C+        merged -> [0,3], length 3\n  0  +---+-+-+\n     0   1 2 3\n\nslab [0,1): {A}      covered 2  -> 1 * 2 = 2\nslab [1,2): {A,B,C}  covered 3  -> 1 * 3 = 3\nslab [2,3): {C}      covered 1  -> 1 * 1 = 1    total 6",
+    "steps": [
+      "For each rectangle emit (x1, +1, y1, y2) and (x2, -1, y1, y2); sort events by x.",
+      "active = y-intervals currently cut by the sweep line; prev_x = first event x.",
+      "For each event at x: area += (x - prev_x) * covered(active); prev_x = x.",
+      "Then add or remove the event's y-interval from active.",
+      "covered(active): sort by start, clip each start to the running end, sum lengths.",
+      "Return area mod 1e9+7."
+    ],
+    "complexity": {
+      "time": "O(n^2 log n)",
+      "space": "O(n)",
+      "why": "2n events, each re-merging up to n active y-intervals in O(n log n)"
+    },
+    "pitfalls": [
+      "Computing the strip area after applying the event instead of before: the slab left of x uses the old active set.",
+      "Summing compressed cell counts instead of real coordinate differences.",
+      "Applying the modulo only at the end is fine in Python; in fixed-width languages the 1e18 intermediate overflows."
+    ],
+    "hints": [
+      "Where can the covered length of a vertical line change as it sweeps from left to right?",
+      "Only at rectangle edges. Sort the 2n x-events; between consecutive events the set of active rectangles is fixed, so area = width x (union length of their y-intervals).",
+      "Union length = sort the active y-intervals by start and merge. Add (x - prev_x) * covered before applying the event at x."
+    ],
+    "code": "class Solution:\n    def rectangleArea(self, rectangles: List[List[int]]) -> int:\n        MOD = 10**9 + 7\n        events = []\n        for x1, y1, x2, y2 in rectangles:\n            events.append((x1, 1, y1, y2))          # rectangle enters the sweep line\n            events.append((x2, -1, y1, y2))         # rectangle leaves it\n        events.sort()\n\n        active: List[tuple] = []                    # y-intervals cut by the line right now\n        area, prev_x = 0, events[0][0]\n        for x, kind, y1, y2 in events:\n            area += (x - prev_x) * self._covered(active)   # slab left of x uses the OLD set\n            prev_x = x\n            if kind == 1:\n                active.append((y1, y2))\n            else:\n                active.remove((y1, y2))\n        return area % MOD\n\n    @staticmethod\n    def _covered(intervals: List[tuple]) -> int:\n        \"\"\"Length of the union of y-intervals: sort by start, merge, sum.\"\"\"\n        total, reach = 0, float(\"-inf\")\n        for s, e in sorted(intervals):\n            s = max(s, reach)                       # clip away the part already counted\n            if e > s:\n                total += e - s\n                reach = e\n        return total",
+    "related": [
+      "merge_intervals",
+      "perfect_rectangle",
+      "meeting_rooms_ii",
+      "my_calendar_iii"
+    ]
+  },
+  {
+    "slug": "perfect_rectangle",
+    "title": "Perfect Rectangle",
+    "leetcode": 391,
+    "difficulty": "Hard",
+    "topic": "math_geometry",
+    "pattern": "Corner parity + area invariant",
+    "file": "math_geometry/perfect_rectangle.py",
+    "problem": "Given n axis-aligned rectangles [x1, y1, x2, y2], return True iff together they form an exact cover of some rectangle: no gaps and no overlaps. Example: [[1,1,3,3],[3,1,4,2],[3,2,4,4],[1,3,2,4],[2,3,3,4]] -> True (they tile the 3x3 square [1,1,4,4]); [[1,1,2,3],[1,3,2,4],[3,1,4,2],[3,2,4,4]] -> False (gap in the middle).",
+    "brute_force": {
+      "approach": "Compare every pair of rectangles for a positive-area overlap and check that the areas sum to the bounding-box area. No overlap plus matching area means every point of the box is covered exactly once. The wasted work is the pairwise overlap test: most pairs are nowhere near each other, yet every pair is examined.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(rectangles: List[List[int]]) -> bool:\n    \"\"\"Pairwise overlap test + total-area check. O(n^2).\"\"\"\n    for i, (ax1, ay1, ax2, ay2) in enumerate(rectangles):\n        for bx1, by1, bx2, by2 in rectangles[i + 1:]:\n            if ax1 < bx2 and bx1 < ax2 and ay1 < by2 and by1 < ay2:   # positive-area overlap\n                return False\n    min_x = min(r[0] for r in rectangles)\n    min_y = min(r[1] for r in rectangles)\n    max_x = max(r[2] for r in rectangles)\n    max_y = max(r[3] for r in rectangles)\n    area = sum((x2 - x1) * (y2 - y1) for x1, y1, x2, y2 in rectangles)\n    return area == (max_x - min_x) * (max_y - min_y)"
+    },
+    "optimization": "The O(n^2) term exists only to rule out overlaps; the area sum already rules out a gap without a compensating overlap. In a perfect tiling every corner point is shared by exactly 2 or 4 rectangles except the four corners of the bounding box, which belong to exactly one rectangle each. Toggle each rectangle's four corners in a set (add if absent, remove if present): only points touched an odd number of times survive, and a valid tiling leaves exactly the four outline corners. That is one O(n) pass with a hash set. Neither test alone suffices: two copies of [0,0,1,1] plus [0,0,2,2] pass the corner test (duplicate corners cancel) but have area 6 != 4; a gap balanced by an overlap elsewhere passes the area test but leaves stray corners. Together they are a complete characterisation.",
+    "intuition": "Each rectangle corner is a light switch. Interior meeting points are flipped an even number of times (two rectangles meet along an edge, four at a cross) and end up off; only the four outer corners are flipped once. Any gap or overlap creates an unmatched corner and leaves an extra light on. The area check closes the one loophole where cancellation hides an overlap.",
+    "geometric": "Lay the rectangles on graph paper. Where two tiles meet edge to edge their shared corners sit on top of each other in pairs; where four meet, in a group of four. Pair them off and they all disappear, leaving just the four corners of the outline. A missing or doubled tile breaks the pairing somewhere and that point sticks out.",
+    "visual": "a=[1,1,3,3] b=[3,1,4,2] c=[3,2,4,4]\nd=[1,3,2,4] e=[2,3,3,4]\n\n +---+---+---+   corner hit counts:\n | d | e |   |   2x -> cancel: (1,3)(2,3)(3,3)(3,1)\n +---+---+ c |                 (3,2)(2,4)(3,4)(4,2)\n |       +---+   1x -> survive: (1,1)(4,1)(4,4)(1,4)\n |   a   | b |   survivors == outline corners    OK\n +-------+---+   area 4+1+2+1+1 = 9 == 3*3        OK\n 1   2   3   4   -> True",
+    "steps": [
+      "Track min_x, min_y, max_x, max_y and the total area while scanning.",
+      "For each rectangle toggle its four corners in a set (symmetric difference).",
+      "After the scan the set must equal the four corners of the bounding box.",
+      "The summed area must equal (max_x - min_x) * (max_y - min_y).",
+      "Both conditions hold -> True."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "one pass with at most 4n corner toggles in a hash set"
+    },
+    "pitfalls": [
+      "Checking only corner parity: duplicate rectangles cancel their own corners.",
+      "Checking only area: a gap plus an overlap elsewhere can balance out.",
+      "Testing len(corners) == 4 without checking they are the bounding-box corners."
+    ],
+    "hints": [
+      "In a perfect tiling, how many rectangles share a given corner point?",
+      "Interior points are shared by 2 or 4 rectangles; only the four outline corners by exactly 1. Toggle corners in a set so even counts cancel.",
+      "Survivors must be exactly the bounding-box corners AND the summed area must equal the bounding-box area; each test alone has a counterexample."
+    ],
+    "code": "class Solution:\n    def isRectangleCover(self, rectangles: List[List[int]]) -> bool:\n        corners = set()\n        area = 0\n        min_x = min_y = float(\"inf\")\n        max_x = max_y = float(\"-inf\")\n        for x1, y1, x2, y2 in rectangles:\n            area += (x2 - x1) * (y2 - y1)\n            min_x, min_y = min(min_x, x1), min(min_y, y1)\n            max_x, max_y = max(max_x, x2), max(max_y, y2)\n            for p in ((x1, y1), (x1, y2), (x2, y1), (x2, y2)):\n                corners ^= {p}                       # toggle: interior corners cancel in pairs\n        outline = {(min_x, min_y), (min_x, max_y), (max_x, min_y), (max_x, max_y)}\n        return corners == outline and area == (max_x - min_x) * (max_y - min_y)",
+    "related": [
+      "rectangle_area_ii",
+      "merge_intervals",
+      "valid_sudoku"
+    ]
+  },
+  {
+    "slug": "my_calendar_iii",
+    "title": "My Calendar III",
+    "leetcode": 732,
+    "difficulty": "Hard",
+    "topic": "intervals",
+    "pattern": "Difference array / prefix-sum sweep",
+    "file": "intervals/my_calendar_iii.py",
+    "problem": "Implement MyCalendarThree. book(startTime, endTime) adds the half-open event [start, end) and returns the largest k such that some instant is covered by k events after this booking. Events are never rejected. Example: book(10,20) -> 1; book(50,60) -> 1; book(10,40) -> 2; book(5,15) -> 3; book(5,10) -> 3; book(25,55) -> 3.",
+    "brute_force": {
+      "approach": "Store every booked interval. After each booking the maximum overlap is attained at some event start, so for every start s count the intervals with start <= s < end and take the max. The wasted work: each start is compared against every interval, although walking the boundaries in sorted order lets one running counter answer 'how many events are open here' for all points at once.",
+      "time": "O(n^2) per book",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    \"\"\"Store every interval; count containment at every start point. O(n^2) per book.\"\"\"\n\n    def __init__(self):\n        self.events: List[tuple] = []\n\n    def book(self, startTime: int, endTime: int) -> int:\n        self.events.append((startTime, endTime))\n        best = 0\n        for s, _ in self.events:\n            best = max(best, sum(1 for a, b in self.events if a <= s < b))\n        return best"
+    },
+    "optimization": "The redundancy is recounting from scratch at every candidate point. The overlap at any instant equals (#starts <= t) - (#ends <= t), so record +1 at each start and -1 at each end in a map keyed by coordinate, then sweep the keys in sorted order while summing: the running total is the overlap at every boundary and its maximum is the answer. That is the difference-array / prefix-sum idea on a sparse, unbounded coordinate space. Keep the distinct boundaries in a sorted list (bisect.insort) so each book is one O(n) sweep, O(n^2) overall instead of O(n^3). The follow-up is a lazy segment tree (range add, global max) at O(log C) per book; the sweep is what you are expected to produce first and it passes.",
+    "intuition": "Overlap is a step function that rises by one at every start and falls by one at every end. Store only the steps. Summing them left to right reconstructs the function, and its highest step is the maximum k-booking.",
+    "geometric": "Draw each event as a horizontal bar and project the bar ends onto the time axis: every left end is an up-tick, every right end a down-tick. Walk the axis once with a counter; it traces the skyline of stacked bars, and the tallest point of that skyline is the answer.",
+    "visual": "book: [10,20) [50,60) [10,40) [5,15) [5,10) [25,55)\n\ndelta:  5:+2  10:+1  15:-1  20:-1  25:+1\n       40:-1  50:+1  55:-1  60:-1\n       (10 = two starts and the end of [5,10))\n\nsweep  p:     5  10  15  20  25  40  50  55  60\n       active 2   3   2   1   2   1   2   1   0\n                  ^ max = 3  ([10,20) [10,40) [5,15))",
+    "steps": [
+      "delta: dict coordinate -> net change (+1 per start, -1 per end); points: sorted list of distinct coordinates.",
+      "book(s, e): delta[s] += 1, delta[e] -= 1; insort each new coordinate into points.",
+      "Sweep points in order: active += delta[p]; best = max(best, active).",
+      "Return best."
+    ],
+    "complexity": {
+      "time": "O(n) per book, O(n^2) total",
+      "space": "O(n)",
+      "why": "one sorted sweep over at most 2n boundaries per call"
+    },
+    "pitfalls": [
+      "Treating intervals as closed: book(5,10) after book(10,20) must not overlap at 10.",
+      "Re-sorting all keys on every call when an ordered insert suffices.",
+      "Returning the overlap at the new interval only instead of the global maximum."
+    ],
+    "hints": [
+      "Overlap only changes at interval boundaries. What single number describes the change at each boundary?",
+      "+1 at every start, -1 at every end. Sweeping the boundaries in sorted order with a running sum gives the overlap everywhere.",
+      "Keep delta in a dict and the distinct boundaries in a sorted list via insort; each book sweeps once and returns the max running sum."
+    ],
+    "code": "class MyCalendarThree:\n    def __init__(self):\n        self.delta = {}       # boundary -> +1 for each start, -1 for each end\n        self.points = []      # sorted distinct boundaries\n\n    def book(self, startTime: int, endTime: int) -> int:\n        for p, d in ((startTime, 1), (endTime, -1)):\n            if p not in self.delta:\n                self.delta[p] = 0\n                insort(self.points, p)\n            self.delta[p] += d\n        best = active = 0\n        for p in self.points:                 # prefix sum of the steps = overlap at p\n            active += self.delta[p]\n            best = max(best, active)\n        return best",
+    "related": [
+      "meeting_rooms_ii",
+      "car_fleet",
+      "range_module",
+      "rectangle_area_ii"
+    ]
+  },
+  {
+    "slug": "patching_array",
+    "title": "Patching Array",
+    "leetcode": 330,
+    "difficulty": "Hard",
+    "topic": "greedy",
+    "pattern": "Greedy reach (furthest reachable index)",
+    "file": "greedy/patching_array.py",
+    "problem": "Given a sorted array nums and an integer n, add (patch) the minimum number of integers so that every value in [1, n] is the sum of some subset of the array; return that count. Example: nums = [1,3], n = 6 -> 1 (patch 2). nums = [1,5,10], n = 20 -> 2 (patch 2 and 4).",
+    "brute_force": {
+      "approach": "Compute the set of all subset sums of the current array, find the smallest value m <= n that is missing, patch m, and repeat until nothing is missing. Each round enumerates 2^k subsets, so the whole thing is exponential. The wasted work: materialising every subset sum when the only fact ever used is 'which prefix [1, reach] is fully covered', a single integer.",
+      "time": "exponential (2^k subset sums per round)",
+      "space": "O(n)",
+      "code": "def brute_force(nums: List[int], n: int) -> int:\n    \"\"\"Rebuild all subset sums (exponential) each round, patch the smallest missing value.\"\"\"\n    arr = list(nums)\n    patches = 0\n    while True:\n        sums = {0}\n        for x in arr:\n            sums |= {s + x for s in sums if s + x <= n}\n        missing = next((m for m in range(1, n + 1) if m not in sums), None)\n        if missing is None:\n            return patches\n        arr.append(missing)\n        patches += 1"
+    },
+    "optimization": "The redundancy is the full subset-sum set. Process nums in sorted order keeping reach = the largest value such that every sum in [1, reach] is buildable. If the next number x is <= reach + 1, adding it extends coverage to [1, reach + x] with no hole, because every old sum s yields s + x and the new sums start at x <= reach + 1. If x > reach + 1, the value reach + 1 is unreachable no matter what later (larger) numbers do, so a patch is forced, and the best patch is reach + 1 itself: it doubles coverage to [1, 2*reach + 1], the most any single patch can add. The invariant replaces the exponential set, and coverage at least doubles per patch, so there are O(log n) patches and O(len + log n) steps.",
+    "intuition": "Coverage is always a contiguous prefix [1, reach]. A number x <= reach + 1 glues onto that prefix and lengthens it by x; a bigger x would leave reach + 1 as a hole. When a hole is forced, fill it with the hole itself, the largest value that can be inserted without creating a new hole, and the prefix exactly doubles.",
+    "geometric": "The covered prefix is a solid bar from 1 to reach. Each array element that starts at or before the bar's end plus one extends the bar by its own length. When the next element starts beyond the bar's end, lay down a bar of exactly the current length right after it (patch = reach + 1) and the bar doubles.",
+    "visual": "nums = [1, 5, 10], n = 20    bar = covered prefix [1..reach]\n\nreach=0  next=1  <= 1  take 1    reach=1   |#|\nreach=1  next=5  >  2  PATCH 2   reach=3   |###|\nreach=3  next=5  >  4  PATCH 4   reach=7   |#######|\nreach=7  next=5  <= 8  take 5    reach=12  |############|\nreach=12 next=10 <= 13 take 10   reach=22  >= 20, done\n\npatches = 2  (values 2 and 4)",
+    "steps": [
+      "reach = 0, patches = 0, i = 0.",
+      "While reach < n: if i < len(nums) and nums[i] <= reach + 1: reach += nums[i]; i += 1.",
+      "Else: patch with reach + 1, so reach += reach + 1 and patches += 1.",
+      "Return patches."
+    ],
+    "complexity": {
+      "time": "O(len(nums) + log n)",
+      "space": "O(1)",
+      "why": "each loop step either consumes an element or doubles reach"
+    },
+    "pitfalls": [
+      "Patching with a value smaller than reach + 1 wastes a patch.",
+      "Comparing nums[i] <= reach instead of reach + 1 misses that x = reach + 1 is fine.",
+      "Forgetting that nums can be empty (patch 1, 2, 4, ... until reach >= n)."
+    ],
+    "hints": [
+      "If every sum in [1, reach] is buildable and you add a number x, which sums become buildable?",
+      "[1, reach + x], provided x <= reach + 1; otherwise reach + 1 is a hole. Keep only reach.",
+      "When nums[i] > reach + 1 (or nums is exhausted), patch reach + 1 and double reach; otherwise absorb nums[i]."
+    ],
+    "code": "class Solution:\n    def minPatches(self, nums: List[int], n: int) -> int:\n        reach = 0            # invariant: every sum in [1, reach] is buildable\n        patches = i = 0\n        while reach < n:\n            if i < len(nums) and nums[i] <= reach + 1:\n                reach += nums[i]           # no hole: [1, reach] + x covers [1, reach + x]\n                i += 1\n            else:\n                reach += reach + 1         # patch with reach + 1: coverage doubles\n                patches += 1\n        return patches",
+    "related": [
+      "jump_game_ii",
+      "minimum_number_of_taps_to_open_to_water_a_garden",
+      "jump_game"
+    ]
+  },
+  {
+    "slug": "split_array_largest_sum",
+    "title": "Split Array Largest Sum",
+    "leetcode": 410,
+    "difficulty": "Hard",
+    "topic": "binary_search",
+    "pattern": "Binary search on the answer",
+    "file": "binary_search/split_array_largest_sum.py",
+    "problem": "Split nums into k non-empty contiguous subarrays so that the largest subarray sum is as small as possible; return that minimised largest sum. Example: nums = [7,2,5,10,8], k = 2 -> 18 ([7,2,5] | [10,8]). nums = [1,2,3,4,5], k = 2 -> 9 ([1,2,3] | [4,5]).",
+    "brute_force": {
+      "approach": "Enumerate every placement of k-1 cut points among the n-1 gaps, compute the k piece sums for each placement, and keep the smallest maximum. C(n-1, k-1) placements, each costing O(n), so exponential in general. The wasted work: almost every placement is hopeless and is evaluated anyway, and placements sharing a prefix of cuts re-sum the same pieces again and again.",
+      "time": "exponential, O(n^k)",
+      "space": "O(k)",
+      "code": "def brute_force(nums: List[int], k: int) -> int:\n    \"\"\"Try every placement of k-1 cuts (exponential), keep the smallest largest piece.\"\"\"\n    n = len(nums)\n    best = float(\"inf\")\n    for cuts in combinations(range(1, n), k - 1):\n        bounds = (0, *cuts, n)\n        largest = max(sum(nums[a:b]) for a, b in zip(bounds, bounds[1:]))\n        best = min(best, largest)\n    return best"
+    },
+    "optimization": "Search over the answer instead of over placements. The predicate 'can the array be split into at most k pieces with every piece sum <= cap?' is monotone (a larger cap never hurts) and is decided greedily: scan left to right, keep adding to the current piece while the sum stays <= cap, cut when it would exceed, count pieces. Greedy produces the fewest pieces for a given cap, so pieces(cap) <= k iff cap is feasible. The answer lies in [max(nums), sum(nums)]; binary search there with the O(n) greedy check gives O(n log S). No DP table: a monotone predicate plus a greedy decision procedure is the whole optimisation.",
+    "intuition": "Flip the question. 'Minimise the largest piece' is hard to construct directly, but 'could every piece fit under a budget cap?' is a yes/no question with an obvious greedy answer: pack greedily and count. Yes/no answers over a monotone range are found by binary search.",
+    "geometric": "The array is a row of bars and cap is a horizontal water line. Pour from the left and start a new bucket whenever the running sum would spill over the line; fewer buckets as the line rises. Binary search raises or lowers the line until exactly k buckets suffice and one unit lower does not.",
+    "visual": "nums = [7, 2, 5, 10, 8], k = 2   search cap in [10, 32]\n\ncap=21: |7 2 5|10 8|     2 pieces  ok    -> hi = 21\ncap=15: |7 2 5|10|8|     3 pieces  fail  -> lo = 16\ncap=18: |7 2 5|10 8|     2 pieces  ok    -> hi = 18\ncap=17: |7 2 5|10|8|     3 pieces  fail  -> lo = 18\nlo == hi == 18\n\ngreedy at cap=18: 7+2+5 = 14, +10 = 24 > 18 -> cut\n                  10+8 = 18 fits        -> 2 pieces",
+    "steps": [
+      "lo = max(nums) (every element must fit), hi = sum(nums) (one piece).",
+      "pieces(cap): count = 1, cur = 0; for x: if cur + x > cap: count += 1, cur = 0; cur += x.",
+      "While lo < hi: mid = (lo + hi) // 2; if pieces(mid) <= k: hi = mid else lo = mid + 1.",
+      "Return lo."
+    ],
+    "complexity": {
+      "time": "O(n log S) with S = sum(nums)",
+      "space": "O(1)",
+      "why": "about log S feasibility scans of O(n) each"
+    },
+    "pitfalls": [
+      "Starting lo at 0 instead of max(nums): the greedy then builds pieces that still exceed cap.",
+      "Using pieces(mid) == k instead of <= k; fewer pieces can always be split further.",
+      "An off-by-one in the search that returns an infeasible cap."
+    ],
+    "hints": [
+      "Instead of choosing where to cut, guess the answer: can every piece fit under a given cap?",
+      "That predicate is monotone in cap and decidable greedily in O(n) by cutting whenever the running sum would exceed cap.",
+      "Binary search cap in [max(nums), sum(nums)]; feasible when the greedy piece count is <= k."
+    ],
+    "code": "class Solution:\n    def splitArray(self, nums: List[int], k: int) -> int:\n        def pieces_needed(cap: int) -> int:\n            \"\"\"Greedy: fewest pieces with every piece sum <= cap.\"\"\"\n            count, cur = 1, 0\n            for x in nums:\n                if cur + x > cap:          # would spill over: start a new piece\n                    count += 1\n                    cur = 0\n                cur += x\n            return count\n\n        lo, hi = max(nums), sum(nums)      # feasible answers live in [lo, hi]\n        while lo < hi:\n            mid = (lo + hi) // 2\n            if pieces_needed(mid) <= k:    # mid works -> try smaller\n                hi = mid\n            else:\n                lo = mid + 1\n        return lo",
+    "related": [
+      "koko_eating_bananas",
+      "binary_search",
+      "minimum_size_subarray_sum"
+    ]
+  },
+  {
+    "slug": "minimum_number_of_taps_to_open_to_water_a_garden",
+    "title": "Minimum Number of Taps to Open to Water a Garden",
+    "leetcode": 1326,
+    "difficulty": "Hard",
+    "topic": "greedy",
+    "pattern": "Greedy reach (furthest reachable index)",
+    "file": "greedy/minimum_number_of_taps_to_open_to_water_a_garden.py",
+    "problem": "A garden is the segment [0, n]. Tap i (0 <= i <= n) waters [i - ranges[i], i + ranges[i]]. Return the minimum number of taps to open so the whole garden is watered, or -1 if impossible. Example: n = 5, ranges = [3,4,1,1,0,0] -> 1 (tap 1 waters [-3, 5]). n = 3, ranges = [0,0,0,0] -> -1.",
+    "brute_force": {
+      "approach": "Try every subset of taps in increasing size and check whether the union of their intervals covers [0, n]. 2^(n+1) subsets, each checked in O(n). The wasted work: a tap is useless unless it covers the leftmost still-dry point, and among taps that do only the one reaching furthest right matters; subsets never exploit that.",
+      "time": "exponential, O(2^n * n)",
+      "space": "O(n)",
+      "code": "def brute_force(n: int, ranges: List[int]) -> int:\n    \"\"\"Try every subset of taps by increasing size (exponential), check coverage of [0, n].\"\"\"\n    taps = list(range(n + 1))\n    for size in range(0, n + 2):\n        for chosen in combinations(taps, size):\n            wet = [False] * n                       # wet[p] = unit segment [p, p+1] watered\n            for i in chosen:\n                for p in range(max(0, i - ranges[i]), min(n, i + ranges[i])):\n                    wet[p] = True\n            if all(wet):\n                return size\n    return -1"
+    },
+    "optimization": "Tap i is the interval [max(0, i - r), i + r]. Build reach[l] = the furthest right end of any interval starting at l (O(n)). Standing at point l with everything to the left wet, 'jump' to reach[l] is exactly Jump Game II: positions wettable with j taps form a contiguous prefix [0, cur_end], and the next tap extends it to the max of reach over that prefix. Scan i from 0 to n-1 maintaining farthest = max(reach[0..i]); whenever i == cur_end another tap must be opened, and if farthest == i nothing gets past i, so return -1. Two optimisation steps: subsets -> interval covering sorted by start (O(n log n), the classic greedy) -> noticing starts are already integers in [0, n], so an array replaces the sort (O(n)).",
+    "intuition": "Convert each tap into 'from position l you can jump to reach[l]'. Watering the whole garden with the fewest taps is reaching index n with the fewest jumps. Each BFS level is the prefix watered with j taps; the next level's right edge is the furthest any tap starting inside the current prefix can reach.",
+    "geometric": "The garden is a number line and each tap a horizontal bar. Walk left to right carrying the wet frontier cur_end, noting the longest bar that starts at or before you. When you step onto cur_end you must open the tap owning that longest bar and the frontier jumps to its right end; if that bar does not extend past you, the point just beyond can never be wetted.",
+    "visual": "n = 5, ranges = [3,4,1,1,0,0]    tap i waters [i-r, i+r]\n         0    1    2    3    4    5\ntap1 r=4 |========================|   [0,5]\ntap0 r=3 |==============|             [0,3]\ntap2 r=1      |=========|             [1,3]\ntap3 r=1           |=========|        [2,4]\nreach[l]: 0->5  1->3  2->4  4->4  5->5\n\ni=0: farthest = 5; i == cur_end -> taps=1, cur_end=5\ni=1..4: i never equals cur_end again  -> answer 1",
+    "steps": [
+      "reach = [0] * (n + 1); for each tap i: l = max(0, i - ranges[i]); reach[l] = max(reach[l], i + ranges[i]).",
+      "taps = cur_end = farthest = 0.",
+      "For i in range(n): farthest = max(farthest, reach[i]).",
+      "If i == cur_end: if farthest <= i return -1; taps += 1; cur_end = farthest.",
+      "Return taps."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "one pass to bucket intervals by start, one Jump Game II scan"
+    },
+    "pitfalls": [
+      "Not clamping the left end at 0 (negative indices wrap around in Python).",
+      "Iterating to n inclusive and counting a spurious tap.",
+      "Checking farthest <= i after incrementing taps, which returns a count instead of -1."
+    ],
+    "hints": [
+      "Rewrite each tap as an interval [i - r, i + r]. Does this look like a problem you have solved on arrays?",
+      "Bucket intervals by their (clamped) start: reach[l] = furthest end from l. Now it is Jump Game II.",
+      "Scan i < n tracking farthest = max(reach[0..i]); at i == cur_end open a tap and jump cur_end to farthest, or return -1 if farthest <= i."
+    ],
+    "code": "class Solution:\n    def minTaps(self, n: int, ranges: List[int]) -> int:\n        reach = [0] * (n + 1)                 # reach[l] = furthest right end of a tap starting at l\n        for i, r in enumerate(ranges):\n            left = max(0, i - r)\n            reach[left] = max(reach[left], i + r)\n\n        taps = cur_end = farthest = 0         # Jump Game II over reach[]\n        for i in range(n):                    # position n itself needs no further tap\n            farthest = max(farthest, reach[i])\n            if i == cur_end:                  # end of the current wet prefix: must open a tap\n                if farthest <= i:             # no tap gets past i -> dry gap\n                    return -1\n                taps += 1\n                cur_end = farthest\n        return taps",
+    "related": [
+      "jump_game_ii",
+      "jump_game",
+      "patching_array",
+      "non_overlapping_intervals"
+    ]
+  },
+  {
+    "slug": "set_intersection_size_at_least_two",
+    "title": "Set Intersection Size At Least Two",
+    "leetcode": 757,
+    "difficulty": "Hard",
+    "topic": "greedy",
+    "pattern": "Greedy by earliest end (interval scheduling)",
+    "file": "greedy/set_intersection_size_at_least_two.py",
+    "problem": "Given closed integer intervals [start, end], find the smallest set of integers S such that every interval contains at least two elements of S; return |S|. Example: [[1,3],[3,7],[8,9]] -> 5 (S = {2,3,4,8,9}). [[1,3],[1,4],[2,5],[3,5]] -> 3 (S = {2,3,5}).",
+    "brute_force": {
+      "approach": "Let P be every integer from the smallest start to the largest end. Try every subset of P in increasing size and check that each interval contains at least two chosen points. Exponential in the coordinate range. The wasted work: when an interval forces a choice, the best points are the ones furthest right so they also serve later intervals, and the subsets never use that.",
+      "time": "exponential in the coordinate range",
+      "space": "O(n)",
+      "code": "def brute_force(intervals: List[List[int]]) -> int:\n    \"\"\"Try every subset of candidate points by increasing size (exponential).\"\"\"\n    lo = min(s for s, _ in intervals)\n    hi = max(e for _, e in intervals)\n    points = range(lo, hi + 1)\n    for size in range(2, len(points) + 1):\n        for chosen in combinations(points, size):\n            if all(sum(s <= p <= e for p in chosen) >= 2 for s, e in intervals):\n                return size\n    return -1   # unreachable: every interval has length >= 1 so all points always work"
+    },
+    "optimization": "Interval scheduling logic, doubled. Sort by end ascending, ties by start descending so that among intervals sharing an end the narrow ones are handled first and the wide ones are then already satisfied. Walk the sorted list keeping only the two largest chosen points a < b. For [s, e]: if s > b neither point is inside, so take two new points, and the best are e-1 and e (rightmost, so they overlap the most future intervals, which all end at >= e). If a < s <= b only b is inside, so add e. Otherwise both are inside and nothing is needed. The invariant 'a, b are the two largest chosen points and every processed interval holds two chosen points' is all the state required: O(n log n) sort, O(1) extra space.",
+    "intuition": "Process intervals by deadline. When an interval is short of points, add them as far right as possible: a point at e helps every later interval starting at or before e, and a point further left helps only a subset of those. Only the two most recent points can matter for later intervals because later intervals end further right.",
+    "geometric": "Intervals stacked and sorted by their right edge; two markers a and b sit on the number line at the two rightmost chosen points. For each interval in order, check whether its left edge is right of both markers (need 2), between them (need 1), or left of both (need 0). New markers always land on the interval's right edge, pushing a and b rightwards.",
+    "visual": "sorted by (end asc, start desc): [1,3] [1,4] [3,5] [2,5]\n\n x:   1   2   3   4   5\n      <------->          [1,3] s=1 > b=-1 : pick 2,3 a=2 b=3\n      <----------->      [1,4] s=1 <= a=2 : covered\n              <------->  [3,5] a < 3 <= b : pick 5   a=3 b=5\n          <----------->  [2,5] s=2 <= a=3 : covered\n pts:     *   *       *  -> {2, 3, 5}, answer 3",
+    "steps": [
+      "Sort by (end ascending, start descending).",
+      "a = b = -1 (no points yet), count = 0.",
+      "For each [s, e]: if s > b: a, b = e-1, e; count += 2.",
+      "elif s > a: a, b = b, e; count += 1.",
+      "Return count."
+    ],
+    "complexity": {
+      "time": "O(n log n)",
+      "space": "O(1)",
+      "why": "one sort, then a single pass holding two integers"
+    },
+    "pitfalls": [
+      "Breaking end-ties by start ascending: with points {0,1} then [1,5],[3,5], the wide interval grabs 5 and the narrow one grabs 5 again, so [[0,1],[1,5],[3,5],[5,6]] returns 4 instead of 5.",
+      "Choosing e and e+1, or s and s+1, instead of e-1 and e.",
+      "Using >= instead of > in the comparisons; endpoints are inclusive."
+    ],
+    "hints": [
+      "Classic interval scheduling picks the earliest end first. Here each interval needs two points instead of one.",
+      "Sort by end (ties: start descending) and remember only the two largest chosen points; when forced to add points, add them at the right end.",
+      "If s > b take e-1 and e; elif s > a take e; else nothing. Return the number taken."
+    ],
+    "code": "class Solution:\n    def intersectionSizeTwo(self, intervals: List[List[int]]) -> int:\n        intervals.sort(key=lambda iv: (iv[1], -iv[0]))   # end asc, start desc\n        a = b = -1                   # two largest chosen points so far, a < b\n        count = 0\n        for s, e in intervals:\n            if s > b:                # neither chosen point inside -> take e-1, e\n                a, b = e - 1, e\n                count += 2\n            elif s > a:              # only b inside -> add e\n                a, b = b, e\n                count += 1\n        return count",
+    "related": [
+      "non_overlapping_intervals",
+      "merge_intervals",
+      "minimum_number_of_taps_to_open_to_water_a_garden"
+    ]
+  },
+  {
+    "slug": "couples_holding_hands",
+    "title": "Couples Holding Hands",
+    "leetcode": 765,
+    "difficulty": "Hard",
+    "topic": "greedy",
+    "pattern": "Union-Find (disjoint set union)",
+    "file": "greedy/couples_holding_hands.py",
+    "problem": "2n people sit in a row; persons 2k and 2k+1 are a couple. A swap exchanges any two people. Return the minimum number of swaps so every couple sits side by side on a couch (seats 2i, 2i+1). Example: row = [0,2,1,3] -> 1 (swap seats 1 and 2). row = [3,2,0,1] -> 0.",
+    "brute_force": {
+      "approach": "Breadth-first search over seatings: from the current row generate every one of the C(2n, 2) swaps and stop at the first row where all couples are adjacent. The state space is (2n)! permutations, so this is exponential. The wasted work: almost all swaps move people who are already with their partner or fix nothing, and the search explores every such dead end.",
+      "time": "exponential, O((2n)! * n^2)",
+      "space": "O((2n)!)",
+      "code": "def brute_force(row: List[int]) -> int:\n    \"\"\"BFS over seatings, one swap per edge; exponential state space (2n)!.\"\"\"\n    def solved(state: tuple) -> bool:\n        return all(state[i] // 2 == state[i + 1] // 2 for i in range(0, len(state), 2))\n\n    start = tuple(row)\n    dist = {start: 0}\n    queue = deque([start])\n    while queue:\n        cur = queue.popleft()\n        if solved(cur):\n            return dist[cur]\n        for i in range(len(cur)):\n            for j in range(i + 1, len(cur)):\n                nxt = list(cur)\n                nxt[i], nxt[j] = nxt[j], nxt[i]\n                nxt = tuple(nxt)\n                if nxt not in dist:\n                    dist[nxt] = dist[cur] + 1\n                    queue.append(nxt)\n    return -1"
+    },
+    "optimization": "Look at couples instead of people: person p belongs to couple p // 2. Build a graph whose nodes are the n couples with one edge per couch joining the two couples seated there. Every couple has two members, so every node has degree exactly 2 and the graph decomposes into disjoint cycles; a couch already holding a couple is a self-loop. A cycle of k couples can be fixed with k-1 swaps (each swap seats one couple and shrinks the cycle by one) and no swap can finish two couples at once without touching two cycles, so k-1 is also a lower bound. Summing gives n - (#cycles). Union-find over the n couples counts cycles in O(n alpha(n)); the greedy 'fix seat 2i by swapping its partner in' gives the same count in O(n) with a position table, but union-find exposes why the count is optimal.",
+    "intuition": "Each couple is a node; each couch is an edge between the two couples sitting on it. The mess is a set of cycles, and untangling a cycle of k couples takes exactly k-1 swaps. So the answer is (number of couples) - (number of cycles): the more fragmented the seating, the fewer swaps it needs.",
+    "geometric": "Draw n dots (couples). For each couch, draw a cord between the couples of the two people on it. A couch seating a real couple gives a cord from a dot to itself: done. Everything else forms closed loops of dots, and each loop of k dots costs k-1 swaps, so the total is n minus the number of loops (self-loops included).",
+    "visual": "row = [5, 4, 2, 6, 3, 1, 0, 7]     couple id = person // 2\ncouch 0: (5,4) -> ids 2,2    couch 2: (3,1) -> ids 1,0\ncouch 1: (2,6) -> ids 1,3    couch 3: (0,7) -> ids 0,3\n\nnodes = couple ids, one edge per couch:\n   2 (self-loop)        1 --- 3      cycle of 3 couples\n                         \\   /       -> 3 - 1 = 2 swaps\n                           0\ncomponents = 2 -> swaps = n - components = 4 - 2 = 2",
+    "steps": [
+      "n = len(row) // 2 couples; parent = list(range(n)); components = n.",
+      "For each couch (seats i, i+1 with i even): a = row[i] // 2, b = row[i+1] // 2.",
+      "union(a, b): if their roots differ, link them and components -= 1.",
+      "Return n - components."
+    ],
+    "complexity": {
+      "time": "O(n alpha(n))",
+      "space": "O(n)",
+      "why": "one union per couch with path compression"
+    },
+    "pitfalls": [
+      "Unioning the two seat indices instead of the two couple ids (wrong node set).",
+      "Counting cycles as edges - nodes instead of n - components.",
+      "Forgetting that a couch already holding a couple is a self-loop that still counts as one component."
+    ],
+    "hints": [
+      "Map each person to a couple id with p // 2. What does each couch tell you about two couple ids?",
+      "Each couch is an edge between two couples; every couple has degree 2, so the graph is a set of cycles.",
+      "A cycle of k couples needs k-1 swaps. Union-find the couple ids per couch; answer = n - components."
+    ],
+    "code": "class Solution:\n    def minSwapsCouples(self, row: List[int]) -> int:\n        n = len(row) // 2                    # nodes = couples; each couch is an edge\n        parent = list(range(n))\n\n        def find(x: int) -> int:\n            while parent[x] != x:\n                parent[x] = parent[parent[x]]   # path halving\n                x = parent[x]\n            return x\n\n        components = n\n        for i in range(0, len(row), 2):\n            a, b = find(row[i] // 2), find(row[i + 1] // 2)   # couple ids on this couch\n            if a != b:\n                parent[a] = b\n                components -= 1\n        return n - components                # each cycle of k couples costs k-1 swaps",
+    "related": [
+      "redundant_connection",
+      "number_of_connected_components",
+      "accounts_merge",
+      "graph_valid_tree"
+    ]
+  },
+  {
+    "slug": "stamping_the_sequence",
+    "title": "Stamping The Sequence",
+    "leetcode": 936,
+    "difficulty": "Hard",
+    "topic": "greedy",
+    "pattern": "Reverse greedy (undo the last move first)",
+    "file": "greedy/stamping_the_sequence.py",
+    "problem": "Starting from a string of len(target) '?' characters, repeatedly place stamp anywhere, overwriting the characters beneath it. Return any sequence of at most 10 * len(target) stamp positions that produces target, or [] if impossible. Example: stamp = 'abc', target = 'ababc' -> [0, 2] (stamp at 0 gives 'abc??', at 2 gives 'ababc'); [1, 0, 2] is also accepted.",
+    "brute_force": {
+      "approach": "Forward BFS over partial strings: start at '????', from each string stamp at every one of the n - m + 1 positions, and stop when the target appears. Each cell can hold any letter or '?', so the state space is exponential in n. The wasted work: forwards you never know which stamps will later be overwritten, so every order must be explored, and most orders are equivalent up to overwriting.",
+      "time": "exponential in len(target)",
+      "space": "exponential",
+      "code": "def brute_force(stamp: str, target: str) -> List[int]:\n    \"\"\"Forward BFS over partial strings from '???...'; exponential state space.\"\"\"\n    m, n = len(stamp), len(target)\n    start = \"?\" * n\n    prev = {start: None}\n    queue = deque([start])\n    while queue:\n        cur = queue.popleft()\n        if cur == target:\n            path = []\n            while prev[cur] is not None:\n                cur, pos = prev[cur]\n                path.append(pos)\n            return path[::-1]\n        for i in range(n - m + 1):\n            nxt = cur[:i] + stamp + cur[i + m:]\n            if nxt not in prev:\n                prev[nxt] = (cur, i)\n                queue.append(nxt)\n    return []"
+    },
+    "optimization": "Reverse the process. The last stamp applied is visible intact: some window of target equals stamp exactly. Peel it off by replacing that window with '?' wildcards (whatever was underneath was overwritten anyway). Now the second-to-last stamp is an exact match on the remaining letters with '?' standing for anything, and so on. The greedy is safe because un-stamping a matching window never hurts a later un-stamp: turning letters into '?' only makes other windows easier to match. So scan positions, un-stamp every window that matches and still has at least one real letter, repeat until all '?' or a full pass makes no progress (impossible). Reverse the recorded positions for the forward order. Each pass is O((n - m) m) and every productive pass erases at least one letter, so worst case O(n (n - m) m) with O(n) space; a done flag per window skips fully erased ones.",
+    "intuition": "Working backwards turns an unknowable question ('what will be covered later?') into a visible one ('which window looks exactly like the stamp right now?'). Erased cells become wildcards, so the set of matchable windows only grows as you peel, which is why any peeling order works and no backtracking is needed.",
+    "geometric": "The target is a strip of tiles. Slide the stamp along it; wherever every tile under the stamp matches or is already blank, lift those tiles off (blank them) and note the position. Keep sliding and lifting until the strip is blank; the lifting order read backwards is the stamping order.",
+    "visual": "stamp = \"abc\", target = \"ababc\"\n\npass 1  i=0: \"aba\" vs \"abc\" -> mismatch\n        i=1: \"bab\" vs \"abc\" -> mismatch\n        i=2: \"abc\" == \"abc\" -> ERASE t=\"ab???\" moves=[2]\npass 2  i=0: \"ab?\" ('?' free) -> ERASE t=\"?????\" moves=[2,0]\nstars == 5 -> reverse -> [0, 2]\n\nforward: \"?????\" -@0-> \"abc??\" -@2-> \"ababc\"",
+    "steps": [
+      "t = list(target); stars = 0; moves = []; done[i] = window i fully erased.",
+      "unstamp(i): collect the non-'?' positions in window i; if any differs from stamp, return 0; else set them to '?' and return how many were erased.",
+      "Loop: for each i not done, if unstamp(i) erased anything, append i, mark done, note progress.",
+      "If a full pass makes no progress while stars < n: return [].",
+      "When stars == n: return moves reversed."
+    ],
+    "complexity": {
+      "time": "O(n (n - m) m) worst case",
+      "space": "O(n)",
+      "why": "at most n productive passes, each scanning every window against the stamp"
+    },
+    "pitfalls": [
+      "Counting a window that is already all '?' as progress (infinite loop).",
+      "Forgetting to reverse the recorded positions.",
+      "Stopping after one left-to-right pass; windows that only match after a neighbour is erased need another pass."
+    ],
+    "hints": [
+      "The last stamp placed is still fully visible in the target. Where?",
+      "Find a window equal to the stamp, replace it with '?' wildcards, and repeat; '?' matches anything because it was overwritten anyway.",
+      "Loop over windows erasing every match with at least one real letter until the string is all '?'; if a pass erases nothing, return []. Output the positions in reverse."
+    ],
+    "code": "class Solution:\n    def movesToStamp(self, stamp: str, target: str) -> List[int]:\n        m, n = len(stamp), len(target)\n        t = list(target)\n        done = [False] * (n - m + 1)        # window fully erased: never look again\n        moves: List[int] = []\n        stars = 0\n\n        def unstamp(i: int) -> int:\n            \"\"\"Erase window i if every live letter matches the stamp; return letters erased.\"\"\"\n            live = [k for k in range(i, i + m) if t[k] != \"?\"]\n            if any(t[k] != stamp[k - i] for k in live):\n                return 0\n            for k in live:\n                t[k] = \"?\"\n            return len(live)\n\n        while stars < n:\n            progressed = False\n            for i in range(n - m + 1):\n                if done[i]:\n                    continue\n                erased = unstamp(i)\n                if erased:                   # this window was the latest surviving stamp here\n                    stars += erased\n                    moves.append(i)\n                    done[i] = True\n                    progressed = True\n            if not progressed:\n                return []                    # letters remain but no window matches\n        return moves[::-1]                   # peeled last-first -> stamp first-last",
+    "related": [
+      "decode_string",
+      "minimum_remove_to_make_valid_parentheses",
+      "word_ladder"
+    ]
+  },
+  {
+    "slug": "super_washing_machines",
+    "title": "Super Washing Machines",
+    "leetcode": 517,
+    "difficulty": "Hard",
+    "topic": "greedy",
+    "pattern": "Prefix-sum flow bound",
+    "file": "greedy/super_washing_machines.py",
+    "problem": "n washing machines in a row hold machines[i] dresses. In one move you may pick any number of machines and have each pass one dress to an adjacent machine simultaneously. Return the minimum number of moves to equalise all machines, or -1 if impossible. Example: [1,0,5] -> 3 ([1,0,5] -> [1,1,4] -> [2,1,3] -> [2,2,2]). [0,3,0] -> 2. [0,2,0] -> -1.",
+    "brute_force": {
+      "approach": "BFS over machine states: from a state every machine independently sends one dress left, right, or nowhere (up to 3^n combinations), all applied simultaneously; stop at the first balanced state. The state space is every composition of the total into n parts, so the search is exponential. The wasted work: it rediscovers that the only quantity that matters, how many dresses must cross each boundary, is fixed by the input before any move is made.",
+      "time": "exponential (3^n transitions per state)",
+      "space": "exponential",
+      "code": "def brute_force(machines: List[int]) -> int:\n    \"\"\"BFS over states; each move = every machine sends 0/1 dress left or right. Exponential.\"\"\"\n    n = len(machines)\n    if sum(machines) % n:\n        return -1\n    goal = tuple([sum(machines) // n] * n)\n    start = tuple(machines)\n    dist = {start: 0}\n    queue = deque([start])\n    while queue:\n        cur = queue.popleft()\n        if cur == goal:\n            return dist[cur]\n        options = [(0,) + ((-1, 1) if cur[i] else ()) for i in range(n)]   # -1 left, +1 right\n        for choice in product(*options):\n            nxt = list(cur)\n            for i, d in enumerate(choice):\n                if d and 0 <= i + d < n:\n                    nxt[i] -= 1\n                    nxt[i + d] += 1\n            nxt = tuple(nxt)\n            if nxt not in dist:\n                dist[nxt] = dist[cur] + 1\n                queue.append(nxt)\n    return -1"
+    },
+    "optimization": "Let target = total / n (impossible unless divisible). Two lower bounds, both tight. Boundary flow: the net number of dresses that must cross the boundary after machine i is balance_i = sum(machines[0..i]) - (i+1) * target, and only one dress crosses a boundary per move in a direction, so moves >= max |balance_i|. Single source: a machine with excess e = machines[i] - target passes exactly one dress per move, so moves >= max e; a deficit is not a bound because a machine can receive from both neighbours at once. The larger bound is achievable by the standard schedule where every machine with positive excess passes one dress toward the side whose flow is still pending, so the answer is max over i of max(|balance_i|, excess_i): one prefix-sum pass, O(n) time, O(1) space.",
+    "intuition": "The row is a pipeline. The imbalance to the left of each boundary must physically pass through it one dress per move, so the biggest left/right imbalance is a floor on the moves. Separately, an overloaded machine can only shed one dress per move, so its surplus is also a floor. Nothing else constrains the schedule, so the answer is the larger floor.",
+    "geometric": "Plot the running balance (prefix excess) as a curve over the boundaries: its highest peak or deepest trough is the busiest boundary and that many dresses must march across it. Overlay per-machine excess bars; a single tall bar may also dominate because it drains one at a time. The answer is the tallest feature on either plot.",
+    "visual": "machines = [1, 0, 5]   total 6, n 3 -> target 2\n\ni  load  excess  balance(prefix)  |balance|  excess\n0   1     -1        -1               1        -1\n1   0     -2        -3               3        -2\n2   5     +3         0               0        +3\n        max |balance| = 3,  max excess = 3  -> 3\n\nboundary 1|2 must carry 3 dresses leftward, 1 per move:\n[1,0,5] -> [1,1,4] -> [2,1,3] -> [2,2,2]",
+    "steps": [
+      "total = sum(machines); if total % n: return -1; target = total // n.",
+      "balance = 0; best = 0.",
+      "For each load: excess = load - target; balance += excess; best = max(best, abs(balance), excess).",
+      "Return best."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "a single prefix-sum pass"
+    },
+    "pitfalls": [
+      "Taking max |balance| only: [0,3,0] gives 1 instead of 2 because the middle machine must shed 2 dresses one per move.",
+      "Taking abs(excess) instead of excess: [3,0,3] gives 2 instead of 1 because a deficit fills from both sides in one move.",
+      "Forgetting the divisibility check."
+    ],
+    "hints": [
+      "How many dresses must cross the boundary between machine i and i+1 in total? Is that number a choice or forced?",
+      "It is forced: the prefix sum of (load - target). At most one dress crosses per move, so max |prefix| is a lower bound; a machine's own surplus is another.",
+      "Answer = max over i of max(|prefix_i|, excess_i); both bounds are achievable together. Return -1 if total % n != 0."
+    ],
+    "code": "class Solution:\n    def findMinMoves(self, machines: List[int]) -> int:\n        total, n = sum(machines), len(machines)\n        if total % n:\n            return -1\n        target = total // n\n        best = balance = 0\n        for load in machines:\n            excess = load - target\n            balance += excess                 # net dresses that must cross the boundary to the right\n            best = max(best, abs(balance), excess)   # a deficit can fill from both sides at once\n        return best",
+    "related": [
+      "gas_station",
+      "product_of_array_except_self",
+      "subarray_sum_equals_k"
+    ]
+  }
+]

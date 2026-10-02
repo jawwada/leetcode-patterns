@@ -1,0 +1,592 @@
+[
+  {
+    "slug": "sudoku_solver",
+    "title": "Sudoku Solver",
+    "leetcode": 37,
+    "difficulty": "Hard",
+    "topic": "backtracking",
+    "pattern": "Constraint backtracking with bitmasks (most-constrained cell first)",
+    "file": "backtracking/sudoku_solver.py",
+    "problem": "Fill a partially filled 9x9 board (digits '1'-'9', '.' for empty) in place so that every row, every column and every 3x3 box contains each digit exactly once. The input has exactly one solution. Example: the classic board whose first row is \"53..7....\" is completed so that row becomes \"534678912\".",
+    "brute_force": {
+      "approach": "Scan for the first empty cell, try the digits 1..9 in order, and check each one by walking its row, column and box (27 cells); recurse, and undo on failure. This is exponential, O(9^E) for E empty cells. The waste is twofold: every placement rescans 27 cells to rediscover which digits are already used, and the first empty cell is expanded even when it has 6 legal digits while another cell has exactly 1.",
+      "time": "O(9^E * 27)",
+      "space": "O(E)",
+      "code": "def brute_force(board: List[List[str]]) -> None:\n    # First empty cell, digits 1..9 in order, legality by rescanning row + column + box.\n    def legal(r: int, c: int, d: str) -> bool:\n        br, bc = r // 3 * 3, c // 3 * 3\n        return all(board[r][k] != d and board[k][c] != d and\n                   board[br + k // 3][bc + k % 3] != d for k in range(9))\n\n    def solve() -> bool:\n        for r in range(9):\n            for c in range(9):\n                if board[r][c] == \".\":\n                    for d in \"123456789\":\n                        if legal(r, c, d):\n                            board[r][c] = d\n                            if solve():\n                                return True\n                            board[r][c] = \".\"\n                    return False                          # exponential: no digit fits here\n        return True\n\n    solve()"
+    },
+    "optimization": "Redundancy 1 is the 27-cell rescan. 'Digit d is used in row r' is set membership, so keep one 9-bit mask per row, column and box: a cell's legal digits are ~(row|col|box) in O(1), and a placement is three OR-ins undone by three XORs. Redundancy 2 is branching on a loosely constrained cell, where a wrong guess is only discovered many levels down. Minimum remaining values fixes this: always expand the empty cell with the fewest legal digits, so a 0-candidate cell kills the branch at once and a 1-candidate cell is a free forced move. The invariant is that the masks always equal the digits on the board.",
+    "intuition": "Sudoku is 'assign values under all-different constraints', and backtracking is the only general tool, so the work is in pruning. Bitmasks make the legality test free. MRV extends the partial solution where the fewest options remain, so wrong guesses fail after one or two levels instead of twenty. On typical puzzles most levels are forced moves with a single child.",
+    "geometric": "Picture three 9x9 shadow grids of bits, one lit per (row, digit), (col, digit) and (box, digit). A cell's candidates are the digits that are dark in all three shadows. The search tree is very narrow: each level picks the cell with the smallest shadow intersection, so most levels have one child and dead ends are cut on sight.",
+    "visual": "digit:       9 8 7 6 5 4 3 2 1\nrows[0]   =  0 0 1 0 1 0 1 0 0   {3,5,7}\ncols[2]   =  0 1 0 0 0 0 0 0 0   {8}\nboxes[0]  =  1 1 0 1 1 0 1 0 0   {3,5,6,8,9}\nOR        =  1 1 1 1 1 0 1 0 0\ncand(0,2) =  0 0 0 0 0 1 0 1 1   {1,2,4} -> 3 children\n\nMRV scan over all empties (count of candidates):\n  (0,2):3  (0,3):2 ...  (4,4):1 {5}  <- pick this one\n  forced move: 1 child, no real branching\n  a cell with 0 candidates -> X prune branch now\nplace d: rows|=bit cols|=bit boxes|=bit\nundo  d: rows^=bit cols^=bit boxes^=bit",
+    "steps": [
+      "Scan the board once: build rows[9], cols[9], boxes[9] bitmasks and the list of empty cells.",
+      "dfs(): if no empty cells remain, the board is solved; return True.",
+      "Pick the empty cell with the fewest candidates, where candidates = ~(rows[r] | cols[c] | boxes[b]) & 0x3FE.",
+      "For each candidate bit: set it in the three masks and on the board, recurse, and on failure XOR it back out.",
+      "If no digit works, restore the cell to '.', put it back on the empty list and return False."
+    ],
+    "complexity": {
+      "time": "O(9^E)",
+      "space": "O(E)",
+      "why": "Worst case is exponential in the E empty cells, but bitmask checks are O(1) and MRV keeps the tree tiny in practice; the stack is at most E deep."
+    },
+    "pitfalls": [
+      "Undoing the board cell but not the three masks when backtracking.",
+      "Computing the box index as r // 3 + c // 3 instead of r // 3 * 3 + c // 3.",
+      "Mixing bit conventions: here digit d lives at bit d (1 << d), so the mask of legal digits is & 0x3FE, not & 0x1FF."
+    ],
+    "hints": [
+      "Checking legality by rescanning the row, column and box costs 27 reads per try. How could you know the used digits of a unit instantly?",
+      "Keep a 9-bit mask per row, column and box. Then think about which empty cell to fill next: does the order matter?",
+      "Always branch on the empty cell whose (row|col|box) complement has the fewest set bits; place a digit with OR, undo with XOR, and return True as soon as no empties remain."
+    ],
+    "code": "class Solution:\n    def solveSudoku(self, board: List[List[str]]) -> None:\n        rows, cols, boxes = [0] * 9, [0] * 9, [0] * 9     # bit d set <=> digit d already used\n        empties = []\n        for r in range(9):\n            for c in range(9):\n                if board[r][c] == \".\":\n                    empties.append((r, c))\n                else:\n                    bit = 1 << int(board[r][c])\n                    rows[r] |= bit; cols[c] |= bit; boxes[r // 3 * 3 + c // 3] |= bit\n\n        def candidates(r: int, c: int) -> int:        # 9-bit mask of legal digits for (r, c)\n            return ~(rows[r] | cols[c] | boxes[r // 3 * 3 + c // 3]) & 0x3FE\n\n        def dfs() -> bool:\n            if not empties:\n                return True\n            # MRV: expand the cell with the fewest legal digits (0 -> immediate dead end)\n            i = min(range(len(empties)), key=lambda k: bin(candidates(*empties[k])).count(\"1\"))\n            empties[i], empties[-1] = empties[-1], empties[i]\n            r, c = empties.pop()\n            b = r // 3 * 3 + c // 3\n            cand = candidates(r, c)\n            while cand:\n                bit = cand & -cand                        # lowest candidate digit\n                cand ^= bit\n                rows[r] |= bit; cols[c] |= bit; boxes[b] |= bit\n                board[r][c] = str(bit.bit_length() - 1)\n                if dfs():\n                    return True\n                rows[r] ^= bit; cols[c] ^= bit; boxes[b] ^= bit\n            board[r][c] = \".\"\n            empties.append((r, c))\n            empties[i], empties[-1] = empties[-1], empties[i]\n            return False\n\n        dfs()",
+    "related": [
+      "valid_sudoku",
+      "n_queens",
+      "word_search"
+    ]
+  },
+  {
+    "slug": "twenty_four_game",
+    "title": "24 Game",
+    "leetcode": 679,
+    "difficulty": "Hard",
+    "topic": "backtracking",
+    "pattern": "Reduce-the-multiset backtracking (combine two values, recurse on the rest)",
+    "file": "backtracking/twenty_four_game.py",
+    "problem": "Given four cards with values 1..9, decide whether +, -, *, / (real division) and parentheses can be arranged so the expression equals 24. Every card is used exactly once and operators are binary. Example: [4,1,8,7] -> True because (8 - 4) * (7 - 1) = 24; [1,2,1,2] -> False.",
+    "brute_force": {
+      "approach": "Enumerate every full expression: 4! card orders times 4^3 operator triples times the 5 ways to parenthesise four operands, evaluating each exactly and comparing with 24 (7680 expressions). Commutative duplicates such as a+b and b+a are evaluated separately, and parenthesisations that share a sub-expression recompute it. The five tree shapes also have to be written out by hand.",
+      "time": "O(4! * 4^3 * 5)",
+      "space": "O(1)",
+      "code": "def brute_force(cards: List[int]) -> bool:\n    # Every order x every operator triple x every one of the 5 parenthesisations, exact arithmetic.\n    def ap(x, y, op):\n        if op == \"+\":\n            return x + y\n        if op == \"-\":\n            return x - y\n        return x * y if op == \"*\" else x / y          # Fraction raises on division by zero\n\n    shapes = (lambda a, b, c, d, p, q, r: ap(ap(ap(a, b, p), c, q), d, r),   # ((a b) c) d\n              lambda a, b, c, d, p, q, r: ap(ap(a, ap(b, c, q), p), d, r),   # (a (b c)) d\n              lambda a, b, c, d, p, q, r: ap(ap(a, b, p), ap(c, d, r), q),   # (a b) (c d)\n              lambda a, b, c, d, p, q, r: ap(a, ap(ap(b, c, q), d, r), p),   # a ((b c) d)\n              lambda a, b, c, d, p, q, r: ap(a, ap(b, ap(c, d, r), q), p))   # a (b (c d))\n    for order in permutations(Fraction(x) for x in cards):\n        for ops in product(\"+-*/\", repeat=3):\n            for shape in shapes:\n                try:\n                    if shape(*order, *ops) == 24:\n                        return True\n                except ZeroDivisionError:\n                    pass\n    return False"
+    },
+    "optimization": "The redundancy is that many (order, shape, operators) triples pass through the same intermediate state. Any evaluation of a 4-operand expression is three steps, each taking two values on the table and replacing them with one result. So the state is just the multiset of remaining values, and the search becomes 'pick an unordered pair, combine it in one of six ways (a+b, a-b, b-a, a*b, a/b, b/a), recurse on the shorter list'. The tree shapes fall out of which pair you pick next, commutative duplicates are computed once, and floats with an epsilon handle cases like 8 / (3 - 8/3) = 24.",
+    "intuition": "Stop thinking in expression trees and think in table states: four numbers, then three, then two, then one. Every legal expression is some way of collapsing the table, so collapsing it exhaustively covers every expression without enumerating parentheses. Subtraction and division are not commutative, so iterating pairs with i < j means you must produce both a-b and b-a, and both a/b and b/a. Returning on the first success keeps typical runs far below the 3888-leaf bound.",
+    "geometric": "A tree of depth 3. The root holds 4 values and has 6 pairs x 6 results = 36 children, each a 3-value table. Each of those has 3 x 6 = 18 children, and each of those has 6 leaves holding a single value. A leaf succeeds if it is within 1e-6 of 24.",
+    "visual": "[4,1,8,7]                      36 children (6 pairs x 6)\n |-(4,1) 4+1 -> [8,7,5]   18 kids ... all X\n |-(4,1) 4-1 -> [8,7,3]   ... X\n |-(4,1) 1-4 -> [8,7,-3]  ... X\n |-(4,1) 4*1 -> [8,7,4]\n |    |-(8,7) 15, 1, -1, 56, 8/7, 7/8   -> all X\n |    |-(8,4) 12, 4, -4, 32, 2, 0.5     -> all X\n |    |-(7,4) 7-4=3 -> [8,3]\n |          8+3 X  8-3 X  3-8 X  8*3 = 24  -> True\n |-(4,8) ... never visited: early return\nleaf test: |v - 24| < 1e-6   (8/(3-8/3) = 24.000..)",
+    "steps": [
+      "Convert the cards to floats and call solve(nums).",
+      "If one number remains, return |nums[0] - 24| < 1e-6.",
+      "For every unordered pair (i < j), build rest = the other numbers.",
+      "For each of a+b, a-b, b-a, a*b, a/b (if b != 0) and b/a (if a != 0), recurse on rest + [value].",
+      "Return True on the first success, False once every pair and result fails."
+    ],
+    "complexity": {
+      "time": "O(1)",
+      "space": "O(1)",
+      "why": "Four cards give at most 36 * 18 * 6 = 3888 leaves and a recursion depth of 3."
+    },
+    "pitfalls": [
+      "Comparing floats with == instead of a tolerance (8/(3-8/3) is not exactly 24.0).",
+      "Iterating i < j but forgetting b-a and b/a; subtraction and division are not commutative.",
+      "Dividing by zero (or a value that is ~0) without a guard."
+    ],
+    "hints": [
+      "Every expression is evaluated by repeatedly merging two of the remaining numbers into one. What is the state after a merge?",
+      "The state is just the list of remaining values. Pick any two, replace them with a combined value, and recurse until one value is left.",
+      "For each pair (i < j) try a+b, a-b, b-a, a*b, a/b, b/a (guarding zero), recurse on rest + [v], and accept a final value within 1e-6 of 24."
+    ],
+    "code": "class Solution:\n    def judgePoint24(self, cards: List[int]) -> bool:\n        EPS = 1e-6\n\n        def solve(nums: List[float]) -> bool:\n            if len(nums) == 1:\n                return abs(nums[0] - 24) < EPS\n            n = len(nums)\n            for i in range(n):\n                for j in range(i + 1, n):\n                    a, b = nums[i], nums[j]\n                    rest = [nums[k] for k in range(n) if k != i and k != j]\n                    results = [a + b, a - b, b - a, a * b]      # six ways to merge the pair\n                    if abs(b) > EPS:\n                        results.append(a / b)\n                    if abs(a) > EPS:\n                        results.append(b / a)\n                    for v in results:\n                        if solve(rest + [v]):                   # table shrinks by one value\n                            return True\n            return False\n\n        return solve([float(x) for x in cards])",
+    "related": [
+      "expression_add_operators",
+      "permutations",
+      "basic_calculator_ii"
+    ]
+  },
+  {
+    "slug": "expression_add_operators",
+    "title": "Expression Add Operators",
+    "leetcode": 282,
+    "difficulty": "Hard",
+    "topic": "backtracking",
+    "pattern": "Backtracking with running value + last operand",
+    "file": "backtracking/expression_add_operators.py",
+    "problem": "Given a digit string num and an integer target, insert '+', '-' or '*' between some of the digits (or nothing, to form multi-digit operands) so that the expression equals target. Return all such expressions. Operands may not have leading zeros. Example: num = \"123\", target = 6 -> [\"1*2*3\", \"1+2+3\"]; num = \"105\", target = 5 -> [\"1*0+5\", \"10-5\"].",
+    "brute_force": {
+      "approach": "Choose one of four separators (nothing, +, -, *) for each of the n-1 gaps, build all 4^(n-1) strings, reject those with a leading-zero operand and evaluate each from scratch. This is exponential by nature. The specific waste is evaluation: strings that share a prefix such as \"1+2*3\" re-parse and re-evaluate it independently, so every leaf pays a full O(n) parse.",
+      "time": "O(4^n * n)",
+      "space": "O(n)",
+      "code": "def brute_force(num: str, target: int) -> List[str]:\n    # Every choice of separator in the n-1 gaps, then evaluate each string from scratch.\n    out = []\n    for seps in product((\"\", \"+\", \"-\", \"*\"), repeat=len(num) - 1):\n        expr = num[0] + \"\".join(sep + d for sep, d in zip(seps, num[1:]))\n        operands = expr.replace(\"+\", \" \").replace(\"-\", \" \").replace(\"*\", \" \").split()\n        if any(len(x) > 1 and x[0] == \"0\" for x in operands):\n            continue\n        if eval(expr) == target:                                 # full re-parse at every leaf\n            out.append(expr)\n    return out"
+    },
+    "optimization": "The redundancy is re-evaluating shared prefixes at every leaf. A prefix's value can be carried down the recursion, except that '*' binds tighter than the '+' or '-' already applied, so appending '*x' must undo the last additive term and re-add it multiplied. So carry two numbers: value (the prefix evaluated so far) and last (the most recent signed multiplicative term). Then '+x' gives (value + x, x), '-x' gives (value - x, -x) and '*x' gives (value - last + last*x, last*x). Each extension is O(1), and the leading-zero rule prunes whole subtrees as soon as an operand starts with '0' and is longer than one digit.",
+    "intuition": "Treat the expression as a sum of terms, where each term is a product of operands. '+' and '-' start a new term and '*' extends the current one. If you know the running total and the current term, you can absorb a new operand in O(1) for any operator. The DFS walks digit positions, chooses where each operand ends, and branches three ways on the operator, except for the first operand, which has no operator in front.",
+    "geometric": "A tree over positions 0..n where each edge picks an operand num[i:j] and an operator. Each node carries (expr, value, last). The '*' branch reaches back one term, replacing the last summand with last * x. Leaves at position n are compared with target, and the leading-zero rule chops off every subtree whose operand would start with '0d'.",
+    "visual": "num = \"123\", target 6      node = expr (value, last)\n\"1\" (1,1)\n |-+2  \"1+2\" (3,2)\n |    |-+3 \"1+2+3\" (6,3)              = 6  OK\n |    |-*3 \"1+2*3\" (3-2+2*3, 6)=(7,6)  X\n |-*2  \"1*2\" (1-1+1*2, 2)=(2,2)\n |    |-*3 \"1*2*3\" (2-2+2*3, 6)=(6,6)  = 6  OK\n |-  -2 \"1-2\" (-1,-2)\n |    |-*3 \"1-2*3\" (-1+2-6, -6)=(-5)   X\n\"12\" (12,12) ... \"123\" (123) X\n\"105\": operand \"05\" -> break (whole subtree pruned)\n'*' undoes last, then re-adds last*x: precedence",
+    "steps": [
+      "dfs(i, expr, value, last): if i == n, record expr when value == target, then return.",
+      "For j in i+1..n take operand s = num[i:j]; break if s has a leading zero and length > 1.",
+      "If i == 0, recurse dfs(j, s, cur, cur) with no operator.",
+      "Otherwise branch '+' -> (value + cur, cur), '-' -> (value - cur, -cur), '*' -> (value - last + last*cur, last*cur).",
+      "Start with dfs(0, \"\", 0, 0) and return the collected expressions."
+    ],
+    "complexity": {
+      "time": "O(4^n * n)",
+      "space": "O(n)",
+      "why": "Each of the n-1 gaps picks one of 4 options with O(1) arithmetic per node; building each output string adds O(n)."
+    },
+    "pitfalls": [
+      "Handling '*' by multiplying value directly, which ignores precedence.",
+      "Dropping the sign from last after '-' (2-3*4 must become 2-12, not 2+12).",
+      "Rejecting a single \"0\" operand while forbidding \"05\"; only multi-digit operands with a leading zero are illegal.",
+      "Putting an operator before the first operand."
+    ],
+    "hints": [
+      "Enumerating 4^(n-1) strings and calling eval on each works, but the shared prefixes get re-evaluated. Can you carry the value down instead?",
+      "'+' and '-' are easy to carry, but '*' binds tighter. Which part of the running value does '*x' actually change?",
+      "Carry (value, last). '+x' -> (value+x, x), '-x' -> (value-x, -x), '*x' -> (value-last+last*x, last*x), and break when an operand of length > 1 starts with '0'."
+    ],
+    "code": "class Solution:\n    def addOperators(self, num: str, target: int) -> List[str]:\n        n, out = len(num), []\n\n        def dfs(i: int, expr: str, value: int, last: int) -> None:\n            if i == n:\n                if value == target:\n                    out.append(expr)\n                return\n            for j in range(i + 1, n + 1):\n                s = num[i:j]\n                if len(s) > 1 and s[0] == \"0\":\n                    break                                       # no leading zeros: prune\n                cur = int(s)\n                if i == 0:\n                    dfs(j, s, cur, cur)                         # first operand, no operator\n                else:\n                    dfs(j, expr + \"+\" + s, value + cur, cur)\n                    dfs(j, expr + \"-\" + s, value - cur, -cur)\n                    dfs(j, expr + \"*\" + s, value - last + last * cur, last * cur)\n\n        dfs(0, \"\", 0, 0)\n        return out",
+    "related": [
+      "twenty_four_game",
+      "basic_calculator_ii",
+      "letter_combinations_of_a_phone_number",
+      "generate_parentheses"
+    ]
+  },
+  {
+    "slug": "robot_room_cleaner",
+    "title": "Robot Room Cleaner",
+    "leetcode": 489,
+    "difficulty": "Hard",
+    "topic": "backtracking",
+    "pattern": "Blind DFS with relative coordinates and turn-around backtrack",
+    "file": "backtracking/robot_room_cleaner.py",
+    "problem": "A robot is in an unknown grid room with open and blocked cells. It exposes only move() -> bool (step forward if possible), turnLeft(), turnRight() and clean(). You know neither the map, your position nor your heading. Clean every cell reachable from the start. Example: in a 5x8 room starting at row 1, col 3 facing up, every open cell connected to the start must end up cleaned.",
+    "brute_force": {
+      "approach": "Run DFS over relative coordinates (start = (0,0), heading 0 = up) with a visited set, but return to the parent the naive way: walk the recorded path in reverse back to the start, then replay the parent's path. Every backtrack costs O(depth) robot commands, so a corridor of N cells costs O(N^2) moves. The waste is re-walking already-cleaned cells purely as transport, even though the parent is always exactly one step behind the robot.",
+      "time": "O(N^2)",
+      "space": "O(N)",
+      "code": "def brute_force(robot: \"Robot\") -> None:\n    # Same DFS, but backtracking retraces the whole path to the start and replays it to the parent.\n    D = ((-1, 0), (0, 1), (1, 0), (0, -1))\n    visited, heading = set(), [0]\n\n    def face(d: int) -> None:\n        while heading[0] != d:\n            robot.turnRight(); heading[0] = (heading[0] + 1) % 4\n\n    def walk(path: List[int], forward: bool) -> None:    # replay the path, or undo it backwards\n        for d in (path if forward else reversed(path)):\n            face(d if forward else (d + 2) % 4); robot.move()\n\n    def dfs(r: int, c: int, path: List[int]) -> None:\n        visited.add((r, c)); robot.clean()\n        for d, (dr, dc) in enumerate(D):\n            if (r + dr, c + dc) not in visited:\n                face(d)\n                if robot.move():\n                    dfs(r + dr, c + dc, path + [d])\n                    walk(path + [d], False); walk(path, True)   # O(depth) commands per backtrack\n\n    dfs(0, 0, [])"
+    },
+    "optimization": "The redundancy is the long transport walk on every backtrack. When DFS enters a child it faces direction d and the parent is directly behind it, so 'turn around, move, turn around' (four turns and one move) puts the robot back on the parent with its original heading. The recursion stack is the path, so no retrace is needed. The other half is keeping the physical heading in sync with the recursion: try the four directions clockwise from the current heading and turnRight() after every attempt. After four attempts the heading is restored, each cell is entered once, each edge is crossed at most twice, and the total is O(N) commands.",
+    "intuition": "You cannot see the room, but you can remember where you have been relative to where you started. Dead-reckoning (row, col) plus a heading index turns the blind robot into an ordinary DFS over an implicit grid graph. The only subtle part is physically undoing a move, and since the parent is right behind you the cheapest undo is a 180-degree turn, one step, and another 180-degree turn.",
+    "geometric": "Picture the DFS tree drawn on the floor: each edge is a move the robot made, and the recursion stack is the path from the start to the robot. Entering a child is one move forward, and returning is spin 180, step, spin 180. After a cell's four tries the robot faces the same way it did on arrival, so its heading is always (d + k) mod 4.",
+    "visual": "relative coords, S = (0,0) facing ^ (d=0)\nD = ^(-1,0) >(0,1) v(1,0) <(0,-1)   clockwise\n\n  . 2 3 .        numbers = DFS entry order\n  . 1 # .        try nd = d, d+1, d+2, d+3\n  . S . .        turnRight() after every try\n\nS d=0: k=0 ^ (-1,0) unvisited, move() ok -> enter 1\n  1 d=0: ^ (-2,0) move ok -> enter 2, face ^\n  2: > (-2,1) -> 3 ... dead ends, go_back\ngo_back = R R move R R : parent cell, same heading\nafter 4 tries + 4 turnRight: heading == d again\nvisited (relative) blocks re-entry: O(N) moves",
+    "steps": [
+      "Use clockwise directions 0 up (-1,0), 1 right (0,1), 2 down (1,0), 3 left (0,-1).",
+      "dfs(r, c, d): add (r, c) to visited and clean().",
+      "For k in 0..3, nd = (d + k) % 4: if the cell ahead is unvisited and move() succeeds, call dfs(next, nd) and then go_back() (turn twice, move, turn twice).",
+      "Call turnRight() after every k, so the heading becomes (d + k + 1) % 4 and returns to d after four tries.",
+      "Start with dfs(0, 0, 0)."
+    ],
+    "complexity": {
+      "time": "O(N)",
+      "space": "O(N)",
+      "why": "Each of the N reachable cells is entered once with at most 4 turns, 4 move attempts and a 5-command return; visited and the recursion stack are O(N)."
+    },
+    "pitfalls": [
+      "Forgetting the turnRight() after each attempt, so the robot's heading drifts away from the recursion's d.",
+      "Restoring position in go_back but not the heading (the second pair of turns matters).",
+      "Calling move() before checking visited, which moves the robot into a cell it then has to leave again.",
+      "Trying to use absolute grid coordinates, which you never have; only relative ones exist."
+    ],
+    "hints": [
+      "You have no map, so invent coordinates: call the start (0,0) and track a heading index. What standard traversal fits now?",
+      "DFS with a visited set of relative cells works, but after exploring a child the robot must physically return. Where is the parent relative to the robot?",
+      "The parent is directly behind you: go_back = turnRight x2, move, turnRight x2. Try directions (d + k) % 4 and turnRight after each try so the heading is d again when you finish."
+    ],
+    "code": "class Solution:\n    def cleanRoom(self, robot: \"Robot\") -> None:\n        D = ((-1, 0), (0, 1), (1, 0), (0, -1))             # up, right, down, left: clockwise\n        visited: Set[Tuple[int, int]] = set()\n\n        def go_back() -> None:                             # to the parent cell, same heading\n            robot.turnRight(); robot.turnRight()\n            robot.move()\n            robot.turnRight(); robot.turnRight()\n\n        def dfs(r: int, c: int, d: int) -> None:          # robot at (r, c) facing D[d]\n            visited.add((r, c))\n            robot.clean()\n            for k in range(4):\n                nd = (d + k) % 4\n                nr, nc = r + D[nd][0], c + D[nd][1]\n                if (nr, nc) not in visited and robot.move():\n                    dfs(nr, nc, nd)\n                    go_back()\n                robot.turnRight()                          # now facing (d + k + 1) % 4\n\n        dfs(0, 0, 0)",
+    "related": [
+      "walls_and_gates",
+      "number_of_islands",
+      "word_search",
+      "unique_paths_iii"
+    ]
+  },
+  {
+    "slug": "unique_paths_iii",
+    "title": "Unique Paths III",
+    "leetcode": 980,
+    "difficulty": "Hard",
+    "topic": "backtracking",
+    "pattern": "Grid DFS backtracking with in-place visited marking",
+    "file": "backtracking/unique_paths_iii.py",
+    "problem": "A grid holds exactly one start (1), one end (2), empty cells (0) and obstacles (-1). Count the 4-directional walks from start to end that visit every empty cell exactly once and never touch an obstacle or repeat a cell. Example: [[1,0,0,0],[0,0,0,0],[0,0,2,-1]] -> 2; [[0,1],[2,0]] -> 0, because whichever empty cell the start steps to first, its only onward move is the end, leaving the other empty cell unvisited.",
+    "brute_force": {
+      "approach": "A valid walk is an ordering of the k empty cells. Enumerate all k! permutations and check that start -> perm -> end is a chain of adjacent cells. This is exponential. The waste is that a permutation whose first two cells are not neighbours is still generated along with all (k-2)! orderings of its tail, and every one of them is rejected for the same reason.",
+      "time": "O(k! * k)",
+      "space": "O(k)",
+      "code": "def brute_force(grid: List[List[int]]) -> int:\n    # Every ordering of the empty cells; keep those forming an adjacent chain start -> ... -> end.\n    cells = {v: (r, c) for r, row in enumerate(grid) for c, v in enumerate(row) if v in (1, 2)}\n    empties = [(r, c) for r, row in enumerate(grid) for c, v in enumerate(row) if v == 0]\n\n    def adjacent(a, b) -> bool:\n        return abs(a[0] - b[0]) + abs(a[1] - b[1]) == 1\n\n    count = 0\n    for order in permutations(empties):                     # k! orderings, checked only when complete\n        chain = (cells[1],) + order + (cells[2],)\n        if all(adjacent(chain[i], chain[i + 1]) for i in range(len(chain) - 1)):\n            count += 1\n    return count"
+    },
+    "optimization": "The redundancy is generating orderings whose prefix is already impossible. A walk can be grown one step at a time, and only the four unvisited non-obstacle neighbours of the current cell may come next. So DFS from the start, mark cells in place while they are on the path, and carry todo, the number of cells still owed. Reaching the end is a success only when todo == 0, and reaching it earlier is a dead end. Bad prefixes die at the first wrong step instead of after (k-2)! completions, and the counter makes the 'all cells used' check O(1).",
+    "intuition": "This is Hamiltonian-path counting on a tiny grid (at most 20 cells). There is no polynomial algorithm, so the job is a clean exhaustive search with early termination. Track two things: where you are and how many cells you still owe. The end cell is a sink that is only accepted when the debt is zero. Marking the current cell as -1 while it is on the path and restoring it on return replaces a visited set.",
+    "geometric": "A snake grows from the start cell, and its body (cells marked -1) is the DFS stack drawn on the floor. At each head position the snake tries up to four moves into unmarked cells. When it corners itself the tail retracts one cell and the next direction is tried. Only snakes that cover the whole floor and end on the 2 are counted.",
+    "visual": "grid            path 1 (order)    path 2 (order)\nS . . .         0  1  2  3        0  5  6  7\n. . . .         7  6  5  4        1  4  9  8\n. . E #         8  9 10  #        2  3 10  #\n\ntodo = 10 empties + 1 (E) = 11, minus 1 per step\nE reached with todo == 0 -> count 1\n\npruned: S v v > > E  E at step 4, todo = 7 -> 0  X\ncornered head (no unmarked nbr) -> retract tail\nbody cells marked -1 while on the stack",
+    "steps": [
+      "One pass: find the start and set todo = number of empty cells + 1 (for the end cell).",
+      "dfs(r, c, todo): if grid[r][c] == 2, return 1 if todo == 0 else 0.",
+      "Save grid[r][c] and set it to -1; sum dfs over in-bounds neighbours holding 0 or 2, passing todo - 1.",
+      "Restore grid[r][c] and return the sum.",
+      "The answer is dfs(start_r, start_c, todo)."
+    ],
+    "complexity": {
+      "time": "O(3^(R*C))",
+      "space": "O(R*C)",
+      "why": "Each step has at most 3 unvisited directions and the walk is at most R*C long; the recursion depth is R*C."
+    },
+    "pitfalls": [
+      "Counting a walk that reaches the end with empty cells left over.",
+      "Forgetting to include the end cell in todo (off by one).",
+      "Not restoring the cell on backtrack, which hides it from sibling branches."
+    ],
+    "hints": [
+      "The walk must cover every empty cell exactly once, which is Hamiltonian path. With at most 20 cells, can you afford a full search if you prune well?",
+      "DFS from the start, marking cells on the current path. What single number tells you, on arriving at the end, whether the walk is valid?",
+      "Count the empties plus one for the end as todo, decrement it per step, return 1 at the end only if todo == 0, and unmark the cell on return."
+    ],
+    "code": "class Solution:\n    def uniquePathsIII(self, grid: List[List[int]]) -> int:\n        R, C = len(grid), len(grid[0])\n        todo = 1                                            # empties still to visit + the end cell\n        for r in range(R):\n            for c in range(C):\n                if grid[r][c] == 1:\n                    sr, sc = r, c\n                elif grid[r][c] == 0:\n                    todo += 1\n\n        def dfs(r: int, c: int, todo: int) -> int:\n            if grid[r][c] == 2:\n                return 1 if todo == 0 else 0                # end reached: all cells used?\n            saved, grid[r][c] = grid[r][c], -1              # mark the cell while on the path\n            count = 0\n            for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                if 0 <= nr < R and 0 <= nc < C and grid[nr][nc] in (0, 2):\n                    count += dfs(nr, nc, todo - 1)\n            grid[r][c] = saved                              # unmark on backtrack\n            return count\n\n        return dfs(sr, sc, todo)",
+    "related": [
+      "word_search",
+      "n_queens",
+      "robot_room_cleaner",
+      "shortest_path_visiting_all_nodes"
+    ]
+  },
+  {
+    "slug": "word_ladder_ii",
+    "title": "Word Ladder II",
+    "leetcode": 126,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Layered BFS + parents DAG, then backtrack paths",
+    "file": "graphs/word_ladder_ii.py",
+    "problem": "Given beginWord, endWord and a wordList, each transformation changes one letter and must land on a word in the list. Return all shortest transformation sequences from beginWord to endWord (each including both ends), or [] if none exists. Example: \"hit\" -> \"cog\" with [\"hot\",\"dot\",\"dog\",\"lot\",\"log\",\"cog\"] gives [[\"hit\",\"hot\",\"dot\",\"dog\",\"cog\"], [\"hit\",\"hot\",\"lot\",\"log\",\"cog\"]].",
+    "brute_force": {
+      "approach": "DFS from beginWord over every simple path, finding neighbours by comparing against every dictionary word, and keep the paths that match the shortest length seen. This is exponential. The same word is reached at many depths along many paths and its subtree is re-explored each time, and paths longer than the shortest are explored to the end before being thrown away.",
+      "time": "O(N! * N * L)",
+      "space": "O(N)",
+      "code": "def brute_force(beginWord: str, endWord: str, wordList: List[str]) -> List[List[str]]:\n    # Enumerate every simple path with DFS (neighbours by pairwise comparison); keep the shortest.\n    best: List[List[str]] = []\n\n    def dfs(word: str, path: List[str]) -> None:\n        if word == endWord:\n            if not best or len(path) < len(best[0]):\n                best.clear()\n            if not best or len(path) == len(best[0]):\n                best.append(path[:])\n            return\n        for cand in wordList:                             # exponential: all simple paths\n            if cand not in path and sum(a != b for a, b in zip(word, cand)) == 1:\n                dfs(cand, path + [cand])\n\n    dfs(beginWord, [beginWord])\n    return best"
+    },
+    "optimization": "Redundancy 1 is exploring paths that cannot be shortest. BFS visits words in order of distance, so a word first reached in layer k has distance k and any later arrival can be ignored. Redundancy 2 is storing whole paths. A shortest path to w is a shortest path to some parent in layer k-1 plus one edge, so record for each word the set of parents in the previous layer. Remove a layer's words from the dictionary only after the whole layer is built, so that siblings can all register as parents. Stop at the layer containing endWord, then backtrack from endWord through the parents map; the backtracking costs time proportional to the output.",
+    "intuition": "There are two phases. A BFS builds the DAG of shortest-path edges, where every edge goes from layer k-1 to layer k. A DFS then walks that DAG from endWord back to beginWord, producing every shortest path and nothing else. The subtle part is deleting visited words a whole layer at a time; deleting them one by one loses parents from the same layer.",
+    "geometric": "Lay the words out in horizontal layers by BFS distance. Edges only run down one layer, and the parents map stores the upward arrows. Every shortest path is a downward route in this layered DAG, and backtracking from endWord follows the upward arrows in all combinations.",
+    "visual": "layer 0:  hit\n           |\nlayer 1:  hot            parents[hot] = {hit}\n         /   \\\nlayer 2: dot  lot        parents[dot] = parents[lot] = {hot}\n          |    |\nlayer 3: dog  log        parents[dog]={dot} [log]={lot}\n           \\  /\nlayer 4:   cog           parents[cog] = {dog, log}\nwords -= nxt.keys() only AFTER the layer: cog keeps both\nbacktrack: cog<-dog<-dot<-hot<-hit  (reverse it)\n           cog<-log<-lot<-hot<-hit",
+    "steps": [
+      "words = set(wordList); return [] if endWord is not in it. Set layer = {beginWord} and remove beginWord from words.",
+      "For each word in the layer, each position and each letter: if the neighbour is in words, add the word to nxt[neighbour].",
+      "Remove all keys of nxt from words at once, merge nxt into parents, and set layer = keys of nxt.",
+      "Stop when endWord is in nxt or the layer is empty.",
+      "If endWord was found, DFS from endWord through parents and record each path reversed when beginWord is reached."
+    ],
+    "complexity": {
+      "time": "O(N * L^2 * 26 + P * L)",
+      "space": "O(N * L)",
+      "why": "Each of N words generates 26L neighbour strings of length L once; P output paths of length up to L are built by the backtracking."
+    },
+    "pitfalls": [
+      "Removing a word from the dictionary as soon as it is first seen, which loses parents from the same layer.",
+      "Storing a single parent per word, which loses paths.",
+      "Storing whole paths in the BFS queue (memory blow-up) instead of a parents map.",
+      "Continuing the BFS past the endWord layer."
+    ],
+    "hints": [
+      "Shortest means BFS. But you need every shortest path, not one. What do you have to remember per word?",
+      "Record, for each word, all of its parents in the previous BFS layer. When is it safe to remove a word from the dictionary?",
+      "Remove a whole layer's words only after the layer is fully expanded, stop at the layer that contains endWord, then DFS backwards from endWord through the parent sets."
+    ],
+    "code": "class Solution:\n    def findLadders(self, beginWord: str, endWord: str, wordList: List[str]) -> List[List[str]]:\n        words = set(wordList)\n        if endWord not in words:\n            return []\n        L = len(beginWord)\n        parents: Dict[str, Set[str]] = {}               # word -> words in the previous layer\n        layer, found = {beginWord}, False\n        words.discard(beginWord)\n        while layer and not found:\n            nxt = defaultdict(set)\n            for w in layer:\n                for i in range(L):\n                    for ch in \"abcdefghijklmnopqrstuvwxyz\":\n                        nb = w[:i] + ch + w[i + 1:]\n                        if nb in words:\n                            nxt[nb].add(w)\n            words -= nxt.keys()                         # remove the whole layer, not word by word\n            parents.update(nxt)\n            layer, found = set(nxt), endWord in nxt\n\n        paths: List[List[str]] = []\n\n        def backtrack(w: str, path: List[str]) -> None:\n            if w == beginWord:\n                paths.append(path[::-1])\n                return\n            for p in parents[w]:\n                backtrack(p, path + [p])\n\n        if found:\n            backtrack(endWord, [endWord])\n        return paths",
+    "related": [
+      "word_ladder",
+      "course_schedule_ii",
+      "bus_routes",
+      "sliding_puzzle"
+    ]
+  },
+  {
+    "slug": "bus_routes",
+    "title": "Bus Routes",
+    "leetcode": 815,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "BFS on implicit graph (stop -> routes index)",
+    "file": "graphs/bus_routes.py",
+    "problem": "routes[i] lists the stops bus i cycles through. Starting at stop source (not on a bus), return the minimum number of buses needed to reach stop target, or -1. Example: routes = [[1,2,7],[3,6,7]], source = 1, target = 6 -> 2 (bus 0 to stop 7, then bus 1). If source == target the answer is 0.",
+    "brute_force": {
+      "approach": "Build the route graph explicitly: two routes are adjacent if they share a stop, so intersect every pair of route sets and then BFS over routes from those containing source. That costs O(R^2) pair tests and O(R^2) adjacency. Most pairs share nothing yet every pair is tested, and a stop shared by many routes is rediscovered once per pair.",
+      "time": "O(R^2 * S/R)",
+      "space": "O(R^2)",
+      "code": "def brute_force(routes: List[List[int]], source: int, target: int) -> int:\n    # Explicit route graph via all-pairs set intersection, then BFS over routes.\n    if source == target:\n        return 0\n    sets = [set(r) for r in routes]\n    R = len(routes)\n    adj = [[j for j in range(R) if j != i and sets[i] & sets[j]] for i in range(R)]   # O(R^2) pairs\n    queue = deque((i, 1) for i in range(R) if source in sets[i])\n    seen = {i for i, _ in queue}\n    while queue:\n        i, buses = queue.popleft()\n        if target in sets[i]:\n            return buses\n        for j in adj[i]:\n            if j not in seen:\n                seen.add(j)\n                queue.append((j, buses + 1))\n    return -1"
+    },
+    "optimization": "The redundancy is the all-pairs intersection test. Routes are adjacent through a stop, so index the other way round: stop -> list of routes visiting it, built in one O(S) pass. A route's neighbours are then 'for each stop on it, every route through that stop', which enumerates exactly the real edges with no failed comparisons. BFS over routes with two visited sets: routes already boarded, and stops already expanded, so each stop's route list is scanned once and the total work is bounded by the index size.",
+    "intuition": "Count buses, not stops. A bus ride is one BFS edge no matter how many stops it covers. The nodes are routes, the start is the set of routes through source (depth 1), and reaching any route that contains target finishes. The stop -> routes map is the adjacency list of the bipartite stop/route graph, and BFS alternates stop, route, stop, route.",
+    "geometric": "Picture a bipartite graph with routes on one side and stops on the other, joined by an edge for every (route, stop) membership. BFS frontier k holds every route reachable with k buses. Expanding a route lights all of its stops, and each newly lit stop lights all of its routes for frontier k+1.",
+    "visual": "routes: r0=[1,2,7]  r1=[3,6,7]   source 1, target 6\nstop_to_routes: 1:[r0] 2:[r0] 7:[r0,r1] 3:[r1] 6:[r1]\n\n  (src) 1 --- r0 --- 2\n               \\\n                7 --- r1 --- 3\n                        \\--- 6 (target)\n\nfrontier buses=1: [r0]         seen_stops={1}\n  ride r0: stops 1 2 7; stop 7 -> r1 new, push\nfrontier buses=2: [r1]\n  ride r1: stop 6 == target -> return 2",
+    "steps": [
+      "If source == target return 0; build stop_to_routes in one pass.",
+      "Seed the queue with every route through source at 1 bus; seen_routes = those routes, seen_stops = {source}.",
+      "Pop (route, buses); for each stop on it, return buses if the stop is target.",
+      "If the stop is new, mark it and push every unseen route through it with buses + 1.",
+      "If the queue empties, return -1."
+    ],
+    "complexity": {
+      "time": "O(S)",
+      "space": "O(S)",
+      "why": "S is the total number of stops across routes; the two visited sets ensure each (route, stop) membership is touched a constant number of times."
+    },
+    "pitfalls": [
+      "Forgetting source == target, which is 0 buses, not 1.",
+      "Marking only routes (or only stops) as visited, so big shared stops are rescanned and the search turns quadratic.",
+      "BFS over stops counting stops instead of bus changes."
+    ],
+    "hints": [
+      "The answer counts buses, not stops. What should the BFS nodes be?",
+      "Routes are adjacent if they share a stop. Instead of comparing every pair of routes, what index lets you jump from a stop to all its routes?",
+      "Build stop -> routes, BFS over routes starting from those through source at depth 1, keep visited sets for both routes and stops, and return the depth of the first route containing target."
+    ],
+    "code": "class Solution:\n    def numBusesToDestination(self, routes: List[List[int]], source: int, target: int) -> int:\n        if source == target:\n            return 0\n        stop_to_routes = defaultdict(list)                # the implicit adjacency\n        for i, route in enumerate(routes):\n            for stop in route:\n                stop_to_routes[stop].append(i)\n        seen_routes = set(stop_to_routes[source])\n        seen_stops = {source}\n        queue = deque((i, 1) for i in seen_routes)        # board any bus at source: 1 bus\n        while queue:\n            i, buses = queue.popleft()\n            for stop in routes[i]:\n                if stop == target:\n                    return buses\n                if stop in seen_stops:\n                    continue                              # its routes were already enqueued\n                seen_stops.add(stop)\n                for j in stop_to_routes[stop]:\n                    if j not in seen_routes:\n                        seen_routes.add(j)\n                        queue.append((j, buses + 1))\n        return -1",
+    "related": [
+      "word_ladder",
+      "word_ladder_ii",
+      "accounts_merge",
+      "network_delay_time"
+    ]
+  },
+  {
+    "slug": "shortest_path_visiting_all_nodes",
+    "title": "Shortest Path Visiting All Nodes",
+    "leetcode": 847,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "BFS over augmented states (position + bitmask/budget)",
+    "file": "graphs/shortest_path_visiting_all_nodes.py",
+    "problem": "An undirected connected graph with n <= 12 nodes is given as adjacency lists. Return the length of the shortest walk that visits every node at least once; you may start anywhere and revisit nodes and edges. Example: [[1,2,3],[0],[0],[0]] -> 4 via 1-0-2-0-3.",
+    "brute_force": {
+      "approach": "Compute all-pairs distances with a BFS from each node, then try every order of first visits: the cost of an order is the sum of distances between consecutive nodes, minimised over all n! orders. This is exponential. Orders sharing a prefix are evaluated independently, and two prefixes that have seen the same set of nodes and stand on the same node are indistinguishable from then on, yet each is extended separately.",
+      "time": "O(n! * n)",
+      "space": "O(n^2)",
+      "code": "def brute_force(graph: List[List[int]]) -> int:\n    # All-pairs BFS distances, then the best of all n! first-visit orders.\n    n = len(graph)\n    dist = [[-1] * n for _ in range(n)]\n    for src in range(n):\n        dist[src][src], queue = 0, deque([src])\n        while queue:\n            u = queue.popleft()\n            for v in graph[u]:\n                if dist[src][v] < 0:\n                    dist[src][v] = dist[src][u] + 1\n                    queue.append(v)\n    return min(sum(dist[a][b] for a, b in zip(order, order[1:]))   # n! orders, prefixes shared\n               for order in permutations(range(n)))"
+    },
+    "optimization": "The redundancy is that a partial walk's future depends only on (current node, set of visited nodes), not on the order of visits. With n <= 12 that set is a 12-bit mask, so there are at most n * 2^n = 49152 states. Each step is a unit edge (u, mask) -> (v, mask | 1 << v), so plain BFS finds the shortest walk. 'Start anywhere' becomes seeding the queue with all (i, 1 << i) at distance 0. The visited set is on states, so revisiting a node with a new mask is allowed while re-entering the same state is cut.",
+    "intuition": "This is TSP-flavoured BFS: the graph is small, so expand each node into (node, what I have seen). Unit-weight edges mean BFS gives optimal distances, and the mask makes 'have I visited everything' a single comparison. Multi-source seeding replaces n separate BFS runs.",
+    "geometric": "Stack 2^n copies of the graph, one per visited mask, and connect node u in copy mask to node v in copy mask | bit(v) for every graph edge. The BFS wave starts on the n singleton copies and climbs toward the all-ones copy; the depth at which it first touches that copy is the answer.",
+    "visual": "graph:     1          state = (node, mask b3b2b1b0)\n           |\n       2 - 0 - 3\n\nd=0: (0,0001) (1,0010) (2,0100) (3,1000)  all seeds\nd=1: (1,0011) (0,0011) (0,0101) (0,1001) ...\nd=2: (2,0111) (3,1011) (1,0111) ...\nd=3: (0,0111) (0,1011) (0,1101) ...\nd=4: (0,0111) -> 3 : mask 1111 == full -> answer 4\nwalk 1-0-2-0-3: node 0 repeats, a state never does\nseen keyed on (node, mask), not on node",
+    "steps": [
+      "full = (1 << n) - 1; if n == 1 return 0.",
+      "Seed the queue with every (i, 1 << i) at distance 0 and mark those states seen.",
+      "Pop (u, mask, d); for each neighbour v, nm = mask | 1 << v; return d + 1 if nm == full.",
+      "Otherwise push (v, nm, d + 1) if that state is unseen.",
+      "The graph is connected, so the loop always returns."
+    ],
+    "complexity": {
+      "time": "O(n^2 * 2^n)",
+      "space": "O(n * 2^n)",
+      "why": "Each of the n * 2^n states is dequeued once and scans up to n neighbours."
+    },
+    "pitfalls": [
+      "Marking visited by node instead of (node, mask), which forbids the revisits the answer needs.",
+      "Starting only from node 0 instead of seeding all nodes.",
+      "Forgetting n == 1, where the answer is 0."
+    ],
+    "hints": [
+      "Revisiting nodes is allowed, so a visited set on nodes is wrong. What actually distinguishes two moments at the same node?",
+      "The set of nodes already seen. With n <= 12, how can you store that set compactly so it fits in a BFS state?",
+      "BFS over (node, bitmask) from all n seeds at distance 0; moving to v ORs in bit v, and the first time the mask is all ones gives the answer."
+    ],
+    "code": "class Solution:\n    def shortestPathLength(self, graph: List[List[int]]) -> int:\n        n = len(graph)\n        full = (1 << n) - 1\n        if n == 1:\n            return 0\n        queue = deque((i, 1 << i, 0) for i in range(n))     # start anywhere, distance 0\n        seen = {(i, 1 << i) for i in range(n)}\n        while queue:\n            u, mask, d = queue.popleft()\n            for v in graph[u]:\n                nm = mask | (1 << v)\n                if nm == full:\n                    return d + 1\n                if (v, nm) not in seen:                       # a node may repeat, a state may not\n                    seen.add((v, nm))\n                    queue.append((v, nm, d + 1))\n        return -1                                             # unreachable: graph is connected",
+    "related": [
+      "shortest_path_to_get_all_keys",
+      "shortest_path_in_a_grid_with_obstacles_elimination",
+      "rotting_oranges",
+      "unique_paths_iii"
+    ]
+  },
+  {
+    "slug": "shortest_path_to_get_all_keys",
+    "title": "Shortest Path to Get All Keys",
+    "leetcode": 864,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "BFS over augmented states (position + bitmask/budget)",
+    "file": "graphs/shortest_path_to_get_all_keys.py",
+    "problem": "A grid has '.' empty cells, '#' walls, '@' the start, lowercase keys and matching uppercase locks (at most 6 pairs). You walk 4-directionally, pick up keys automatically, and can pass a lock only while holding its key. Return the fewest moves to collect every key, or -1. Example: [\"@.a..\",\"###.#\",\"b.A.B\"] -> 8 (fetch a, go down the gap, pass A, reach b); [\"@Aa\"] -> -1.",
+    "brute_force": {
+      "approach": "Choose the order in which to collect the k keys (k! permutations). For each order, BFS from the current position to the next key, allowing only locks whose keys are already held, and sum the legs. This is exponential in k. The waste is that a leg like 'from key a to key b holding {a}' is recomputed in every order that starts a, b, and BFS keeps restarting from the same (position, key set).",
+      "time": "O(k! * k * R * C)",
+      "space": "O(R * C)",
+      "code": "def brute_force(grid: List[str]) -> int:\n    # Try every pickup order; BFS each leg with only the keys collected so far. k! * BFS.\n    R, C = len(grid), len(grid[0])\n    pos = {ch: (r, c) for r, row in enumerate(grid) for c, ch in enumerate(row) if ch == \"@\" or ch.islower()}\n    keys = sorted(k for k in pos if k != \"@\")\n\n    def bfs(src: Tuple[int, int], dst: Tuple[int, int], held: set) -> Optional[int]:\n        dist, queue = {src: 0}, deque([src])\n        while queue:\n            r, c = queue.popleft()\n            if (r, c) == dst:\n                return dist[(r, c)]\n            for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                if 0 <= nr < R and 0 <= nc < C and grid[nr][nc] != \"#\" and (nr, nc) not in dist \\\n                        and not (grid[nr][nc].isupper() and grid[nr][nc].lower() not in held):\n                    dist[(nr, nc)] = dist[(r, c)] + 1\n                    queue.append((nr, nc))\n        return None\n\n    best = -1\n    for order in permutations(keys):                  # same (position, key set) re-searched\n        total, cur, held = 0, pos[\"@\"], set()\n        for k in order:\n            leg = bfs(cur, pos[k], held)\n            if leg is None:\n                break\n            total, cur = total + leg, pos[k]\n            held.add(k)\n        else:\n            best = total if best < 0 else min(best, total)\n    return best"
+    },
+    "optimization": "The redundancy is re-running searches from identical situations. The situation is fully described by (row, col, keys held), and with k <= 6 the key set is a 6-bit mask, so there are at most R * C * 64 states. Every step is a unit edge between states: entering a key cell ORs in its bit, and a lock cell is passable iff its bit is set. One BFS seeded at (start, 0) finds the first state with a full mask at the minimum number of moves. Because visited is keyed on the full state, walking back over a cell with more keys is allowed, which is exactly what fetching a key and returning through its lock needs.",
+    "intuition": "A plain grid BFS fails because passability changes as you pick up keys. Make the keys part of the position: the same cell with a different key ring is a different place. The state space is just the grid times 64 copies, BFS on it is ordinary, and the target is any cell with the full key ring.",
+    "geometric": "Stack 2^k copies of the grid, one per key ring. Walking moves you inside a copy, and stepping on a new key moves you to the copy with that bit added. Locks are walls in copies lacking the key and floor in those that have it. The BFS ripple spreads across copies, and the answer is the depth at which it first reaches the all-keys copy.",
+    "visual": "@ . a . .     state (r, c, mask)   mask bits = b a\n# # # . #\nb . A . B\n\nd=0  (0,0,00)  start\nd=2  (0,2,01)  step on a -> move to copy 'a'\nd=5  (2,3,01)  down through the gap in column 3\nd=6  (2,2,01)  A is floor in copy 01 (wall in 00)\nd=8  (2,0,11)  step on b -> mask == full -> 8\n(2,4) B stays a wall: bit b not held at that time\nseen keyed on (r, c, mask): revisits with more keys ok",
+    "steps": [
+      "Scan the grid: find '@' and OR every key's bit into full.",
+      "Seed the queue with (r0, c0, 0) and BFS layer by layer, steps = 0.",
+      "Pop (r, c, mask); if mask == full return steps.",
+      "For each in-bounds non-wall neighbour: a lowercase cell sets nm = mask | bit; an uppercase cell is skipped unless its bit is in mask.",
+      "Push (nr, nc, nm) if unseen; after each layer increment steps; return -1 when the queue empties."
+    ],
+    "complexity": {
+      "time": "O(R * C * 2^k)",
+      "space": "O(R * C * 2^k)",
+      "why": "Each (cell, key mask) state is dequeued at most once and has 4 neighbours."
+    },
+    "pitfalls": [
+      "Marking visited by cell instead of (cell, mask), which blocks the return trip through a newly opened lock.",
+      "Checking the lock against the key bit with the wrong letter offset (ord('A') for locks, ord('a') for keys).",
+      "Treating key pickup as optional or as an extra step; it is automatic on entering the cell."
+    ],
+    "hints": [
+      "A plain BFS on cells breaks because whether a lock is passable depends on history. What extra information makes the state complete?",
+      "The set of keys held. There are at most 6 keys, so how do you store that set inside a BFS state?",
+      "BFS over (row, col, keyMask): entering a key ORs its bit, a lock is passable only with its bit, and the first popped state whose mask equals the all-keys mask gives the answer."
+    ],
+    "code": "class Solution:\n    def shortestPathAllKeys(self, grid: List[str]) -> int:\n        R, C = len(grid), len(grid[0])\n        full = 0                                      # bitmask of every key on the grid\n        for r in range(R):\n            for c in range(C):\n                if grid[r][c] == \"@\":\n                    sr, sc = r, c\n                elif grid[r][c].islower():\n                    full |= 1 << (ord(grid[r][c]) - 97)\n        queue = deque([(sr, sc, 0)])                  # (row, col, keys-held bitmask)\n        seen = {(sr, sc, 0)}\n        steps = 0\n        while queue:\n            for _ in range(len(queue)):               # one BFS layer = one move\n                r, c, mask = queue.popleft()\n                if mask == full:\n                    return steps\n                for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                    if not (0 <= nr < R and 0 <= nc < C) or grid[nr][nc] == \"#\":\n                        continue\n                    ch, nm = grid[nr][nc], mask\n                    if ch.islower():\n                        nm |= 1 << (ord(ch) - 97)     # pick the key up\n                    elif ch.isupper() and not mask >> (ord(ch) - 65) & 1:\n                        continue                      # locked and no key\n                    if (nr, nc, nm) not in seen:\n                        seen.add((nr, nc, nm))\n                        queue.append((nr, nc, nm))\n            steps += 1\n        return -1",
+    "related": [
+      "shortest_path_visiting_all_nodes",
+      "shortest_path_in_a_grid_with_obstacles_elimination",
+      "rotting_oranges",
+      "walls_and_gates"
+    ]
+  },
+  {
+    "slug": "minimum_moves_to_move_a_box_to_their_target_location",
+    "title": "Minimum Moves to Move a Box to Their Target Location",
+    "leetcode": 1263,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "0-1 BFS (deque shortest path)",
+    "file": "graphs/minimum_moves_to_move_a_box_to_their_target_location.py",
+    "problem": "A grid holds walls '#', floor '.', the player 'S', a box 'B' and a target 'T'. The player walks 4-directionally for free; walking into the box pushes it one cell if the cell beyond is floor. Return the minimum number of pushes to get the box onto the target, or -1. Example: in [\"######\",\"#T####\",\"#..B.#\",\"#.##.#\",\"#...S#\",\"######\"] the answer is 3 (push left twice, walk round below the box, push up).",
+    "brute_force": {
+      "approach": "The state is (box, player), and a move either walks the player (weight 0) or pushes the box (weight 1). The obvious correct method is Dijkstra with a binary heap over all (R*C)^2 states. The waste is that the heap keeps ordering keys that only ever take two values at a time (d and d + 1), paying O(log S) per operation for an order a deque can maintain for free.",
+      "time": "O(S log S), S = (R*C)^2",
+      "space": "O(S)",
+      "code": "def brute_force(grid: List[List[str]]) -> int:\n    # Dijkstra with a heap over the same (box, player) states; weights are only 0 and 1.\n    R, C = len(grid), len(grid[0])\n    find = lambda ch: next((r, c) for r in range(R) for c in range(C) if grid[r][c] == ch)\n    (pr, pc), (br, bc), target = find(\"S\"), find(\"B\"), find(\"T\")\n    free = lambda r, c: 0 <= r < R and 0 <= c < C and grid[r][c] != \"#\"\n    heap, best = [(0, br, bc, pr, pc)], {(br, bc, pr, pc): 0}\n    while heap:\n        d, br, bc, pr, pc = heapq.heappop(heap)             # O(log S) per operation\n        if (br, bc) == target:\n            return d\n        if d > best[(br, bc, pr, pc)]:\n            continue\n        for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):\n            nr, nc = pr + dr, pc + dc\n            if not free(nr, nc) or ((nr, nc) == (br, bc) and not free(br + dr, bc + dc)):\n                continue\n            nxt = (br + dr, bc + dc, nr, nc) if (nr, nc) == (br, bc) else (br, bc, nr, nc)\n            nd = d + ((nr, nc) == (br, bc))\n            if nd < best.get(nxt, float(\"inf\")):\n                best[nxt] = nd\n                heapq.heappush(heap, (nd, *nxt))\n    return -1"
+    },
+    "optimization": "The redundancy is the heap. With edge weights restricted to {0, 1}, a deque can stand in for the priority queue: relax a 0-cost edge by pushing to the front and a 1-cost edge by pushing to the back, and the deque stays sorted by distance (all d before all d + 1). That is 0-1 BFS, which gives Dijkstra's correctness with O(1) work per edge over the (box, player) state space. Keep a dist map, skip relaxations that do not improve, and return the distance of the first popped state whose box is on the target. An equivalent view is BFS over box positions that recomputes the player's reachable region per layer; 0-1 BFS fuses that inner walk into the main search.",
+    "intuition": "Two agents share one objective: minimise pushes, not steps. Walking is free, so the player's wandering is a zero-cost edge in a weighted graph whose only paid action is a push. The rule that the player must stand behind the box is encoded automatically, because a push only happens when the player steps into the box, carrying both forward.",
+    "geometric": "Each box position is a room. Inside a room the player roams freely on cells not blocked by walls or the box (cost-0 edges). A cost-1 arrow leaves the room when the player stands behind the box and walks into it, so the box advances and the player takes its old cell. 0-1 BFS floods a room completely before taking any cost-1 arrow, so the first route into the target room uses the fewest pushes.",
+    "visual": "# # # # # #    state (box, player); walk 0, push 1\n# T # # # #\n# . . B . #    S walks up to (2,4)        cost 0\n# . # # . #    push <: box (2,3)->(2,2)   cost 1\n# . . . S #    push <: box (2,2)->(2,1)   cost 2\n# # # # # #    walk round to (3,1)        cost 2\n               push ^: box -> (1,1) = T   cost 3\n\ndeque:  [ d d d d | d+1 d+1 ]\n        walk -> appendleft    push -> append\npop left; box on T -> return d (pushes, not steps)",
+    "steps": [
+      "Locate S, B and T; the start state is (box, player) with dist 0 in a deque.",
+      "Pop from the left; if the box is on T, return its distance.",
+      "For each direction, the player's next cell must be in bounds and not a wall.",
+      "If that cell is the box, the cell beyond it must be free: new state (box + dir, old box) at cost 1, appended right. Otherwise new state (box, player + dir) at cost 0, appended left.",
+      "Relax only when the new distance is smaller; return -1 when the deque empties."
+    ],
+    "complexity": {
+      "time": "O((R*C)^2)",
+      "space": "O((R*C)^2)",
+      "why": "There are at most R*C box positions times R*C player positions, each relaxed with 4 moves in O(1)."
+    },
+    "pitfalls": [
+      "Counting player steps instead of pushes.",
+      "Keying visited on the box position alone; the side the player is on matters.",
+      "Pushing without checking that the cell beyond the box is free floor.",
+      "Treating a state as final when pushed rather than when popped; with 0-1 BFS the same state can be pushed twice."
+    ],
+    "hints": [
+      "Only pushes count. What does a single state need to capture so you can tell which pushes are possible next?",
+      "State = (box, player). Walking costs 0 and pushing costs 1. Which shortest-path algorithm handles weights of only 0 and 1 without a heap?",
+      "0-1 BFS: a walk goes to the deque's front and a push to its back, relax only on improvement, and return the distance when a state with the box on T is popped."
+    ],
+    "code": "class Solution:\n    def minPushBox(self, grid: List[List[str]]) -> int:\n        R, C = len(grid), len(grid[0])\n        for r in range(R):\n            for c in range(C):\n                if grid[r][c] == \"S\":\n                    pr, pc = r, c\n                elif grid[r][c] == \"B\":\n                    br, bc = r, c\n                elif grid[r][c] == \"T\":\n                    tr, tc = r, c\n\n        def free(r: int, c: int) -> bool:\n            return 0 <= r < R and 0 <= c < C and grid[r][c] != \"#\"\n\n        start = (br, bc, pr, pc)\n        dist = {start: 0}\n        dq = deque([start])\n        while dq:\n            state = dq.popleft()\n            br, bc, pr, pc = state\n            d = dist[state]\n            if (br, bc) == (tr, tc):\n                return d\n            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):\n                nr, nc = pr + dr, pc + dc                     # where the player steps\n                if not free(nr, nc):\n                    continue\n                if (nr, nc) == (br, bc):                      # stepping into the box = push\n                    if not free(br + dr, bc + dc):\n                        continue\n                    nxt, cost = (br + dr, bc + dc, nr, nc), 1\n                else:\n                    nxt, cost = (br, bc, nr, nc), 0\n                if d + cost < dist.get(nxt, float(\"inf\")):\n                    dist[nxt] = d + cost\n                    (dq.append if cost else dq.appendleft)(nxt)   # 0-1 BFS: deque stays sorted\n        return -1",
+    "related": [
+      "minimum_cost_to_make_at_least_one_valid_path_in_a_grid",
+      "network_delay_time",
+      "swim_in_rising_water",
+      "shortest_path_to_get_all_keys"
+    ]
+  },
+  {
+    "slug": "shortest_path_in_a_grid_with_obstacles_elimination",
+    "title": "Shortest Path in a Grid with Obstacles Elimination",
+    "leetcode": 1293,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "BFS over augmented states (position + bitmask/budget)",
+    "file": "graphs/shortest_path_in_a_grid_with_obstacles_elimination.py",
+    "problem": "In a 0/1 grid you walk 4-directionally from (0,0) to (m-1,n-1) and may step onto at most k obstacle cells (1s), eliminating them. Return the minimum number of steps, or -1. Example: grid = [[0,0,0],[1,1,0],[0,0,0],[0,1,1],[0,0,0]], k = 1 -> 6, going right along the top and down the right edge through the obstacle at (3,2).",
+    "brute_force": {
+      "approach": "Choose which obstacles to delete: for every subset of at most k obstacle cells, clear them and run a plain BFS, keeping the shortest result. This is exponential in k. Most subsets delete obstacles far from any useful path, and the BFS over the open region is repeated from scratch for every subset although the regions mostly coincide.",
+      "time": "O(C(B, <=k) * m * n)",
+      "space": "O(m * n)",
+      "code": "def brute_force(grid: List[List[int]], k: int) -> int:\n    # Choose which obstacles to clear (every subset of size <= k), BFS the cleared grid, keep the best.\n    R, C = len(grid), len(grid[0])\n    obstacles = [(r, c) for r in range(R) for c in range(C) if grid[r][c] == 1]\n\n    def bfs(cleared: set) -> int:\n        dist, queue = {(0, 0): 0}, deque([(0, 0)])\n        while queue:\n            r, c = queue.popleft()\n            if (r, c) == (R - 1, C - 1):\n                return dist[(r, c)]\n            for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                if 0 <= nr < R and 0 <= nc < C and (nr, nc) not in dist \\\n                        and (grid[nr][nc] == 0 or (nr, nc) in cleared):\n                    dist[(nr, nc)] = dist[(r, c)] + 1\n                    queue.append((nr, nc))\n        return -1\n\n    best = -1\n    for size in range(min(k, len(obstacles)) + 1):           # C(B, <= k) subsets, each a full BFS\n        for subset in combinations(obstacles, size):\n            d = bfs(set(subset))\n            if d >= 0 and (best < 0 or d < best):\n                best = d\n    return best"
+    },
+    "optimization": "The redundancy is deciding which obstacles to delete in advance. A walk only cares how many eliminations it has left, not which cells it spent them on, so its situation is (row, col, eliminations left): at most m * n * (k + 1) states. Every step is a unit edge (stepping on a 1 decrements the budget), so one BFS over the state graph replaces all the per-subset searches. Visited must be keyed on the full state, because reaching a cell with more budget left is a genuinely better situation. Also, if k >= m + n - 2 the straight Manhattan walk is always affordable, so return m + n - 2 at once.",
+    "intuition": "Augment the position with the resource that constrains the walk. Each cell becomes k + 1 nodes, one per remaining budget. Obstacles are edges that cost a unit of budget, and BFS depth is still the step count because every edge is still one step.",
+    "geometric": "Picture k + 1 stacked copies of the grid. In copy j you move freely on 0-cells, and stepping on a 1-cell drops you to copy j - 1 (it is a wall in copy 0). The BFS wave spreads inside each layer and leaks downward at obstacles; the first time any layer reaches the bottom-right cell, the depth is the answer.",
+    "visual": "grid, k=1     layer left=1    layer left=0\n0 0 0         0 1 2           . . .\n1 1 0         . . 3           . . .\n0 0 0         . . 4           . . .\n0 1 1         . . .           . . 5   <- 1 at (3,2)\n0 0 0         . . .           . . 6   target\n(numbers = BFS depth along the winning walk)\nstate = (r, c, left); stepping on a 1: left -= 1\nseen on (r, c, left): (r,c) reached with left=0\n  must not block a later arrival with left=1\nshortcut: k >= m+n-2 -> return m+n-2",
+    "steps": [
+      "If k >= m + n - 2 return m + n - 2 (this also covers the 1x1 grid).",
+      "Seed the queue with (0, 0, k), mark it seen and set steps = 0.",
+      "Process a layer: pop (r, c, left) and return steps if (r, c) is the target.",
+      "For each in-bounds neighbour, nl = left - grid[nr][nc]; skip if nl < 0; push (nr, nc, nl) if unseen.",
+      "Increment steps after each layer; return -1 when the queue empties."
+    ],
+    "complexity": {
+      "time": "O(m * n * k)",
+      "space": "O(m * n * k)",
+      "why": "Each (cell, budget) state is expanded once with 4 neighbours."
+    },
+    "pitfalls": [
+      "Keying visited on (r, c) only; a later arrival with more budget may be the only way through.",
+      "Letting the budget go negative instead of treating a 1 as a wall when left == 0.",
+      "Missing the k >= m + n - 2 shortcut, which keeps large-k inputs fast."
+    ],
+    "hints": [
+      "Choosing which obstacles to remove ahead of time is exponential. Does a walk care which obstacles it removed, or only how many?",
+      "Add 'eliminations left' to the BFS state. How many states are there, and what must visited be keyed on?",
+      "BFS over (r, c, left) with visited on all three, stepping on a 1 costs one unit of left, and return early with m + n - 2 when k >= m + n - 2."
+    ],
+    "code": "class Solution:\n    def shortestPath(self, grid: List[List[int]], k: int) -> int:\n        R, C = len(grid), len(grid[0])\n        if k >= R + C - 2:\n            return R + C - 2                                  # the Manhattan walk is affordable\n        queue = deque([(0, 0, k)])                            # (row, col, eliminations left)\n        seen = {(0, 0, k)}\n        steps = 0\n        while queue:\n            for _ in range(len(queue)):\n                r, c, left = queue.popleft()\n                if (r, c) == (R - 1, C - 1):\n                    return steps\n                for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                    if 0 <= nr < R and 0 <= nc < C:\n                        nl = left - grid[nr][nc]              # stepping on a 1 spends one\n                        if nl >= 0 and (nr, nc, nl) not in seen:\n                            seen.add((nr, nc, nl))\n                            queue.append((nr, nc, nl))\n            steps += 1\n        return -1",
+    "related": [
+      "shortest_path_to_get_all_keys",
+      "shortest_path_visiting_all_nodes",
+      "rotting_oranges",
+      "minimum_cost_to_make_at_least_one_valid_path_in_a_grid"
+    ]
+  },
+  {
+    "slug": "sliding_puzzle",
+    "title": "Sliding Puzzle",
+    "leetcode": 773,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "BFS on implicit graph (board-state strings)",
+    "file": "graphs/sliding_puzzle.py",
+    "problem": "A 2x3 board holds tiles 1..5 and one blank 0. A move swaps the blank with a 4-directionally adjacent tile. Return the minimum number of moves to reach [[1,2,3],[4,5,0]], or -1 if it is unsolvable. Example: [[1,2,3],[4,0,5]] -> 1; [[4,1,2],[5,0,3]] -> 5; [[1,2,3],[5,4,0]] -> -1.",
+    "brute_force": {
+      "approach": "BFS over boards, but find each board's neighbours the naive way: compare it with every one of the 6! = 720 arrangements of \"012345\" and keep those that differ by one legal swap of the blank. Each expansion scans 719 candidates to find at most 3 real neighbours, even though the blank's position already says which swaps are possible.",
+      "time": "O(S^2), S = 720",
+      "space": "O(S)",
+      "code": "def brute_force(board: List[List[int]]) -> int:\n    # BFS, but neighbours are found by scanning all 720 arrangements for one-move differences.\n    boards = [\"\".join(p) for p in permutations(\"012345\")]\n    nbr = [[1, 3], [0, 2, 4], [1, 5], [0, 4], [1, 3, 5], [2, 4]]\n\n    def one_move(a: str, b: str) -> bool:\n        diff = [i for i in range(6) if a[i] != b[i]]\n        return len(diff) == 2 and \"0\" in (a[diff[0]], a[diff[1]]) and diff[1] in nbr[diff[0]]\n\n    start = \"\".join(str(x) for row in board for x in row)\n    queue, seen = deque([(start, 0)]), {start}\n    while queue:\n        s, d = queue.popleft()\n        if s == \"123450\":\n            return d\n        for t in boards:                                     # 719 failed comparisons per board\n            if t not in seen and one_move(s, t):\n                seen.add(t)\n                queue.append((t, d + 1))\n    return -1"
+    },
+    "optimization": "The redundancy is the full scan to find neighbours that could be generated directly. A move is determined by the blank's index and one of its at most 3 grid neighbours. So flatten the board into a 6-character string (hashable) and precompute the adjacency of the six cells once: nbr = [[1,3],[0,2,4],[1,5],[0,4],[1,3,5],[2,4]]. A neighbour is then one swap, O(1) to choose and O(6) to build, so BFS over the implicit graph touches each of at most 720 states once. Moves are unit cost, so BFS depth is the move count, and an empty queue means the board is in the unreachable parity half, so return -1.",
+    "intuition": "The puzzle is a shortest-path question on a graph whose nodes are board configurations: too many to draw, but small enough (360 reachable) to search exhaustively. Everything hinges on a hashable state (the string), a cheap neighbour function (swap the blank with an adjacent index) and a visited set.",
+    "geometric": "Nodes are 6-character strings and an edge swaps '0' with an adjacent position. BFS rings grow outward from the start string, and the ring number at which \"123450\" first appears is the answer.",
+    "visual": "index:  0 1 2     nbr = [[1,3],[0,2,4],[1,5],\n        3 4 5            [0,4],[1,3,5],[2,4]]\n\nstart \"412503\"     4 1 2 / 5 0 3   blank at 4\n  nbr[4] = {1,3,5}:\nring1 \"402513\"  \"412053\"  \"412530\"\nring2 \"042513\"  \"420513\"  ...  (unseen only)\nring3 ...\nring4 ...\nring5 \"123450\"  -> return 5\nseen = set of strings (marked when pushed)\nother parity half of 720 boards: queue empties -> -1",
+    "steps": [
+      "Precompute nbr for the six indices and flatten the board into a start string.",
+      "Seed the queue with (start, 0) and seen = {start}.",
+      "Pop (s, d); return d if s == \"123450\".",
+      "Let i = s.index('0'); for each j in nbr[i], swap s[i] and s[j] into t, and push (t, d + 1) if t is unseen.",
+      "Return -1 when the queue empties."
+    ],
+    "complexity": {
+      "time": "O(S * 6)",
+      "space": "O(S)",
+      "why": "Each of at most S = 720 boards is expanded once with at most 3 neighbours, each built in O(6)."
+    },
+    "pitfalls": [
+      "Using a list of lists as the visited key (unhashable) instead of a string or tuple.",
+      "Getting the flattened adjacency wrong, e.g. treating indices 2 and 3 as neighbours across the row break.",
+      "Marking visited on pop instead of on push, which lets duplicates into the queue."
+    ],
+    "hints": [
+      "Minimum number of moves with unit cost means BFS. What are the nodes, and how do you make them hashable?",
+      "Flatten the 2x3 board into a 6-character string. Which indices can the blank swap with from each position?",
+      "Precompute nbr = [[1,3],[0,2,4],[1,5],[0,4],[1,3,5],[2,4]], BFS from the start string with a seen set, and return the depth at which \"123450\" is dequeued, or -1."
+    ],
+    "code": "class Solution:\n    def slidingPuzzle(self, board: List[List[int]]) -> int:\n        nbr = [[1, 3], [0, 2, 4], [1, 5], [0, 4], [1, 3, 5], [2, 4]]   # grid adjacency of indices\n        start = \"\".join(str(x) for row in board for x in row)\n        queue = deque([(start, 0)])\n        seen = {start}\n        while queue:\n            s, d = queue.popleft()\n            if s == \"123450\":\n                return d\n            i = s.index(\"0\")\n            for j in nbr[i]:                                            # slide a neighbouring tile\n                t = list(s)\n                t[i], t[j] = t[j], t[i]\n                t = \"\".join(t)\n                if t not in seen:\n                    seen.add(t)\n                    queue.append((t, d + 1))\n        return -1",
+    "related": [
+      "word_ladder",
+      "word_ladder_ii",
+      "rotting_oranges",
+      "minimum_moves_to_move_a_box_to_their_target_location"
+    ]
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "topic": "intervals",
+  "title": "Intervals and Sweep Lines",
+  "order": [
+    {"slug": "merge_intervals", "why_here": "The base move: sort by start, keep one running interval, extend or emit."},
+    {"slug": "insert_interval", "why_here": "Same merge, but the input is already sorted, so the answer is three contiguous phases in O(n)."},
+    {"slug": "non_overlapping_intervals", "why_here": "First change of sort key: sorting by end makes greedy safe, proved by an exchange argument."},
+    {"slug": "meeting_rooms_ii", "why_here": "From merging to counting the stack: a min-heap of end times is the state the sweep carries."},
+    {"slug": "employee_free_time", "why_here": "Many pre-sorted lists k-way merged by a heap; the running reach exposes common gaps."},
+    {"slug": "minimum_interval_to_include_each_query", "why_here": "Sort the queries too and sweep both streams; a heap by size with lazy removal answers each stop."},
+    {"slug": "my_calendar_iii", "why_here": "Pure +1/-1 events in a sparse difference array, maintained online as bookings arrive."},
+    {"slug": "rectangle_area_ii", "why_here": "Closing problem: sweep in x, merge intervals in y, multiply; every earlier idea at once."}
+  ]
+}

@@ -1,0 +1,931 @@
+[
+  {
+    "slug": "invert_binary_tree",
+    "title": "Invert Binary Tree",
+    "leetcode": 226,
+    "difficulty": "Easy",
+    "topic": "trees",
+    "pattern": "Tree recursion (post-order)",
+    "file": "trees/invert_binary_tree.py",
+    "problem": "Given the root of a binary tree, mirror it so that every node's left and right children are swapped, all the way down, and return the root. Example: [4,2,7,1,3,6,9] becomes [4,7,2,9,6,3,1].",
+    "brute_force": {
+      "approach": "Build a brand-new mirrored tree: allocate a copy of each node whose left child is the mirror of the original right subtree and vice versa. The wasted work is the allocation itself: every node is copied although nothing about it changes except which pointer is called left and which right.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "code": "def brute_force(root: Optional[TreeNode]) -> Optional[TreeNode]:\n    # Allocate a mirrored copy of every node instead of swapping pointers in place.\n    if root is None:\n        return None\n    copy = TreeNode(root.val)\n    copy.left = brute_force(root.right)\n    copy.right = brute_force(root.left)\n    return copy"
+    },
+    "optimization": "The copy is redundant because node values never change; only the two child pointers of each node need to trade places, and that is a local O(1) operation. So one traversal that visits each node once and swaps its children in place is sufficient. Recursion (or an explicit stack) is only the vehicle for reaching every node; the invariant is that when the call on a node returns, its whole subtree is already mirrored.",
+    "intuition": "mirror(T) is a node whose children are (mirror(T.right), mirror(T.left)). A tree is mirrored exactly when every node has had its children swapped, so one swap per node does the whole job. The order does not matter: swap first then recurse into the new children, or recurse then swap, both are correct. A tuple swap evaluates both recursive calls before overwriting either pointer.",
+    "geometric": "Fold the drawing of the tree along the vertical line through the root. Every node keeps its depth; only its horizontal position flips. The recursion walks down each path and flips the two arms of each node on the way back up.",
+    "visual": "before:          4                after:          4\n               /   \\                            /   \\\n              2     7                          7     2\n             / \\   / \\                        / \\   / \\\n            1   3 6   9                      9   6 3   1\n\ninvertTree(2): left, right = invert(3), invert(1)\n  -> 2's children swapped; control returns to 4, which\n     swaps the already-mirrored subtrees 7 and 2.",
+    "steps": [
+      "If the node is None, return None.",
+      "Recursively invert the right subtree and the left subtree.",
+      "Assign node.left = inverted right and node.right = inverted left with a tuple swap.",
+      "Return the node."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "Each node is visited once; the recursion stack is as deep as the tree height h."
+    },
+    "pitfalls": [
+      "Swapping with two plain assignments and losing one child; use a tuple swap or a temporary.",
+      "Forgetting the None base case."
+    ],
+    "hints": [
+      "What is the only thing that changes about any node when you mirror a tree?",
+      "If both subtrees are already mirrored, what single operation finishes the job at the parent?",
+      "root.left, root.right = invert(root.right), invert(root.left); return root."
+    ],
+    "code": "class Solution:\n    def invertTree(self, root: Optional[TreeNode]) -> Optional[TreeNode]:\n        if root is None:\n            return None\n        # tuple swap: both recursive results are computed before either pointer is overwritten\n        root.left, root.right = self.invertTree(root.right), self.invertTree(root.left)\n        return root",
+    "related": [
+      "maximum_depth_of_binary_tree",
+      "same_tree"
+    ]
+  },
+  {
+    "slug": "maximum_depth_of_binary_tree",
+    "title": "Maximum Depth of Binary Tree",
+    "leetcode": 104,
+    "difficulty": "Easy",
+    "topic": "trees",
+    "pattern": "Tree recursion (post-order)",
+    "file": "trees/maximum_depth_of_binary_tree.py",
+    "problem": "Return the number of nodes on the longest root-to-leaf path of a binary tree. Example: [3,9,20,null,null,15,7] has depth 3 (3 -> 20 -> 15); an empty tree has depth 0.",
+    "brute_force": {
+      "approach": "Enumerate every root-to-leaf path as an explicit list of values, then take the longest. Each of up to n/2 leaves copies a path of length up to h. The wasted work is materialising the paths at all: only their length is ever used, and every path through a node re-copies the same prefix.",
+      "time": "O(n*h)",
+      "space": "O(n*h)",
+      "code": "def brute_force(root: Optional[TreeNode]) -> int:\n    # Materialise every root-to-leaf path as a list, then take the longest: O(n*h).\n    paths: List[List[int]] = []\n\n    def walk(node: Optional[TreeNode], path: List[int]) -> None:\n        if node is None:\n            return\n        path = path + [node.val]          # copies the shared prefix for every descendant\n        if node.left is None and node.right is None:\n            paths.append(path)\n        walk(node.left, path)\n        walk(node.right, path)\n\n    walk(root, [])\n    return max((len(p) for p in paths), default=0)"
+    },
+    "optimization": "The redundancy is the repeated prefix: every leaf under a node re-counts the same ancestors. The observation is that a subtree's depth depends only on its two children's depths: depth(node) = 1 + max(depth(left), depth(right)). That gives a post-order recursion where each node is visited once and returns a single integer, so no path storage is needed. Invariant: the value returned for a node is the height of its subtree.",
+    "intuition": "A tree's height is one more than the taller of its two subtrees. Recursion computes heights bottom-up: a None child reports 0, leaves report 1, and each parent adds one to the larger report. The max() at every level selects the longest path without ever naming it.",
+    "geometric": "Picture water filling the tree from the leaves upward: each node is labelled with the height of the tallest column beneath it. The recursion goes down one path at a time and the labels bubble up as the calls return; the root's label is the answer.",
+    "visual": "            3          depth(3)  = 1 + max(1, 2) = 3\n           / \\\n          9   20       depth(9)  = 1 + max(0, 0) = 1\n             /  \\      depth(20) = 1 + max(1, 1) = 2\n            15   7     depth(15) = depth(7) = 1\n                       None -> 0\nheights bubble up: leaves report 1, each parent adds 1 to\nthe larger child report; the root's number is the answer.",
+    "steps": [
+      "If the node is None, return 0.",
+      "Recursively compute the depth of the left and right subtrees.",
+      "Return 1 + the larger of the two."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "One visit per node; recursion depth equals the height (O(n) for a skewed tree)."
+    },
+    "pitfalls": [
+      "Returning 1 for a None node (off by one).",
+      "Mixing up depth in nodes (this problem) with depth in edges."
+    ],
+    "hints": [
+      "How does the depth of a tree relate to the depths of its two subtrees?",
+      "Make None report 0 and let every node add 1 to the taller child.",
+      "return 0 if not root else 1 + max(maxDepth(root.left), maxDepth(root.right))."
+    ],
+    "code": "class Solution:\n    def maxDepth(self, root: Optional[TreeNode]) -> int:\n        if root is None:\n            return 0\n        return 1 + max(self.maxDepth(root.left), self.maxDepth(root.right))",
+    "related": [
+      "diameter_of_binary_tree",
+      "balanced_binary_tree",
+      "invert_binary_tree"
+    ]
+  },
+  {
+    "slug": "diameter_of_binary_tree",
+    "title": "Diameter of Binary Tree",
+    "leetcode": 543,
+    "difficulty": "Easy",
+    "topic": "trees",
+    "pattern": "Post-order height with side-channel answer",
+    "file": "trees/diameter_of_binary_tree.py",
+    "problem": "The diameter of a binary tree is the number of edges on the longest path between any two nodes; the path need not pass through the root. Example: [1,2,3,4,5] has diameter 3 (4 -> 2 -> 1 -> 3).",
+    "brute_force": {
+      "approach": "For every node, the longest path bending at that node is height(left) + height(right). Compute height() from scratch at each node and take the maximum. The repeated work is height(): a subtree's height is recomputed once for every one of its ancestors, O(n^2) on a skewed tree.",
+      "time": "O(n^2)",
+      "space": "O(h)",
+      "code": "def brute_force(root: Optional[TreeNode]) -> int:\n    # Recompute both subtree heights from scratch at every node: O(n^2) on skewed trees.\n    def height(node: Optional[TreeNode]) -> int:\n        if node is None:\n            return 0\n        return 1 + max(height(node.left), height(node.right))\n\n    if root is None:\n        return 0\n    through_root = height(root.left) + height(root.right)\n    return max(through_root, brute_force(root.left), brute_force(root.right))"
+    },
+    "optimization": "height() is already a post-order recursion that computes height(left) and height(right) on the way, and those two numbers are exactly what the diameter-through-node formula needs. So instead of calling height() again from outside, update a running best = max(best, left + right) inside height() while the values are at hand. Each node's height is then computed exactly once and the answer falls out of a single pass. Invariant: when height(node) returns, best accounts for every path whose highest point lies inside node's subtree.",
+    "intuition": "Every path has a unique highest node where it bends. The longest path bending at a node is its left height plus its right height. Compute heights bottom-up and at each node try left + right as a candidate answer. The value returned upward is 1 + max(left, right), because a path continuing up through the parent can use only one arm.",
+    "geometric": "Think of each node as a hinge with two arms hanging down whose lengths are the subtree heights. Opening the hinge flat gives a path of length left + right; the recursion measures both arms once per hinge and remembers the widest opening.",
+    "visual": "          1      height(1): L=2, R=1 -> best = max(2, 3) = 3\n         / \\                returns 1 + max(2, 1) = 3\n        2   3    height(2): L=1, R=1 -> best = 2\n       / \\                  returns 1 + max(1, 1) = 2\n      4   5      height(4) = height(5) = height(3) = 1\n\n longest path  4 - 2 - 1 - 3   (3 edges) = answer\n post-order 4, 5, 2, 3, 1: each height computed once",
+    "steps": [
+      "Define height(node); return 0 for None.",
+      "Recursively get left = height(node.left) and right = height(node.right).",
+      "Update best = max(best, left + right): the longest path that bends at this node, in edges.",
+      "Return 1 + max(left, right) to the parent.",
+      "Call height(root) and return best."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "One post-order visit per node; the stack is as deep as the height."
+    },
+    "pitfalls": [
+      "Counting nodes instead of edges (off by one).",
+      "Returning left + right upward instead of 1 + max(left, right).",
+      "Assuming the longest path goes through the root."
+    ],
+    "hints": [
+      "Every path has a highest node. What is the longest path whose highest node is a given node?",
+      "You are already computing subtree heights recursively; can you record the candidate at each node for free?",
+      "Inside height(): best = max(best, left + right); return 1 + max(left, right)."
+    ],
+    "code": "class Solution:\n    def diameterOfBinaryTree(self, root: Optional[TreeNode]) -> int:\n        self.best = 0\n\n        def height(node: Optional[TreeNode]) -> int:\n            if node is None:\n                return 0\n            left, right = height(node.left), height(node.right)\n            self.best = max(self.best, left + right)   # longest path that bends at `node`\n            return 1 + max(left, right)                 # only one arm continues upward\n\n        height(root)\n        return self.best",
+    "related": [
+      "maximum_depth_of_binary_tree",
+      "balanced_binary_tree",
+      "binary_tree_maximum_path_sum"
+    ]
+  },
+  {
+    "slug": "balanced_binary_tree",
+    "title": "Balanced Binary Tree",
+    "leetcode": 110,
+    "difficulty": "Easy",
+    "topic": "trees",
+    "pattern": "Post-order height with side-channel answer",
+    "file": "trees/balanced_binary_tree.py",
+    "problem": "A binary tree is height-balanced if at every node the heights of the left and right subtrees differ by at most 1. Return whether the tree is balanced. Example: [3,9,20,null,null,15,7] is balanced; [1,2,2,3,3,null,null,4,4] is not.",
+    "brute_force": {
+      "approach": "At each node compute height(left) and height(right) with a standalone height() function, check that they differ by at most 1, then recurse into both children. The repeated work is height(): a subtree's height is recomputed once for each of its ancestors, O(n^2) on a skewed tree.",
+      "time": "O(n^2)",
+      "space": "O(h)",
+      "code": "def brute_force(root: Optional[TreeNode]) -> bool:\n    # Standalone height() recomputed at every node: O(n^2) worst case.\n    def height(node: Optional[TreeNode]) -> int:\n        if node is None:\n            return 0\n        return 1 + max(height(node.left), height(node.right))\n\n    if root is None:\n        return True\n    if abs(height(root.left) - height(root.right)) > 1:\n        return False\n    return brute_force(root.left) and brute_force(root.right)"
+    },
+    "optimization": "height() already visits children before the parent, so the two numbers the balance check needs are produced inside the recursion anyway. Fold the check into height() and return a sentinel (-1) the moment any subtree is unbalanced; every ancestor passes the -1 upward without further work. Each node is visited once. Invariant: height(node) returns the true height if node's subtree is balanced, otherwise -1.",
+    "intuition": "Balance is a local property (difference of two child heights) that must hold everywhere. A post-order traversal naturally has both child heights available when it looks at the parent, so each node can both check itself and report its height upward in one step. A single bad node poisons the whole answer, so short-circuit with -1 instead of carrying a separate flag.",
+    "geometric": "Picture the tree as a mobile hanging from the root: each node balances two arms. Measure arms from the bottom up; the first node whose arms differ by 2 or more breaks the mobile, and the break propagates straight to the top.",
+    "visual": "            1          height() post-order; -1 = unbalanced\n           / \\\n          2   2 <- h=1\n         / \\\n        3   3 <- h=1\n       / \\\n      4   4   <- h=1 each\n height(left 3) = 1 + max(1,1) = 2\n height(left 2) : |2 - 1| = 1 ok -> returns 3\n height(1)      : |3 - 1| = 2     -> -1  => False\n (a -1 anywhere short-circuits every ancestor above it)",
+    "steps": [
+      "Define height(node); None returns 0.",
+      "left = height(node.left); if it is -1, return -1 immediately.",
+      "right = height(node.right); if it is -1 or |left - right| > 1, return -1.",
+      "Return 1 + max(left, right).",
+      "The tree is balanced iff height(root) != -1."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "One post-order visit per node with O(1) work; stack depth is the height."
+    },
+    "pitfalls": [
+      "Checking only the root; balance must hold at every node.",
+      "Forgetting to propagate the -1 sentinel from a child.",
+      "An empty tree is balanced."
+    ],
+    "hints": [
+      "Balance needs two subtree heights at every node. Where in a recursion do you already have both?",
+      "Make the height function itself report failure instead of running a second check.",
+      "Return -1 when a child returns -1 or the heights differ by more than 1; answer is height(root) >= 0."
+    ],
+    "code": "class Solution:\n    def isBalanced(self, root: Optional[TreeNode]) -> bool:\n        def height(node: Optional[TreeNode]) -> int:\n            # height of a balanced subtree, or -1 as soon as any subtree is unbalanced\n            if node is None:\n                return 0\n            left = height(node.left)\n            if left < 0:\n                return -1\n            right = height(node.right)\n            if right < 0 or abs(left - right) > 1:\n                return -1\n            return 1 + max(left, right)\n\n        return height(root) >= 0",
+    "related": [
+      "maximum_depth_of_binary_tree",
+      "diameter_of_binary_tree"
+    ]
+  },
+  {
+    "slug": "same_tree",
+    "title": "Same Tree",
+    "leetcode": 100,
+    "difficulty": "Easy",
+    "topic": "trees",
+    "pattern": "Simultaneous tree recursion",
+    "file": "trees/same_tree.py",
+    "problem": "Given two binary trees p and q, return True if they are structurally identical and every corresponding node has the same value. Example: p=[1,2,3], q=[1,2,3] -> True; p=[1,2], q=[1,null,2] -> False.",
+    "brute_force": {
+      "approach": "Serialize both trees completely (preorder with a null marker for every missing child) and compare the two lists. The wasted work is finishing both serializations even when the trees already differ at the root, and holding two full copies in memory just to compare them element by element.",
+      "time": "O(n+m)",
+      "space": "O(n+m)",
+      "code": "def brute_force(p: Optional[TreeNode], q: Optional[TreeNode]) -> bool:\n    # Fully serialize both trees (preorder with null markers), then compare the lists.\n    def serialize(node: Optional[TreeNode], out: List[Optional[int]]) -> None:\n        if node is None:\n            out.append(None)\n            return\n        out.append(node.val)\n        serialize(node.left, out)\n        serialize(node.right, out)\n\n    a: List[Optional[int]] = []\n    b: List[Optional[int]] = []\n    serialize(p, a)\n    serialize(q, b)\n    return a == b"
+    },
+    "optimization": "The serialization compares position i of one list with position i of the other, and those positions correspond to the same place in both trees. So skip the flattening: walk both trees in lockstep and compare nodes directly as you reach them. The recursion stops at the first mismatch and needs no storage beyond the call stack. Invariant: isSameTree(a, b) is True iff the subtrees rooted at a and b are identical.",
+    "intuition": "Two trees are identical iff their roots agree, their left subtrees are identical, and their right subtrees are identical; that recursive definition is the algorithm. Base cases: two None nodes match, one None and one real node do not.",
+    "geometric": "Overlay the two trees and trace them with two fingers moving in sync: left-left, right-right. The moment one finger lands on a node while the other lands on empty space (or a different value), stop and answer False.",
+    "visual": "  p:    1        q:    1       walk both in lockstep\n       / \\            / \\\n      2   3          2   3     (1,1) ok -> (2,2) ok ->\n                               (None,None) ok -> (3,3) ok\n                               => True\n  p:    1        q:    1\n       /                \\\n      2                  2     (1,1) ok -> (2, None):\n                               one side empty => False",
+    "steps": [
+      "If either node is None, return True only if both are None.",
+      "If the values differ, return False.",
+      "Recurse on (p.left, q.left) and (p.right, q.right); both must be True."
+    ],
+    "complexity": {
+      "time": "O(min(n,m))",
+      "space": "O(h)",
+      "why": "Stops at the first mismatch; the stack is as deep as the height."
+    },
+    "pitfalls": [
+      "Comparing .val before checking for None.",
+      "Treating [1,2] and [1,null,2] as equal because their values match in some traversal order."
+    ],
+    "hints": [
+      "When are two trees identical, stated in terms of their roots and subtrees?",
+      "Handle the None cases first: both None is a match, exactly one None is a mismatch.",
+      "return p is q if p is None or q is None else p.val == q.val and same(left) and same(right)."
+    ],
+    "code": "class Solution:\n    def isSameTree(self, p: Optional[TreeNode], q: Optional[TreeNode]) -> bool:\n        if p is None or q is None:\n            return p is q            # both None -> True, exactly one None -> False\n        return (p.val == q.val\n                and self.isSameTree(p.left, q.left)\n                and self.isSameTree(p.right, q.right))",
+    "related": [
+      "subtree_of_another_tree",
+      "invert_binary_tree"
+    ]
+  },
+  {
+    "slug": "subtree_of_another_tree",
+    "title": "Subtree of Another Tree",
+    "leetcode": 572,
+    "difficulty": "Easy",
+    "topic": "trees",
+    "pattern": "Tree serialization + substring search",
+    "file": "trees/subtree_of_another_tree.py",
+    "problem": "Return True if subRoot is identical in structure and values to some subtree of root (possibly root itself). Example: root=[3,4,5,1,2], subRoot=[4,1,2] -> True; adding a child 0 under node 2 of root makes it False.",
+    "brute_force": {
+      "approach": "For every node of root, run isSameTree(node, subRoot). isSameTree re-walks the same region of root for many different starting nodes: a node deep in root is compared against subRoot once for every candidate ancestor whose comparison reaches it before failing.",
+      "time": "O(m*n)",
+      "space": "O(h)",
+      "code": "def brute_force(root: Optional[TreeNode], subRoot: Optional[TreeNode]) -> bool:\n    # isSameTree started at every node of root: O(m * n).\n    def same(a: Optional[TreeNode], b: Optional[TreeNode]) -> bool:\n        if a is None or b is None:\n            return a is b\n        return a.val == b.val and same(a.left, b.left) and same(a.right, b.right)\n\n    if root is None:\n        return subRoot is None\n    return (same(root, subRoot)\n            or brute_force(root.left, subRoot)\n            or brute_force(root.right, subRoot))"
+    },
+    "optimization": "Repeated comparison of overlapping regions is exactly the redundancy of naive substring search. A tree flattened in preorder with explicit null markers determines the tree uniquely, and the serialization of a subtree is a contiguous substring of its parent's serialization. So serialize both once and ask whether the small string occurs in the big one; Python's `in` uses a linear two-way search for long needles (KMP gives the same guarantee). The one subtlety is tokenization: a delimiter before every value stops \"2\" from matching inside \"12\".",
+    "intuition": "A subtree becomes a substring once the tree is written down in preorder with nulls. The null markers are essential because without them [1,2] and [1,null,2] serialize identically, and the delimiter before each token stops a value from matching the tail of a longer value.",
+    "geometric": "Flatten the big tree into a line of tokens by walking it preorder; the small tree becomes a short line. Slide the short line along the long one looking for an exact overlap, exactly like finding a word in a sentence.",
+    "visual": " root:     3          sub:   4\n          / \\               / \\\n         4   5             1   2\n        / \\\n       1   2\n preorder + null markers (',' before every token):\n root: ,3,4,1,#,#,2,#,#,5,#,#\n sub :   ,4,1,#,#,2,#,#        <- contiguous substring\n         ^ found at index 2  => True\n add a child 0 under 2:  ,3,4,1,#,#,2,0,#,#,#,5,#,#\n sub no longer occurs => False",
+    "steps": [
+      "serialize(node): None -> \",#\"; otherwise \",\" + val + serialize(left) + serialize(right).",
+      "Compute big = serialize(root) and small = serialize(subRoot).",
+      "Return small in big."
+    ],
+    "complexity": {
+      "time": "O(n+m)",
+      "space": "O(n+m)",
+      "why": "Two linear serializations plus a linear-time substring search."
+    },
+    "pitfalls": [
+      "Omitting null markers loses the structure.",
+      "Forgetting the delimiter lets \"2\" match inside \"12\".",
+      "Comparing in-order value sequences only (structure lost)."
+    ],
+    "hints": [
+      "The obvious approach calls isSameTree at every node. Which comparisons does it repeat?",
+      "Can a tree be written as a string such that a subtree is a substring? What makes that encoding unique?",
+      "Preorder with ',#' for nulls and ',' before every value; answer is serialize(subRoot) in serialize(root)."
+    ],
+    "code": "class Solution:\n    def isSubtree(self, root: Optional[TreeNode], subRoot: Optional[TreeNode]) -> bool:\n        def serialize(node: Optional[TreeNode]) -> str:\n            # ',' before every token and '#' for null keep \"2\" from matching inside \"12\"\n            if node is None:\n                return \",#\"\n            return f\",{node.val}\" + serialize(node.left) + serialize(node.right)\n\n        return serialize(subRoot) in serialize(root)",
+    "related": [
+      "same_tree",
+      "serialize_and_deserialize_binary_tree"
+    ]
+  },
+  {
+    "slug": "lowest_common_ancestor_of_a_bst",
+    "title": "Lowest Common Ancestor of a BST",
+    "leetcode": 235,
+    "difficulty": "Medium",
+    "topic": "trees",
+    "pattern": "BST ordered descent",
+    "file": "trees/lowest_common_ancestor_of_a_bst.py",
+    "problem": "Given a binary search tree and two of its nodes p and q, return their lowest common ancestor: the deepest node that has both as descendants, where a node counts as its own descendant. Example: root=[6,2,8,0,4,7,9,null,null,3,5], p=2, q=8 -> 6; p=2, q=4 -> 2.",
+    "brute_force": {
+      "approach": "Record the root->p path and the root->q path as lists (each by descending the BST), then walk both lists in parallel and return the last node they share. Two separate descents cover the same prefix twice, and both paths are stored only to find where they diverge.",
+      "time": "O(h)",
+      "space": "O(h)",
+      "code": "def brute_force(root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n    # Record the full root->p and root->q paths, then take the last node they share.\n    def path_to(target: TreeNode) -> List[TreeNode]:\n        path, node = [], root\n        while node is not target:\n            path.append(node)\n            node = node.left if target.val < node.val else node.right\n        path.append(node)\n        return path\n\n    a, b = path_to(p), path_to(q)\n    lca = root\n    for x, y in zip(a, b):\n        if x is not y:\n            break\n        lca = x\n    return lca"
+    },
+    "optimization": "The two paths are identical until the first node where p and q fall on different sides, and that node is exactly the LCA. In a BST, which side is decided by comparing values: if both p.val and q.val are smaller than node.val both paths go left; if both are larger both go right; otherwise they split here (or node is one of them). So a single descent from the root that stops at the first split finds the LCA with O(1) extra space. Invariant: the current node is an ancestor of both p and q.",
+    "intuition": "In a BST the LCA is the first node on the way down whose value lies between p.val and q.val inclusive. Above it both targets are on the same side; below it they are separated. The inclusive comparison handles the case where one target is the ancestor of the other.",
+    "geometric": "Think of the BST drawn on a number line: every node splits its interval into less-than (left) and greater-than (right). Walk down while the interval [min(p,q), max(p,q)] sits wholly on one side; the first node whose value falls inside that interval is the answer.",
+    "visual": "              6         p=2, q=4 -> lo=2, hi=4\n            /   \\\n           2     8      at 6: hi=4 < 6  -> go left\n          / \\   / \\\n         0   4 7   9    at 2: lo=2 <= 2 <= hi=4 -> split\n            / \\                 => LCA = 2  (p itself)\n           3   5\n p=2, q=8 -> lo=2, hi=8: at 6: 2 <= 6 <= 8 -> LCA = 6\n one pointer walks a single root->LCA path: O(h), O(1)",
+    "steps": [
+      "lo, hi = min(p.val, q.val), max(p.val, q.val); node = root.",
+      "If hi < node.val, both targets are in the left subtree: node = node.left.",
+      "Else if lo > node.val, both are in the right subtree: node = node.right.",
+      "Otherwise lo <= node.val <= hi: node is the LCA, return it."
+    ],
+    "complexity": {
+      "time": "O(h)",
+      "space": "O(1)",
+      "why": "One pointer walks a single root-to-LCA path; h is log n if balanced, n if skewed."
+    },
+    "pitfalls": [
+      "Using strict inequalities for the split; the LCA may be p or q itself.",
+      "Applying the value-based trick to a tree that is not a BST."
+    ],
+    "hints": [
+      "How does a BST tell you which side of a node p and q live on without exploring?",
+      "If both values are smaller than the node, both paths go left; if both larger, both go right. What if neither?",
+      "Walk down while both targets are on the same side; the first node between them (inclusive) is the LCA."
+    ],
+    "code": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        lo, hi = min(p.val, q.val), max(p.val, q.val)\n        node = root\n        while node:\n            if hi < node.val:\n                node = node.left          # both targets lie in the left subtree\n            elif lo > node.val:\n                node = node.right         # both lie in the right subtree\n            else:\n                return node               # lo <= node.val <= hi: they split here\n        return None",
+    "related": [
+      "lowest_common_ancestor_of_a_binary_tree",
+      "validate_binary_search_tree",
+      "kth_smallest_element_in_a_bst"
+    ]
+  },
+  {
+    "slug": "binary_tree_level_order_traversal",
+    "title": "Binary Tree Level Order Traversal",
+    "leetcode": 102,
+    "difficulty": "Medium",
+    "topic": "trees",
+    "pattern": "BFS by level (queue snapshot)",
+    "file": "trees/binary_tree_level_order_traversal.py",
+    "problem": "Return the node values level by level, left to right, as a list of lists. Example: [3,9,20,null,null,15,7] -> [[3],[9,20],[15,7]].",
+    "brute_force": {
+      "approach": "Compute the height h, then for each depth d run a fresh DFS over the whole tree collecting nodes whose depth equals d. Every pass walks all n nodes but keeps only one level, so each node is visited h times (O(n^2) on a skewed tree).",
+      "time": "O(n*h)",
+      "space": "O(h)",
+      "code": "def brute_force(root: Optional[TreeNode]) -> List[List[int]]:\n    # For each depth d run a fresh DFS that collects nodes at exactly depth d: O(n * h).\n    def height(node: Optional[TreeNode]) -> int:\n        return 0 if node is None else 1 + max(height(node.left), height(node.right))\n\n    def collect(node: Optional[TreeNode], depth: int, target: int, out: List[int]) -> None:\n        if node is None:\n            return\n        if depth == target:\n            out.append(node.val)\n        else:\n            collect(node.left, depth + 1, target, out)\n            collect(node.right, depth + 1, target, out)\n\n    result = []\n    for d in range(height(root)):\n        level: List[int] = []\n        collect(root, 0, d, level)\n        result.append(level)\n    return result"
+    },
+    "optimization": "The brute force re-discovers the nodes of level d+1 while it is already standing on level d: they are the children of what it just collected. So keep them. A FIFO queue naturally holds the frontier in left-to-right order, and remembering how many nodes were in the queue when a level started lets you pop exactly one complete level while its children accumulate behind. Every node is enqueued and dequeued once. Invariant: at the top of the outer loop the queue holds exactly the nodes of one level, left to right.",
+    "intuition": "BFS visits nodes in distance order. The only extra trick for grouping is the level snapshot: len(queue) at the start of a round is the size of the current level, because all of its nodes are already there and none of their children have been added yet.",
+    "geometric": "Picture a horizontal line sweeping down the drawing of the tree one row at a time. The queue is the set of nodes currently on the line; each round replaces the line's nodes by their children, left to right, so the next row is already in order.",
+    "visual": "          3          queue at the top of each round\n         / \\\n        9   20       round 1: [3]       size=1 -> [3]\n           /  \\      round 2: [9, 20]   size=2 -> [9,20]\n          15   7     round 3: [15, 7]   size=2 -> [15,7]\n                     round 4: []        stop\n\n mid round 2: pop 9 (no kids), pop 20 -> push 15, push 7\n queue = [15, 7]    result so far = [[3], [9, 20]]",
+    "steps": [
+      "If root is None return []; queue = deque([root]).",
+      "While the queue is non-empty: size = len(queue), level = [].",
+      "Pop size nodes, appending each value to level and enqueueing its non-None children.",
+      "Append level to the result."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(w)",
+      "why": "Each node is enqueued once; the queue holds at most one level of width w (up to n/2)."
+    },
+    "pitfalls": [
+      "Reading len(queue) inside the inner loop; it changes as children are added.",
+      "Enqueueing None children.",
+      "Forgetting the empty-tree case."
+    ],
+    "hints": [
+      "Which traversal visits nodes in order of distance from the root?",
+      "At the moment a level begins, what does the queue contain, and how many items is that?",
+      "for _ in range(len(queue)): pop, record, push children; append the collected level."
+    ],
+    "code": "class Solution:\n    def levelOrder(self, root: Optional[TreeNode]) -> List[List[int]]:\n        if root is None:\n            return []\n        result: List[List[int]] = []\n        queue = deque([root])\n        while queue:\n            level = []\n            for _ in range(len(queue)):       # snapshot: exactly the nodes of this level\n                node = queue.popleft()\n                level.append(node.val)\n                if node.left:\n                    queue.append(node.left)\n                if node.right:\n                    queue.append(node.right)\n            result.append(level)\n        return result",
+    "related": [
+      "binary_tree_right_side_view",
+      "maximum_depth_of_binary_tree"
+    ]
+  },
+  {
+    "slug": "binary_tree_right_side_view",
+    "title": "Binary Tree Right Side View",
+    "leetcode": 199,
+    "difficulty": "Medium",
+    "topic": "trees",
+    "pattern": "DFS with depth (first-visit per level)",
+    "file": "trees/binary_tree_right_side_view.py",
+    "problem": "Standing to the right of a binary tree, return the values visible from top to bottom: the rightmost node of every level. Example: [1,2,3,null,5,null,4] -> [1,3,4]; [1,null,3] -> [1,3].",
+    "brute_force": {
+      "approach": "Run a full level-order traversal that stores every node of every level as a list of lists, then keep the last element of each list. All n values are stored when only one per level is used; everything but the last entry of each level is thrown away.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "code": "def brute_force(root: Optional[TreeNode]) -> List[int]:\n    # Full level-order listing of every node, then keep only the last value per level.\n    if root is None:\n        return []\n    levels, frontier = [], [root]\n    while frontier:\n        levels.append([n.val for n in frontier])\n        nxt = []\n        for n in frontier:\n            if n.left:\n                nxt.append(n.left)\n            if n.right:\n                nxt.append(n.right)\n        frontier = nxt\n    return [level[-1] for level in levels]"
+    },
+    "optimization": "Only the first node reached on each level matters if right children are visited before left children. A DFS that carries its depth and goes right-first reaches, for every depth d, the rightmost node of depth d before any other node of that depth. So \"depth == len(view)\" means nobody has claimed this level yet: record the value. Space drops to the recursion stack plus the h answers. Invariant: view[d] is the first node visited at depth d, which right-first order makes the rightmost one.",
+    "intuition": "Right-first preorder DFS reaches each level's rightmost node before any other node of that level. The length of the answer list doubles as the next unseen depth, so no extra bookkeeping is needed. The deeper nodes reachable only through a left child are still found because the DFS back-fills after the right spine ends.",
+    "geometric": "Shine a light from the right: each level's rightmost node casts the only visible silhouette. The DFS hugs the right edge of the drawing first, then back-fills deeper levels that the right spine does not reach.",
+    "visual": "        1     <- depth 0: view=[1]       right-first DFS\n       / \\\n      2   3   <- depth 1: 3 reached first -> view=[1,3]\n       \\   \\\n        5   4 <- depth 2: 4 reached first -> view=[1,3,4]\n                 later 5 at depth 2: len(view)=3 != 2, skip\n visit order: 1, 3, 4, 2, 5\n view[d] is claimed by the first node reached at depth d",
+    "steps": [
+      "view = []; call dfs(root, 0).",
+      "dfs(node, depth): return if None; if depth == len(view), append node.val.",
+      "Recurse dfs(node.right, depth + 1) and then dfs(node.left, depth + 1).",
+      "Return view."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "Every node is visited once; the recursion stack is as deep as the height."
+    },
+    "pitfalls": [
+      "Visiting left first (records the left view).",
+      "Returning just the right spine, which misses deeper nodes hanging under a left child.",
+      "Mutating a shared depth counter instead of passing it down."
+    ],
+    "hints": [
+      "Level order gives you every level; which single node per level do you actually need?",
+      "If you visit right children before left, when do you first reach each depth?",
+      "Carry depth in a DFS; when depth == len(result), this node is the rightmost of its level."
+    ],
+    "code": "class Solution:\n    def rightSideView(self, root: Optional[TreeNode]) -> List[int]:\n        view: List[int] = []\n\n        def dfs(node: Optional[TreeNode], depth: int) -> None:\n            if node is None:\n                return\n            if depth == len(view):        # first node reached at this depth\n                view.append(node.val)\n            dfs(node.right, depth + 1)    # right first so it claims the level\n            dfs(node.left, depth + 1)\n\n        dfs(root, 0)\n        return view",
+    "related": [
+      "binary_tree_level_order_traversal",
+      "count_good_nodes_in_binary_tree"
+    ]
+  },
+  {
+    "slug": "count_good_nodes_in_binary_tree",
+    "title": "Count Good Nodes in Binary Tree",
+    "leetcode": 1448,
+    "difficulty": "Medium",
+    "topic": "trees",
+    "pattern": "DFS carrying path state",
+    "file": "trees/count_good_nodes_in_binary_tree.py",
+    "problem": "A node is good if no node on the path from the root to it has a value greater than it (the root is always good). Count the good nodes. Example: [3,1,4,3,null,1,5] -> 4 (the root 3, the 4, the 5, and the deeper 3).",
+    "brute_force": {
+      "approach": "DFS while carrying the full root->node path as a list; at every node call max(path) over the whole list to decide if the node is good. The repeated work is the max() scan: the maximum of the path's prefix was already computed at the parent, yet it is recomputed from scratch at every child.",
+      "time": "O(n*h)",
+      "space": "O(h^2)",
+      "code": "def brute_force(root: TreeNode) -> int:\n    # Carry the whole root->node path and rescan it with max() at every node: O(n * h).\n    def dfs(node: Optional[TreeNode], path: List[int]) -> int:\n        if node is None:\n            return 0\n        path = path + [node.val]\n        good = 1 if node.val >= max(path) else 0\n        return good + dfs(node.left, path) + dfs(node.right, path)\n\n    return dfs(root, [])"
+    },
+    "optimization": "The decision at a node needs only one number about the path: its maximum, and that number is incremental: max(path + [v]) = max(max(path), v). So pass the running maximum down the recursion instead of the path itself; each child receives max(parent_max, parent.val) and compares its value against it in O(1). Every node is visited once with constant work. Invariant: path_max passed into dfs(node) is the largest value strictly above node.",
+    "intuition": "Good means a new record high along the root path. Track the record as you descend; a node is good when it ties or beats it, and then it becomes the new record for everything below it. Siblings get independent copies because the maximum is passed as an argument, not mutated.",
+    "geometric": "Walk down each root-to-leaf path like a hiker tracking the highest altitude reached so far. Every node whose altitude is at least the current record is a new summit; the record only ever rises, so a single integer riding along with the recursion suffices.",
+    "visual": "          3   path_max=-inf: 3 >= -inf good   (max -> 3)\n         / \\\n        1   4    1 < 3 bad          4 >= 3 good (max -> 4)\n       /   / \\\n      3   1   5  3 >= 3 good (tie)  1 < 4 bad  5 >= 4 good\n\n dfs(node, path_max): good = node.val >= path_max\n                      recurse with max(path_max, node.val)\n good nodes: 3, 4, 3, 5  => 4",
+    "steps": [
+      "dfs(node, path_max): return 0 for None.",
+      "good = 1 if node.val >= path_max else 0.",
+      "path_max = max(path_max, node.val).",
+      "Return good + dfs(left, path_max) + dfs(right, path_max).",
+      "Start with dfs(root, root.val)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "One visit per node with O(1) work; the stack is as deep as the height."
+    },
+    "pitfalls": [
+      "Using > instead of >=; equal values are good.",
+      "Updating the maximum before comparing the current node.",
+      "Sharing one mutable maximum across sibling subtrees."
+    ],
+    "hints": [
+      "What single fact about the root-to-node path decides whether a node is good?",
+      "Can that fact be updated in O(1) when stepping from parent to child?",
+      "Pass the running max down; count the node if node.val >= running max, then recurse with max(running, node.val)."
+    ],
+    "code": "class Solution:\n    def goodNodes(self, root: TreeNode) -> int:\n        def dfs(node: Optional[TreeNode], path_max: int) -> int:\n            if node is None:\n                return 0\n            good = 1 if node.val >= path_max else 0   # ties count as good\n            path_max = max(path_max, node.val)\n            return good + dfs(node.left, path_max) + dfs(node.right, path_max)\n\n        return dfs(root, root.val)",
+    "related": [
+      "binary_tree_right_side_view",
+      "validate_binary_search_tree"
+    ]
+  },
+  {
+    "slug": "validate_binary_search_tree",
+    "title": "Validate Binary Search Tree",
+    "leetcode": 98,
+    "difficulty": "Medium",
+    "topic": "trees",
+    "pattern": "DFS with (low, high) bounds",
+    "file": "trees/validate_binary_search_tree.py",
+    "problem": "Return True if a binary tree is a valid BST: every node's value is strictly greater than all values in its left subtree and strictly less than all values in its right subtree. Example: [2,1,3] -> True; [5,1,4,null,null,3,6] -> False because 3 sits in the right subtree of 5.",
+    "brute_force": {
+      "approach": "At each node collect every value in its left subtree and check they are all smaller, collect every value in its right subtree and check they are all larger, then recurse into both children. The repeated work is the scanning: a node deep in the tree is re-examined once by every ancestor.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(root: Optional[TreeNode]) -> bool:\n    # At each node rescan its entire left and right subtrees: O(n^2).\n    def all_values(node: Optional[TreeNode]) -> List[int]:\n        if node is None:\n            return []\n        return [node.val] + all_values(node.left) + all_values(node.right)\n\n    if root is None:\n        return True\n    if any(v >= root.val for v in all_values(root.left)):\n        return False\n    if any(v <= root.val for v in all_values(root.right)):\n        return False\n    return brute_force(root.left) and brute_force(root.right)"
+    },
+    "optimization": "An ancestor does not need to look at every descendant; it only needs to hand down a constraint. A node is valid with respect to all its ancestors iff low < node.val < high, where low is the nearest ancestor from which we turned right and high the nearest from which we turned left. The bounds update in O(1) on the way down: going left tightens high to node.val, going right tightens low to node.val. One traversal with the bound pair replaces all rescans. Invariant: every value in the subtree rooted at node must lie strictly inside (low, high).",
+    "intuition": "Checking only parent-child pairs is insufficient: in [5,4,6,null,null,3,7] the 3 is smaller than its parent 6 but violates the grandparent 5. Carrying an open interval accumulates every ancestor's constraint; each node checks itself against the interval and narrows it for its children. An equivalent view: the in-order sequence must be strictly increasing.",
+    "geometric": "Each node receives a window on the number line; the root's window is (-inf, +inf). Stepping to a left child slides the right wall in to the parent's value, stepping right slides the left wall. A node is valid when it sits strictly inside its window, and windows only shrink going down.",
+    "visual": "            5   window (-inf, +inf)  windows shrink downward\n           / \\\n          4   6     4 in (-inf, 5)  ok\n             / \\    6 in (5, +inf)  ok\n            3   7   7 in (6, +inf)  ok\n                    3 in (5, 6) ?   3 < 5  -> False\n\n a parent-only check accepts 3 (3 < 6); the inherited\n lower bound 5 from the grandparent catches it",
+    "steps": [
+      "valid(node, low, high): None returns True.",
+      "If not (low < node.val < high), return False.",
+      "Return valid(node.left, low, node.val) and valid(node.right, node.val, high).",
+      "Start with valid(root, -inf, +inf)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "Each node is checked once against two bounds; the stack is as deep as the height."
+    },
+    "pitfalls": [
+      "Comparing only with the direct parent.",
+      "Using <= somewhere; duplicates make the tree invalid.",
+      "Using finite sentinel bounds that can collide with real values; use +/- infinity or None."
+    ],
+    "hints": [
+      "Why is checking each node against only its parent not enough? Build a 7-node counterexample.",
+      "What does an ancestor need to tell a descendant so the descendant can validate itself locally?",
+      "Pass (low, high); going left sets high = node.val, going right sets low = node.val."
+    ],
+    "code": "class Solution:\n    def isValidBST(self, root: Optional[TreeNode]) -> bool:\n        def valid(node: Optional[TreeNode], low: float, high: float) -> bool:\n            # every value in node's subtree must lie strictly inside (low, high)\n            if node is None:\n                return True\n            if not (low < node.val < high):\n                return False\n            return valid(node.left, low, node.val) and valid(node.right, node.val, high)\n\n        return valid(root, float(\"-inf\"), float(\"inf\"))",
+    "related": [
+      "kth_smallest_element_in_a_bst",
+      "lowest_common_ancestor_of_a_bst",
+      "count_good_nodes_in_binary_tree"
+    ]
+  },
+  {
+    "slug": "kth_smallest_element_in_a_bst",
+    "title": "Kth Smallest Element in a BST",
+    "leetcode": 230,
+    "difficulty": "Medium",
+    "topic": "trees",
+    "pattern": "Iterative in-order traversal with early stop",
+    "file": "trees/kth_smallest_element_in_a_bst.py",
+    "problem": "Given the root of a BST and an integer k, return the k-th smallest value (1-indexed). Example: [3,1,4,null,2], k=1 -> 1; [5,3,6,2,4,null,null,1], k=3 -> 3.",
+    "brute_force": {
+      "approach": "Collect every value with any traversal into a list, sort it, and return index k-1. The sort ignores that the BST already orders the values, and all n values are gathered when only the first k are ever needed.",
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "code": "def brute_force(root: Optional[TreeNode], k: int) -> int:\n    # Dump every value, sort, index: O(n log n); ignores the BST ordering entirely.\n    vals: List[int] = []\n\n    def walk(node: Optional[TreeNode]) -> None:\n        if node:\n            vals.append(node.val)\n            walk(node.left)\n            walk(node.right)\n\n    walk(root)\n    return sorted(vals)[k - 1]"
+    },
+    "optimization": "In-order traversal (left, node, right) of a BST visits values in sorted order for free, so sorting is unnecessary. And because we can stop as soon as the k-th node is emitted, we do not need to visit the rest of the tree. An explicit stack makes the early stop clean: push the left spine, pop (that is the next smallest), then move to the popped node's right child and push its left spine. Invariant: the stack holds the ancestors whose values are the next to be emitted, smallest on top.",
+    "intuition": "A BST's in-order sequence is the sorted order. Walk it lazily, counting down k, and return the value when k hits zero. The iterative stack lets you pause mid-traversal, which a plain recursive in-order cannot do without a flag.",
+    "geometric": "Picture the tree drawn with every node at the x-coordinate of its value; in-order traversal is a left-to-right sweep. The stack is the chain of nodes above and to the right of the sweep line that are still waiting to be reported; each pop moves the sweep line one node right.",
+    "visual": "            5        in-order with an explicit stack, k = 3\n           / \\\n          3   6      push left spine: stack = [5, 3, 2, 1]\n         / \\         pop 1  k=2   node = 1.right = None\n        2   4        pop 2  k=1   node = 2.right = None\n       /             pop 3  k=0   -> return 3\n      1              (4, 5, 6 are never visited)\n stack = ancestors still waiting, smallest on top",
+    "steps": [
+      "stack = []; node = root.",
+      "Loop: while node is not None, push it and move to node.left.",
+      "node = stack.pop(); k -= 1; if k == 0 return node.val.",
+      "node = node.right and repeat."
+    ],
+    "complexity": {
+      "time": "O(h + k)",
+      "space": "O(h)",
+      "why": "The left spine is pushed once, then each of k pops is amortised O(1); the stack never exceeds the height."
+    },
+    "pitfalls": [
+      "Visiting a node before its left subtree (wrong order).",
+      "Treating k as 0-indexed.",
+      "Using recursion and not stopping once the k-th value is found."
+    ],
+    "hints": [
+      "Which traversal of a BST yields its values in sorted order?",
+      "You do not need all n values; how can you stop after exactly k of them?",
+      "Iterative in-order with a stack: push the left spine, pop, decrement k, then go right."
+    ],
+    "code": "class Solution:\n    def kthSmallest(self, root: Optional[TreeNode], k: int) -> int:\n        stack: List[TreeNode] = []\n        node = root\n        while True:\n            while node:                   # dive left, stacking the ancestors\n                stack.append(node)\n                node = node.left\n            node = stack.pop()            # next value in sorted order\n            k -= 1\n            if k == 0:\n                return node.val\n            node = node.right             # then its right subtree's left spine",
+    "related": [
+      "validate_binary_search_tree",
+      "lowest_common_ancestor_of_a_bst"
+    ]
+  },
+  {
+    "slug": "construct_binary_tree_from_preorder_and_inorder_traversal",
+    "title": "Construct Binary Tree from Preorder and Inorder Traversal",
+    "leetcode": 105,
+    "difficulty": "Medium",
+    "topic": "trees",
+    "pattern": "Recursive tree construction with index map",
+    "file": "trees/construct_binary_tree_from_preorder_and_inorder_traversal.py",
+    "problem": "Given the preorder and inorder traversals of a binary tree with unique values, rebuild the tree. Example: preorder=[3,9,20,15,7], inorder=[9,3,15,20,7] -> [3,9,20,null,null,15,7].",
+    "brute_force": {
+      "approach": "preorder[0] is the root; find it in inorder with a linear search. Everything left of it is the left subtree's inorder, everything right is the right subtree's; the next len(left) preorder entries are the left subtree's preorder. Recurse on sliced lists. The repeated work is the linear search for the root and the copying of sub-arrays that are only ever read, O(n) per node on a skewed tree.",
+      "time": "O(n^2)",
+      "space": "O(n^2)",
+      "code": "def brute_force(preorder: List[int], inorder: List[int]) -> Optional[TreeNode]:\n    # Linear search for the root in inorder and slice both lists at every call: O(n^2).\n    if not preorder:\n        return None\n    root = TreeNode(preorder[0])\n    mid = inorder.index(root.val)\n    root.left = brute_force(preorder[1:mid + 1], inorder[:mid])\n    root.right = brute_force(preorder[mid + 1:], inorder[mid + 1:])\n    return root"
+    },
+    "optimization": "Two independent fixes. The linear search answers \"where is value v in inorder?\", which a hash map answers in O(1) after one pass. The slices only delimit which part of inorder a subtree owns, and a pair of indices (lo, hi) carries that without copying. The preorder side needs no bounds at all: nodes are consumed strictly in preorder order, so a single running pointer suffices, because building the left subtree first consumes exactly mid - lo preorder entries before the right subtree starts. Invariant: make(lo, hi) consumes exactly hi - lo preorder entries and returns the subtree whose inorder occupies inorder[lo:hi].",
+    "intuition": "Preorder tells you who the root is (first element); inorder tells you how big the left subtree is (everything before the root). Those two facts split the problem into two smaller identical ones. A hash map makes the split O(1), and consuming preorder with a pointer keeps the two traversals in sync without ever slicing.",
+    "geometric": "Picture inorder as a horizontal line of values; the root splits it into a left segment and a right segment. The recursion repeatedly cuts segments at the next preorder value, left segment first. The preorder pointer moves strictly rightward, one step per node created, while the inorder window shrinks around each subtree.",
+    "visual": " preorder: [3, 9, 20, 15, 7]  <- pre pointer, left to right\n inorder : [9, 3, 15, 20, 7]  index={9:0,3:1,15:2,20:3,7:4}\n\n make(0,5): root=3, mid=1                    3\n   make(0,1): root=9  (leaf)                / \\\n   make(2,5): root=20, mid=3               9   20\n     make(2,3): root=15                       /  \\\n     make(4,5): root=7                       15   7\n the inorder window [lo,hi) splits at mid; the left half is\n built first so pre lands on 20 exactly when it is needed",
+    "steps": [
+      "index = {value: position in inorder}; pre = 0.",
+      "make(lo, hi): if lo >= hi return None.",
+      "root = TreeNode(preorder[pre]); pre += 1; mid = index[root.val].",
+      "root.left = make(lo, mid); root.right = make(mid + 1, hi); return root.",
+      "Answer is make(0, n)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "Each node is created once with O(1) map lookups; the map holds n entries plus O(h) stack."
+    },
+    "pitfalls": [
+      "Building the right subtree before the left; the preorder pointer must consume the left subtree first.",
+      "Off-by-one on the inorder bounds (half-open [lo, hi) keeps it clean).",
+      "The index map requires unique values."
+    ],
+    "hints": [
+      "What does preorder[0] tell you, and what does its position in inorder tell you?",
+      "The slicing version is O(n^2). Which two operations are wasteful, and what replaces each?",
+      "Hash map for inorder positions, a running preorder pointer, and (lo, hi) bounds instead of slices."
+    ],
+    "code": "class Solution:\n    def buildTree(self, preorder: List[int], inorder: List[int]) -> Optional[TreeNode]:\n        index = {v: i for i, v in enumerate(inorder)}   # O(1) \"where is the root in inorder?\"\n        self.pre = 0                                      # next unused preorder entry\n\n        def make(lo: int, hi: int) -> Optional[TreeNode]:\n            # builds the subtree whose inorder values occupy inorder[lo:hi]\n            if lo >= hi:\n                return None\n            root = TreeNode(preorder[self.pre])\n            self.pre += 1\n            mid = index[root.val]\n            root.left = make(lo, mid)          # consumes exactly mid - lo preorder entries\n            root.right = make(mid + 1, hi)\n            return root\n\n        return make(0, len(inorder))",
+    "related": [
+      "serialize_and_deserialize_binary_tree",
+      "kth_smallest_element_in_a_bst"
+    ]
+  },
+  {
+    "slug": "binary_tree_maximum_path_sum",
+    "title": "Binary Tree Maximum Path Sum",
+    "leetcode": 124,
+    "difficulty": "Hard",
+    "topic": "trees",
+    "pattern": "Post-order height with side-channel answer",
+    "file": "trees/binary_tree_maximum_path_sum.py",
+    "problem": "A path is any sequence of nodes connected by parent-child edges, each node used at most once; it need not pass through the root or end at a leaf. Return the maximum sum of node values over all non-empty paths. Example: [-10,9,20,null,null,15,7] -> 42 via 15 -> 20 -> 7.",
+    "brute_force": {
+      "approach": "Every path has a unique highest node. For each node as that top, the best path is node.val plus the best downward gain on the left plus the best downward gain on the right (each clipped at 0). Compute gain() with a standalone recursive function at every node and take the max. The repeated work is gain(): a subtree's gain is recomputed for every ancestor that considers itself the top.",
+      "time": "O(n^2)",
+      "space": "O(h)",
+      "code": "def brute_force(root: Optional[TreeNode]) -> int:\n    # Every node as the path's top; recompute both downward gains from scratch: O(n^2).\n    def gain(node: Optional[TreeNode]) -> int:\n        if node is None:\n            return 0\n        return node.val + max(gain(node.left), gain(node.right), 0)\n\n    if root is None:\n        return float(\"-inf\")\n    here = root.val + max(gain(root.left), 0) + max(gain(root.right), 0)\n    return max(here, brute_force(root.left), brute_force(root.right))"
+    },
+    "optimization": "gain(node) is itself a post-order recursion that computes gain(left) and gain(right) on the way, and those are exactly the two numbers the node-as-top formula needs. So evaluate the candidate inside gain(), update a global best, and return only the single-arm value node.val + max(left, right, 0) to the parent. One pass, each node visited once. The split matters: a path bending at node uses both arms, but a path continuing up through the parent can use only one, so the returned value and the recorded candidate are different quantities.",
+    "intuition": "Two quantities per node: the best path that bends here (val + left gain + right gain) is a candidate answer, and the best path that can be extended upward (val + the better single arm) is what gets returned. Negative gains are clipped to 0 because a bad subtree is simply left out. Initialise best to -infinity so an all-negative tree still returns its largest single node.",
+    "geometric": "Each node is a hinge with two arms hanging below. Measuring from the leaves up, every arm reports the heaviest downward chain it can offer, or 0 if all its chains are negative. Opening a hinge flat gives a candidate path; folding it to one side gives what the hinge passes up.",
+    "visual": "          -10     gain(-10): L=9, R=35 -> cand -10+9+35 = 34\n         /   \\               returns -10 + 35 = 25\n        9     20  gain(20): L=15, R=7 -> cand 20+15+7 = 42 *\n             /  \\            returns 20 + 15 = 35\n            15   7   gain(9)=9  gain(15)=15  gain(7)=7\n\n best = 42: path 15 - 20 - 7 bends at 20, never reaches root\n returned value = one arm only; candidate = both arms",
+    "steps": [
+      "best = -inf. Define gain(node); None returns 0.",
+      "left = max(gain(node.left), 0); right = max(gain(node.right), 0).",
+      "best = max(best, node.val + left + right): the path bending here.",
+      "Return node.val + max(left, right) to the parent.",
+      "Call gain(root); return best."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "One post-order visit per node with O(1) work; the stack is as deep as the height."
+    },
+    "pitfalls": [
+      "Returning left + right upward; a path cannot fork.",
+      "Initialising best to 0, which fails for all-negative trees.",
+      "Forgetting to clip negative gains to 0."
+    ],
+    "hints": [
+      "Every path has a highest node. What is the best path whose highest node is a given node?",
+      "The value a node returns to its parent cannot include both children. Why?",
+      "In post-order: candidate = val + max(L,0) + max(R,0); return val + max(L, R, 0)."
+    ],
+    "code": "class Solution:\n    def maxPathSum(self, root: Optional[TreeNode]) -> int:\n        self.best = float(\"-inf\")             # not 0: an all-negative tree still has an answer\n\n        def gain(node: Optional[TreeNode]) -> int:\n            # best sum of a path that starts at `node` and goes DOWN one side (never negative)\n            if node is None:\n                return 0\n            left = max(gain(node.left), 0)    # a negative arm is simply not used\n            right = max(gain(node.right), 0)\n            self.best = max(self.best, node.val + left + right)   # path bending at node\n            return node.val + max(left, right)                     # only one arm continues up\n\n        gain(root)\n        return self.best",
+    "related": [
+      "diameter_of_binary_tree",
+      "balanced_binary_tree",
+      "count_good_nodes_in_binary_tree"
+    ]
+  },
+  {
+    "slug": "serialize_and_deserialize_binary_tree",
+    "title": "Serialize and Deserialize Binary Tree",
+    "leetcode": 297,
+    "difficulty": "Hard",
+    "topic": "trees",
+    "pattern": "Preorder with null sentinels",
+    "file": "trees/serialize_and_deserialize_binary_tree.py",
+    "problem": "Design a Codec with serialize(root) -> str and deserialize(str) -> root such that deserialize(serialize(t)) reproduces t exactly; any format is allowed. Example: [1,2,3,null,null,4,5] -> \"1,2,#,#,3,4,#,#,5,#,#\" and back.",
+    "brute_force": {
+      "approach": "Use LeetCode's display format: level-order BFS emitting \"null\" for every missing child, decoded with a queue that pairs each parent with the next two tokens. Still O(n), but the decoder has to keep a queue of parents waiting for children and a running token index, and every leaf costs two null tokens; structure is reconstructed by remembering who is waiting rather than implied by the order of tokens.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    # Level-order with explicit \"null\" tokens (LeetCode's display format): the decoder\n    # needs a queue of waiting parents plus a running token index.\n    def serialize(self, root: Optional[TreeNode]) -> str:\n        out, queue = [], deque([root])\n        while queue:\n            node = queue.popleft()\n            if node is None:\n                out.append(\"null\")\n                continue\n            out.append(str(node.val))\n            queue.append(node.left)\n            queue.append(node.right)\n        return \",\".join(out)\n\n    def deserialize(self, data: str) -> Optional[TreeNode]:\n        tokens = data.split(\",\")\n        if tokens[0] == \"null\":\n            return None\n        root = TreeNode(int(tokens[0]))\n        queue, i = deque([root]), 1\n        while queue:\n            node = queue.popleft()\n            for side in (\"left\", \"right\"):\n                if tokens[i] != \"null\":\n                    child = TreeNode(int(tokens[i]))\n                    setattr(node, side, child)\n                    queue.append(child)\n                i += 1\n        return root"
+    },
+    "optimization": "The queue exists only to remember which parent the next tokens belong to, and recursion remembers that for free. Emit nodes in preorder with a sentinel \"#\" for every null child; the decoder is then a single recursive reader: take the next token, if it is \"#\" return None, otherwise make a node, read its left subtree, then its right subtree. The sentinels say exactly where each subtree ends, so no sizes, indices or queues are needed, and the decoder mirrors the encoder line for line. Invariant: when read() returns, the token stream is positioned just past the subtree it decoded.",
+    "intuition": "Preorder alone is ambiguous ([1,2] vs [1,null,2]), but preorder with null markers is a complete description: each \"#\" says this branch stops here. Encoding and decoding are the same traversal run in two directions, and duplicates are no problem because no value is ever used to find a position.",
+    "geometric": "Walk the tree in preorder and write down what you see, including every empty slot, producing a flat line of tokens. Decoding replays the walk: a value token means step down-left, a \"#\" means this branch is done, step back up and go right. The token iterator is the walker's position on the line.",
+    "visual": "        1          preorder with '#' sentinels\n       / \\\n      2   3        \"1,2,#,#,3,4,#,#,5,#,#\"\n         / \\\n        4   5      decode: read() consumes tokens in order\n read(): 1 -> left = read(): 2 -> left  = read(): '#' None\n                                  right = read(): '#' None\n              right = read(): 3 -> left = read(): 4 ...\n each '#' closes a branch; recursion knows whose turn it is",
+    "steps": [
+      "serialize: walk(node): None appends \"#\"; else append val, walk left, walk right. Join with commas.",
+      "deserialize: tokens = iter(data.split(\",\")).",
+      "read(): tok = next(tokens); if tok == \"#\" return None.",
+      "node = TreeNode(int(tok)); node.left = read(); node.right = read(); return node."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "Each node emits one token and triggers one pair of recursive reads; recursion depth is the height."
+    },
+    "pitfalls": [
+      "Choosing a separator that can appear inside values (negatives need a real delimiter).",
+      "Storing preorder + inorder instead, which breaks on duplicate values.",
+      "Deep recursion on skewed trees of 10^4 nodes; raise the recursion limit or go iterative."
+    ],
+    "hints": [
+      "Why is a plain preorder list not enough to rebuild a tree? What extra token fixes that?",
+      "If every missing child is written down explicitly, does the decoder still need to know subtree sizes?",
+      "Preorder with '#' for null; decode with a recursive read() over an iterator of tokens."
+    ],
+    "code": "class Codec:\n    def serialize(self, root: Optional[TreeNode]) -> str:\n        # preorder with '#' for every null child: the structure is implied by the order\n        tokens: List[str] = []\n\n        def walk(node: Optional[TreeNode]) -> None:\n            if node is None:\n                tokens.append(\"#\")\n                return\n            tokens.append(str(node.val))\n            walk(node.left)\n            walk(node.right)\n\n        walk(root)\n        return \",\".join(tokens)\n\n    def deserialize(self, data: str) -> Optional[TreeNode]:\n        tokens = iter(data.split(\",\"))\n\n        def read() -> Optional[TreeNode]:\n            tok = next(tokens)\n            if tok == \"#\":\n                return None\n            node = TreeNode(int(tok))\n            node.left = read()            # consumes exactly the left subtree's tokens\n            node.right = read()\n            return node\n\n        return read()",
+    "related": [
+      "construct_binary_tree_from_preorder_and_inorder_traversal",
+      "subtree_of_another_tree"
+    ]
+  },
+  {
+    "slug": "lowest_common_ancestor_of_a_binary_tree",
+    "title": "Lowest Common Ancestor of a Binary Tree",
+    "leetcode": 236,
+    "difficulty": "Medium",
+    "topic": "trees",
+    "pattern": "Post-order \"found below me\" recursion",
+    "file": "trees/lowest_common_ancestor_of_a_binary_tree.py",
+    "problem": "Given a binary tree (no ordering) and two nodes p and q that are both in it, return their lowest common ancestor; a node may be its own ancestor. Example: root=[3,5,1,6,2,0,8,null,null,7,4], p=5, q=1 -> 3; p=5, q=4 -> 5.",
+    "brute_force": {
+      "approach": "Run one DFS to record the root->p path as a list of nodes, another to record the root->q path, then walk both lists in parallel and return the last shared node. The tree is traversed twice, the shared prefix of both paths is stored twice, and both paths are kept only to find where they diverge.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "code": "def brute_force(root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n    # Two full searches to record root->p and root->q paths, then compare the paths.\n    def path_to(node: Optional[TreeNode], target: TreeNode, path: List[TreeNode]) -> bool:\n        if node is None:\n            return False\n        path.append(node)\n        if node is target or path_to(node.left, target, path) or path_to(node.right, target, path):\n            return True\n        path.pop()\n        return False\n\n    a: List[TreeNode] = []\n    b: List[TreeNode] = []\n    path_to(root, p, a)\n    path_to(root, q, b)\n    lca = None\n    for x, y in zip(a, b):\n        if x is not y:\n            break\n        lca = x\n    return lca"
+    },
+    "optimization": "Instead of asking for the path to p and the path to q separately, ask every subtree one question: do you contain p or q, and if so hand me back the most relevant node? A post-order recursion returns p or q when it finds it, propagates that single hit upward, and when a node receives hits from both children it must be the split point, so it returns itself from then on. One traversal, no stored paths. Invariant: the call on a node returns None if its subtree has neither target, the found target if it has exactly one, and the LCA if it has both.",
+    "intuition": "The LCA is the first node, bottom-up, whose left and right subtrees each contribute one of the targets, or that is itself a target with the other beneath it. The recursion collapses each subtree into a single report (None / p / q / LCA) and parents only combine two reports. Returning early when root is p or q is safe because both targets are guaranteed to exist.",
+    "geometric": "Picture two signals rising from p and q toward the root along their ancestor chains. Each node forwards the signal it receives, or nothing. The first node where the two signals meet is the LCA; above it, nodes simply forward the answer without further inspection.",
+    "visual": "            3         post-order reports: None / p / q / LCA\n          /   \\\n         5     1      lca(5): root is p -> return 5 at once\n        / \\   / \\     lca(1): left=lca(0)=None,\n       6   2 0   8            right=lca(8)=None -> None\n          / \\         lca(3): left=5, right=None -> return 5\n         7   4                                  => LCA = 5\n p=5, q=1: lca(3): left=5, right=1 -> both hit -> return 3",
+    "steps": [
+      "If root is None or root is p or root is q, return root.",
+      "left = recurse(root.left); right = recurse(root.right).",
+      "If both are non-None, return root: p and q are on different sides.",
+      "Otherwise return whichever is non-None (or None)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "Every node is visited once; the recursion stack is as deep as the height."
+    },
+    "pitfalls": [
+      "Comparing node values instead of node identity; values may repeat.",
+      "Confusing this with the BST variant that can use values to steer.",
+      "The early return on finding p or q relies on both targets being present."
+    ],
+    "hints": [
+      "Without BST ordering you cannot steer. What can a subtree report upward about p and q?",
+      "What does it mean if a node hears a hit from both its left and its right child?",
+      "Return root if it is None/p/q; recurse both sides; if both non-None return root else return the non-None one."
+    ],
+    "code": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        # returns p / q / their LCA if found in this subtree, else None\n        if root is None or root is p or root is q:\n            return root\n        left = self.lowestCommonAncestor(root.left, p, q)\n        right = self.lowestCommonAncestor(root.right, p, q)\n        if left and right:\n            return root          # p and q are on different sides: root is the split point\n        return left or right     # both on one side (that side already reports the answer)",
+    "related": [
+      "lowest_common_ancestor_of_a_bst",
+      "diameter_of_binary_tree"
+    ]
+  },
+  {
+    "slug": "implement_trie_prefix_tree",
+    "title": "Implement Trie (Prefix Tree)",
+    "leetcode": 208,
+    "difficulty": "Medium",
+    "topic": "tries",
+    "pattern": "Trie (prefix tree)",
+    "file": "tries/implement_trie_prefix_tree.py",
+    "problem": "Design a Trie with insert(word), search(word) (is this exact word stored?) and startsWith(prefix) (does any stored word begin with prefix?). Example: insert(\"apple\"); search(\"apple\") -> True; search(\"app\") -> False; startsWith(\"app\") -> True; insert(\"app\"); search(\"app\") -> True.",
+    "brute_force": {
+      "approach": "Keep the inserted words in a list. search scans the list comparing whole strings; startsWith scans it calling w.startswith(prefix) on every word. Words that share a prefix (apple, apply, app) are compared character by character against the same query over and over; shared letters are re-read once per word instead of once in total.",
+      "time": "O(N*L) per query",
+      "space": "O(N*L)",
+      "code": "class BruteForce:\n    # Plain list of words: search scans every word, startsWith re-compares every prefix.\n    def __init__(self):\n        self.words: List[str] = []\n\n    def insert(self, word: str) -> None:\n        self.words.append(word)\n\n    def search(self, word: str) -> bool:\n        return any(w == word for w in self.words)\n\n    def startsWith(self, prefix: str) -> bool:\n        return any(w.startswith(prefix) for w in self.words)"
+    },
+    "optimization": "Shared prefixes should be stored once. A tree whose edges are labelled by characters does exactly that: the path spelling \"app\" is shared by every word starting with \"app\", and apple / apply only branch after it. A query then follows at most len(query) edges regardless of how many words are stored: startsWith asks can I walk the whole prefix, search asks can I walk the whole word and is the last node marked as a word end. The end marker is what distinguishes a stored word from a mere prefix. Invariant: the node reached by walking s exists iff some inserted word has s as a prefix.",
+    "intuition": "A trie is a dictionary of dictionaries keyed by character. Walking a string is a chain of lookups; inserting creates missing links on the way. A sentinel key (\"$\") on a node says a word ends here, which is the only difference between search and startsWith.",
+    "geometric": "Picture words laid out as paths fanning out from a single root: app, apple and apply share the trunk a-p-p, then split. Each query is a finger tracing one path from the root; if the finger runs off the tree the answer is False, and search additionally checks for an end mark on the last node.",
+    "visual": " (root)              after insert apple, app, apply\n   |\n   a\n   |\n   p\n   |\n   p $   <- \"app\" ends here    search(\"app\")  -> True\n   |\n   l                           search(\"appl\") -> walk ok,\n  / \\                             no '$' here -> False\n e$  y$  <- \"apple\", \"apply\"  startsWith(\"appl\") -> True\n                               startsWith(\"apl\") -> 'l' not\n                                  under p -> False",
+    "steps": [
+      "root = {} where each node maps char -> child dict; the key \"$\" marks a word end.",
+      "insert: node = root; for ch in word: node = node.setdefault(ch, {}); then node[\"$\"] = True.",
+      "_walk(s): follow s from the root; return the node reached, or None if a character is missing.",
+      "search(word): node = _walk(word); return node is not None and \"$\" in node.",
+      "startsWith(prefix): return _walk(prefix) is not None."
+    ],
+    "complexity": {
+      "time": "O(L) per operation",
+      "space": "O(total characters)",
+      "why": "Each operation touches one node per character; nodes are shared across words with common prefixes."
+    },
+    "pitfalls": [
+      "Forgetting the end marker, so search(\"app\") is True after inserting only \"apple\".",
+      "Letting the end-marker key collide with a real character (fine for lowercase input)."
+    ],
+    "hints": [
+      "Where does a list of words waste work when many of them share a prefix?",
+      "Store each distinct prefix exactly once as a path of characters from a root.",
+      "Nested dicts keyed by char; mark word ends with a sentinel key; search checks the mark, startsWith does not."
+    ],
+    "code": "class Trie:\n    def __init__(self):\n        self.root: dict = {}          # char -> child dict; \"$\" marks the end of a word\n\n    def insert(self, word: str) -> None:\n        node = self.root\n        for ch in word:\n            node = node.setdefault(ch, {})\n        node[\"$\"] = True\n\n    def _walk(self, s: str) -> Optional[dict]:\n        # node reached by spelling s from the root, or None if the path breaks\n        node = self.root\n        for ch in s:\n            node = node.get(ch)\n            if node is None:\n                return None\n        return node\n\n    def search(self, word: str) -> bool:\n        node = self._walk(word)\n        return node is not None and \"$\" in node\n\n    def startsWith(self, prefix: str) -> bool:\n        return self._walk(prefix) is not None",
+    "related": [
+      "design_add_and_search_words_data_structure",
+      "replace_words",
+      "word_search_ii"
+    ]
+  },
+  {
+    "slug": "design_add_and_search_words_data_structure",
+    "title": "Design Add and Search Words Data Structure",
+    "leetcode": 211,
+    "difficulty": "Medium",
+    "topic": "tries",
+    "pattern": "Trie with wildcard DFS",
+    "file": "tries/design_add_and_search_words_data_structure.py",
+    "problem": "Design WordDictionary with addWord(word) and search(word), where the search pattern may contain '.' matching any single letter. Example: add bad, dad, mad; search(\"pad\") -> False; search(\"bad\") -> True; search(\".ad\") -> True; search(\"b..\") -> True.",
+    "brute_force": {
+      "approach": "Store the words in a list; search compares the pattern against every stored word character by character, treating '.' as a free match. Every word is checked in full against the pattern, even though many words share long prefixes and could be rejected or accepted as a group after one comparison.",
+      "time": "O(N*L) per search",
+      "space": "O(N*L)",
+      "code": "class BruteForce:\n    # Keep a list; every search compares the pattern against every stored word.\n    def __init__(self):\n        self.words: List[str] = []\n\n    def addWord(self, word: str) -> None:\n        self.words.append(word)\n\n    def search(self, word: str) -> bool:\n        def matches(w: str) -> bool:\n            return len(w) == len(word) and all(p == \".\" or p == c for p, c in zip(word, w))\n\n        return any(matches(w) for w in self.words)"
+    },
+    "optimization": "A trie stores shared prefixes once, so a literal character in the pattern is one dictionary lookup that discards every word not continuing with that letter, all at once. The wildcard is the only place where several branches stay viable, and there the search must try each child: a DFS over (trie node, pattern index) that branches only at '.'. A literal mismatch prunes the whole subtree immediately, and the end marker again distinguishes a full word from a prefix. Invariant: dfs(node, i) is True iff some word in node's subtree spells pattern[i:].",
+    "intuition": "Literal characters follow exactly one edge; a dot fans out over all edges. Because literals dominate most patterns the fan-out is usually small, and the search touches only the part of the trie that is consistent with the pattern so far. Length matching is automatic: the pattern must run out exactly at a node carrying the end marker.",
+    "geometric": "Picture the trie as a branching diagram and the pattern as a path description. Literal letters lock you onto one branch; each '.' is a fork where you send a scout down every branch, succeeding if any scout reaches a word end exactly when the pattern runs out.",
+    "visual": "       (root)\n      /  |  \\\n     b   d   m          search(\".ad\"):\n     |   |   |            '.' at root -> fan out to b, d, m\n     a   a   a            'a' -> follow the single edge\n     |   |   |            'd' -> follow the single edge\n     d$  d$  d$           i == 3 and '$' present -> True\n\n search(\"b..\"): b -> fan {a} -> fan {d} -> '$' -> True\n search(\"pad\"): 'p' not in root -> False immediately\n search(\"...\"): True; search(\"....\") runs past '$' -> False",
+    "steps": [
+      "addWord: standard trie insert; mark the last node with \"$\".",
+      "search: dfs(node, i): if i == len(word) return \"$\" in node.",
+      "ch = word[i]; if ch != '.': return ch in node and dfs(node[ch], i + 1).",
+      "Otherwise return any(dfs(child, i + 1)) over every child key except \"$\"."
+    ],
+    "complexity": {
+      "time": "O(L) add; O(26^d * L) worst-case search with d dots",
+      "space": "O(total characters)",
+      "why": "Literals follow one edge each; only dots branch, bounded by the trie's actual fan-out."
+    },
+    "pitfalls": [
+      "Recursing into the \"$\" marker as if it were a child.",
+      "Matching \"...\" against a longer word; lengths must match exactly.",
+      "Returning True at a prefix node that is not a word end."
+    ],
+    "hints": [
+      "How does a trie reject many words at once when a literal character fails to match?",
+      "What should the search do at a '.' that it does not do at a literal?",
+      "DFS over (node, i): literal -> one child; '.' -> any child; at the end require the word-end marker."
+    ],
+    "code": "class WordDictionary:\n    def __init__(self):\n        self.root: dict = {}          # char -> child dict; \"$\" marks the end of a word\n\n    def addWord(self, word: str) -> None:\n        node = self.root\n        for ch in word:\n            node = node.setdefault(ch, {})\n        node[\"$\"] = True\n\n    def search(self, word: str) -> bool:\n        def dfs(node: dict, i: int) -> bool:\n            if i == len(word):\n                return \"$\" in node\n            ch = word[i]\n            if ch != \".\":\n                return ch in node and dfs(node[ch], i + 1)\n            # wildcard: branch into every real child (skip the end marker)\n            return any(dfs(child, i + 1) for key, child in node.items() if key != \"$\")\n\n        return dfs(self.root, 0)",
+    "related": [
+      "implement_trie_prefix_tree",
+      "word_search_ii"
+    ]
+  },
+  {
+    "slug": "word_search_ii",
+    "title": "Word Search II",
+    "leetcode": 212,
+    "difficulty": "Hard",
+    "topic": "tries",
+    "pattern": "Trie-guided grid backtracking",
+    "file": "tries/word_search_ii.py",
+    "problem": "Given an m x n board of letters and a list of words, return every word that can be spelled by a path of horizontally or vertically adjacent cells without reusing a cell. Example: board [[o,a,a,n],[e,t,a,e],[i,h,k,r],[i,f,l,v]], words [oath,pea,eat,rain] -> [eat, oath].",
+    "brute_force": {
+      "approach": "Run Word Search I for every word: from every cell start a backtracking search for that specific word. Words sharing a prefix (oath, oats) re-explore the exact same board paths from scratch, and every start cell is revisited once per word even when no word begins with that letter.",
+      "time": "O(W * m*n * 4^L)",
+      "space": "O(L)",
+      "code": "def brute_force(board: List[List[str]], words: List[str]) -> List[str]:\n    # Word Search I for every word independently: each restarts backtracking from every cell.\n    rows, cols = len(board), len(board[0])\n\n    def exists(r: int, c: int, word: str, i: int) -> bool:\n        if i == len(word):\n            return True\n        if not (0 <= r < rows and 0 <= c < cols) or board[r][c] != word[i]:\n            return False\n        saved, board[r][c] = board[r][c], \"#\"\n        ok = any(exists(nr, nc, word, i + 1)\n                 for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)))\n        board[r][c] = saved\n        return ok\n\n    return [w for w in words\n            if any(exists(r, c, w, 0) for r in range(rows) for c in range(cols))]"
+    },
+    "optimization": "The board paths are the expensive part, so explore them once and check all words simultaneously. Put the words in a trie; a DFS from each cell descends the trie in lockstep with the path, so a neighbour whose letter is not a child of the current trie node is pruned immediately, and reaching a node that stores a word emits it. Three refinements keep it fast: store the word at its terminal node and pop it when found (no duplicates, and the search for that word stops), mark visited cells in place with a sentinel instead of a visited set, and delete trie branches that have become empty so later cells never re-walk dead paths. Invariant: the current trie node corresponds exactly to the letters on the current path.",
+    "intuition": "Backtracking explores paths; a trie tells you after every step whether any remaining word could still match, so dead paths die at the first wrong letter. Each board path is walked at most once for all words together instead of once per word, and pruning shrinks the trie as words are harvested.",
+    "geometric": "Two structures move together: a path snaking through the grid and a pointer walking down a branching trie diagram. Every grid step must have a matching trie edge; when the pointer lands on a node holding a word, that word is harvested and the node emptied, and empty branches are pruned.",
+    "visual": " board         trie of oath, pea, eat, rain\n o a a n          (root)\n e t a e        /  |  |  \\\n i h k r       o   p  e   r     'p' is on no cell, so the\n i f l v       |   |  |   |     \"pea\" branch is never used\n               a   e  a   a\n path o(0,0)   |   |  |   |\n  -> a(0,1)    t   a  t$  i\n  -> t(1,1)    |          |\n  -> h(2,1)    h$         n$\n every grid step needs a matching trie edge; at h the node\n holds '$' -> harvest \"oath\", pop it, prune o-a-t-h",
+    "steps": [
+      "Build the trie; at each word's last node store node[\"$\"] = word.",
+      "For every cell whose letter is a child of the trie root, call dfs(r, c, trie).",
+      "dfs: node = parent[letter]; if \"$\" in node, pop it and record the word.",
+      "Mark board[r][c] = \"#\", recurse into the four neighbours whose letter is in node, then restore the cell.",
+      "If node is now empty, delete it from parent (prune).",
+      "Return the collected words."
+    ],
+    "complexity": {
+      "time": "O(m*n * 4 * 3^(L-1))",
+      "space": "O(total word characters)",
+      "why": "Each cell starts a DFS of depth at most L with at most 3 onward choices per step; the trie bounds depth and prunes most branches."
+    },
+    "pitfalls": [
+      "Not restoring the cell after backtracking.",
+      "Emitting a word twice when it appears on two paths.",
+      "Descending when the trie has no matching child.",
+      "Using a visited set instead of an in-place marker (slow)."
+    ],
+    "hints": [
+      "Running Word Search I per word repeats which work exactly?",
+      "What structure lets one DFS step check all remaining words at once?",
+      "Trie + DFS from each cell; store the word at its end node, pop it when found, prune empty nodes."
+    ],
+    "code": "class Solution:\n    def findWords(self, board: List[List[str]], words: List[str]) -> List[str]:\n        trie: dict = {}\n        for w in words:\n            node = trie\n            for ch in w:\n                node = node.setdefault(ch, {})\n            node[\"$\"] = w                      # store the whole word at its terminal node\n\n        rows, cols = len(board), len(board[0])\n        found: List[str] = []\n\n        def dfs(r: int, c: int, parent: dict) -> None:\n            ch = board[r][c]\n            node = parent[ch]\n            word = node.pop(\"$\", None)         # harvest once; the word can never be re-emitted\n            if word is not None:\n                found.append(word)\n            board[r][c] = \"#\"                  # in-place visited marker for this path\n            for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                if 0 <= nr < rows and 0 <= nc < cols and board[nr][nc] in node:\n                    dfs(nr, nc, node)\n            board[r][c] = ch\n            if not node:                       # branch exhausted: prune it from the trie\n                del parent[ch]\n\n        for r in range(rows):\n            for c in range(cols):\n                if board[r][c] in trie:\n                    dfs(r, c, trie)\n        return found",
+    "related": [
+      "implement_trie_prefix_tree",
+      "design_add_and_search_words_data_structure",
+      "word_search"
+    ]
+  },
+  {
+    "slug": "replace_words",
+    "title": "Replace Words",
+    "leetcode": 648,
+    "difficulty": "Medium",
+    "topic": "tries",
+    "pattern": "Trie (prefix tree)",
+    "file": "tries/replace_words.py",
+    "problem": "Given a dictionary of roots and a sentence, replace every word that starts with a root by its shortest such root. Example: dictionary=[cat,bat,rat], sentence=\"the cattle was rattled by the battery\" -> \"the cat was rat by the bat\".",
+    "brute_force": {
+      "approach": "For every word in the sentence, test every root with word.startswith(root) and keep the shortest match. A word is compared against the first letters of every root even though roots sharing a first letter re-read the same characters, and roots that cannot match are still tested in full.",
+      "time": "O(W*D*L)",
+      "space": "O(1)",
+      "code": "def brute_force(dictionary: List[str], sentence: str) -> str:\n    # For every word test every root with startswith and keep the shortest: O(W * D * L).\n    out = []\n    for word in sentence.split():\n        best = word\n        for root in dictionary:\n            if word.startswith(root) and len(root) < len(best):\n                best = root\n        out.append(best)\n    return \" \".join(out)"
+    },
+    "optimization": "Store all roots once in a trie, so a word is compared against all roots at the same time by walking a single path: at each character there is exactly one edge to follow or none. The shortest root is simply the first node on that path that carries an end-of-word marker, so the walk stops as soon as one is seen; if the path breaks before any marker, no root is a prefix and the word is kept. Each word costs O(len(word)) regardless of dictionary size. Invariant: the node reached after i characters exists iff some root begins with word[:i].",
+    "intuition": "Finding the shortest root that is a prefix of a word is the same as walking the word down a trie of roots and stopping at the first terminal node. The trie turns compare-with-each-root into follow-one-path, and shortest-first comes for free from stopping early.",
+    "geometric": "Draw the roots as a branching diagram from a single root node with the end markers highlighted. Each sentence word is a finger tracing its letters from the top; the finger either hits a marked node (replace by the letters traced so far) or falls off the diagram (keep the word).",
+    "visual": "      (root)\n     /  |  \\\n    c   b   r        \"cattle\": c -> a -> t$  '$' seen after\n    |   |   |          3 letters -> replace by \"cat\"\n    a   a   a        \"was\":  'w' not in root -> keep\n    |   |   |        \"battery\": b -> a -> t$ -> \"bat\"\n    t$  t$  t$\n\n with roots [catt, cat] the path c-a-t$-t$ stops at the\n FIRST '$' (depth 3), so the shortest root \"cat\" wins",
+    "steps": [
+      "Insert every root into a dict-of-dicts trie; mark terminal nodes with \"$\".",
+      "For each word: node = trie; for i, ch in enumerate(word):",
+      "If ch not in node, no root is a prefix: keep the word.",
+      "node = node[ch]; if \"$\" in node, replace the word with word[:i+1] and stop.",
+      "Join the processed words with single spaces."
+    ],
+    "complexity": {
+      "time": "O(sum of root lengths + sum of word lengths)",
+      "space": "O(sum of root lengths)",
+      "why": "Building the trie is linear in the dictionary; each sentence word walks at most its own length."
+    },
+    "pitfalls": [
+      "Not stopping at the first terminal, which picks a longer root.",
+      "Checking for \"$\" before descending (would match an empty root).",
+      "Splitting on a literal space and reassembling incorrectly; use split() and join with one space."
+    ],
+    "hints": [
+      "Which comparisons repeat when you test every root against every word with startswith?",
+      "If the roots live in a trie, what does walking a word down it tell you at each step?",
+      "Walk each word down the trie; return word[:i+1] at the first node with an end marker, else keep the word."
+    ],
+    "code": "class Solution:\n    def replaceWords(self, dictionary: List[str], sentence: str) -> str:\n        trie: dict = {}\n        for root in dictionary:\n            node = trie\n            for ch in root:\n                node = node.setdefault(ch, {})\n            node[\"$\"] = True                    # a root ends here\n\n        def shortest_root(word: str) -> str:\n            node = trie\n            for i, ch in enumerate(word):\n                if ch not in node:\n                    return word                 # path breaks: no root is a prefix\n                node = node[ch]\n                if \"$\" in node:\n                    return word[:i + 1]         # first terminal on the path = shortest root\n            return word\n\n        return \" \".join(shortest_root(w) for w in sentence.split())",
+    "related": [
+      "implement_trie_prefix_tree",
+      "design_add_and_search_words_data_structure"
+    ]
+  }
+]

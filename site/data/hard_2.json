@@ -1,0 +1,581 @@
+[
+  {
+    "slug": "valid_number",
+    "title": "Valid Number",
+    "leetcode": 65,
+    "difficulty": "Hard",
+    "topic": "strings",
+    "pattern": "Single-pass state machine with flags",
+    "file": "strings/valid_number.py",
+    "problem": "Return True if the string is a valid number: an optional sign, then an integer or a decimal (\"3.\", \".5\", \"3.14\"), optionally followed by 'e'/'E', an optional sign and an integer. No spaces, no inf/nan. Example: \"2e10\", \"-.9\" and \"4.\" are valid; \"e3\" (no mantissa), \"99e2.5\" (exponent must be an integer) and \".\" are not.",
+    "brute_force": {
+      "approach": "Split-and-check: find the 'e', require the left half to be a signed decimal/integer and the right half a signed integer; the decimal test splits again on '.' and tests each side with a digits check. Each piece is sliced and re-scanned by a different helper, so the same characters are read three or four times and every helper carries its own edge cases (\"+\" alone, \".\" alone, \"1e\").",
+      "time": "O(n)",
+      "space": "O(n)",
+      "code": "def brute_force(s: str) -> bool:\n    def digits(t: str) -> bool:\n        return t != \"\" and all(\"0\" <= c <= \"9\" for c in t)\n\n    def is_int(t: str) -> bool:\n        return digits(t[1:] if t[:1] in (\"+\", \"-\") else t)\n\n    def is_dec(t: str) -> bool:                           # signed integer or signed a.b\n        if t[:1] in (\"+\", \"-\"):\n            t = t[1:]\n        if \".\" not in t:\n            return digits(t)\n        a, b = t.split(\".\", 1)                            # re-scans both halves\n        return (a == \"\" or digits(a)) and (b == \"\" or digits(b)) and (a + b) != \"\"\n\n    for k, c in enumerate(s):                             # split at the exponent, if any\n        if c in \"eE\":\n            return is_dec(s[:k]) and is_int(s[k + 1:])\n    return is_dec(s)"
+    },
+    "optimization": "The redundancy is re-scanning: every helper looks at the same characters again to answer a question that depends only on what has already been seen. Observation: the grammar needs just three bits of memory: have I seen a digit in the current part, have I seen a dot, have I seen an exponent. Each character's legality is decided by those flags plus the previous character (a sign is legal only at index 0 or right after 'e'). So one left-to-right pass carrying three booleans is a complete state machine, and the string is valid iff nothing was rejected and the last part contains a digit.",
+    "intuition": "Think of the number as mantissa [e exponent]. A dot is allowed once and never after 'e'. An 'e' is allowed once and only if a digit precedes it, and it resets the digit flag because the exponent needs its own digits. A sign is allowed only at the very start or immediately after 'e'. Anything else rejects immediately. At the end, seen_digit says whether the last part was non-empty.",
+    "geometric": "Picture a cursor moving along the string with three light bulbs above it: DIGIT, DOT, EXP. Each character either switches a bulb on (digit, dot, e), is tolerated in position (a sign), or trips the fuse (reject). The 'e' switches DIGIT off again, so the bulb must relight to the right of it.",
+    "visual": "s = \"-123.456e789\"       flags: DIGIT DOT EXP\n -    i=0, sign ok               0    0   0\n 123  digits                     1    0   0\n .    first dot, no exp yet      1    1   0\n 456  digits                     1    1   0\n e    DIGIT was 1 -> ok, reset   0    1   1\n 789  digits                     1    1   1\n end: DIGIT == 1  -> valid\n\ns = \"1e\"     -> e resets DIGIT, end with 0 -> invalid\ns = \"99e2.5\" -> \".\" arrives with EXP == 1  -> reject\ns = \"3e+7\"   -> \"+\" right after e           -> ok",
+    "steps": [
+      "seen_digit = seen_dot = seen_exp = False.",
+      "Digit: seen_digit = True.",
+      "'+'/'-': legal only if i == 0 or s[i-1] in \"eE\"; otherwise return False.",
+      "'.': return False if seen_dot or seen_exp; else seen_dot = True.",
+      "'e'/'E': return False if seen_exp or not seen_digit; else seen_exp = True and seen_digit = False.",
+      "Any other character: return False. After the loop return seen_digit."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "one pass over the string with three booleans."
+    },
+    "pitfalls": [
+      "A sign after 'e' is legal (\"3e+7\"); a dot after 'e' is not (\"99e2.5\").",
+      "Forgetting to reset seen_digit after 'e' accepts \"1e\".",
+      "\".\" and \"+\" alone must be rejected: no digit was ever seen."
+    ],
+    "hints": [
+      "What information do you need about the characters already read to judge the next one?",
+      "Three flags: seen a digit, seen a dot, seen an exponent; plus whether the previous char was 'e' (for signs).",
+      "One pass: digit sets DIGIT; '.' needs !DOT and !EXP; 'e' needs DIGIT and !EXP and then clears DIGIT; sign only at 0 or after 'e'; return DIGIT at the end."
+    ],
+    "code": "class Solution:\n    def isNumber(self, s: str) -> bool:\n        seen_digit = seen_dot = seen_exp = False\n        for i, c in enumerate(s):\n            if \"0\" <= c <= \"9\":\n                seen_digit = True\n            elif c in \"+-\":\n                if i > 0 and s[i - 1] not in \"eE\":        # sign only at start or right after e\n                    return False\n            elif c == \".\":\n                if seen_dot or seen_exp:                  # one dot, and never in the exponent\n                    return False\n                seen_dot = True\n            elif c in \"eE\":\n                if seen_exp or not seen_digit:            # one e, and it needs a mantissa\n                    return False\n                seen_exp = True\n                seen_digit = False                        # the exponent needs its own digits\n            else:\n                return False\n        return seen_digit",
+    "related": [
+      "string_to_integer_atoi",
+      "compare_version_numbers",
+      "implement_split"
+    ]
+  },
+  {
+    "slug": "integer_to_english_words",
+    "title": "Integer to English Words",
+    "leetcode": 273,
+    "difficulty": "Hard",
+    "topic": "strings",
+    "pattern": "Chunk by thousands + lookup tables",
+    "file": "strings/integer_to_english_words.py",
+    "problem": "Convert a non-negative integer below 2^31 to English words. Example: 1234567 -> \"One Million Two Hundred Thirty Four Thousand Five Hundred Sixty Seven\"; 12345 -> \"Twelve Thousand Three Hundred Forty Five\"; 0 -> \"Zero\"; 1000010 -> \"One Million Ten\".",
+    "brute_force": {
+      "approach": "Spell every number 0..999 up front with a triple loop over hundreds, tens and ones (1000 strings), then peel the input into 3-digit chunks and look each one up. Every call builds and discards 1000 strings to use at most four of them, and the table loop still has to encode the teens/tens irregularity, so nothing is actually saved.",
+      "time": "O(1000 + log n)",
+      "space": "O(1000)",
+      "code": "def brute_force(num: int) -> str:\n    if num == 0:\n        return \"Zero\"\n    ones, tens = Solution.ONES, Solution.TENS\n    table = [\"\"] * 1000                               # spell every chunk 0..999 up front\n    for h in range(10):\n        for t in range(10):\n            for o in range(10):\n                parts = [ones[h], \"Hundred\"] if h else []\n                if t >= 2:\n                    parts += [tens[t]] + ([ones[o]] if o else [])\n                elif 10 * t + o:\n                    parts.append(ones[10 * t + o])\n                table[100 * h + 10 * t + o] = \" \".join(parts)\n    out = []\n    for scale in Solution.SCALES:\n        if num % 1000:\n            out.insert(0, (table[num % 1000] + \" \" + scale).strip())\n        num //= 1000\n    return \" \".join(out)"
+    },
+    "optimization": "The redundancy is pre-spelling chunks that are never read. Observation: English is a positional system in base 1000: a number is a sequence of 3-digit groups, each read with the same stencil (\"X Hundred Y Z\") followed by a scale word (Thousand, Million, Billion). Inside a group the only irregularity is that 1..19 have their own names and 20..90 have tens names. So one function chunk(n) for n < 1000 plus two short tables covers everything; apply it on demand to num % 1000 while dividing by 1000 and prepend the scale word. Three lists and a loop replace the 1000-entry table.",
+    "intuition": "Divide by place value, but split on 1000 rather than 10. A 3-digit chunk is read as hundreds digit + \"Hundred\", then either a teen word (n < 20) or tens word + ones word. Zero chunks produce nothing, not even their scale word: 1000010 is \"One Million Ten\". Processing low chunks first and prepending means the loop never needs to know how many groups there are.",
+    "geometric": "Write the number right-aligned in columns of width 3: | 1 | 234 | 567 |. Each column is a cell that gets labelled by the same stencil; the column position chooses the suffix Million / Thousand / nothing. Empty (000) cells are skipped entirely. Read the cells left to right.",
+    "visual": "num = 1234567  -> 3-digit groups from the right\n|   1 |  234 |  567 |\n Million Thousand  \"\"      <- scale word per column\nchunk(1)   = One\nchunk(234) = Two Hundred Thirty Four\nchunk(567) = Five Hundred Sixty Seven\njoin -> One Million Two Hundred Thirty Four Thousand\n        Five Hundred Sixty Seven\n\nnum = 1000010  -> | 1 | 000 | 010 |  -> One Million Ten\n                        ^ empty chunk: no words, no scale",
+    "steps": [
+      "If num == 0 return \"Zero\".",
+      "chunk(n) for n < 1000: if n >= 100 emit ONES[n//100], \"Hundred\" and n %= 100; if n >= 20 emit TENS[n//10] and n %= 10; if n emit ONES[n] (covers 1..19).",
+      "For scale in [\"\", \"Thousand\", \"Million\", \"Billion\"]: if num % 1000 != 0, out = chunk(num % 1000) + [scale if non-empty] + out; then num //= 1000.",
+      "Return \" \".join(out)."
+    ],
+    "complexity": {
+      "time": "O(log n)",
+      "space": "O(1)",
+      "why": "at most four 3-digit chunks, each handled with constant tables."
+    },
+    "pitfalls": [
+      "Emitting \"Zero\" or a scale word for an all-zero chunk (1000010 is \"One Million Ten\").",
+      "Teens must be looked up whole: 15 is \"Fifteen\", not \"Ten Five\".",
+      "Spelling: \"Forty\" not \"Fourty\"; avoid double spaces from joining empty strings."
+    ],
+    "hints": [
+      "How do you read 1,234,567 aloud? Which part repeats?",
+      "Split into 3-digit groups; each group is read by the same rule, then a scale word (Thousand, Million, Billion).",
+      "chunk(n): hundreds + \"Hundred\", then teen word or tens + ones; loop num % 1000, num //= 1000, prepend chunk + scale, skipping zero chunks."
+    ],
+    "code": "class Solution:\n    ONES = [\"\", \"One\", \"Two\", \"Three\", \"Four\", \"Five\", \"Six\", \"Seven\", \"Eight\", \"Nine\", \"Ten\",\n            \"Eleven\", \"Twelve\", \"Thirteen\", \"Fourteen\", \"Fifteen\", \"Sixteen\", \"Seventeen\",\n            \"Eighteen\", \"Nineteen\"]\n    TENS = [\"\", \"\", \"Twenty\", \"Thirty\", \"Forty\", \"Fifty\", \"Sixty\", \"Seventy\", \"Eighty\", \"Ninety\"]\n    SCALES = [\"\", \"Thousand\", \"Million\", \"Billion\"]\n\n    def numberToWords(self, num: int) -> str:\n        if num == 0:\n            return \"Zero\"\n\n        def chunk(n: int) -> List[str]:               # words for 0 <= n < 1000\n            words = []\n            if n >= 100:\n                words += [self.ONES[n // 100], \"Hundred\"]\n                n %= 100\n            if n >= 20:\n                words.append(self.TENS[n // 10])\n                n %= 10\n            if n:                                     # 1..19 (teens are one word)\n                words.append(self.ONES[n])\n            return words\n\n        out = []\n        for scale in self.SCALES:                     # peel 3 digits at a time, low to high\n            if num % 1000:\n                out = chunk(num % 1000) + ([scale] if scale else []) + out\n            num //= 1000\n        return \" \".join(out)",
+    "related": [
+      "string_to_integer_atoi",
+      "text_justification",
+      "compare_version_numbers"
+    ]
+  },
+  {
+    "slug": "shortest_palindrome",
+    "title": "Shortest Palindrome",
+    "leetcode": 214,
+    "difficulty": "Hard",
+    "topic": "strings",
+    "pattern": "KMP failure function (longest border)",
+    "file": "strings/shortest_palindrome.py",
+    "problem": "You may add characters only in front of s; return the shortest palindrome you can form. Example: \"aacecaaa\" -> \"aaacecaaa\" (prepend \"a\"); \"abcd\" -> \"dcbabcd\" (prepend \"dcb\"). Equivalently: find the longest palindromic prefix p of s and return reverse(s[len(p):]) + s.",
+    "brute_force": {
+      "approach": "For L = n down to 1 test whether s[:L] is a palindrome by comparing it to its reverse; the first hit is the longest palindromic prefix, and the rest of s is mirrored in front. Each test re-compares characters from scratch although the tests for L and L-1 share almost all comparisons, and a mismatch tells you nothing you reuse for the next L.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(s: str) -> str:\n    for length in range(len(s), 0, -1):               # longest prefix first\n        prefix = s[:length]\n        if prefix == prefix[::-1]:                    # fresh O(length) check every time\n            return s[length:][::-1] + s\n    return s"
+    },
+    "optimization": "The redundancy is testing each prefix independently. Observation: \"s[:L] is a palindrome\" means \"s[:L] equals the last L characters of reverse(s)\", i.e. a prefix of s that is also a suffix of rev(s). Matching a prefix of one string against a suffix of another is exactly what the KMP failure function computes on the concatenation t = s + '#' + rev(s): fail[-1] is the length of the longest proper border (prefix that is also a suffix) of t. The separator, absent from s, caps the border at len(s), so fail[-1] is exactly the longest palindromic prefix. The failure array is built in O(n) amortised because the border length rises at most once per character and so can fall at most n times in total.",
+    "intuition": "A palindromic prefix of s reads the same from the front of s and from the end of rev(s). Glue the two strings with a separator and ask the classic KMP question: what is the longest string that is both a prefix and a suffix of the whole thing? That is the part you keep; mirror the rest in front.",
+    "geometric": "Lay rev(s) to the right of s with a wall between them. Slide a copy of s rightwards until its head overlaps the tail of rev(s) exactly; the overlap length is the border. The failure function computes that sliding incrementally: fail[i] is how far the prefix overlaps the text ending at i, and at the very end of t the overlap can only be a palindromic prefix of s.",
+    "visual": "s = aacecaaa          rev(s) = aaacecaa\nt = a a c e c a a a # a a a c e c a a\ni   0 1 2 3 4 5 6 7 8 9 ...         16\nfail[16] = 7 : t[:7] == t[-7:] == \"aacecaa\"\n    [a a c e c a a] a # a [a a c e c a a]\n     prefix of s            suffix of rev(s)\n=> longest palindromic prefix of s has length 7\nkeep s[:7] = \"aacecaa\"; mirror s[7:] = \"a\" in front\nanswer = \"a\" + \"aacecaaa\" = \"aaacecaaa\"",
+    "steps": [
+      "t = s + \"#\" + s[::-1]; fail = [0] * len(t).",
+      "For i in 1..len(t)-1: k = fail[i-1]; while k and t[i] != t[k]: k = fail[k-1]; if t[i] == t[k]: k += 1; fail[i] = k.",
+      "keep = fail[-1], the longest palindromic prefix length of s.",
+      "Return s[keep:][::-1] + s."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "amortised KMP failure function over a string of length 2n+1."
+    },
+    "pitfalls": [
+      "Omitting the separator lets a border run past len(s) (e.g. \"aaaa\" would report 8).",
+      "Prepend the reverse of the SUFFIX s[keep:], not of the prefix.",
+      "Back up with fail[k-1], not fail[k]."
+    ],
+    "hints": [
+      "Adding in front only helps if you keep a palindromic prefix; find the longest one.",
+      "A palindromic prefix of s is a prefix of s that is also a suffix of reverse(s). Which string algorithm finds the longest prefix-that-is-also-a-suffix?",
+      "Build the KMP failure array of s + '#' + reverse(s); fail[-1] is the length to keep; answer = reverse(rest) + s."
+    ],
+    "code": "class Solution:\n    def shortestPalindrome(self, s: str) -> str:\n        t = s + \"#\" + s[::-1]                         # '#' stops a border crossing the middle\n        fail = [0] * len(t)                           # fail[i] = longest proper border of t[:i+1]\n        for i in range(1, len(t)):\n            k = fail[i - 1]\n            while k and t[i] != t[k]:                 # fall back along shorter borders\n                k = fail[k - 1]\n            if t[i] == t[k]:\n                k += 1\n            fail[i] = k\n        keep = fail[-1]                               # longest palindromic prefix of s\n        return s[keep:][::-1] + s",
+    "related": [
+      "longest_happy_prefix",
+      "longest_palindromic_substring",
+      "valid_palindrome",
+      "palindrome_pairs"
+    ]
+  },
+  {
+    "slug": "palindrome_pairs",
+    "title": "Palindrome Pairs",
+    "leetcode": 336,
+    "difficulty": "Hard",
+    "topic": "strings",
+    "pattern": "Hash map of reversed words + palindrome split",
+    "file": "strings/palindrome_pairs.py",
+    "problem": "Given distinct words, return all index pairs (i, j), i != j, such that words[i] + words[j] is a palindrome. Example: [\"abcd\",\"dcba\",\"lls\",\"s\",\"sssll\"] -> [[0,1],[1,0],[3,2],[2,4]] (\"abcddcba\", \"dcbaabcd\", \"slls\", \"llssssll\"); [\"a\",\"\"] -> [[0,1],[1,0]].",
+    "brute_force": {
+      "approach": "Try every ordered pair (i, j), build words[i] + words[j] and compare it to its reverse. For a fixed words[i] the test against each of the n-1 partners re-reads words[i] from scratch, and almost every partner fails at the first character; nothing learned about words[i] is reused across partners.",
+      "time": "O(n^2 * L)",
+      "space": "O(L)",
+      "code": "def brute_force(words: List[str]) -> List[List[int]]:\n    res = []\n    for i, a in enumerate(words):\n        for j, b in enumerate(words):                        # every ordered pair\n            if i != j and (a + b) == (a + b)[::-1]:\n                res.append([i, j])\n    return res"
+    },
+    "optimization": "The redundancy is scanning n partners per word. Observation: if w + x is a palindrome and |w| >= |x|, then reverse(x) must be a prefix of w and the leftover middle of w must itself be a palindrome; symmetrically if |w| < |x|, reverse(w) is a suffix of x. So the partner is determined by w alone: split w = pre + suf at each of the |w|+1 cut points; if suf is a palindrome the partner is reverse(pre), placed after w; if pre is a palindrome the partner is reverse(suf), placed before w. A hash map from reversed word to index answers \"does that partner exist, and where?\" in O(1). Work drops from O(n^2 L) to O(n L^2): n words, L+1 cuts, O(L) palindrome test each.",
+    "intuition": "A palindromic concatenation has the shorter word mirrored at the far end of the longer one. Walk a cut point along each word: one side must be a palindrome (the seam in the middle) and the other side's reverse must be a whole word in the list, which the map finds instantly. Skipping the empty-suffix case in the second rule stops the equal-length pair from being reported twice (it is already found from the other word with an empty prefix).",
+    "geometric": "Draw w as a bar [ pre | suf ] with a sliding cut. A partner placed before w covers suf's mirror image: rev(suf) + pre + suf, valid when pre is a palindrome. A partner placed after w covers pre's mirror: pre + suf + rev(pre), valid when suf is a palindrome. The dictionary of reversed words is the lookup that tells you whether the mirrored piece exists.",
+    "visual": "words = [abcd, dcba, lls, s, sssll]\nwhere = {rev(w): i} = {dcba:0, abcd:1, sll:2, s:3, llsss:4}\n\nw = \"lls\" (i=2)      cut j:  pre | suf\n  j=2  \"ll\" | \"s\"    pre palindrome, where[\"s\"] = 3\n                     -> \"s\" + \"lls\" = slls      [3,2]\nw = \"sssll\" (i=4)\n  j=2  \"ss\" | \"sll\"  pre palindrome, where[\"sll\"] = 2\n                     -> \"lls\" + \"sssll\" = llssssll [2,4]\nw = \"abcd\" (i=0)\n  j=0  \"\" | \"abcd\"   pre \"\" palindrome, where[\"abcd\"]=1\n                     -> \"dcba\" + \"abcd\"           [1,0]\n  j=4  \"abcd\" | \"\"   j == len(w): skip rule 2 (no dupes)",
+    "steps": [
+      "where = {reverse(word): index for every word}.",
+      "For each word w at index i and each cut j in 0..len(w): pre, suf = w[:j], w[j:].",
+      "If pre is a palindrome and suf is a key in where (index != i): add [where[suf], i].",
+      "If j < len(w) and suf is a palindrome and pre is a key in where (index != i): add [i, where[pre]].",
+      "Return the collected pairs."
+    ],
+    "complexity": {
+      "time": "O(n * L^2)",
+      "space": "O(n * L)",
+      "why": "L+1 cuts per word with an O(L) palindrome test each; one map entry per word."
+    },
+    "pitfalls": [
+      "Duplicate pairs when two words are exact reverses of each other: guard the suffix rule with j < len(w).",
+      "Pairing a word with itself: check where[...] != i.",
+      "The empty string pairs with every palindromic word in both orders; the j == 0 cut handles it."
+    ],
+    "hints": [
+      "If words[i] + words[j] is a palindrome and words[i] is longer, what must words[j] look like relative to words[i]?",
+      "Reverse(words[j]) is a prefix of words[i] and the rest of words[i] is a palindrome. Store reversed words in a hash map.",
+      "For each word and each cut pre|suf: pre palindrome & rev(suf) exists -> [that, i]; suf palindrome & rev(pre) exists (j < len) -> [i, that]."
+    ],
+    "code": "class Solution:\n    def palindromePairs(self, words: List[str]) -> List[List[int]]:\n        where = {w[::-1]: i for i, w in enumerate(words)}   # reversed word -> its index\n        res = []\n        for i, w in enumerate(words):\n            for j in range(len(w) + 1):                      # w = pre + suf\n                pre, suf = w[:j], w[j:]\n                # pre is a palindrome: rev(suf) + pre + suf reads the same both ways\n                if pre == pre[::-1] and suf in where and where[suf] != i:\n                    res.append([where[suf], i])\n                # suf is a palindrome: pre + suf + rev(pre); j < len(w) skips the duplicate\n                if j < len(w) and suf == suf[::-1] and pre in where and where[pre] != i:\n                    res.append([i, where[pre]])\n        return res",
+    "related": [
+      "shortest_palindrome",
+      "group_anagrams",
+      "longest_palindromic_substring",
+      "valid_palindrome"
+    ]
+  },
+  {
+    "slug": "longest_happy_prefix",
+    "title": "Longest Happy Prefix",
+    "leetcode": 1392,
+    "difficulty": "Hard",
+    "topic": "strings",
+    "pattern": "KMP failure function (longest border)",
+    "file": "strings/longest_happy_prefix.py",
+    "problem": "A happy prefix is a non-empty proper prefix of s that is also a suffix of s. Return the longest one, or \"\" if none exists. Example: \"level\" -> \"l\"; \"ababab\" -> \"abab\"; \"leetcodeleet\" -> \"leet\"; \"a\" -> \"\".",
+    "brute_force": {
+      "approach": "For L = n-1 down to 1 compare s[:L] with s[n-L:]; the first match is the answer. Each L is tested independently, so a mismatch deep inside the comparison for L is forgotten and the comparison for L-1 restarts at character 0, re-reading the same prefix characters up to n times.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(s: str) -> str:\n    for length in range(len(s) - 1, 0, -1):          # longest candidate first\n        if s[:length] == s[-length:]:                # fresh O(length) comparison each time\n            return s[:length]\n    return \"\""
+    },
+    "optimization": "The redundancy is restarting the prefix/suffix comparison for every candidate length. Observation: let fail[i] be the longest proper border (prefix == suffix) of s[:i+1]. Borders are nested: the second-longest border of a string is the longest border of its longest border. Hence fail[i] follows from fail[i-1]: take k = fail[i-1]; if s[i] == s[k] the border extends to k+1, otherwise shrink k to fail[k-1] and retry. The inner loop looks expensive, but k rises by at most 1 per character, so it can fall at most n times in total: amortised O(n). fail[n-1] is the answer's length, and the array is the KMP failure function.",
+    "intuition": "A border is a self-overlap: the string laid over a shifted copy of itself with the overlapping parts equal. The longest overlap at position i is at most one longer than the longest overlap at i-1, and if extending fails, the next candidate is the border of the border, which is already computed. Nothing is recomputed and nothing is sliced.",
+    "geometric": "Picture two copies of s on parallel rails, the lower one shifted right. fail[i] is the smallest shift at which the upper copy's first i+1 characters still agree with the lower copy where they overlap. As i grows the shift either stays (match) or jumps to the next self-consistent shift (fail[k-1]), never backwards.",
+    "visual": "s    = a b a b a b        i: 0 1 2 3 4 5\nfail = 0 0 1 2 3 4\ni=5: k = fail[4] = 3 ; s[5]=b == s[3]=b -> k = 4\nborder 4 = \"abab\":\n    a b a b a b\n        a b a b a b       shift 2, overlap matches\nif s[5] were \"c\": k=3 -> fail[2]=1 -> fail[0]=0 -> 0\nanswer = s[:fail[-1]] = \"abab\"",
+    "steps": [
+      "fail = [0] * n.",
+      "For i in 1..n-1: k = fail[i-1]; while k and s[i] != s[k]: k = fail[k-1]; if s[i] == s[k]: k += 1; fail[i] = k.",
+      "Return s[:fail[-1]]."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "amortised: k increases at most n times in total, so it can decrease at most n times."
+    },
+    "pitfalls": [
+      "Backing up with fail[k] instead of fail[k-1].",
+      "The border must be proper; the recurrence guarantees fail[i] <= i, so the whole string is never returned.",
+      "n == 1 must return \"\"."
+    ],
+    "hints": [
+      "You want the longest prefix that is also a suffix. Can the answer for s[:i+1] be derived from the answer for s[:i]?",
+      "If the longest border of s[:i] has length k and s[i] == s[k], the border grows by one; otherwise try the border of that border.",
+      "This is the KMP failure function; return s[:fail[-1]]."
+    ],
+    "code": "class Solution:\n    def longestPrefix(self, s: str) -> str:\n        fail = [0] * len(s)                          # fail[i] = longest proper border of s[:i+1]\n        for i in range(1, len(s)):\n            k = fail[i - 1]\n            while k and s[i] != s[k]:                # shrink to the border of the border\n                k = fail[k - 1]\n            if s[i] == s[k]:\n                k += 1\n            fail[i] = k\n        return s[:fail[-1]]",
+    "related": [
+      "shortest_palindrome",
+      "longest_palindromic_substring",
+      "implement_trie_prefix_tree"
+    ]
+  },
+  {
+    "slug": "parsing_a_boolean_expression",
+    "title": "Parsing a Boolean Expression",
+    "leetcode": 1106,
+    "difficulty": "Hard",
+    "topic": "stack",
+    "pattern": "Stack-based expression evaluation",
+    "file": "stack/parsing_a_boolean_expression.py",
+    "problem": "Evaluate a boolean expression built from 't', 'f', !(expr), &(expr,expr,...) and |(expr,expr,...). Example: \"&(|(f))\" -> False; \"|(f,f,f,t)\" -> True; \"!(&(f,t))\" -> True.",
+    "brute_force": {
+      "approach": "Repeatedly reduce the innermost group: find the first ')', walk back to its '(', read the operator just before it, split the inside on ',', evaluate, and splice the single result letter back into the string until no '(' remains. Each round copies the whole string, so the untouched outer text is re-copied and re-scanned once per nested group.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(expression: str) -> bool:\n    s = expression\n    while \"(\" in s:\n        close = s.index(\")\")                         # first \")\" closes an innermost group\n        open_ = s.rindex(\"(\", 0, close)\n        op, args = s[open_ - 1], s[open_ + 1:close].split(\",\")\n        if op == \"!\":\n            val = \"t\" if args == [\"f\"] else \"f\"\n        elif op == \"&\":\n            val = \"f\" if \"f\" in args else \"t\"\n        else:\n            val = \"t\" if \"t\" in args else \"f\"\n        s = s[:open_ - 1] + val + s[close + 1:]      # rebuild the whole string each round\n    return s == \"t\""
+    },
+    "optimization": "The redundancy is re-materialising the whole expression after each inner evaluation. Observation: the text left of an innermost group is never inspected until that group has collapsed to one letter, so it can sit untouched on a stack instead of being copied. Push operators, '(' and 't'/'f' as they arrive; on ')' pop letters down to the matching '(', pop the operator beneath it, compute one letter and push it back; that letter is exactly the operand the enclosing group needs. Each character is pushed and popped once, so evaluation is a single O(n) pass with O(n) stack.",
+    "intuition": "A ')' signals that a complete sub-expression just ended and everything it needs sits on top of the stack. Because &, | and ! only care about the SET of operand values (is there an 'f'? is there a 't'? is the lone operand 'f'?), collecting the popped letters into a set makes each operator a one-liner. Commas carry no information and are skipped.",
+    "geometric": "The stack mirrors the nesting depth: every '(' opens a new ledge, letters pile up on the top ledge, and ')' sweeps the top ledge into a single letter that drops onto the ledge below. The input is read strictly left to right; the stack height at any moment is the nesting depth.",
+    "visual": "expr = !(&(f,t))        read left to right\n'!'  push        stack: [!]\n'('  push        stack: [! (]\n'&'  push        stack: [! ( &]\n'('  push        stack: [! ( & (]\n'f'  push        stack: [! ( & ( f]\n','  skip\n't'  push        stack: [! ( & ( f t]\n')'  pop to '(' -> vals {f,t}; op '&': 'f' in vals -> f\n     push 'f'    stack: [! ( f]\n')'  pop to '(' -> vals {f}; op '!': vals == {f} -> t\n     push 't'    stack: [t]          answer: True",
+    "steps": [
+      "For each character c: skip ','.",
+      "If c != ')': push it (operators, '(', 't', 'f').",
+      "On ')': pop into a set until '(' is on top; pop the '('; pop the operator.",
+      "'!': push 't' if set == {'f'} else 'f'. '&': push 'f' if 'f' in set else 't'. '|': push 't' if 't' in set else 'f'.",
+      "The stack ends with one letter; return it == 't'."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "every character is pushed and popped at most once."
+    },
+    "pitfalls": [
+      "Forgetting to pop the '(' and then the operator after collecting operands.",
+      "Evaluating '!' on a list of operands instead of checking the single value.",
+      "Treating a bare \"t\" or \"f\" expression with no parentheses as an error."
+    ],
+    "hints": [
+      "Where in the string can a sub-expression be evaluated without knowing anything else?",
+      "At a ')': everything back to the matching '(' is finished. Keep unfinished characters on a stack.",
+      "On ')' pop operand letters into a set, pop '(' and the operator, push one letter: '!' -> set == {'f'}, '&' -> 'f' not in set, '|' -> 't' in set."
+    ],
+    "code": "class Solution:\n    def parseBoolExpr(self, expression: str) -> bool:\n        stack = []                                   # operators, \"(\", and letters 't'/'f'\n        for c in expression:\n            if c == \",\":\n                continue\n            if c != \")\":\n                stack.append(c)\n                continue\n            vals = set()\n            while stack[-1] != \"(\":                  # collect this group's operand values\n                vals.add(stack.pop())\n            stack.pop()                              # the \"(\"\n            op = stack.pop()\n            if op == \"!\":\n                stack.append(\"t\" if vals == {\"f\"} else \"f\")\n            elif op == \"&\":\n                stack.append(\"f\" if \"f\" in vals else \"t\")\n            else:                                    # \"|\"\n                stack.append(\"t\" if \"t\" in vals else \"f\")\n        return stack[0] == \"t\"",
+    "related": [
+      "decode_string",
+      "basic_calculator",
+      "basic_calculator_ii",
+      "evaluate_reverse_polish_notation"
+    ]
+  },
+  {
+    "slug": "basic_calculator",
+    "title": "Basic Calculator",
+    "leetcode": 224,
+    "difficulty": "Hard",
+    "topic": "stack",
+    "pattern": "Sign stack for parentheses",
+    "file": "stack/basic_calculator.py",
+    "problem": "Evaluate a string containing non-negative integers, '+', '-', '(', ')' and spaces, including unary minus such as \"-(2-3)\". No eval(). Example: \"(1+(4+5+2)-3)+(6+8)\" -> 23; \" 2-1 + 2 \" -> 3; \"-(2-3)\" -> 1.",
+    "brute_force": {
+      "approach": "Recursive descent on substrings: scan left to right summing signed numbers; on '(' walk forward counting depth to find the matching ')', recurse on the slice between them and add the result with the current sign. Locating the match reads the whole inner text, and the recursive call reads it again, so deeply nested input re-scans the same characters once per nesting level.",
+      "time": "O(n * depth), O(n^2) worst",
+      "space": "O(n)",
+      "code": "def brute_force(s: str) -> int:\n    def evaluate(expr: str) -> int:\n        total, sign, i = 0, 1, 0\n        while i < len(expr):\n            c = expr[i]\n            if c.isdigit():\n                j = i\n                while j < len(expr) and expr[j].isdigit():\n                    j += 1\n                total, i = total + sign * int(expr[i:j]), j\n                continue\n            if c == \"(\":                             # look ahead for the matching \")\"\n                depth, j = 0, i\n                while True:\n                    depth += (expr[j] == \"(\") - (expr[j] == \")\")\n                    if depth == 0:\n                        break\n                    j += 1\n                total, i = total + sign * evaluate(expr[i + 1:j]), j   # re-reads the inside\n            elif c in \"+-\":\n                sign = 1 if c == \"+\" else -1\n            i += 1\n        return total\n    return evaluate(s)"
+    },
+    "optimization": "The redundancy is looking ahead for the matching parenthesis. Observation: with only + and -, parentheses change nothing except the SIGN applied to the terms inside: a - (b - c) is a - b + c. So each term's effective sign is (its own operator) x (effective sign of the enclosing context). Keep a stack of context signs: on '(' push the sign in front of it (the context for everything inside), on ')' pop. Every number is added to one running total as soon as it is complete; no recursion, no slicing, no look-ahead. One pass, O(n) time, O(depth) stack.",
+    "intuition": "Distribute the minus. Instead of computing a parenthesised value and negating it afterwards, negate each term inside as you meet it. The stack top always answers \"am I inside an odd number of negated groups?\" and each new operator just multiplies with that. A sentinel '+' appended to the input flushes the last pending number.",
+    "geometric": "Each parenthesis pair is a lens: a '-' lens flips the sign of every term seen through it, and two nested '-' lenses cancel. The stack is the pile of lenses the cursor is currently looking through; '(' adds a lens, ')' removes one, and a term's sign is its own operator viewed through the pile.",
+    "visual": "s = \"1-(2+3)\"         res  num  sign   signs\n'1'                    0    1   +1    [+1]\n'-'  res += +1*1       1    0   -1    [+1]\n'('  push sign         1    0   -1    [+1,-1]\n'2'                    1    2   -1\n'+'  res += -1*2      -1    0   -1    sign = -1 * (+1)\n'3'                   -1    3   -1\n')'  pop              -1    3   -1    [+1]\n'+'  sentinel flush   -4    0         res += -1*3\nanswer = -4   (1 - 5)",
+    "steps": [
+      "res = 0, num = 0, sign = 1, signs = [1]; iterate over s + \"+\" (sentinel flushes the last number).",
+      "Digit: num = num*10 + digit.",
+      "'+' or '-': res += sign * num; num = 0; sign = signs[-1] * (+1 or -1).",
+      "'(': signs.append(sign); the sign in front of the group becomes the inner context.",
+      "')': signs.pop().",
+      "Return res."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(d)",
+      "why": "one pass; the stack holds one sign per currently open parenthesis."
+    },
+    "pitfalls": [
+      "Forgetting to flush the final number (use a sentinel operator or add after the loop).",
+      "On '(' push the CURRENT sign, not +1; the context of the group is the sign in front of it.",
+      "Resetting sign to +1 after ')': the next term's sign comes from its operator times signs[-1]."
+    ],
+    "hints": [
+      "With only + and -, what does a parenthesis actually change about the terms inside it?",
+      "Only their sign: a - (b - c) = a - b + c. Track the effective sign of the current context.",
+      "Stack of context signs: push the current sign on '(', pop on ')'; each operator sets sign = signs[-1] * (+1/-1); add sign * num when a number ends."
+    ],
+    "code": "class Solution:\n    def calculate(self, s: str) -> int:\n        res, num, sign = 0, 0, 1\n        signs = [1]                                  # effective sign of the enclosing context\n        for c in s + \"+\":                            # sentinel operator flushes the last number\n            if c.isdigit():\n                num = num * 10 + int(c)\n            elif c in \"+-\":\n                res += sign * num\n                num = 0\n                sign = signs[-1] * (1 if c == \"+\" else -1)\n            elif c == \"(\":\n                signs.append(sign)                   # everything inside inherits this sign\n            elif c == \")\":\n                signs.pop()\n        return res",
+    "related": [
+      "basic_calculator_ii",
+      "evaluate_reverse_polish_notation",
+      "decode_string",
+      "parsing_a_boolean_expression"
+    ]
+  },
+  {
+    "slug": "longest_valid_parentheses",
+    "title": "Longest Valid Parentheses",
+    "leetcode": 32,
+    "difficulty": "Hard",
+    "topic": "stack",
+    "pattern": "Stack of indices with a barrier",
+    "file": "stack/longest_valid_parentheses.py",
+    "problem": "Given a string of '(' and ')', return the length of the longest well-formed contiguous substring. Example: \"(()\" -> 2; \")()())\" -> 4 (\"()()\"); \"\" -> 0.",
+    "brute_force": {
+      "approach": "From every start index scan right with a balance counter ('(' +1, ')' -1); whenever the balance returns to 0 the substring is valid, record its length; stop when the balance goes negative. Starting the next scan at i+1 re-reads the same characters and re-discovers the same matched pairs the scan from i already found.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(s: str) -> int:\n    best = 0\n    for i in range(len(s)):                          # restart the balance from every index\n        balance = 0\n        for j in range(i, len(s)):\n            balance += 1 if s[j] == \"(\" else -1\n            if balance < 0:\n                break\n            if balance == 0:\n                best = max(best, j - i + 1)\n    return best"
+    },
+    "optimization": "The redundancy is re-matching pairs. Observation: a ')' matches the most recent unmatched '(', so one left-to-right pass with a stack of '(' indices matches every pair exactly once. The remaining question, \"how long is the valid run ending here\", is answered by the same stack: after popping the partner, whatever index sits on top is the last position NOT in the current run (an unmatched '(' still waiting, or a stray ')' that broke the string), so length = i - stack[-1]. Seed the stack with -1 as the initial barrier and, whenever a ')' finds nothing to match, make its own index the new barrier. Each index is pushed and popped once: O(n).",
+    "intuition": "The stack bottom is a wall: the start of the current stretch of possibly-valid text. Above it sit the '(' still waiting. Popping on ')' closes a pair; the new top is either another open '(' (the run reaches right up to it) or the wall (the run reaches the wall). Either way the run's length is current index minus the new top. A stray ')' becomes a new wall.",
+    "geometric": "Picture a staircase of open brackets standing on a wall. Each ')' removes the top step and measures the distance from the cursor back to whatever is now on top. The wall slides right only when a stray ')' arrives with no step to remove, knocking the whole staircase down.",
+    "visual": "s = ) ( ) ( ) )\ni = 0 1 2 3 4 5\ni=0 ')' nothing open -> barrier = 0      stack [0]\ni=1 '(' push                              stack [0,1]\ni=2 ')' pop 1 ; len = 2 - 0 = 2           stack [0]\ni=3 '(' push                              stack [0,3]\ni=4 ')' pop 3 ; len = 4 - 0 = 4  <- best  stack [0]\ni=5 ')' nothing open -> barrier = 5      stack [5]\n        run \"()()\" covers indices 1..4",
+    "steps": [
+      "stack = [-1] (barrier), best = 0.",
+      "For i, c in s: if c == '(' push i.",
+      "Else if the stack holds more than the barrier: pop (match) and best = max(best, i - stack[-1]).",
+      "Else: stack[0] = i (this stray ')' is the new barrier).",
+      "Return best."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "each index is pushed and popped at most once."
+    },
+    "pitfalls": [
+      "Measuring i - popped_index + 1 misses chained runs like \"()()\"; measure to the new stack top.",
+      "Forgetting the -1 barrier, so the first complete match has no reference point.",
+      "Popping the barrier itself when a ')' has nothing to match."
+    ],
+    "hints": [
+      "A ')' always closes the most recent unmatched '('. Which structure finds that in O(1)?",
+      "Stack of '(' indices. After popping, how do you know where the current valid run began?",
+      "Keep a barrier index at the bottom (-1 initially, updated to each stray ')'); length = i - stack[-1] after each pop."
+    ],
+    "code": "class Solution:\n    def longestValidParentheses(self, s: str) -> int:\n        stack = [-1]                                 # indices; stack[0] is the barrier\n        best = 0\n        for i, c in enumerate(s):\n            if c == \"(\":\n                stack.append(i)\n            elif len(stack) > 1:                     # an open \"(\" is waiting: match it\n                stack.pop()\n                best = max(best, i - stack[-1])      # run extends back to the new top\n            else:\n                stack[0] = i                         # stray \")\": new barrier\n        return best",
+    "related": [
+      "valid_parentheses",
+      "minimum_remove_to_make_valid_parentheses",
+      "largest_rectangle_in_histogram",
+      "remove_invalid_parentheses"
+    ]
+  },
+  {
+    "slug": "create_maximum_number",
+    "title": "Create Maximum Number",
+    "leetcode": 321,
+    "difficulty": "Hard",
+    "topic": "stack",
+    "pattern": "Monotonic stack + greedy merge",
+    "file": "stack/create_maximum_number.py",
+    "problem": "Given two digit arrays nums1 (length m) and nums2 (length n) and k <= m + n, form the largest k-digit number by taking digits from both arrays while preserving each array's relative order; return it as a digit list. Example: nums1 = [3,4,6,5], nums2 = [9,1,2,5,8,3], k = 5 -> [9,8,6,5,3]; nums1 = [6,7], nums2 = [6,0,4], k = 5 -> [6,7,6,0,4].",
+    "brute_force": {
+      "approach": "Enumerate every subsequence of nums1 of size i and of nums2 of size k - i, and for each pair every order-preserving interleaving; keep the lexicographically largest. Exponential: O(2^m * 2^n * C(k, i)) candidates. Almost every candidate shares a long prefix with one already known to lose, and the best-i-digits sub-problem for one array is re-solved for every partner.",
+      "time": "O(2^(m+n) * 2^k) exponential",
+      "space": "O(k)",
+      "code": "def brute_force(nums1: List[int], nums2: List[int], k: int) -> List[int]:\n    def interleave(a, b):                                   # every order-preserving merge\n        if not a or not b:\n            yield a + b\n            return\n        for rest in interleave(a[1:], b):\n            yield [a[0]] + rest\n        for rest in interleave(a, b[1:]):\n            yield [b[0]] + rest\n\n    best = []\n    for i in range(max(0, k - len(nums2)), min(k, len(nums1)) + 1):\n        for ca in combinations(nums1, i):                   # exponential: 2^m * 2^n * C(k, i)\n            for cb in combinations(nums2, k - i):\n                for merged in interleave(list(ca), list(cb)):\n                    best = max(best, merged)\n    return best"
+    },
+    "optimization": "Two decisions are tangled: WHICH digits to keep from each array and HOW to interleave them. Observation 1: for a fixed split (i from nums1, k-i from nums2) the best choice from one array does not depend on the other, and \"largest subsequence of length t\" is a monotonic-stack problem: walk the array, pop the stack top while it is smaller than the current digit and deletions remain (len - t), then push; O(len). Observation 2: combining the two picks is a greedy merge, but ties must be broken by comparing the REMAINING suffixes, not the heads ([6,7] vs [6,0,4]: take the 6 from [6,7] first). Python compares lists lexicographically, so a[i:] > b[j:] does exactly that. Trying all k+1 splits and keeping the maximum costs O(k) rounds of O(m + n + k^2).",
+    "intuition": "Split on how many digits come from nums1. For each split the best subsequence of each array is fixed and found greedily (keep the stack decreasing while you can still afford to drop digits, then truncate). Then zip the two picks, always taking from whichever remainder is lexicographically larger: an equal head is resolved by looking further right, because the digit after the tie decides which stream should be spent first.",
+    "geometric": "Two conveyor belts of digits. A monotonic stack skims the best t digits off each belt by letting a bigger digit knock smaller earlier digits off while the drop budget lasts. Then a zipper closes the two skimmed strips, each time pulling from the strip whose remaining tail reads larger.",
+    "visual": "nums1 = [3,4,6,5]  pick 2  (drop 2)\n  3 -> [3]   4>3 pop -> [4]   6>4 pop -> [6]  drop=0\n  5 -> [6,5]                        pick = [6,5]\nnums2 = [9,1,2,5,8,3]  pick 3  (drop 3)\n  [9] [9,1]  2>1 pop [9,2]  5>2 pop [9,5]  8>5 pop [9,8]\n  3 -> [9,8,3]  (drop used up)      pick = [9,8,3]\nmerge [6,5] with [9,8,3]: compare remaining tails\n  [6,5] < [9,8,3] -> 9 | [6,5] < [8,3] -> 8\n  [6,5] > [3]     -> 6 | [5] > [3]     -> 5 | -> 3\nresult [9,8,6,5,3]   (max over splits i = 0..4)",
+    "steps": [
+      "pick(nums, t): drop = len(nums) - t; for x in nums: while drop and stack and stack[-1] < x: pop, drop -= 1; push x. Return stack[:t].",
+      "merge(a, b): while digits remain, append the head of whichever remaining list compares greater (a[i:] > b[j:]).",
+      "For i in max(0, k-n) .. min(k, m): candidate = merge(pick(nums1, i), pick(nums2, k-i)).",
+      "Return the lexicographically largest candidate."
+    ],
+    "complexity": {
+      "time": "O(k * (m + n + k^2))",
+      "space": "O(m + n)",
+      "why": "k+1 splits, each with two O(len) stack passes and a merge whose tie-break comparison can cost O(k) per step."
+    },
+    "pitfalls": [
+      "Merging by comparing heads only fails on equal digits ([6,7] + [6,0,4]).",
+      "Forgetting to truncate the stack to t when the input is increasing and fewer than drop pops happen.",
+      "The split range must respect both lengths: i <= m and k - i <= n."
+    ],
+    "hints": [
+      "If you knew how many digits came from nums1, could you solve each array separately?",
+      "Yes: the largest subsequence of length t is a monotonic stack with a drop budget. Then the two picks must be merged.",
+      "Try every split i; pick(nums1, i) and pick(nums2, k-i) with a decreasing stack; merge by comparing the remaining tails (a[i:] > b[j:]); keep the max."
+    ],
+    "code": "class Solution:\n    def maxNumber(self, nums1: List[int], nums2: List[int], k: int) -> List[int]:\n        def pick(nums: List[int], t: int) -> List[int]:     # largest subsequence of length t\n            drop = len(nums) - t\n            stack = []\n            for x in nums:\n                while drop and stack and stack[-1] < x:     # a bigger digit wants this slot\n                    stack.pop()\n                    drop -= 1\n                stack.append(x)\n            return stack[:t]                                # trim if input was increasing\n\n        def merge(a: List[int], b: List[int]) -> List[int]:\n            i = j = 0\n            out = []\n            while i < len(a) or j < len(b):\n                if a[i:] > b[j:]:                           # compare remaining tails, not heads\n                    out.append(a[i])\n                    i += 1\n                else:\n                    out.append(b[j])\n                    j += 1\n            return out\n\n        best = []\n        for i in range(max(0, k - len(nums2)), min(k, len(nums1)) + 1):\n            best = max(best, merge(pick(nums1, i), pick(nums2, k - i)))\n        return best",
+    "related": [
+      "largest_rectangle_in_histogram",
+      "daily_temperatures",
+      "merge_two_sorted_lists",
+      "sliding_window_maximum"
+    ]
+  },
+  {
+    "slug": "maximum_frequency_stack",
+    "title": "Maximum Frequency Stack",
+    "leetcode": 895,
+    "difficulty": "Hard",
+    "topic": "design",
+    "pattern": "Frequency buckets as stacks + max pointer",
+    "file": "design/maximum_frequency_stack.py",
+    "problem": "Design FreqStack with push(val) and pop(): pop removes and returns the most frequent element; on a tie, the one pushed most recently among the tied values. Example: push 5,7,5,7,4,5 then pop -> 5 (frequency 3), pop -> 7 (5 and 7 tie at 2, 7 is more recent), pop -> 5, pop -> 4.",
+    "brute_force": {
+      "approach": "Keep a plain list in push order. pop counts every element, finds the maximum count, then scans from the right for the first element with that count and deletes it. The counts are rebuilt from scratch on every pop although a single push changes exactly one of them, and the scan re-examines elements whose frequency can never win.",
+      "time": "O(n) per pop",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    \"\"\"Plain list in push order; pop recounts everything and scans from the top, O(n).\"\"\"\n\n    def __init__(self):\n        self.items = []\n\n    def push(self, val: int) -> None:\n        self.items.append(val)\n\n    def pop(self) -> int:\n        counts = Counter(self.items)             # rebuilt from scratch on every pop\n        top = max(counts.values())\n        for i in range(len(self.items) - 1, -1, -1):\n            if counts[self.items[i]] == top:     # rightmost among the most frequent\n                return self.items.pop(i)"
+    },
+    "optimization": "Two things are recomputed: each value's frequency, and which maximal-frequency value was pushed most recently. The first is fixed by a persistent dict freq[val] updated by +-1. For the second, observe that when a value reaches frequency f it is, at that moment, the most recent element to have frequency f. So keep one stack per frequency: group[f] holds values in the order they REACHED f. The element to pop is the top of group[maxfreq]; after popping, that value's frequency is f-1, which is already represented by its earlier copy in group[f-1]. If group[maxfreq] empties, maxfreq decrements by exactly one, because frequencies are reached one step at a time. Every operation is O(1).",
+    "intuition": "A value pushed three times lives in three buckets: group[1], group[2], group[3]. The highest bucket a value occupies is its current frequency, so popping it from its highest bucket is precisely \"decrement frequency by one\". Within a bucket, LIFO order is exactly the tie-break the problem asks for: the most recent arrival at that frequency.",
+    "geometric": "A staircase of stacks, one per frequency level. Each push lifts a value one step by placing a copy on the next level's stack. pop always takes from the highest occupied step, and the staircase can only shrink one step at a time, so a single pointer maxfreq tracks the top.",
+    "visual": "push 5,7,5,7,4,5           freq: 5->3  7->2  4->1\ngroup[3]: [5]        <- maxfreq = 3\ngroup[2]: [5, 7]\ngroup[1]: [5, 7, 4]\npop -> group[3].pop() = 5 ; empty -> maxfreq = 2\ngroup[2]: [5, 7]     pop -> 7  (newest at freq 2)\ngroup[2]: [5]        pop -> 5 ; empty -> maxfreq = 1\ngroup[1]: [5, 7, 4]  pop -> 4",
+    "steps": [
+      "freq = {}, group = {frequency: list used as a stack}, maxfreq = 0.",
+      "push(val): freq[val] += 1; f = freq[val]; group[f].append(val); maxfreq = max(maxfreq, f).",
+      "pop(): val = group[maxfreq].pop(); if group[maxfreq] is empty: maxfreq -= 1; freq[val] -= 1; return val."
+    ],
+    "complexity": {
+      "time": "O(1) per operation",
+      "space": "O(n)",
+      "why": "one dict update and one list push/pop; every pushed element occupies exactly one bucket slot."
+    },
+    "pitfalls": [
+      "Keeping a value only in its top bucket; the lower buckets must still hold its earlier copies.",
+      "Not decrementing maxfreq when its bucket empties.",
+      "Reaching for a heap keyed by (freq, time): correct but O(log n) and more code."
+    ],
+    "hints": [
+      "A heap keyed by (frequency, push time) works in O(log n). Can you avoid the log?",
+      "Group values by frequency. When a value reaches frequency f, it is the newest element at level f.",
+      "One stack per frequency level plus a maxfreq pointer: push appends to group[new freq]; pop takes group[maxfreq].pop() and lowers maxfreq when that stack empties."
+    ],
+    "code": "class FreqStack:\n    def __init__(self):\n        self.freq = defaultdict(int)             # val -> current frequency\n        self.group = defaultdict(list)           # frequency -> stack of vals that reached it\n        self.maxfreq = 0\n\n    def push(self, val: int) -> None:\n        self.freq[val] += 1\n        f = self.freq[val]\n        self.group[f].append(val)                # val is now the newest at frequency f\n        self.maxfreq = max(self.maxfreq, f)\n\n    def pop(self) -> int:\n        val = self.group[self.maxfreq].pop()     # most recent among the most frequent\n        if not self.group[self.maxfreq]:\n            self.maxfreq -= 1                    # group[maxfreq-1] is guaranteed non-empty\n        self.freq[val] -= 1\n        return val",
+    "related": [
+      "lfu_cache",
+      "min_stack",
+      "top_k_frequent_elements",
+      "kth_largest_element_in_a_stream"
+    ]
+  },
+  {
+    "slug": "all_oone_data_structure",
+    "title": "All O`one Data Structure",
+    "leetcode": 432,
+    "difficulty": "Hard",
+    "topic": "design",
+    "pattern": "Hash map + doubly linked list of count buckets",
+    "file": "design/all_oone_data_structure.py",
+    "problem": "Design AllOne with inc(key), dec(key) (the key exists; a count of 1 removes it), getMaxKey() and getMinKey() (any key with the max/min count, or \"\" when empty), all in O(1). Example: inc(\"hello\") twice, inc(\"leet\") -> getMaxKey() = \"hello\", getMinKey() = \"leet\".",
+    "brute_force": {
+      "approach": "A dict key -> count. inc and dec are O(1), but getMaxKey/getMinKey scan all keys with max()/min() over the dict. Each query re-examines every key even though a single inc or dec moved one key by one step, so the ordering of counts has barely changed since the last query.",
+      "time": "O(n) per max/min query",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    \"\"\"Dict key -> count; every max/min query scans all keys, O(n).\"\"\"\n\n    def __init__(self):\n        self.counts = {}\n\n    def inc(self, key: str) -> None:\n        self.counts[key] = self.counts.get(key, 0) + 1\n\n    def dec(self, key: str) -> None:\n        self.counts[key] -= 1\n        if self.counts[key] == 0:\n            del self.counts[key]\n\n    def getMaxKey(self) -> str:\n        return max(self.counts, key=self.counts.get) if self.counts else \"\"\n\n    def getMinKey(self) -> str:\n        return min(self.counts, key=self.counts.get) if self.counts else \"\""
+    },
+    "optimization": "The redundancy is re-deriving the ordering of counts from scratch. Observation: counts change by exactly +-1, so a key only ever moves to the ADJACENT count. Keep the distinct counts in a sorted doubly linked list of buckets, each holding one count and the set of keys with that count: inc moves a key from its bucket to the next bucket (creating it when the next count is not count+1) and dec moves it to the previous one. The dict key -> bucket hands over the node in O(1), inserting or unlinking a neighbouring node is O(1) pointer work, and min/max are simply head.next and tail.prev. Empty buckets are unlinked immediately so the extremes are always real.",
+    "intuition": "Sort by count, but exploit that nothing ever jumps: a +-1 step can only land in the neighbouring bucket, so the sorted order is maintained by local pointer surgery, never a sort or a scan. Buckets hold sets so many keys with the same count share one node and removing a key is O(1). The head sentinel doubles as a virtual count-0 bucket, which makes inc of a brand-new key the same code path as inc of an existing one.",
+    "geometric": "A number line of counts with a bucket at each occupied value. Keys hop one bucket left or right along the line; empty buckets vanish, so the two ends of the line are always the current min and max. The dict is the index card telling you which bucket each key currently stands in.",
+    "visual": "inc hello, inc hello, inc leet\nhead <-> [1:{leet}] <-> [2:{hello}] <-> tail\n          ^ min              ^ max\ninc(\"leet\"): cur=[1], next.count == 2 -> hop right\nhead <-> [2:{leet,hello}] <-> tail       ([1] unlinked)\ndec(\"hello\"): prev is head -> insert [1] before [2]\nhead <-> [1:{hello}] <-> [2:{leet}] <-> tail\nwhere = {hello: [1], leet: [2]}\nmin = head.next -> hello ;  max = tail.prev -> leet",
+    "steps": [
+      "Node(count, keys=set(), prev, next); sentinels head (count 0) <-> tail; where = {key: node}.",
+      "inc(key): cur = where.get(key, head); nxt = cur.next; if nxt is tail or nxt.count != cur.count+1, insert a new node with count cur.count+1 after cur. Add key to nxt, update where, remove key from cur (unlink cur if empty and not head).",
+      "dec(key): cur = where[key]; if cur.count == 1 delete where[key]; else find or create the bucket with count cur.count-1 just before cur and move the key there. Remove key from cur; unlink cur if empty.",
+      "getMaxKey: any key in tail.prev (or \"\" if that is head); getMinKey: any key in head.next (or \"\" if that is tail)."
+    ],
+    "complexity": {
+      "time": "O(1) per operation",
+      "space": "O(n)",
+      "why": "one dict lookup plus constant pointer rewrites; one node per distinct count and one dict entry per key."
+    },
+    "pitfalls": [
+      "Not unlinking empty buckets, so getMax/getMin return stale nodes.",
+      "Creating a new bucket when the neighbour already has the right count, breaking the distinct-counts invariant.",
+      "Forgetting to delete the key from the dict when its count reaches 0."
+    ],
+    "hints": [
+      "A dict gives O(1) inc/dec. What makes max/min O(1) too, given counts change by exactly one?",
+      "Keep buckets of keys ordered by count in a doubly linked list; a key only ever moves to the adjacent bucket.",
+      "dict key -> bucket node; inc/dec move the key to the neighbouring bucket (create it if missing, unlink empties); max = tail.prev, min = head.next."
+    ],
+    "code": "class Node:\n    __slots__ = (\"count\", \"keys\", \"prev\", \"next\")\n\n    def __init__(self, count: int = 0):\n        self.count = count\n        self.keys = set()\n        self.prev = self.next = None\n\n\nclass AllOne:\n    def __init__(self):\n        self.head, self.tail = Node(), Node()          # sentinels; counts ascend in between\n        self.head.next, self.tail.prev = self.tail, self.head\n        self.where = {}                                # key -> bucket node holding it\n\n    def _insert_after(self, node: Node, count: int) -> Node:\n        new = Node(count)\n        new.prev, new.next = node, node.next\n        node.next.prev = new\n        node.next = new\n        return new\n\n    def _remove_key(self, node: Node, key: str) -> None:\n        node.keys.discard(key)\n        if not node.keys and node is not self.head:    # drop empty buckets immediately\n            node.prev.next, node.next.prev = node.next, node.prev\n\n    def inc(self, key: str) -> None:\n        cur = self.where.get(key, self.head)           # head acts as the count-0 bucket\n        nxt = cur.next\n        if nxt is self.tail or nxt.count != cur.count + 1:\n            nxt = self._insert_after(cur, cur.count + 1)\n        nxt.keys.add(key)\n        self.where[key] = nxt\n        self._remove_key(cur, key)\n\n    def dec(self, key: str) -> None:\n        cur = self.where[key]\n        if cur.count == 1:\n            del self.where[key]\n        else:\n            prv = cur.prev\n            if prv is self.head or prv.count != cur.count - 1:\n                prv = self._insert_after(cur.prev, cur.count - 1)\n            prv.keys.add(key)\n            self.where[key] = prv\n        self._remove_key(cur, key)\n\n    def getMaxKey(self) -> str:\n        node = self.tail.prev\n        return next(iter(node.keys)) if node is not self.head else \"\"\n\n    def getMinKey(self) -> str:\n        node = self.head.next\n        return next(iter(node.keys)) if node is not self.tail else \"\"",
+    "related": [
+      "lfu_cache",
+      "lru_cache",
+      "insert_delete_getrandom_o1",
+      "design_hashmap"
+    ]
+  },
+  {
+    "slug": "remove_invalid_parentheses",
+    "title": "Remove Invalid Parentheses",
+    "leetcode": 301,
+    "difficulty": "Hard",
+    "topic": "backtracking",
+    "pattern": "Backtracking with counted removals and balance pruning",
+    "file": "backtracking/remove_invalid_parentheses.py",
+    "problem": "Remove the minimum number of parentheses so the string becomes valid and return every distinct result; letters are kept as-is. Example: \"()())()\" -> [\"(())()\", \"()()()\"]; \"(a)())()\" -> [\"(a())()\", \"(a)()()\"]; \")(\" -> [\"\"].",
+    "brute_force": {
+      "approach": "Try every subset of characters to delete (2^n masks), keep the subsets that leave a valid string, and return the valid strings of maximum length, deduplicated. Exponential. Most masks are doomed early (they keep a ')' with nothing open, or delete far more than needed) yet the whole string is still assembled and validated for each one.",
+      "time": "O(2^n * n) exponential",
+      "space": "O(2^n)",
+      "code": "def brute_force(s: str) -> List[str]:\n    def valid(t: str) -> bool:\n        bal = 0\n        for c in t:\n            bal += (c == \"(\") - (c == \")\")\n            if bal < 0:\n                return False\n        return bal == 0\n\n    n = len(s)\n    kept = set()\n    for mask in range(1 << n):                             # exponential: every delete-subset\n        t = \"\".join(s[i] for i in range(n) if mask >> i & 1)\n        if valid(t):\n            kept.add(t)\n    longest = max(map(len, kept))\n    return [t for t in kept if len(t) == longest]"
+    },
+    "optimization": "Two independent pieces of waste. First, HOW MANY '(' and ')' to delete is known before any search: one left-to-right pass counting unmatched ')' (right) and leftover '(' (left) gives the exact minimum, so the search only decides WHICH ones. Second, a partial string whose running balance goes negative, or that has spent more than its left/right budget, can never be completed, so prune it at once. The DFS carries (index, open balance, left budget, right budget, path) and forks at most two ways per bracket: delete it if the budget allows, or keep it if the balance stays >= 0. Duplicates from deleting different copies of the same character are collapsed by a set. The search is bounded by C(n, left) * C(n, right) leaves instead of 2^n, and every leaf reached is an answer.",
+    "intuition": "Count first, then search. The counting pass is the same balance check you would use to validate a string; its two leftover counters are exactly the deletions you are forced to make. With the budgets fixed, DFS walks along the string and each bracket is a fork: spend budget on it or keep it. Keeping a ')' is only allowed when something is open, which kills the vast majority of hopeless branches at their first wrong step.",
+    "geometric": "A binary recursion tree whose width is capped by the removal budgets. The running balance is a fence along the bottom: any branch that would dip below zero is cut immediately, and any branch that exhausts a budget has no more delete-forks, so it runs straight to a leaf.",
+    "visual": "s = ( ) ( ) ) ( )     pass 1: left = 0, right = 1\ni   0 1 2 3 4 5 6     exactly one \")\" must go\ndfs(i, open, left, right, path):\n keep 0..3  \"()()\" open=0 -> i=4 \")\" cannot keep\n   right=1 -> delete i=4 -> keep 5,6 => \"()()()\"  add\n delete i=3 (right=0)  \"()(\" open=1\n   keep 4 -> \"()()\" -> keep 5,6 => \"()()()\"  dup, set\n delete i=1 (right=0)  \"(\" open=1\n   keep 2,3,4 -> \"(())\" open=0 -> keep 5,6 => \"(())()\"\n delete i=6 -> \"()()(\" ends with open=1 -> rejected\nresult = {\"()()()\", \"(())()\"}",
+    "steps": [
+      "Scan s: '(' -> left += 1; ')' -> if left: left -= 1 else right += 1.",
+      "dfs(i, open, left, right, path): at i == n add path if open == 0 and left == right == 0.",
+      "If s[i] == '(' and left > 0: recurse skipping it with left-1. If s[i] == ')' and right > 0: recurse skipping it with right-1.",
+      "Keep s[i]: '(' -> open+1; ')' only if open > 0 -> open-1; a letter leaves open unchanged.",
+      "Return the result set as a list."
+    ],
+    "complexity": {
+      "time": "O(2^n) worst case",
+      "space": "O(n)",
+      "why": "exponential but bounded by C(n, left) * C(n, right) leaves with pruning; recursion depth n plus the output."
+    },
+    "pitfalls": [
+      "Not requiring open == 0 at the end lets a leftover '(' slip through.",
+      "Deleting different copies of the same adjacent bracket yields duplicates; use a set or skip repeated characters.",
+      "Letters must be kept, not treated as deletable."
+    ],
+    "hints": [
+      "Can you compute how many '(' and how many ')' must be removed before searching?",
+      "One balance pass gives the exact budgets. Then only decide which brackets to drop, and never let the running balance go negative.",
+      "DFS(i, open, left, right, path): optionally delete the bracket if its budget allows; keep it if balance stays >= 0; collect paths at the end with all counters zero into a set."
+    ],
+    "code": "class Solution:\n    def removeInvalidParentheses(self, s: str) -> List[str]:\n        left = right = 0                                   # minimum \"(\" and \")\" removals\n        for c in s:\n            if c == \"(\":\n                left += 1\n            elif c == \")\":\n                if left:\n                    left -= 1\n                else:\n                    right += 1\n\n        res = set()\n\n        def dfs(i: int, open_: int, left: int, right: int, path: str) -> None:\n            if i == len(s):\n                if open_ == 0 and left == 0 and right == 0:\n                    res.add(path)\n                return\n            c = s[i]\n            if c == \"(\" and left:                          # option: delete this \"(\"\n                dfs(i + 1, open_, left - 1, right, path)\n            if c == \")\" and right:                         # option: delete this \")\"\n                dfs(i + 1, open_, left, right - 1, path)\n            if c == \"(\":\n                dfs(i + 1, open_ + 1, left, right, path + c)\n            elif c == \")\":\n                if open_:                                  # prune: balance never goes negative\n                    dfs(i + 1, open_ - 1, left, right, path + c)\n            else:\n                dfs(i + 1, open_, left, right, path + c)\n\n        dfs(0, 0, left, right, \"\")\n        return list(res)",
+    "related": [
+      "minimum_remove_to_make_valid_parentheses",
+      "generate_parentheses",
+      "valid_parentheses",
+      "longest_valid_parentheses"
+    ]
+  }
+]

@@ -1,0 +1,1034 @@
+[
+  {
+    "slug": "number_of_islands",
+    "title": "Number of Islands",
+    "leetcode": 200,
+    "difficulty": "Medium",
+    "topic": "graphs",
+    "pattern": "Grid flood fill (DFS/BFS)",
+    "file": "graphs/number_of_islands.py",
+    "problem": "Given an m x n grid of '1' (land) and '0' (water), count the islands, where an island is a maximal group of '1' cells connected horizontally or vertically. Example: [[\"1\",\"1\",\"0\"],[\"0\",\"1\",\"0\"],[\"0\",\"0\",\"1\"]] has 2 islands: the L-shape in the top-left and the lone cell at the bottom-right.",
+    "brute_force": {
+      "approach": "From every land cell, run a full DFS with its own visited set to collect the component it belongs to, then count only the DFS whose start cell is the smallest (row, col) in that component. Every cell of an island of size k is explored k times; the wasted work is re-walking a component that has already been fully discovered.",
+      "time": "O((m*n)^2)",
+      "space": "O(m*n)",
+      "code": "def brute_force(grid: List[List[str]]) -> int:\n    # From every land cell, explore its whole component without any shared visited state;\n    # count the cell only if it is the smallest (row, col) in that component.\n    rows, cols = len(grid), len(grid[0])\n\n    def component(r: int, c: int) -> set:\n        seen = {(r, c)}\n        stack = [(r, c)]\n        while stack:\n            x, y = stack.pop()\n            for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):\n                if 0 <= nx < rows and 0 <= ny < cols and grid[nx][ny] == \"1\" and (nx, ny) not in seen:\n                    seen.add((nx, ny))\n                    stack.append((nx, ny))\n        return seen\n\n    count = 0\n    for r in range(rows):\n        for c in range(cols):\n            if grid[r][c] == \"1\" and min(component(r, c)) == (r, c):\n                count += 1\n    return count"
+    },
+    "optimization": "The redundancy is re-exploring cells that already belong to a counted island. Once a DFS from any cell of an island finishes, every cell of that island has been seen, so no other cell of it should ever start a new search. Mark cells visited the moment they are touched (sink '1' to '0' or use a shared visited set); then a new DFS starts only from an unvisited '1', and each such start is exactly one island. Every cell is entered at most once, giving O(m*n).",
+    "intuition": "Count how many times you have to start a new flood. Scan the grid row by row; whenever you land on a '1' that is still unvisited you have found a brand-new island, so increment the count and immediately flood-fill the whole island to '0'. Because the flood sinks every connected land cell, no other cell of that island can trigger another count. The DFS stack (or BFS queue) is just the expanding front of the flood.",
+    "geometric": "Picture pouring paint onto the grid: each time the scan pointer lands on dry land it pours, and the paint spreads to all 4-connected land cells. The number of pours is the answer. The stack holds the wet front of the paint as it expands outward from the pour point.",
+    "visual": "Scan row-major. '#' = sunk (visited), '*' = on DFS stack\n     c0 c1 c2 c3 c4\nr0 [  #  #  #  #  0 ]   island 1: already flooded\nr1 [  #  #  0  #  0 ]\nr2 [  #  #  0  0  0 ]\nr3 [  0  0  0  *  1 ]   scan hits (3,3) == '1' -> count = 2\n                        stack: [(3,3)] -> pop, push (3,4)\nr3 [  0  0  0  #  * ]   stack: [(3,4)] -> pop, no new land\n                        stack empty => island 2 fully sunk",
+    "steps": [
+      "Loop over every cell (r, c) of the grid.",
+      "If grid[r][c] == '1', increment the island count and start a flood fill from (r, c).",
+      "Flood fill: set the cell to '0', push it, and while the stack is non-empty pop a cell and push each in-bounds 4-neighbour that is still '1' (sinking it on push).",
+      "Return the count after the scan finishes."
+    ],
+    "complexity": {
+      "time": "O(m*n)",
+      "space": "O(m*n)",
+      "why": "Every cell is sunk at most once; the explicit stack can hold an entire island in the worst case."
+    },
+    "pitfalls": [
+      "Marking a cell visited on pop instead of on push lets it be pushed twice from two neighbours.",
+      "Forgetting bounds checks on the four neighbours.",
+      "Recursive DFS can hit the recursion limit on a 300x300 all-land grid; use an explicit stack.",
+      "Mutating the caller's grid; deep-copy first if the input must survive."
+    ],
+    "hints": [
+      "Each island is a connected component; think about what happens when you start a search from one cell of it.",
+      "If you sink every land cell you reach to '0', can a later scan ever start a second search inside the same island?",
+      "Scan all cells; on each unsunk '1', count += 1 and run an iterative DFS that sets cells to '0' as they are pushed."
+    ],
+    "code": "class Solution:\n    def numIslands(self, grid: List[List[str]]) -> int:\n        rows, cols = len(grid), len(grid[0])\n        count = 0\n\n        def sink(r: int, c: int) -> None:\n            stack = [(r, c)]\n            grid[r][c] = \"0\"\n            while stack:\n                x, y = stack.pop()\n                for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):\n                    if 0 <= nx < rows and 0 <= ny < cols and grid[nx][ny] == \"1\":\n                        grid[nx][ny] = \"0\"  # mark on push, not on pop, to avoid duplicates\n                        stack.append((nx, ny))\n\n        for r in range(rows):\n            for c in range(cols):\n                if grid[r][c] == \"1\":\n                    count += 1\n                    sink(r, c)\n        return count",
+    "related": [
+      "max_area_of_island",
+      "surrounded_regions",
+      "number_of_connected_components",
+      "rotting_oranges"
+    ]
+  },
+  {
+    "slug": "clone_graph",
+    "title": "Clone Graph",
+    "leetcode": 133,
+    "difficulty": "Medium",
+    "topic": "graphs",
+    "pattern": "Graph traversal with old->new node map",
+    "file": "graphs/clone_graph.py",
+    "problem": "Given a reference to one node of a connected undirected graph, where each node has an integer val (1..n, unique) and a list of neighbors, return a deep copy of the whole graph. Example: the 4-cycle with adjacency [[2,4],[1,3],[2,4],[1,3]] must come back as an identical graph made of brand-new Node objects.",
+    "brute_force": {
+      "approach": "Traverse the graph once to collect every original node, allocate one new node per original, then for every edge (u, v) linearly scan the list of new nodes to find the clone whose val matches v and append it. The linear scan is the wasted work: each of the E edge endpoints rescans up to V nodes.",
+      "time": "O(V*E)",
+      "space": "O(V)",
+      "code": "def brute_force(node: Optional[Node]) -> Optional[Node]:\n    # Pass 1: collect all original nodes. Pass 2: build clones in a list.\n    # Pass 3: for every edge, linearly scan the clone list to find the matching endpoint.\n    if node is None:\n        return None\n    originals, stack = [], [node]\n    while stack:\n        cur = stack.pop()\n        if cur in originals:\n            continue\n        originals.append(cur)\n        stack.extend(cur.neighbors)\n    copies = [Node(o.val) for o in originals]\n    for o, c in zip(originals, copies):\n        for nb in o.neighbors:\n            c.neighbors.append(next(cp for cp in copies if cp.val == nb.val))\n    return copies[0]"
+    },
+    "optimization": "The redundancy is the linear lookup 'which clone corresponds to this original node?'. That is a pure key-to-value question, so a hash map old_node -> clone answers it in O(1). With the map in hand, cloning and wiring can happen in a single traversal: on first sight of an original node create its clone and store it; on later sightings via other edges just look it up. The map doubles as the visited set, which is also what stops the traversal from looping on cycles. Total O(V + E).",
+    "intuition": "Walk the graph once. For each node, make sure its clone exists (create it on first sight), then for each neighbour make sure the neighbour's clone exists and append clone-to-clone. The map is the only state and it guarantees every original maps to exactly one clone, so shared neighbours and cycles are copied faithfully. Returning clones[node] gives the entry point of the copied graph.",
+    "geometric": "Picture the original graph and a shadow graph growing beside it. A BFS frontier sweeps the original; each time it touches a node it casts a shadow node (if not already cast) and draws a shadow edge parallel to the original edge. When the frontier has covered everything, the shadow is a complete isomorphic copy.",
+    "visual": "original          clones map (old -> new)      BFS queue\n 1 -- 2           1 -> 1'   (wired)             [3, 4]\n |    |           2 -> 2'   (wired)\n 4 -- 3           3 -> 3'   created when seen from 2\n                  4 -> 4'   created when seen from 1\nwiring so far:  1'.neighbors = [2', 4']\n                2'.neighbors = [1', 3']\nnext pop 3: nb 2 in map -> link 3' -> 2'\n            nb 4 in map -> link 3' -> 4'   (no new nodes)",
+    "steps": [
+      "If node is None, return None.",
+      "Create clones = {node: Node(node.val)} and a queue containing node.",
+      "Pop cur; for each neighbour nb: if nb is not in clones, create its clone and enqueue nb.",
+      "Append clones[nb] to clones[cur].neighbors.",
+      "When the queue is empty, return clones[node]."
+    ],
+    "complexity": {
+      "time": "O(V + E)",
+      "space": "O(V)",
+      "why": "Each node is cloned once and each edge is wired once; the map and queue hold at most V nodes."
+    },
+    "pitfalls": [
+      "Creating two clones for a node reached via two different edges; always check the map before allocating.",
+      "Appending the original neighbour object instead of its clone.",
+      "Forgetting the None input case."
+    ],
+    "hints": [
+      "You need to know, for any original node, whether its copy already exists.",
+      "A dictionary original -> clone both answers that question and acts as your visited set.",
+      "BFS from the start node; create clones lazily on first sight and wire clones[cur].neighbors.append(clones[nb]) for every edge."
+    ],
+    "code": "class Solution:\n    def cloneGraph(self, node: Optional[\"Node\"]) -> Optional[\"Node\"]:\n        if node is None:\n            return None\n        clones = {node: Node(node.val)}  # original -> copy; also the visited set\n        queue = deque([node])\n        while queue:\n            cur = queue.popleft()\n            for nb in cur.neighbors:\n                if nb not in clones:\n                    clones[nb] = Node(nb.val)\n                    queue.append(nb)\n                clones[cur].neighbors.append(clones[nb])\n        return clones[node]",
+    "related": [
+      "number_of_islands",
+      "course_schedule"
+    ]
+  },
+  {
+    "slug": "max_area_of_island",
+    "title": "Max Area of Island",
+    "leetcode": 695,
+    "difficulty": "Medium",
+    "topic": "graphs",
+    "pattern": "Grid flood fill (DFS/BFS)",
+    "file": "graphs/max_area_of_island.py",
+    "problem": "Given an m x n binary grid, an island is a maximal group of 1 cells connected 4-directionally. Return the area (cell count) of the largest island, or 0 if there is no land. Example: [[0,1,0],[1,1,0],[0,0,1]] -> 3, from the three connected 1s in the top-left.",
+    "brute_force": {
+      "approach": "From every land cell independently, run a DFS with its own local visited set and record how many cells it reaches; return the maximum. Each cell of an island of size k launches a DFS that walks all k cells, so one island costs O(k^2). The wasted work is re-measuring the same island once per cell it contains.",
+      "time": "O((m*n)^2)",
+      "space": "O(m*n)",
+      "code": "def brute_force(grid: List[List[int]]) -> int:\n    # Measure the island from EVERY land cell with a private visited set; take the max.\n    rows, cols = len(grid), len(grid[0])\n\n    def size_from(r: int, c: int) -> int:\n        seen, stack = {(r, c)}, [(r, c)]\n        while stack:\n            x, y = stack.pop()\n            for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):\n                if 0 <= nx < rows and 0 <= ny < cols and grid[nx][ny] == 1 and (nx, ny) not in seen:\n                    seen.add((nx, ny))\n                    stack.append((nx, ny))\n        return len(seen)\n\n    best = 0\n    for r in range(rows):\n        for c in range(cols):\n            if grid[r][c] == 1:\n                best = max(best, size_from(r, c))\n    return best"
+    },
+    "optimization": "The redundancy is measuring the same island k times. The area of an island is a property of the component, not of the starting cell, so one measurement per component suffices. Share the visited state across all starts by sinking 1s to 0s as they are counted: a DFS launched from a cell only covers cells nobody has counted before, each island is measured exactly once from its first-scanned cell, and the total work is O(m*n).",
+    "intuition": "Same scan as Number of Islands, but each flood returns how many cells it swallowed instead of just signalling that it happened. Keep the largest return value. Sinking cells as you count them is what makes each count exact and the total linear. If there is no land the loop never floods and the answer is 0.",
+    "geometric": "Picture the grid as a map with lakes of 1s. A scanning pointer walks row by row; when it hits land it drops an expanding wavefront (the DFS stack) that eats the whole island and tallies the cells eaten. Each island is eaten exactly once; the biggest meal is the answer.",
+    "visual": "'#' = counted+sunk, '*' = on stack        best so far = 2\n     c0 c1 c2 c3 c4\nr0 [  0  0  0  0  0 ]\nr1 [  0  #  *  0  0 ]   flood from (1,1): area=1\nr2 [  0  *  1  1  0 ]   push (1,2),(2,1)        area=3\nr3 [  0  0  0  1  0 ]   pop (2,1): push (2,2)   area=4\n                        pop (2,2): push (2,3)   area=5\n                        pop (2,3): push (3,3)   area=6\nstack empties -> flood returns 6 -> best = max(2, 6) = 6",
+    "steps": [
+      "For every cell, if it is 1, run a flood fill from it.",
+      "Flood fill: set the cell to 0, push it, area = 1; pop cells and for each in-bounds neighbour that is 1 set it to 0, increment area, and push it.",
+      "After each flood, best = max(best, area).",
+      "Return best (0 when the grid has no land)."
+    ],
+    "complexity": {
+      "time": "O(m*n)",
+      "space": "O(m*n)",
+      "why": "Each cell is sunk once; the stack may hold an entire island."
+    },
+    "pitfalls": [
+      "Counting a cell on pop rather than on push double-counts cells pushed from two neighbours.",
+      "Returning -infinity or None instead of 0 for an all-water grid.",
+      "Recursion depth on large islands; prefer an iterative stack."
+    ],
+    "hints": [
+      "This is Number of Islands where each flood also returns a number.",
+      "If you zero out cells as you claim them, each cell contributes to exactly one island's area.",
+      "Iterative DFS from each unvisited 1, increment area whenever you push a neighbour, keep the max over all floods."
+    ],
+    "code": "class Solution:\n    def maxAreaOfIsland(self, grid: List[List[int]]) -> int:\n        rows, cols = len(grid), len(grid[0])\n\n        def flood(r: int, c: int) -> int:\n            grid[r][c] = 0\n            stack, area = [(r, c)], 1\n            while stack:\n                x, y = stack.pop()\n                for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):\n                    if 0 <= nx < rows and 0 <= ny < cols and grid[nx][ny] == 1:\n                        grid[nx][ny] = 0  # claim on push so each cell is counted once\n                        area += 1\n                        stack.append((nx, ny))\n            return area\n\n        best = 0\n        for r in range(rows):\n            for c in range(cols):\n                if grid[r][c] == 1:\n                    best = max(best, flood(r, c))\n        return best",
+    "related": [
+      "number_of_islands",
+      "surrounded_regions",
+      "pacific_atlantic_water_flow"
+    ]
+  },
+  {
+    "slug": "pacific_atlantic_water_flow",
+    "title": "Pacific Atlantic Water Flow",
+    "leetcode": 417,
+    "difficulty": "Medium",
+    "topic": "graphs",
+    "pattern": "Multi-source reverse BFS/DFS from the boundary",
+    "file": "graphs/pacific_atlantic_water_flow.py",
+    "problem": "An m x n height grid touches the Pacific along its top and left edges and the Atlantic along its bottom and right edges. Water flows from a cell to a 4-neighbour whose height is less than or equal to its own. Return every cell from which water can reach both oceans. Example: for the 5x5 grid [[1,2,2,3,5],[3,2,3,4,4],[2,4,5,3,1],[6,7,1,4,5],[5,1,1,2,4]] the answer is [[0,4],[1,3],[1,4],[2,2],[3,0],[3,1],[4,0]].",
+    "brute_force": {
+      "approach": "For each of the m*n cells, run its own downhill DFS and check whether it touches a top/left border cell and a bottom/right border cell. Each search can cover the whole grid. The wasted work is that neighbouring cells of similar height re-explore nearly identical downhill basins, and the same low regions are re-walked once per starting cell.",
+      "time": "O((m*n)^2)",
+      "space": "O(m*n)",
+      "code": "def brute_force(heights: List[List[int]]) -> List[List[int]]:\n    # From every cell, flow downhill with its own visited set and test whether both\n    # ocean borders were touched.\n    rows, cols = len(heights), len(heights[0])\n\n    def reaches_both(r0: int, c0: int) -> bool:\n        seen, stack, pac, atl = {(r0, c0)}, [(r0, c0)], False, False\n        while stack:\n            r, c = stack.pop()\n            pac |= r == 0 or c == 0\n            atl |= r == rows - 1 or c == cols - 1\n            for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                if 0 <= nr < rows and 0 <= nc < cols and (nr, nc) not in seen \\\n                        and heights[nr][nc] <= heights[r][c]:\n                    seen.add((nr, nc))\n                    stack.append((nr, nc))\n        return pac and atl\n\n    return [[r, c] for r in range(rows) for c in range(cols) if reaches_both(r, c)]"
+    },
+    "optimization": "The redundancy is asking 'can cell X reach the ocean?' separately for every X when all those questions share one reachability structure. Reverse the question: a cell can drain to the Pacific iff it is reachable from some Pacific-border cell by moving only to neighbours of height >= the current height. That is a single multi-source traversal per ocean, visiting each cell at most once, producing two boolean grids; the answer is their intersection. Two BFS passes give O(m*n) total.",
+    "intuition": "Water flows down, so start at the oceans and walk uphill. Seed one BFS with every Pacific-border cell and mark everything it can climb to; seed another with every Atlantic-border cell and do the same. A cell marked by both can send water to both oceans. Because the climb uses >= rather than >, plateaus are handled correctly.",
+    "geometric": "Picture two tides rising from opposite corners of the map. The Pacific tide creeps from the top/left edges onto any neighbouring cell at least as high; the Atlantic tide does the same from the bottom/right. Each tide's frontier is a BFS queue. Cells submerged by both tides are the answer.",
+    "visual": "Pacific = top/left edges, Atlantic = bottom/right edges\nheights       pac: climbed from    atl: climbed from\n              top/left (>=)        bottom/right (>=)\n1 2 2 3 5     P P P P P            . . . . A\n3 2 3 4 4     P P P P P            . . . A A\n2 4 5 3 1     P P P . .            . . A . A\n6 7 1 4 5     P P . . .            A A A A A\n5 1 1 2 4     P . . . .            A A A A A\npac BFS stops at (2,3)=3: lower than (1,3)=4, can't climb\nboth P and A: (0,4)(1,3)(1,4)(2,2)(3,0)(3,1)(4,0)",
+    "steps": [
+      "Create two boolean grids pac and atl.",
+      "Seed the Pacific queue with every cell in row 0 and column 0; seed the Atlantic queue with the last row and last column.",
+      "BFS each: from (r, c) move to an in-bounds, unmarked neighbour whose height is >= heights[r][c]; mark it and enqueue it.",
+      "Return every (r, c) with pac[r][c] and atl[r][c] both true."
+    ],
+    "complexity": {
+      "time": "O(m*n)",
+      "space": "O(m*n)",
+      "why": "Each ocean's BFS visits every cell at most once; two boolean grids and a queue of at most m*n cells."
+    },
+    "pitfalls": [
+      "Using > instead of >= when climbing: water does flow between equal heights.",
+      "Seeding only the two corners instead of whole edges.",
+      "Climbing the wrong way (<=) because you forgot the search is reversed."
+    ],
+    "hints": [
+      "Running a search from every cell repeats work; what if you searched from the oceans instead?",
+      "Reverse the flow rule: from an ocean cell you may step onto a neighbour that is at least as high.",
+      "Two multi-source BFS runs seeded with the Pacific and Atlantic borders; output the cells marked by both."
+    ],
+    "code": "class Solution:\n    def pacificAtlantic(self, heights: List[List[int]]) -> List[List[int]]:\n        rows, cols = len(heights), len(heights[0])\n\n        def climb(sources: List[tuple]) -> List[List[bool]]:\n            seen = [[False] * cols for _ in range(rows)]\n            queue = deque(sources)\n            for r, c in sources:\n                seen[r][c] = True\n            while queue:\n                r, c = queue.popleft()\n                for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                    if 0 <= nr < rows and 0 <= nc < cols and not seen[nr][nc] \\\n                            and heights[nr][nc] >= heights[r][c]:  # reverse flow: go uphill\n                        seen[nr][nc] = True\n                        queue.append((nr, nc))\n            return seen\n\n        pacific = [(r, 0) for r in range(rows)] + [(0, c) for c in range(cols)]\n        atlantic = [(r, cols - 1) for r in range(rows)] + [(rows - 1, c) for c in range(cols)]\n        pac, atl = climb(pacific), climb(atlantic)\n        return [[r, c] for r in range(rows) for c in range(cols) if pac[r][c] and atl[r][c]]",
+    "related": [
+      "surrounded_regions",
+      "number_of_islands",
+      "walls_and_gates"
+    ]
+  },
+  {
+    "slug": "surrounded_regions",
+    "title": "Surrounded Regions",
+    "leetcode": 130,
+    "difficulty": "Medium",
+    "topic": "graphs",
+    "pattern": "Multi-source reverse BFS/DFS from the boundary",
+    "file": "graphs/surrounded_regions.py",
+    "problem": "Given an m x n board of 'X' and 'O', flip to 'X' every region of 'O' cells that is completely surrounded, i.e. that does not touch the border. Modify the board in place. Example: [[\"X\",\"X\",\"X\",\"X\"],[\"X\",\"O\",\"O\",\"X\"],[\"X\",\"X\",\"O\",\"X\"],[\"X\",\"O\",\"X\",\"X\"]] becomes all 'X' except the bottom-row 'O', which touches the border and survives.",
+    "brute_force": {
+      "approach": "For every 'O' cell, flood-fill its region with a private visited set and check whether any cell of the region lies on the border; if none does, flip the whole region. Every cell of a region of size k launches a flood of size k, so an all-'O' board costs O((m*n)^2). The waste is re-flooding and re-testing the same region once per cell it contains.",
+      "time": "O((m*n)^2)",
+      "space": "O(m*n)",
+      "code": "def brute_force(board: List[List[str]]) -> None:\n    # For every 'O', flood its region with a private visited set; flip only if no\n    # member of the region lies on the border.\n    rows, cols = len(board), len(board[0])\n    for r0 in range(rows):\n        for c0 in range(cols):\n            if board[r0][c0] != \"O\":\n                continue\n            region, stack, on_border = {(r0, c0)}, [(r0, c0)], False\n            while stack:\n                r, c = stack.pop()\n                on_border |= r in (0, rows - 1) or c in (0, cols - 1)\n                for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                    if 0 <= nr < rows and 0 <= nc < cols and board[nr][nc] == \"O\" and (nr, nc) not in region:\n                        region.add((nr, nc))\n                        stack.append((nr, nc))\n            if not on_border:\n                for r, c in region:\n                    board[r][c] = \"X\""
+    },
+    "optimization": "The redundancy is deciding 'is this region safe?' separately for each of its cells. A region is safe exactly when it is reachable from a border 'O', so flip the question: start one traversal from all border 'O's at once and mark every 'O' it reaches as safe. Everything unmarked is, by definition, surrounded. A single multi-source BFS visits each cell at most once, giving O(m*n), and no per-region border test is needed at all.",
+    "intuition": "Do not look for what is surrounded; look for what is not. Any 'O' connected to the edge escapes capture. Mark all escapees with a temporary letter 'S' via BFS from the border, then do one final sweep: remaining 'O' -> 'X' (captured), 'S' -> 'O' (restored). The sentinel letter avoids needing a separate visited grid.",
+    "geometric": "Picture the board's rim as a coastline and every border 'O' as a harbour. A BFS tide flows inland from all harbours through connected 'O' cells; the frontier is the queue. 'O' pockets the tide never reaches are inland lakes with no outlet, and those are the ones filled with 'X'.",
+    "visual": "border 'O's seeded -> BFS marks 'S' (safe); other 'O's die\n  input         mid-BFS (queue=[(3,1)])      final\nX X X X         X X X X                      X X X X\nX O O X         X O O X   <- never reached   X X X X\nX X O X         X X O X      from border     X X X X\nX O X X         X S X X   <- border 'O'      X O X X\n                pop (3,1): all neighbours 'X' -> no spread\nsweep: 'O' -> 'X' (captured), 'S' -> 'O' (restored)",
+    "steps": [
+      "Scan the four border rows/columns; every 'O' there becomes 'S' and is enqueued.",
+      "BFS: pop (r, c); for each in-bounds neighbour that is 'O', set it to 'S' and enqueue it.",
+      "Sweep the whole board: 'O' -> 'X', 'S' -> 'O'."
+    ],
+    "complexity": {
+      "time": "O(m*n)",
+      "space": "O(m*n)",
+      "why": "Each cell is enqueued at most once; the queue can hold O(m*n) cells on an all-'O' board."
+    },
+    "pitfalls": [
+      "Scanning only corners or only two edges when seeding.",
+      "Flipping 'O' to 'X' before the border BFS finishes, destroying cells the BFS still needs.",
+      "Forgetting the final pass that restores 'S' back to 'O'."
+    ],
+    "hints": [
+      "Which 'O' regions are guaranteed to survive? Those touching the border.",
+      "Instead of testing each region for border contact, start from the border and mark everything connected to it.",
+      "Multi-source BFS from all border 'O's marking 'S'; then one sweep turns leftover 'O' into 'X' and 'S' back into 'O'."
+    ],
+    "code": "class Solution:\n    def solve(self, board: List[List[str]]) -> None:\n        rows, cols = len(board), len(board[0])\n        queue = deque()\n        for r in range(rows):\n            for c in range(cols):\n                if (r in (0, rows - 1) or c in (0, cols - 1)) and board[r][c] == \"O\":\n                    board[r][c] = \"S\"  # safe: touches the border\n                    queue.append((r, c))\n        while queue:\n            r, c = queue.popleft()\n            for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                if 0 <= nr < rows and 0 <= nc < cols and board[nr][nc] == \"O\":\n                    board[nr][nc] = \"S\"\n                    queue.append((nr, nc))\n        for r in range(rows):\n            for c in range(cols):\n                board[r][c] = \"O\" if board[r][c] == \"S\" else \"X\"",
+    "related": [
+      "pacific_atlantic_water_flow",
+      "number_of_islands",
+      "walls_and_gates"
+    ]
+  },
+  {
+    "slug": "rotting_oranges",
+    "title": "Rotting Oranges",
+    "leetcode": 994,
+    "difficulty": "Medium",
+    "topic": "graphs",
+    "pattern": "Multi-source BFS (level = distance)",
+    "file": "graphs/rotting_oranges.py",
+    "problem": "In an m x n grid, 0 is empty, 1 is a fresh orange and 2 is a rotten orange. Every minute each rotten orange rots its 4-neighbouring fresh oranges. Return the minimum number of minutes until no fresh orange remains, or -1 if that never happens. Example: [[2,1,1],[1,1,0],[0,1,1]] -> 4; [[2,1,1],[0,1,1],[1,0,1]] -> -1 because the bottom-left orange is isolated.",
+    "brute_force": {
+      "approach": "Simulate minute by minute: each round rescan the whole grid and, for every rotten cell, rot its fresh neighbours into a copy so the round is simultaneous; stop when a round changes nothing. A round costs O(m*n) and a snake-shaped grid needs O(m*n) rounds. The waste is rescanning every cell each round even though only oranges rotted in the previous round can spread anything new.",
+      "time": "O((m*n)^2)",
+      "space": "O(m*n)",
+      "code": "def brute_force(grid: List[List[int]]) -> int:\n    # Full-grid simulation: each minute rescan every cell and rot fresh neighbours of\n    # rotten ones (written to a copy so the step is simultaneous).\n    rows, cols = len(grid), len(grid[0])\n    minutes = 0\n    while True:\n        nxt = [row[:] for row in grid]\n        changed = False\n        for r in range(rows):\n            for c in range(cols):\n                if grid[r][c] == 2:\n                    for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                        if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 1:\n                            nxt[nr][nc] = 2\n                            changed = True\n        if not changed:\n            break\n        grid, minutes = nxt, minutes + 1\n    return -1 if any(1 in row for row in grid) else minutes"
+    },
+    "optimization": "The redundancy is rescanning cells that cannot possibly change. The only oranges that spread rot at minute t are those that became rotten at minute t-1: the frontier. Keeping that frontier in a queue is exactly multi-source BFS where every initially rotten orange is a source and BFS depth equals the minute. Each cell is enqueued once, so the simulation becomes O(m*n). Counting fresh oranges up front lets us detect the -1 case without a second scan.",
+    "intuition": "All rotten oranges spread simultaneously, so treat them as one BFS wave with many sources. Each BFS layer is one minute. Process the queue layer by layer, rotting fresh neighbours and decrementing the fresh count; the answer is the number of layers it took to reach the last fresh orange. If the queue empties while fresh > 0, some orange was unreachable, return -1.",
+    "geometric": "Picture ripples spreading from several stones dropped into a pond at the same instant. Each ripple ring is one minute; where rings meet they merge. The queue holds the current ring. The time is the radius of the farthest ring needed to cover every fresh orange; a fresh orange on an island cut off by empty cells is never reached.",
+    "visual": "minute 0        minute 1        minute 2\n2 1 1           2 2 1           2 2 2\n1 1 0           2 1 0           2 2 0\n0 1 1           0 1 1           0 1 1\nqueue=[(0,0)]   queue=[(0,1),   queue=[(0,2),(1,1)]\nfresh=6           (1,0)]        fresh=2\n                fresh=4\none BFS layer == one minute; each cell enqueued once\nminute 3: (2,1) rots   minute 4: (2,2) rots -> fresh=0 => 4",
+    "steps": [
+      "Scan once: enqueue every rotten cell and count the fresh ones.",
+      "While the queue is non-empty and fresh > 0: process exactly len(queue) cells (one layer).",
+      "For each popped cell, rot every in-bounds fresh neighbour: set it to 2, fresh -= 1, enqueue it.",
+      "After each full layer, minutes += 1.",
+      "Return minutes if fresh == 0, else -1."
+    ],
+    "complexity": {
+      "time": "O(m*n)",
+      "space": "O(m*n)",
+      "why": "Every cell enters the queue at most once; the queue can hold a whole layer."
+    },
+    "pitfalls": [
+      "Counting an extra minute for the final layer that rots nothing; looping only while fresh > 0 avoids it.",
+      "Returning -1 when there were never any fresh oranges (answer is 0).",
+      "Rotting neighbours without level separation, which lets rot travel two cells in one minute."
+    ],
+    "hints": [
+      "Rot spreads one cell per minute from every rotten orange at the same time; which graph algorithm measures distance in steps?",
+      "Seed a queue with all rotten oranges at once and process it layer by layer.",
+      "Multi-source BFS: each full layer is one minute; track a fresh counter to detect the impossible case."
+    ],
+    "code": "class Solution:\n    def orangesRotting(self, grid: List[List[int]]) -> int:\n        rows, cols = len(grid), len(grid[0])\n        queue, fresh = deque(), 0\n        for r in range(rows):\n            for c in range(cols):\n                if grid[r][c] == 2:\n                    queue.append((r, c))\n                elif grid[r][c] == 1:\n                    fresh += 1\n        minutes = 0\n        while queue and fresh:\n            for _ in range(len(queue)):  # one BFS layer == one minute\n                r, c = queue.popleft()\n                for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                    if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 1:\n                        grid[nr][nc] = 2\n                        fresh -= 1\n                        queue.append((nr, nc))\n            minutes += 1\n        return minutes if fresh == 0 else -1",
+    "related": [
+      "walls_and_gates",
+      "number_of_islands",
+      "word_ladder"
+    ]
+  },
+  {
+    "slug": "walls_and_gates",
+    "title": "Walls and Gates",
+    "leetcode": 286,
+    "difficulty": "Medium",
+    "topic": "graphs",
+    "pattern": "Multi-source BFS (level = distance)",
+    "file": "graphs/walls_and_gates.py",
+    "problem": "Given an m x n grid where -1 is a wall, 0 is a gate and INF (2^31 - 1) is an empty room, fill every empty room with the distance to its nearest gate, leaving unreachable rooms as INF. Modify in place. Example: [[INF,-1,0,INF],[INF,INF,INF,-1],[INF,-1,INF,-1],[0,-1,INF,INF]] becomes [[3,-1,0,1],[2,2,1,-1],[1,-1,2,-1],[0,-1,3,4]].",
+    "brute_force": {
+      "approach": "For every empty room, run its own BFS until it first reaches a gate and write that depth into the room. Each BFS can cover the whole grid and there are up to m*n rooms. The wasted work: adjacent rooms explore nearly identical regions, and each gate is rediscovered once per room instead of once in total.",
+      "time": "O((m*n)^2)",
+      "space": "O(m*n)",
+      "code": "def brute_force(rooms: List[List[int]]) -> None:\n    # One BFS per empty room, stopping at the first gate it reaches.\n    rows, cols = len(rooms), len(rooms[0])\n    result = [row[:] for row in rooms]\n    for r0 in range(rows):\n        for c0 in range(cols):\n            if rooms[r0][c0] != INF:\n                continue\n            seen, queue = {(r0, c0)}, deque([(r0, c0, 0)])\n            while queue:\n                r, c, d = queue.popleft()\n                if rooms[r][c] == 0:\n                    result[r0][c0] = d\n                    break\n                for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                    if 0 <= nr < rows and 0 <= nc < cols and rooms[nr][nc] != -1 and (nr, nc) not in seen:\n                        seen.add((nr, nc))\n                        queue.append((nr, nc, d + 1))\n    for r in range(rows):\n        rooms[r][:] = result[r]"
+    },
+    "optimization": "The redundancy is computing shortest paths room by room when every query shares the same set of targets. The distance from a room to its nearest gate equals the distance from the set of all gates to that room, and a BFS seeded with every gate at depth 0 computes exactly that for all rooms simultaneously: the first wave to reach a room came from its closest gate. One traversal relaxes each cell once, giving O(m*n). The INF value itself serves as the visited marker, since only INF cells are ever enqueued.",
+    "intuition": "Flip the direction: instead of rooms searching for gates, gates flood toward rooms. Put all gates in the queue; expand outward, and whenever you step onto an INF cell write neighbour + 1 into it and enqueue it. Because BFS reaches cells in order of increasing distance, the first write is the final answer, and rooms sealed off by walls are simply never written.",
+    "geometric": "Picture every gate as a lamp switched on at the same instant. Light spreads one cell per tick through empty rooms and is blocked by walls. The queue is the glowing ring of cells reached at the current tick; each room records the tick at which it first lit up. Rooms in sealed chambers stay dark and keep INF.",
+    "visual": "INF = empty, -1 wall, 0 gate. Seed queue with ALL gates.\n  start               layer 1             layer 2\nINF  -1   0 INF     INF  -1   0   1     INF  -1   0   1\nINF INF INF  -1     INF INF   1  -1       2   2   1  -1\nINF  -1 INF  -1       1  -1 INF  -1       1  -1   2  -1\n  0  -1 INF INF       0  -1 INF INF       0  -1 INF INF\nqueue: [(0,2),(3,0)] -> [(0,3),(1,2),(2,0)] -> ...\nwritten value = neighbour + 1 at FIRST arrival (nearest)",
+    "steps": [
+      "Enqueue every gate cell (value 0).",
+      "Pop (r, c); for each in-bounds neighbour whose value is INF, set it to rooms[r][c] + 1 and enqueue it.",
+      "Stop when the queue is empty; unreached rooms remain INF."
+    ],
+    "complexity": {
+      "time": "O(m*n)",
+      "space": "O(m*n)",
+      "why": "Every cell is enqueued at most once because only INF cells are written and enqueued."
+    },
+    "pitfalls": [
+      "Running one BFS per room (quadratic).",
+      "Testing != -1 instead of == INF, which overwrites gates and already-filled rooms.",
+      "Thinking level-by-level separation is needed: propagating rooms[r][c] + 1 already carries the distance."
+    ],
+    "hints": [
+      "Every room wants the distance to the closest of several targets; which direction of search handles all rooms at once?",
+      "Start from all gates simultaneously and spread outward.",
+      "Multi-source BFS from the gates; write neighbour + 1 into any INF cell you reach and enqueue it."
+    ],
+    "code": "class Solution:\n    def wallsAndGates(self, rooms: List[List[int]]) -> None:\n        rows, cols = len(rooms), len(rooms[0])\n        queue = deque((r, c) for r in range(rows) for c in range(cols) if rooms[r][c] == 0)\n        while queue:\n            r, c = queue.popleft()\n            for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                if 0 <= nr < rows and 0 <= nc < cols and rooms[nr][nc] == INF:\n                    rooms[nr][nc] = rooms[r][c] + 1  # first arrival is the nearest gate\n                    queue.append((nr, nc))",
+    "related": [
+      "rotting_oranges",
+      "surrounded_regions",
+      "pacific_atlantic_water_flow"
+    ]
+  },
+  {
+    "slug": "course_schedule",
+    "title": "Course Schedule",
+    "leetcode": 207,
+    "difficulty": "Medium",
+    "topic": "graphs",
+    "pattern": "Topological sort (Kahn's BFS) / cycle detection",
+    "file": "graphs/course_schedule.py",
+    "problem": "There are numCourses courses labelled 0..n-1, and prerequisites [a, b] means course b must be taken before course a. Return true if it is possible to finish every course, i.e. the prerequisite graph has no directed cycle. Example: numCourses=2, [[1,0]] -> true; numCourses=2, [[1,0],[0,1]] -> false.",
+    "brute_force": {
+      "approach": "For each course, run a DFS along prerequisite edges and check whether it can reach itself again, which would be a cycle through that node. Each DFS is O(V + E) and it is run V times. The waste: the same edges are re-walked for every start, including from nodes already proven to lie on no cycle.",
+      "time": "O(V*(V+E))",
+      "space": "O(V)",
+      "code": "def brute_force(numCourses: int, prerequisites: List[List[int]]) -> bool:\n    # From every course, DFS along prereq -> course edges and see if we come back to it.\n    adj = [[] for _ in range(numCourses)]\n    for course, pre in prerequisites:\n        adj[pre].append(course)\n    for start in range(numCourses):\n        seen, stack = set(), list(adj[start])\n        while stack:\n            cur = stack.pop()\n            if cur == start:\n                return False\n            if cur not in seen:\n                seen.add(cur)\n                stack.extend(adj[cur])\n    return True"
+    },
+    "optimization": "The redundancy is re-exploring nodes whose cycle-free status is already known. A node with in-degree 0 cannot be on any cycle, and removing it only lowers other in-degrees, never creating a cycle. So repeatedly peel off in-degree-0 nodes (Kahn's algorithm): keep a queue of them, pop one, decrement its out-neighbours' in-degrees, and enqueue any that hit 0. Each edge is decremented exactly once, giving O(V + E). If fewer than V nodes are peeled, every leftover has in-degree >= 1, which is only possible inside a cycle.",
+    "intuition": "A course with no outstanding prerequisites can be taken now, and taking it may unlock others. Keep taking whatever is unlocked. If you manage to take all n courses, no cycle exists. If you get stuck with courses remaining, each of them is waiting on another one of them, which is exactly a cycle.",
+    "geometric": "Draw the courses as nodes with arrows prerequisite -> course and write each node's in-degree beside it. The queue holds the nodes labelled 0. Each pop deletes a node and all its outgoing arrows, decrementing the labels at the arrow tips; new zeros join the queue. A cycle is a ring of nodes whose labels never reach 0 because each is held up by the one before it.",
+    "visual": "edges (pre -> course): 0->1  0->2  1->3  2->3  3->1\n       0            in-degree table      queue (indeg 0)\n      / \\           node: 0 1 2 3\n     v   v          start 0 2 1 2        [0]\n     1   2          pop 0 - 1 0 2        [2]   taken=1\n      \\ /           pop 2 - 1 - 1        []    taken=2\n       v\n       3 --> 1      (back edge)   1 and 3 never reach 0:\n                    taken=2 != 4  ->  cycle  ->  False",
+    "steps": [
+      "Build the adjacency list prerequisite -> [courses] and the in-degree array.",
+      "Enqueue every course whose in-degree is 0.",
+      "Pop a course, count it as taken, and decrement the in-degree of each dependent; enqueue dependents that reach 0.",
+      "Return taken == numCourses."
+    ],
+    "complexity": {
+      "time": "O(V + E)",
+      "space": "O(V + E)",
+      "why": "Each node is enqueued once and each edge decremented once; adjacency list stores E edges."
+    },
+    "pitfalls": [
+      "Reversing the edge direction: [a, b] means b -> a.",
+      "Forgetting isolated courses, which start at in-degree 0 and must still be counted.",
+      "Using a visited set alone with DFS (no 'in progress' state) and missing cycles."
+    ],
+    "hints": [
+      "Model courses as a directed graph; the question is whether it has a cycle.",
+      "A course with no remaining prerequisites can be taken immediately; what happens to its dependents when you take it?",
+      "Kahn's algorithm: queue of in-degree-0 nodes, decrement neighbours on pop, succeed iff you pop all n nodes."
+    ],
+    "code": "class Solution:\n    def canFinish(self, numCourses: int, prerequisites: List[List[int]]) -> bool:\n        adj = [[] for _ in range(numCourses)]\n        indeg = [0] * numCourses\n        for course, pre in prerequisites:\n            adj[pre].append(course)\n            indeg[course] += 1\n        queue = deque(c for c in range(numCourses) if indeg[c] == 0)\n        taken = 0\n        while queue:\n            cur = queue.popleft()\n            taken += 1\n            for nxt in adj[cur]:\n                indeg[nxt] -= 1\n                if indeg[nxt] == 0:\n                    queue.append(nxt)\n        return taken == numCourses",
+    "related": [
+      "course_schedule_ii",
+      "alien_dictionary",
+      "graph_valid_tree"
+    ]
+  },
+  {
+    "slug": "course_schedule_ii",
+    "title": "Course Schedule II",
+    "leetcode": 210,
+    "difficulty": "Medium",
+    "topic": "graphs",
+    "pattern": "Topological sort (Kahn's BFS) / cycle detection",
+    "file": "graphs/course_schedule_ii.py",
+    "problem": "Same setup as Course Schedule: numCourses courses and prerequisites [a, b] meaning b before a. Return any ordering of all courses that respects every prerequisite, or an empty list if none exists. Example: numCourses=4, [[1,0],[2,0],[3,1],[3,2]] -> [0,1,2,3] (or [0,2,1,3]).",
+    "brute_force": {
+      "approach": "Repeatedly scan the whole prerequisite list to find a course all of whose prerequisites are already placed; append it and repeat until n courses are placed or a full scan finds nothing (a cycle). Each scan is O(V + E) and up to V scans are needed. The waste is rescanning every edge each round when only the edges leaving the course just placed could have changed anyone's readiness.",
+      "time": "O(V*(V+E))",
+      "space": "O(V)",
+      "code": "def brute_force(numCourses: int, prerequisites: List[List[int]]) -> List[int]:\n    # Each round, rescan all courses and all prerequisites to find one that is ready.\n    placed, order = set(), []\n    while len(order) < numCourses:\n        progress = False\n        for c in range(numCourses):\n            if c in placed:\n                continue\n            if all(pre in placed for course, pre in prerequisites if course == c):\n                placed.add(c)\n                order.append(c)\n                progress = True\n                break\n        if not progress:\n            return []\n    return order"
+    },
+    "optimization": "The redundancy is recomputing 'is this course ready?' for all courses after each placement. Readiness only changes for the direct dependents of the course just placed, and it is a simple counter: remaining prerequisites == in-degree. Maintain in-degrees, keep a queue of ready courses, and when a course is placed decrement only its dependents. Each edge is touched exactly once, so the whole thing is O(V + E), and the order in which courses leave the queue is a topological order.",
+    "intuition": "This is Kahn's algorithm with the pop order recorded. A course leaves the queue only after every one of its prerequisites has already left, so writing courses down in pop order guarantees prerequisites come first. If the output is shorter than n, a cycle blocked the rest, so return [].",
+    "geometric": "Nodes with in-degree labels and a conveyor belt (the queue) on the side. Nodes labelled 0 fall onto the belt. Each node taken off the belt is appended to the output row and its outgoing arrows are cut, lowering the labels at the arrow tips; newly zero nodes fall onto the belt. The output row grows left to right in dependency order.",
+    "visual": "n=4 prereqs [[1,0],[2,0],[3,1],[3,2]]  edge: pre -> course\n       0           in-degree   queue    order\n      / \\          0 1 2 3\n     v   v         0 1 1 2     [0]      []\n     1   2         - 0 0 2     [1,2]    [0]        pop 0\n      \\ /          - - 0 1     [2]      [0,1]      pop 1\n       v           - - - 0     [3]      [0,1,2]    pop 2\n       3           - - - -     []       [0,1,2,3]  pop 3\nlen(order) == 4 -> valid; [0,2,1,3] would also be accepted",
+    "steps": [
+      "Build adjacency prerequisite -> [courses] and the in-degree array.",
+      "Enqueue all in-degree-0 courses.",
+      "Pop a course, append it to order, decrement each dependent's in-degree, and enqueue those that hit 0.",
+      "Return order if len(order) == numCourses, else []."
+    ],
+    "complexity": {
+      "time": "O(V + E)",
+      "space": "O(V + E)",
+      "why": "Each node enqueued once and each edge relaxed once; adjacency list of size E plus the output."
+    },
+    "pitfalls": [
+      "Returning a partial order when a cycle exists instead of [].",
+      "Edge direction: [a, b] means b -> a.",
+      "Testing against one specific expected order; any valid topological order is accepted, so validate instead."
+    ],
+    "hints": [
+      "You need an order where every prerequisite appears before its dependent course.",
+      "Courses with no remaining prerequisites can go next; taking one may free up others.",
+      "Kahn's algorithm: record the pop order; if you did not pop all n courses there is a cycle."
+    ],
+    "code": "class Solution:\n    def findOrder(self, numCourses: int, prerequisites: List[List[int]]) -> List[int]:\n        adj = [[] for _ in range(numCourses)]\n        indeg = [0] * numCourses\n        for course, pre in prerequisites:\n            adj[pre].append(course)\n            indeg[course] += 1\n        queue = deque(c for c in range(numCourses) if indeg[c] == 0)\n        order = []\n        while queue:\n            cur = queue.popleft()\n            order.append(cur)\n            for nxt in adj[cur]:\n                indeg[nxt] -= 1\n                if indeg[nxt] == 0:\n                    queue.append(nxt)\n        return order if len(order) == numCourses else []",
+    "related": [
+      "course_schedule",
+      "alien_dictionary"
+    ]
+  },
+  {
+    "slug": "redundant_connection",
+    "title": "Redundant Connection",
+    "leetcode": 684,
+    "difficulty": "Medium",
+    "topic": "graphs",
+    "pattern": "Union-Find (disjoint set union)",
+    "file": "graphs/redundant_connection.py",
+    "problem": "A tree with n nodes labelled 1..n had one extra edge added, so the input has n edges. Return the edge that can be removed to make it a tree again; if several work, return the one that appears last in the input. Example: [[1,2],[1,3],[2,3]] -> [2,3]; [[1,2],[2,3],[3,4],[1,4],[1,5]] -> [1,4].",
+    "brute_force": {
+      "approach": "Process edges in input order; before adding edge (u, v), run a DFS over the edges added so far to test whether v is already reachable from u. The first edge whose endpoints are already connected is the answer. Each reachability test is O(n) and up to n tests are done. The waste: every test re-walks the same growing component from scratch instead of remembering which nodes are already connected.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(edges: List[List[int]]) -> List[int]:\n    # Before adding each edge, DFS over the edges added so far to see if its endpoints\n    # are already connected.\n    adj = {}\n    for u, v in edges:\n        seen, stack = {u}, [u]\n        while stack:\n            cur = stack.pop()\n            if cur == v:\n                return [u, v]\n            for nb in adj.get(cur, ()):\n                if nb not in seen:\n                    seen.add(nb)\n                    stack.append(nb)\n        adj.setdefault(u, []).append(v)\n        adj.setdefault(v, []).append(u)\n    return []"
+    },
+    "optimization": "The redundancy is re-deriving connectivity that earlier edges already established. The only question asked is 'are u and v in the same component?', and components only ever merge, never split. That is exactly what a disjoint-set union supports: find(u) == find(v) answers the question in near-constant amortised time with path compression and union by rank, and union(u, v) records the merge. One pass over the edges gives O(n * alpha(n)).",
+    "intuition": "Add edges one by one into a union-find. Each edge either joins two separate components (a tree edge) or connects two nodes already in the same component (it closes a cycle). Because the input has exactly one extra edge, the first edge that closes a cycle is the one to remove, and since it is the latest processed edge on that cycle it is also the last one in input order.",
+    "geometric": "Picture the nodes as islands and each processed edge as a bridge. Union-find keeps one flag node per island group (the root). When a new bridge connects two islands flying different flags, lower one flag so they are one group. When a bridge connects two islands already flying the same flag, you have built a loop: that bridge is redundant.",
+    "visual": "edges [[1,2],[2,3],[3,4],[1,4],[1,5]]   parent[] per step\nstart  : 1:1 2:2 3:3 4:4 5:5\n(1,2)  : find 1=1, find 2=2 -> union  parent[2]=1\n(2,3)  : find 2=1, find 3=3 -> union  parent[3]=1\n(3,4)  : find 3=1, find 4=4 -> union  parent[4]=1\n(1,4)  : find 1=1, find 4=1 -> SAME ROOT -> cycle!\n         1 -- 2 -- 3 -- 4            return [1,4]\n         +--------------+  (this edge closes the loop)\n(1,5) is never examined",
+    "steps": [
+      "parent[i] = i and rank[i] = 0 for i in 1..n.",
+      "find(x): follow parents to the root, halving the path on the way.",
+      "For each edge (u, v): if find(u) == find(v), return [u, v].",
+      "Otherwise union the two roots by rank and continue."
+    ],
+    "complexity": {
+      "time": "O(n * alpha(n))",
+      "space": "O(n)",
+      "why": "Each edge triggers two finds and at most one union, each near-constant amortised; parent and rank arrays of size n + 1."
+    },
+    "pitfalls": [
+      "Nodes are 1-indexed, so allocate n + 1 slots.",
+      "Skipping path compression makes find O(n) on chain-shaped inputs.",
+      "The 'first cycle edge wins' logic is correct only because exactly one extra edge exists."
+    ],
+    "hints": [
+      "The extra edge is the one that creates a cycle; which edge, processed in order, is the first to connect two already-connected nodes?",
+      "You need a structure that answers 'same component?' and merges components quickly.",
+      "Union-find: for each edge, if find(u) == find(v) return it, else union."
+    ],
+    "code": "class Solution:\n    def findRedundantConnection(self, edges: List[List[int]]) -> List[int]:\n        parent = list(range(len(edges) + 1))\n        rank = [0] * (len(edges) + 1)\n\n        def find(x: int) -> int:\n            while parent[x] != x:\n                parent[x] = parent[parent[x]]  # path halving\n                x = parent[x]\n            return x\n\n        for u, v in edges:\n            ru, rv = find(u), find(v)\n            if ru == rv:\n                return [u, v]  # u and v already connected: this edge closes the cycle\n            if rank[ru] < rank[rv]:\n                ru, rv = rv, ru\n            parent[rv] = ru\n            if rank[ru] == rank[rv]:\n                rank[ru] += 1\n        return []",
+    "related": [
+      "graph_valid_tree",
+      "number_of_connected_components",
+      "accounts_merge"
+    ]
+  },
+  {
+    "slug": "number_of_connected_components",
+    "title": "Number of Connected Components in an Undirected Graph",
+    "leetcode": 323,
+    "difficulty": "Medium",
+    "topic": "graphs",
+    "pattern": "Union-Find (disjoint set union)",
+    "file": "graphs/number_of_connected_components.py",
+    "problem": "Given n nodes labelled 0..n-1 and a list of undirected edges, return the number of connected components. Example: n=5, edges=[[0,1],[1,2],[3,4]] -> 2; n=5, edges=[[0,1],[1,2],[2,3],[3,4]] -> 1.",
+    "brute_force": {
+      "approach": "For every node, DFS over the adjacency list with a fresh visited set and collect the nodes reached; count the node only if it is the smallest id in its component. Each DFS is O(V + E) and there are V of them. The waste is walking the same component once per node it contains.",
+      "time": "O(V*(V+E))",
+      "space": "O(V)",
+      "code": "def brute_force(n: int, edges: List[List[int]]) -> int:\n    # DFS from every node with a private visited set; count the node only if it is the\n    # smallest id in the component it reaches.\n    adj = [[] for _ in range(n)]\n    for u, v in edges:\n        adj[u].append(v)\n        adj[v].append(u)\n    count = 0\n    for start in range(n):\n        seen, stack = {start}, [start]\n        while stack:\n            cur = stack.pop()\n            for nb in adj[cur]:\n                if nb not in seen:\n                    seen.add(nb)\n                    stack.append(nb)\n        if min(seen) == start:\n            count += 1\n    return count"
+    },
+    "optimization": "The redundancy is rediscovering a component from each of its members. One fix is to share a visited set so each component is explored once and you count DFS launches, O(V + E). Union-find goes a step further: there is no need to build the graph at all. Start with n singleton components and process the edge list; every union that merges two different roots reduces the component count by one. That is O(E * alpha(n)) using only the edge list, and it extends naturally to edges arriving over time.",
+    "intuition": "Assume every node is its own component (count = n). Each edge is a merge request: if its endpoints already share a root it changes nothing; otherwise it glues two components together and count drops by one. After all edges, count is the answer. Isolated nodes are handled for free because they were counted at the start.",
+    "geometric": "Draw n dots, each with a parent arrow pointing to itself. Processing an edge redirects one root's arrow to the other root, so two trees of parent pointers become one tree. The number of dots that still point to themselves is the number of components; a counter tracks it so no rescan is needed.",
+    "visual": "n=5  edges [[0,1],[1,2],[3,4]]        count starts at n = 5\nedge   find(u) find(v)  action            parent[]     count\n(0,1)    0       1      union: par[1]=0   [0,0,2,3,4]   4\n(1,2)    0       2      union: par[2]=0   [0,0,0,3,4]   3\n(3,4)    3       4      union: par[4]=3   [0,0,0,3,3]   2\nforest of parent pointers:      0        3\n                               / \\       |\n                              1   2      4      -> 2 roots",
+    "steps": [
+      "parent = list(range(n)), rank = [0]*n, count = n.",
+      "For each edge (u, v), compute ru = find(u) and rv = find(v).",
+      "If ru != rv, attach the lower-rank root under the other and decrement count.",
+      "Return count."
+    ],
+    "complexity": {
+      "time": "O(V + E * alpha(V))",
+      "space": "O(V)",
+      "why": "Initialising the arrays is O(V); each edge costs one near-constant find/union."
+    },
+    "pitfalls": [
+      "Decrementing count for an edge whose endpoints were already connected.",
+      "Starting count at 0 and forgetting isolated nodes.",
+      "Recursive find without compression can overflow on long chains."
+    ],
+    "hints": [
+      "Each edge can only reduce the number of components, and only when it joins two different ones.",
+      "Start with n components and track merges.",
+      "Union-find: count -= 1 whenever find(u) != find(v) before you union them."
+    ],
+    "code": "class Solution:\n    def countComponents(self, n: int, edges: List[List[int]]) -> int:\n        parent = list(range(n))\n        rank = [0] * n\n\n        def find(x: int) -> int:\n            while parent[x] != x:\n                parent[x] = parent[parent[x]]\n                x = parent[x]\n            return x\n\n        count = n  # every node starts as its own component\n        for u, v in edges:\n            ru, rv = find(u), find(v)\n            if ru == rv:\n                continue\n            if rank[ru] < rank[rv]:\n                ru, rv = rv, ru\n            parent[rv] = ru\n            if rank[ru] == rank[rv]:\n                rank[ru] += 1\n            count -= 1\n        return count",
+    "related": [
+      "graph_valid_tree",
+      "redundant_connection",
+      "number_of_islands"
+    ]
+  },
+  {
+    "slug": "graph_valid_tree",
+    "title": "Graph Valid Tree",
+    "leetcode": 261,
+    "difficulty": "Medium",
+    "topic": "graphs",
+    "pattern": "Union-Find (disjoint set union)",
+    "file": "graphs/graph_valid_tree.py",
+    "problem": "Given n nodes labelled 0..n-1 and a list of undirected edges, return true iff the edges form a valid tree: the graph is connected and has no cycle. Example: n=5, [[0,1],[0,2],[0,3],[1,4]] -> true; n=5, [[0,1],[1,2],[2,3],[1,3],[1,4]] -> false because 1-2-3-1 is a cycle.",
+    "brute_force": {
+      "approach": "Build the adjacency list; check connectivity with one DFS from node 0. Check acyclicity by, for every edge (u, v), removing it temporarily and testing whether v is still reachable from u; if so, that edge closes a cycle. Each reachability test is O(V + E) and there are E of them. The waste is that each per-edge test re-walks essentially the whole graph.",
+      "time": "O(E*(V+E))",
+      "space": "O(V+E)",
+      "code": "def brute_force(n: int, edges: List[List[int]]) -> bool:\n    # Connectivity via one DFS; acyclicity by removing each edge in turn and testing\n    # whether its endpoints are still connected.\n    adj = [set() for _ in range(n)]\n    for u, v in edges:\n        adj[u].add(v)\n        adj[v].add(u)\n\n    def reachable(src: int, dst: int, skip: tuple) -> bool:\n        seen, stack = {src}, [src]\n        while stack:\n            cur = stack.pop()\n            if cur == dst:\n                return True\n            for nb in adj[cur]:\n                if (cur, nb) in (skip, skip[::-1]):\n                    continue\n                if nb not in seen:\n                    seen.add(nb)\n                    stack.append(nb)\n        return False\n\n    if not all(reachable(0, t, (-1, -1)) for t in range(n)):\n        return False\n    return not any(reachable(u, v, (u, v)) for u, v in edges)"
+    },
+    "optimization": "The redundancy is testing for cycles one edge at a time with full traversals. First, a counting shortcut: a tree on n nodes has exactly n - 1 edges, so a different edge count is an immediate false, and with exactly n - 1 edges connected and acyclic become equivalent, so only one needs checking. Second, a cycle appears exactly when an edge joins two nodes already in the same component, which union-find detects in near-constant amortised time. Edge-count check, then union all edges; any collision means a cycle. Otherwise n - 1 successful merges leave one component.",
+    "intuition": "A tree is just enough edges to connect everything: n - 1 of them, none wasted on a loop. Count the edges first. Then feed them to union-find: every edge must merge two different components; the moment one does not, there is a cycle. If all n - 1 edges merge cleanly, the graph is one component and acyclic.",
+    "geometric": "Picture n separate dots with self-pointing parent arrows. Each edge redirects one root arrow to another root, gluing two trees into one. After n - 1 gluings with no 'already same root' collision, all dots hang under one root: a tree. A collision means the edge connected two dots already hanging under the same root, which is a cycle.",
+    "visual": "n=5 edges [[0,1],[1,2],[2,3],[1,3],[1,4]]  len 4 == n-1 ok\nedge   find(u) find(v)  result            parent[]\n(0,1)    0       1      union par[1]=0    [0,0,2,3,4]\n(1,2)    0       2      union par[2]=0    [0,0,0,3,4]\n(2,3)    0       3      union par[3]=0    [0,0,0,0,4]\n(1,3)    0       0      SAME ROOT -> cycle -> False\n      0            the cycle: 1 - 2 - 3 - 1\n    / | \\          (edge (1,4) is never examined)\n   1  2  3",
+    "steps": [
+      "If len(edges) != n - 1, return false.",
+      "Initialise parent = list(range(n)) and rank; define find with path halving.",
+      "For each edge (u, v): if find(u) == find(v) return false; otherwise union by rank.",
+      "Return true."
+    ],
+    "complexity": {
+      "time": "O(n * alpha(n))",
+      "space": "O(n)",
+      "why": "At most n - 1 edges, each one find/union; parent and rank arrays of size n."
+    },
+    "pitfalls": [
+      "Skipping the edge-count check and then forgetting to verify connectivity separately.",
+      "n = 1 with no edges is a valid tree.",
+      "Duplicate or self-loop edges must be reported as cycles; the count check or the union collision catches them."
+    ],
+    "hints": [
+      "How many edges does a tree on n nodes have? Check that first.",
+      "With exactly n - 1 edges, a single cycle anywhere forces some node to be disconnected, so you only need to detect a cycle.",
+      "Union-find over the edges: a cycle is an edge whose endpoints already share a root."
+    ],
+    "code": "class Solution:\n    def validTree(self, n: int, edges: List[List[int]]) -> bool:\n        if len(edges) != n - 1:\n            return False  # a tree has exactly n-1 edges\n        parent = list(range(n))\n        rank = [0] * n\n\n        def find(x: int) -> int:\n            while parent[x] != x:\n                parent[x] = parent[parent[x]]\n                x = parent[x]\n            return x\n\n        for u, v in edges:\n            ru, rv = find(u), find(v)\n            if ru == rv:\n                return False  # edge joins an existing component to itself: cycle\n            if rank[ru] < rank[rv]:\n                ru, rv = rv, ru\n            parent[rv] = ru\n            if rank[ru] == rank[rv]:\n                rank[ru] += 1\n        return True  # n-1 merges with no collision => one component",
+    "related": [
+      "redundant_connection",
+      "number_of_connected_components",
+      "course_schedule"
+    ]
+  },
+  {
+    "slug": "word_ladder",
+    "title": "Word Ladder",
+    "leetcode": 127,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "BFS on implicit graph (wildcard buckets)",
+    "file": "graphs/word_ladder.py",
+    "problem": "Given beginWord, endWord and a wordList, a transformation changes exactly one letter and the result must be in wordList. Return the number of words in the shortest transformation sequence from beginWord to endWord, counting both ends, or 0 if none exists. Example: \"hit\" -> \"cog\" with [\"hot\",\"dot\",\"dog\",\"lot\",\"log\",\"cog\"] -> 5 via hit->hot->dot->dog->cog.",
+    "brute_force": {
+      "approach": "BFS from beginWord, but to find a word's neighbours compare it against every word in the list and keep those differing in exactly one position. With N words of length L each expansion costs O(N*L) and there are up to N expansions. The waste: for every word we rescan the whole dictionary, and almost all of those comparisons fail.",
+      "time": "O(N^2 * L)",
+      "space": "O(N)",
+      "code": "def brute_force(beginWord: str, endWord: str, wordList: List[str]) -> int:\n    # BFS, but discover neighbours by comparing against every dictionary word.\n    def adjacent(a: str, b: str) -> bool:\n        return sum(x != y for x, y in zip(a, b)) == 1\n\n    queue, visited = deque([(beginWord, 1)]), {beginWord}\n    while queue:\n        word, dist = queue.popleft()\n        if word == endWord:\n            return dist\n        for cand in wordList:\n            if cand not in visited and adjacent(word, cand):\n                visited.add(cand)\n                queue.append((cand, dist + 1))\n    return 0"
+    },
+    "optimization": "The redundancy is the all-pairs comparison used to discover edges. Two words are adjacent iff they share a wildcard pattern such as h*t (same letters except one slot). Pre-bucket every word under each of its L patterns in a hash map; then a word's neighbours are the union of its L buckets, found with O(L) lookups instead of an O(N*L) scan. BFS over this implicit graph visits each word once, so the total is O(N * L^2), the L^2 coming from building L patterns of length L per word.",
+    "intuition": "Shortest path with unit edges means BFS. The trick is generating neighbours cheaply: a word's neighbours are the words sharing one of its one-letter-blanked forms. Index the dictionary by those forms once, then BFS layer by layer, marking words visited when they are enqueued. The first time endWord is dequeued, its depth is the answer; if the queue empties first, return 0.",
+    "geometric": "Picture words as nodes and wildcard patterns as hub nodes: h*t connects hit, hot and hat. Each real word hangs off L hubs. BFS ripples outward from beginWord: layer 1 is beginWord, layer 2 is everything sharing a hub with it, and so on. The queue is the current ripple; passing through a hub costs one unit, so BFS depth on word nodes equals ladder length.",
+    "visual": "hit -> cog    dict: hot dot dog lot log cog\nbuckets: \"h*t\":[hot]  \"*ot\":[hot,dot,lot]  \"d*g\":[dog]\n         \"do*\":[dot,dog] \"lo*\":[lot,log] \"*og\":[dog,log,cog]\nBFS layers (dist):\n 1: hit\n 2: hot                      via  h*t\n 3: dot lot                  via  *ot\n 4: dog log                  via  do* , lo*\n 5: cog  <- endWord popped at dist 5 -> answer 5\nqueue when popping dot: [lot, dog]\nvisited = {hit, hot, dot, lot, dog}",
+    "steps": [
+      "If endWord is not in wordList, return 0.",
+      "Build buckets: for every word and every position i, append the word to bucket word[:i] + '*' + word[i+1:].",
+      "queue = [(beginWord, 1)], visited = {beginWord}.",
+      "Pop (word, d); if word == endWord return d.",
+      "For each of the word's L patterns, enqueue every unvisited bucket member with d + 1 and mark it visited.",
+      "Return 0 if the queue empties."
+    ],
+    "complexity": {
+      "time": "O(N * L^2)",
+      "space": "O(N * L)",
+      "why": "Each of N words generates L patterns of length L; the buckets hold N*L references."
+    },
+    "pitfalls": [
+      "Forgetting the endWord-not-in-list check.",
+      "Marking visited on pop instead of on push, which lets the queue blow up with duplicates.",
+      "Counting edges instead of words (the answer includes both endpoints)."
+    ],
+    "hints": [
+      "Words are nodes, one-letter changes are edges, and you want the shortest path: BFS.",
+      "Comparing every pair of words is too slow; find a key that two adjacent words share.",
+      "Bucket words by patterns like h*t; BFS where a word's neighbours are the members of its L buckets."
+    ],
+    "code": "class Solution:\n    def ladderLength(self, beginWord: str, endWord: str, wordList: List[str]) -> int:\n        if endWord not in wordList:\n            return 0\n        L = len(beginWord)\n        buckets = defaultdict(list)  # \"h*t\" -> [hit, hot, ...]\n        for w in wordList:\n            for i in range(L):\n                buckets[w[:i] + \"*\" + w[i + 1:]].append(w)\n        queue = deque([(beginWord, 1)])\n        visited = {beginWord}\n        while queue:\n            word, dist = queue.popleft()\n            if word == endWord:\n                return dist\n            for i in range(L):\n                for nb in buckets[word[:i] + \"*\" + word[i + 1:]]:\n                    if nb not in visited:\n                        visited.add(nb)\n                        queue.append((nb, dist + 1))\n        return 0",
+    "related": [
+      "rotting_oranges",
+      "clone_graph"
+    ]
+  },
+  {
+    "slug": "alien_dictionary",
+    "title": "Alien Dictionary",
+    "leetcode": 269,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Topological sort (Kahn's BFS) / cycle detection",
+    "file": "graphs/alien_dictionary.py",
+    "problem": "Given a list of words sorted lexicographically according to an unknown alphabet, return a string of the unique letters in a valid alphabet order, or \"\" if the ordering is contradictory. Any valid order is accepted. Example: [\"wrt\",\"wrf\",\"er\",\"ett\",\"rftt\"] -> \"wertf\"; [\"z\",\"x\",\"z\"] -> \"\".",
+    "brute_force": {
+      "approach": "Extract the constraints a < b from adjacent words (the first differing letter). Then repeatedly scan all letters for one that never appears on the right side of a remaining constraint, emit it and delete its constraints; if no such letter exists there is a cycle. Each round rescans every constraint. The waste is rescanning all constraints each round when only those leaving the just-emitted letter changed.",
+      "time": "O(U*C + S)",
+      "space": "O(U + C)",
+      "code": "def brute_force(words: List[str]) -> str:\n    # Extract constraints, then each round rescan all remaining constraints to find a\n    # letter that is never on the right-hand side.\n    letters = {ch for w in words for ch in w}\n    constraints = set()\n    for w1, w2 in zip(words, words[1:]):\n        for a, b in zip(w1, w2):\n            if a != b:\n                constraints.add((a, b))\n                break\n        else:\n            if len(w1) > len(w2):\n                return \"\"\n    order = []\n    while letters:\n        blocked = {b for a, b in constraints if a in letters}\n        free = sorted(letters - blocked)\n        if not free:\n            return \"\"\n        ch = free[0]\n        order.append(ch)\n        letters.remove(ch)\n        constraints = {(a, b) for a, b in constraints if a != ch}\n    return \"\".join(order)"
+    },
+    "optimization": "The constraints form a directed graph on letters, and 'pick a letter with no remaining incoming constraint' is exactly Kahn's topological sort. Maintain the in-degree of each letter and a queue of zero-in-degree letters; when a letter is emitted, decrement only its direct successors. Each edge is touched once, giving O(S + U + C) for S total characters. If fewer than U letters are emitted, the leftovers sit on a cycle, so return \"\". The invalid prefix case (\"abc\" before \"ab\") is caught during extraction.",
+    "intuition": "Each adjacent pair of words gives at most one fact: at the first position where they differ, the earlier word's letter comes first. Collect those facts as edges, then take letters in any order that respects every edge, which is a topological sort. Use a queue of letters with no pending predecessors; if you get stuck before using every letter, the facts contradict each other.",
+    "geometric": "Draw a node per letter, an arrow per constraint, and write the in-degree beside each node. Letters labelled 0 sit in the queue and are written to the output; popping one deletes its outgoing arrows and lowers the labels at the tips. The output grows as labels drain to 0; a ring of arrows whose labels never reach 0 is a contradiction.",
+    "visual": "words: wrt wrf er ett rftt    adjacent pair -> first diff\nwrt|wrf: t<f   wrf|er: w<e   er|ett: r<t   ett|rftt: e<r\ngraph:  w -> e -> r -> t -> f\nin-degree  w:0 e:1 r:1 t:1 f:1    queue   order\npop w: indeg[e]=0                 [e]     \"w\"\npop e: indeg[r]=0                 [r]     \"we\"\npop r: indeg[t]=0                 [t]     \"wer\"\npop t: indeg[f]=0                 [f]     \"wert\"\npop f                             []      \"wertf\"  all 5",
+    "steps": [
+      "Initialise in-degree 0 for every letter appearing in any word.",
+      "For each adjacent pair (w1, w2), find the first differing index j and add edge w1[j] -> w2[j] once; if no index differs and len(w1) > len(w2), return \"\".",
+      "Kahn: enqueue in-degree-0 letters; pop, append to the result, decrement successors, enqueue those hitting 0.",
+      "Return the result if it contains every letter, else \"\"."
+    ],
+    "complexity": {
+      "time": "O(S + U + C)",
+      "space": "O(U + C)",
+      "why": "All characters are scanned once to extract at most one edge per adjacent pair; Kahn is linear in letters plus edges."
+    },
+    "pitfalls": [
+      "Adding the same edge twice inflates the in-degree so the letter never reaches 0.",
+      "Dropping letters that only appear in words with no constraints (they still belong in the output).",
+      "Missing the invalid prefix case where a longer word precedes its own prefix."
+    ],
+    "hints": [
+      "Compare only adjacent words; the first differing letter tells you one ordering fact.",
+      "Those facts are directed edges between letters; a valid alphabet is a topological order of that graph.",
+      "Kahn's algorithm over the letter graph; a cycle (or a longer word before its prefix) means return the empty string."
+    ],
+    "code": "class Solution:\n    def alienOrder(self, words: List[str]) -> str:\n        adj = defaultdict(set)\n        indeg = {ch: 0 for w in words for ch in w}\n        for w1, w2 in zip(words, words[1:]):\n            for a, b in zip(w1, w2):\n                if a != b:\n                    if b not in adj[a]:  # avoid double-counting duplicate constraints\n                        adj[a].add(b)\n                        indeg[b] += 1\n                    break\n            else:\n                if len(w1) > len(w2):\n                    return \"\"  # \"abc\" before \"ab\" is impossible\n        queue = deque(ch for ch, d in indeg.items() if d == 0)\n        order = []\n        while queue:\n            ch = queue.popleft()\n            order.append(ch)\n            for nxt in adj[ch]:\n                indeg[nxt] -= 1\n                if indeg[nxt] == 0:\n                    queue.append(nxt)\n        return \"\".join(order) if len(order) == len(indeg) else \"\"",
+    "related": [
+      "course_schedule",
+      "course_schedule_ii"
+    ]
+  },
+  {
+    "slug": "network_delay_time",
+    "title": "Network Delay Time",
+    "leetcode": 743,
+    "difficulty": "Medium",
+    "topic": "graphs",
+    "pattern": "Dijkstra (min-heap shortest paths)",
+    "file": "graphs/network_delay_time.py",
+    "problem": "There are n nodes labelled 1..n and directed edges times[i] = (u, v, w) meaning a signal takes w time units to travel from u to v. A signal is sent from node k. Return the time at which every node has received it, or -1 if some node never does. Example: times=[[2,1,1],[2,3,1],[3,4,1]], n=4, k=2 -> 2.",
+    "brute_force": {
+      "approach": "Bellman-Ford style: dist[k] = 0, all others infinite; repeat n-1 rounds in which every edge (u, v, w) relaxes dist[v] = min(dist[v], dist[u] + w). The waste is that every round rescans all E edges, including edges out of nodes whose distance did not change since the last round, so most relaxations do nothing. (Equivalently: Dijkstra with a plain list and a linear scan for the minimum, O(V^2 + E), is the same algorithm minus the heap.)",
+      "time": "O(V*E)",
+      "space": "O(V)",
+      "code": "def brute_force(times: List[List[int]], n: int, k: int) -> int:\n    # Bellman-Ford: n-1 rounds, each relaxing EVERY edge.\n    INF = float(\"inf\")\n    dist = [INF] * (n + 1)\n    dist[k] = 0\n    for _ in range(n - 1):\n        for u, v, w in times:\n            if dist[u] + w < dist[v]:\n                dist[v] = dist[u] + w\n    worst = max(dist[1:])\n    return -1 if worst == INF else worst"
+    },
+    "optimization": "The redundancy is relaxing edges out of nodes that are not yet final or have not changed. With non-negative weights, the unsettled node with the smallest tentative distance is already final because no later path can undercut it, so nodes can be settled in increasing distance order and each node's out-edges relaxed exactly once. Picking that minimum efficiently is the job of a min-heap: push (dist, node) whenever a distance improves, pop the smallest, and skip stale entries for nodes already settled. That gives O((V + E) log V).",
+    "intuition": "Expand outward from k in order of arrival time. The heap always hands you the node that is about to receive the signal next; when you pop it its time is final, so relax its neighbours by pushing (time + w, v). The answer is the largest finalised time; if fewer than n nodes were ever popped, some node is unreachable and the answer is -1.",
+    "geometric": "Picture the signal as a wavefront whose radius is time. Nodes are settled in the order the wavefront reaches them; the heap holds candidate arrival events (time, node) sorted by time. Popping the earliest event advances the wavefront to that node and schedules new events along its out-edges. The last node reached fixes the answer.",
+    "visual": "times [[2,1,1],[2,3,1],[3,4,1]]  n=4  k=2\n      1 <--1-- 2 --1--> 3 --1--> 4\nheap (dist,node)       pop        dist (settled)\n[(0,2)]                (0,2)      {2:0}\n[(1,1),(1,3)]          (1,1)      {2:0, 1:1}\n[(1,3)]                (1,3)      {2:0, 1:1, 3:1}\n[(2,4)]                (2,4)      {2:0, 1:1, 3:1, 4:2}\nall 4 settled -> answer = max(dist) = 2\n(a stale entry for a settled node is popped and skipped)",
+    "steps": [
+      "Build the adjacency list u -> [(v, w)].",
+      "heap = [(0, k)], dist = {}.",
+      "Pop (d, u); if u is already in dist, skip it (stale); otherwise record dist[u] = d.",
+      "For each (v, w) out of u with v unsettled, push (d + w, v).",
+      "Return max(dist.values()) if len(dist) == n, else -1."
+    ],
+    "complexity": {
+      "time": "O((V + E) log V)",
+      "space": "O(V + E)",
+      "why": "Each edge can push one heap entry and each push/pop is logarithmic; adjacency list stores E edges."
+    },
+    "pitfalls": [
+      "Not skipping stale heap entries, which re-settles nodes and wastes work.",
+      "Nodes are 1-indexed, so check len(dist) against n rather than n - 1 or n + 1.",
+      "Returning 0 for an unreachable node instead of -1."
+    ],
+    "hints": [
+      "Signal time to every node is a shortest-path question with non-negative weights.",
+      "Settle nodes in order of increasing distance; what structure gives you the next smallest quickly?",
+      "Dijkstra with a min-heap of (dist, node); the answer is the max settled distance, or -1 if not all n settle."
+    ],
+    "code": "class Solution:\n    def networkDelayTime(self, times: List[List[int]], n: int, k: int) -> int:\n        adj = defaultdict(list)\n        for u, v, w in times:\n            adj[u].append((v, w))\n        dist = {}\n        heap = [(0, k)]\n        while heap:\n            d, u = heapq.heappop(heap)\n            if u in dist:\n                continue  # stale entry: u was settled with a smaller distance\n            dist[u] = d\n            for v, w in adj[u]:\n                if v not in dist:\n                    heapq.heappush(heap, (d + w, v))\n        return max(dist.values()) if len(dist) == n else -1",
+    "related": [
+      "min_cost_to_connect_all_points",
+      "meeting_rooms_ii"
+    ]
+  },
+  {
+    "slug": "min_cost_to_connect_all_points",
+    "title": "Min Cost to Connect All Points",
+    "leetcode": 1584,
+    "difficulty": "Medium",
+    "topic": "graphs",
+    "pattern": "Minimum spanning tree (Prim's with heap)",
+    "file": "graphs/min_cost_to_connect_all_points.py",
+    "problem": "Given n points on a plane, connecting two points costs their Manhattan distance |x1-x2| + |y1-y2|. Return the minimum total cost to connect all points so that there is a path between every pair, i.e. the weight of a minimum spanning tree of the complete graph. Example: [[0,0],[2,2],[3,10],[5,2],[7,0]] -> 20.",
+    "brute_force": {
+      "approach": "Kruskal without union-find: generate all n(n-1)/2 edges, sort them by weight, and for each edge in order run a DFS over the accepted edges to check whether its endpoints are already connected, accepting it if not. Sorting costs O(n^2 log n) and each of the O(n^2) edges may trigger an O(n) DFS. The waste is re-deriving connectivity by traversal for every candidate edge.",
+      "time": "O(n^3)",
+      "space": "O(n^2)",
+      "code": "def brute_force(points: List[List[int]]) -> int:\n    # Kruskal without union-find: sort all edges, accept an edge only if a DFS over the\n    # accepted edges shows its endpoints are not yet connected.\n    n = len(points)\n    edges = sorted(\n        (abs(points[i][0] - points[j][0]) + abs(points[i][1] - points[j][1]), i, j)\n        for i in range(n) for j in range(i + 1, n)\n    )\n    adj = [[] for _ in range(n)]\n    total = 0\n    for w, u, v in edges:\n        seen, stack = {u}, [u]\n        while stack:\n            cur = stack.pop()\n            for nb in adj[cur]:\n                if nb not in seen:\n                    seen.add(nb)\n                    stack.append(nb)\n        if v not in seen:\n            adj[u].append(v)\n            adj[v].append(u)\n            total += w\n    return total"
+    },
+    "optimization": "Two independent fixes. Replacing the connectivity DFS with union-find makes Kruskal O(n^2 log n), dominated by sorting. Prim's avoids materialising and sorting all edges: grow one tree from an arbitrary start; by the cut property the cheapest edge leaving the tree is always safe, so we only need the cheapest known edge from the tree to each outside vertex. Keep those candidates in a min-heap and, when a vertex joins, push its distance to every unvisited vertex. That is O(n^2 log n) time; an array-based Prim without a heap is O(n^2) and is the true optimum on a dense complete graph, but the heap version is what interviewers usually expect.",
+    "intuition": "Start with any point in the tree. Repeatedly add the outside point closest to any point already in; that edge can never be beaten (cut property). A min-heap of (cost, point) hands you that closest point each time; entries for points already added are stale and are popped and skipped. Stop once all n points are in and return the summed costs.",
+    "geometric": "Picture the points on graph paper. The tree is a growing blob of connected points. At each step draw the shortest possible line from the blob to a point outside it and absorb that point. The heap is a sorted pile of candidate lines from the blob's members to the outside; the shortest valid one is always on top.",
+    "visual": "points A(0,0) B(2,2) C(3,10) D(5,2) E(7,0)   Manhattan cost\n      C\n                      tree so far: A--B--D--E   total = 11\n  B       D           visited = {A,B,D,E}\nA           E         heap: (7,D)(7,E)(7,E)(9,C)(10,C)...\npop (7,D) stale, (7,E) stale, (7,E) stale  -> skipped\npop (9,C): C joins via B->C                 total = 20\ncut property: cheapest edge leaving the tree is always safe",
+    "steps": [
+      "visited = [False]*n, heap = [(0, 0)], total = 0, added = 0.",
+      "Pop (cost, i); if visited[i], skip (stale).",
+      "Mark visited[i], add cost to total, added += 1.",
+      "For every unvisited j, push (manhattan(i, j), j).",
+      "Stop when added == n; return total."
+    ],
+    "complexity": {
+      "time": "O(n^2 log n)",
+      "space": "O(n^2)",
+      "why": "Each vertex added pushes up to n candidates and every push/pop is logarithmic; the heap may hold O(n^2) entries."
+    },
+    "pitfalls": [
+      "Pushing the start point with a non-zero cost.",
+      "Not skipping stale pops, which adds a vertex's cost twice.",
+      "Using Euclidean distance instead of Manhattan."
+    ],
+    "hints": [
+      "Connecting all points at minimum total cost is a minimum spanning tree.",
+      "Grow the tree one vertex at a time: the cheapest edge from the tree to the outside is always safe to take.",
+      "Prim's with a min-heap of (cost, point); skip popped points already in the tree."
+    ],
+    "code": "class Solution:\n    def minCostConnectPoints(self, points: List[List[int]]) -> int:\n        n = len(points)\n        visited = [False] * n\n        heap = [(0, 0)]  # (cost to join the tree, point index)\n        total = added = 0\n        while added < n:\n            cost, i = heapq.heappop(heap)\n            if visited[i]:\n                continue  # stale: i joined earlier via a cheaper edge\n            visited[i] = True\n            total += cost\n            added += 1\n            xi, yi = points[i]\n            for j in range(n):\n                if not visited[j]:\n                    xj, yj = points[j]\n                    heapq.heappush(heap, (abs(xi - xj) + abs(yi - yj), j))\n        return total",
+    "related": [
+      "network_delay_time",
+      "redundant_connection",
+      "number_of_connected_components"
+    ]
+  },
+  {
+    "slug": "reconstruct_itinerary",
+    "title": "Reconstruct Itinerary",
+    "leetcode": 332,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Eulerian path (Hierholzer's DFS)",
+    "file": "graphs/reconstruct_itinerary.py",
+    "problem": "Given tickets [from, to] that all belong to one traveller starting at \"JFK\", reconstruct the itinerary that uses every ticket exactly once; if several exist, return the lexicographically smallest when read as one string. A valid itinerary is guaranteed. Example: [[\"MUC\",\"LHR\"],[\"JFK\",\"MUC\"],[\"SFO\",\"SJC\"],[\"LHR\",\"SFO\"]] -> [\"JFK\",\"MUC\",\"LHR\",\"SFO\",\"SJC\"].",
+    "brute_force": {
+      "approach": "Backtracking: from the current airport try each unused ticket in lexical order of destination, recurse, and undo if the recursion fails to use every ticket; the first complete path is the smallest. The search can commit to a lexically small edge early, hit a dead end deep in the recursion, and unwind and rebuild large suffixes, which is exponential in the worst case.",
+      "time": "O(E!) worst case",
+      "space": "O(E)",
+      "code": "def brute_force(tickets: List[List[str]]) -> List[str]:\n    # Backtracking: try unused tickets in lexical order, undo on failure.\n    adj = defaultdict(list)\n    for src, dst in sorted(tickets):\n        adj[src].append(dst)\n    used = {src: [False] * len(dsts) for src, dsts in adj.items()}\n    path = [\"JFK\"]\n\n    def backtrack() -> bool:\n        if len(path) == len(tickets) + 1:\n            return True\n        cur = path[-1]\n        for i, dst in enumerate(adj[cur]):\n            if used[cur][i]:\n                continue\n            used[cur][i] = True\n            path.append(dst)\n            if backtrack():\n                return True\n            path.pop()\n            used[cur][i] = False\n        return False\n\n    backtrack()\n    return path"
+    },
+    "optimization": "The problem is an Eulerian path (use every edge once), and one is guaranteed to exist. Hierholzer's insight: when a DFS that greedily consumes edges gets stuck at an airport with no unused outgoing tickets, that airport must be the end of the itinerary (or of a sub-cycle that is spliced in just before). So instead of undoing, record the airport when its DFS call finishes (post-order) and reverse at the end. No backtracking is needed and each ticket is consumed exactly once. Sorting each airport's destinations in reverse and popping from the end yields lexical order in O(E log E).",
+    "intuition": "Greedily fly to the smallest available destination. When you are stranded with no tickets left from the current airport, that airport is the last stop of whatever sub-route you are on: write it down and back out one step, where there may be other tickets to use. Because airports are written down only when finished, the written list is the itinerary in reverse.",
+    "geometric": "Picture airports as dots and tickets as arrows. The DFS walks arrows, deleting each one it uses. When it hits a dot with no arrows left, that dot is pinned to the end of the route and the walk retreats one step, possibly discovering a side loop from there; that loop gets pinned just before the dead end. Reading the pins backwards gives one continuous path covering every arrow.",
+    "visual": "tickets JFK->SFO JFK->ATL SFO->ATL ATL->JFK ATL->SFO\nadj sorted desc, pop() = smallest destination\nJFK:[SFO,ATL]  ATL:[SFO,JFK]  SFO:[ATL]\ndfs(JFK) pop ATL -> dfs(ATL) pop JFK -> dfs(JFK) pop SFO\n  -> dfs(SFO) pop ATL -> dfs(ATL) pop SFO -> dfs(SFO): empty\nstranded at SFO: route=[SFO]           (it is the END)\nreturn to ATL: empty  -> route=[SFO,ATL]\nreturn to SFO: empty  -> route=[SFO,ATL,SFO]\nreturn to JFK, ATL, JFK -> route=[SFO,ATL,SFO,JFK,ATL,JFK]\nreversed = JFK ATL JFK SFO ATL SFO   <- answer",
+    "steps": [
+      "Build adj: src -> list of destinations sorted in descending order, so pop() returns the smallest.",
+      "dfs(u): while adj[u] is non-empty, dfs(adj[u].pop()); then route.append(u).",
+      "Call dfs(\"JFK\") and return route reversed."
+    ],
+    "complexity": {
+      "time": "O(E log E)",
+      "space": "O(E)",
+      "why": "Sorting the tickets dominates; each ticket is popped once and the recursion depth is at most E."
+    },
+    "pitfalls": [
+      "Appending airports on the way in (pre-order) breaks on dead ends.",
+      "Forgetting to reverse the post-order list.",
+      "Sorting ascending and popping from the front, which costs O(E) per pop."
+    ],
+    "hints": [
+      "Using every ticket exactly once is an Eulerian path; one is guaranteed to exist.",
+      "If greedy DFS gets stuck at an airport, that airport must be the final stop; what does that tell you about when to record it?",
+      "Hierholzer: pop the smallest destination repeatedly, append the airport in post-order, reverse the result."
+    ],
+    "code": "class Solution:\n    def findItinerary(self, tickets: List[List[str]]) -> List[str]:\n        adj = defaultdict(list)\n        for src, dst in sorted(tickets, reverse=True):\n            adj[src].append(dst)  # descending, so pop() yields the smallest destination\n        route = []\n\n        def dfs(airport: str) -> None:\n            while adj[airport]:\n                dfs(adj[airport].pop())\n            route.append(airport)  # post-order: stranded airport goes to the END\n\n        dfs(\"JFK\")\n        return route[::-1]",
+    "related": [
+      "course_schedule_ii",
+      "clone_graph"
+    ]
+  },
+  {
+    "slug": "accounts_merge",
+    "title": "Accounts Merge",
+    "leetcode": 721,
+    "difficulty": "Medium",
+    "topic": "graphs",
+    "pattern": "Union-Find (disjoint set union)",
+    "file": "graphs/accounts_merge.py",
+    "problem": "accounts[i] = [name, email1, email2, ...]. Two accounts belong to the same person if they share at least one email; names can repeat across different people. Merge the accounts and return each person's [name, sorted emails...] in any order. Example: [[\"John\",\"a@m\",\"b@m\"],[\"John\",\"b@m\",\"c@m\"],[\"Mary\",\"d@m\"]] -> [[\"John\",\"a@m\",\"b@m\",\"c@m\"],[\"Mary\",\"d@m\"]].",
+    "brute_force": {
+      "approach": "Treat accounts as nodes and connect two accounts if their email sets intersect; then find connected components by DFS. Building the adjacency means intersecting every pair of accounts' email sets. The waste is the all-pairs intersection test: most pairs share nothing, yet every pair is checked.",
+      "time": "O(A^2 * k)",
+      "space": "O(A^2)",
+      "code": "def brute_force(accounts: List[List[str]]) -> List[List[str]]:\n    # Compare every pair of accounts for a shared email, then DFS the resulting graph.\n    n = len(accounts)\n    sets = [set(a[1:]) for a in accounts]\n    adj = [[j for j in range(n) if j != i and sets[i] & sets[j]] for i in range(n)]\n    seen, result = set(), []\n    for i in range(n):\n        if i in seen:\n            continue\n        seen.add(i)\n        stack, emails = [i], set()\n        while stack:\n            cur = stack.pop()\n            emails |= sets[cur]\n            for nb in adj[cur]:\n                if nb not in seen:\n                    seen.add(nb)\n                    stack.append(nb)\n        result.append([accounts[i][0]] + sorted(emails))\n    return result"
+    },
+    "optimization": "The redundancy is pairwise comparison to discover shared emails. An email is shared iff it appears in two accounts, which a single hash map email -> first account index detects in O(1) per email with no pairwise step. 'Same person' is transitive and components only merge, so union-find over account indices is the natural store: for each email, if it was already seen under account j, union(i, j). Afterwards group emails by find(root) and sort each group. Total O(N * alpha(A) + N log N) for N total emails.",
+    "intuition": "Each account starts as its own person. Walk every email; the first time you see one, remember which account it came from; the next time, that proves two accounts are the same person, so union them. At the end bucket all emails by their account's root and sort each bucket, prefixing the root account's name.",
+    "geometric": "Draw account indices as dots with self-pointing parent arrows. Every email is a thread hanging from an account; when a second account grabs the same thread, redirect one root's arrow to the other so the two parent trees become one. Finally each tree's root collects all threads hanging below it into one sorted list.",
+    "visual": "0: John [js@m, jn@m]   1: John [js@m, j00@m]\n2: Mary [m@m]          3: John [jb@m]      parent=[0,1,2,3]\nemail   owner map      action\njs@m    -> 0           first seen\njn@m    -> 0           first seen\njs@m    seen under 0   union(1,0): parent[1]=0  -> [0,0,2,3]\nj00@m   -> 1           first seen (find(1) = 0 later)\nm@m     -> 2           first seen\njb@m    -> 3           first seen\ngroups by find(owner): 0:{js,jn,j00} 2:{m} 3:{jb} -> 3",
+    "steps": [
+      "parent = list(range(len(accounts))); owner = {} mapping email -> account index.",
+      "For account i and each email e: if e in owner, union(i, owner[e]); else owner[e] = i.",
+      "Group every email under find(owner[e]).",
+      "For each root, output [accounts[root][0]] + sorted(emails)."
+    ],
+    "complexity": {
+      "time": "O(N log N)",
+      "space": "O(N)",
+      "why": "N total emails each cost one map lookup and at most one union; sorting the grouped emails dominates."
+    },
+    "pitfalls": [
+      "Keying on names: different people can share a name.",
+      "Forgetting that an account's emails must be grouped together even if never shared with another account.",
+      "Returning emails unsorted."
+    ],
+    "hints": [
+      "A shared email links two accounts, and the link is transitive across accounts.",
+      "You never need to compare accounts pairwise: remember which account first listed each email.",
+      "Union-find over account indices; union on a repeated email, then group emails by root and sort."
+    ],
+    "code": "class Solution:\n    def accountsMerge(self, accounts: List[List[str]]) -> List[List[str]]:\n        parent = list(range(len(accounts)))\n\n        def find(x: int) -> int:\n            while parent[x] != x:\n                parent[x] = parent[parent[x]]\n                x = parent[x]\n            return x\n\n        owner = {}  # email -> index of the first account that listed it\n        for i, acct in enumerate(accounts):\n            for email in acct[1:]:\n                if email in owner:\n                    parent[find(i)] = find(owner[email])  # shared email => same person\n                else:\n                    owner[email] = i\n        groups = defaultdict(list)\n        for email, i in owner.items():\n            groups[find(i)].append(email)\n        return [[accounts[root][0]] + sorted(emails) for root, emails in groups.items()]",
+    "related": [
+      "number_of_connected_components",
+      "redundant_connection",
+      "graph_valid_tree"
+    ]
+  },
+  {
+    "slug": "merge_intervals",
+    "title": "Merge Intervals",
+    "leetcode": 56,
+    "difficulty": "Medium",
+    "topic": "intervals",
+    "pattern": "Sort by start, sweep and merge",
+    "file": "intervals/merge_intervals.py",
+    "problem": "Given a list of intervals [start, end], merge all overlapping intervals and return the non-overlapping intervals that cover the same points. Intervals that merely touch, like [1,4] and [4,5], count as overlapping. Example: [[1,3],[2,6],[8,10],[15,18]] -> [[1,6],[8,10],[15,18]].",
+    "brute_force": {
+      "approach": "Repeat until nothing changes: scan every pair (i, j); if they overlap, replace them with their union and restart the scan. Each pass costs O(n^2) pair checks and up to n merges can happen. The waste: pairs already found disjoint are re-tested after every merge, and every merge triggers a fresh full scan.",
+      "time": "O(n^3)",
+      "space": "O(n)",
+      "code": "def brute_force(intervals: List[List[int]]) -> List[List[int]]:\n    # Repeatedly scan every pair; merge the first overlapping pair found and restart.\n    ivs = [iv[:] for iv in intervals]\n    changed = True\n    while changed:\n        changed = False\n        for i in range(len(ivs)):\n            for j in range(i + 1, len(ivs)):\n                a, b = ivs[i], ivs[j]\n                if a[0] <= b[1] and b[0] <= a[1]:\n                    ivs[i] = [min(a[0], b[0]), max(a[1], b[1])]\n                    ivs.pop(j)\n                    changed = True\n                    break\n            if changed:\n                break\n    return sorted(ivs)"
+    },
+    "optimization": "The redundancy is checking pairs that are far apart on the number line. If intervals are sorted by start, an interval can only overlap the one currently being built (the last merged interval): anything that starts after the current end can never reach back. So sort once in O(n log n) and sweep left to right keeping a single running interval; extend its end when the next start falls inside it, otherwise close it and start a new one. Each interval is compared exactly once, so the total is O(n log n).",
+    "intuition": "Sort by start so the sweep never needs to look backwards. Keep a running interval; the next interval either begins inside it (extend the end to the max of both ends) or after it (the running interval is finished, so emit it and start a new one). Taking the max of ends handles short intervals nested inside long ones.",
+    "geometric": "Picture the intervals as horizontal bars above a number line, sorted by left edge. A vertical sweep moves right; the current bar's right edge is a frontier. Any bar whose left edge is at or before the frontier is fused into the current bar and may push the frontier further right; the first bar starting past the frontier closes the block.",
+    "visual": "sorted by start:  [1,3] [2,6] [8,10] [15,18]\n0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18\n   [=====]\n      [===========]       2 <= 3 (cur end): fuse, end=6\n   [==============]       cur = [1,6]\n                        [=====]   8 > 6: close cur, new cur\n                                             [========]\nmerged: [1,6] [8,10] [15,18]",
+    "steps": [
+      "Sort intervals by start.",
+      "merged = [first interval].",
+      "For each following [s, e]: if s <= merged[-1][1], set merged[-1][1] = max(merged[-1][1], e); else append [s, e].",
+      "Return merged."
+    ],
+    "complexity": {
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "why": "Sorting dominates; the sweep is linear and the output holds at most n intervals."
+    },
+    "pitfalls": [
+      "Using < instead of <= so touching intervals are not merged.",
+      "Setting the end to e instead of max(end, e), which shrinks a long interval when a nested one follows.",
+      "Forgetting to sort first."
+    ],
+    "hints": [
+      "Sorting puts potentially overlapping intervals next to each other.",
+      "After sorting by start, which existing interval could the next one possibly overlap?",
+      "Keep only the last merged interval; extend its end or append a new one."
+    ],
+    "code": "class Solution:\n    def merge(self, intervals: List[List[int]]) -> List[List[int]]:\n        intervals.sort(key=lambda iv: iv[0])\n        merged = [intervals[0][:]]\n        for start, end in intervals[1:]:\n            if start <= merged[-1][1]:\n                merged[-1][1] = max(merged[-1][1], end)  # nested interval: keep the longer end\n            else:\n                merged.append([start, end])\n        return merged",
+    "related": [
+      "insert_interval",
+      "non_overlapping_intervals",
+      "meeting_rooms_ii"
+    ]
+  },
+  {
+    "slug": "insert_interval",
+    "title": "Insert Interval",
+    "leetcode": 57,
+    "difficulty": "Medium",
+    "topic": "intervals",
+    "pattern": "Sort by start, sweep and merge",
+    "file": "intervals/insert_interval.py",
+    "problem": "intervals is sorted by start and pairwise non-overlapping. Insert newInterval, merging where necessary, and return the list still sorted and non-overlapping. Example: [[1,3],[6,9]] with new [2,5] -> [[1,5],[6,9]]; [[1,2],[3,5],[6,7],[8,10],[12,16]] with new [4,8] -> [[1,2],[3,10],[12,16]].",
+    "brute_force": {
+      "approach": "Append newInterval to the list, sort, and run the generic Merge Intervals sweep. This is correct but ignores that the input is already sorted and pairwise disjoint; the sort is the wasted step, and the sweep re-tests pairs of original intervals that are guaranteed not to overlap each other.",
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "code": "def brute_force(intervals: List[List[int]], newInterval: List[int]) -> List[List[int]]:\n    # Ignore the sorted/disjoint guarantee: add the interval, sort, and merge generically.\n    ivs = sorted([iv[:] for iv in intervals] + [newInterval[:]])\n    merged = [ivs[0]]\n    for s, e in ivs[1:]:\n        if s <= merged[-1][1]:\n            merged[-1][1] = max(merged[-1][1], e)\n        else:\n            merged.append([s, e])\n    return merged"
+    },
+    "optimization": "The redundancy is sorting an already-sorted list and testing already-disjoint pairs. Only intervals that touch newInterval can change, and in a sorted list they form one contiguous run. So the output is: everything that ends before new.start, untouched; one fused interval equal to the union of new with every interval that overlaps it; and everything that starts after new.end, untouched. A single left-to-right pass with three phases produces exactly this in O(n) with no sort.",
+    "intuition": "Walk the intervals. While they finish before the new one begins, copy them. While they overlap the new one, grow the new one to swallow them (min of starts, max of ends). Once an interval starts after the new one ends, emit the grown interval and copy the rest verbatim. Because the list is sorted, each phase is a contiguous block.",
+    "geometric": "Bars on a number line, already sorted and separated. The new bar drops in somewhere. Bars entirely to its left are untouched, bars entirely to its right are untouched, and the bars it collides with get fused into it, so its left edge becomes the leftmost collided start and its right edge the rightmost collided end.",
+    "visual": "intervals [1,2] [3,5] [6,7] [8,10] [12,16]     new = [4,8]\n0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16\n   [==]  phase 1: end 2 < 4, copy as-is\n         [=====]  [==]  [=====]     phase 2: start <= 8\n            [===========]  new      absorb all three\n         [=====================]    fused = [3,10]\n                                    [===========] phase 3\nresult: [1,2] [3,10] [12,16]",
+    "steps": [
+      "Phase 1: while intervals[i].end < new.start, copy intervals[i] to the output.",
+      "Phase 2: while intervals[i].start <= new.end, set new = [min(starts), max(ends)].",
+      "Append the fused new interval.",
+      "Phase 3: copy all remaining intervals."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "Each interval is visited once; the output list has at most n + 1 entries."
+    },
+    "pitfalls": [
+      "Using < instead of <= so a touching interval is not merged.",
+      "Forgetting to append newInterval when it belongs at the very end.",
+      "Mutating newInterval in place when the caller still needs it."
+    ],
+    "hints": [
+      "The input is already sorted and disjoint; sorting again throws that away.",
+      "Which intervals can change? Only those overlapping the new one, and they are contiguous in the list.",
+      "Three phases: copy intervals ending before new.start, fuse those overlapping, then copy the rest."
+    ],
+    "code": "class Solution:\n    def insert(self, intervals: List[List[int]], newInterval: List[int]) -> List[List[int]]:\n        start, end = newInterval\n        out, i, n = [], 0, len(intervals)\n        while i < n and intervals[i][1] < start:  # entirely left of the new interval\n            out.append(intervals[i])\n            i += 1\n        while i < n and intervals[i][0] <= end:  # overlaps: absorb into [start, end]\n            start = min(start, intervals[i][0])\n            end = max(end, intervals[i][1])\n            i += 1\n        out.append([start, end])\n        out.extend(intervals[i:])  # entirely right of the new interval\n        return out",
+    "related": [
+      "merge_intervals",
+      "non_overlapping_intervals"
+    ]
+  },
+  {
+    "slug": "non_overlapping_intervals",
+    "title": "Non-overlapping Intervals",
+    "leetcode": 435,
+    "difficulty": "Medium",
+    "topic": "intervals",
+    "pattern": "Greedy by earliest end (interval scheduling)",
+    "file": "intervals/non_overlapping_intervals.py",
+    "problem": "Given intervals [start, end], return the minimum number of intervals to remove so that the remaining ones are pairwise non-overlapping. Touching intervals such as [1,2] and [2,3] do not overlap. Example: [[1,2],[2,3],[3,4],[1,3]] -> 1 (remove [1,3]); [[1,2],[1,2],[1,2]] -> 2.",
+    "brute_force": {
+      "approach": "Enumerate every subset of intervals, keep the largest subset that is pairwise non-overlapping, and return n minus its size. The waste is enormous: subsets sharing the same conflicting pair are retested from scratch, and most subsets are obviously dominated by one that swaps an interval for an earlier-ending one.",
+      "time": "O(2^n * n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(intervals: List[List[int]]) -> int:\n    # Enumerate every subset; keep the largest that is pairwise non-overlapping.\n    n = len(intervals)\n    best = 0\n    for mask in range(1 << n):\n        chosen = [intervals[i] for i in range(n) if mask >> i & 1]\n        ok = all(a[1] <= b[0] or b[1] <= a[0]\n                 for i, a in enumerate(chosen) for b in chosen[i + 1:])\n        if ok:\n            best = max(best, len(chosen))\n    return n - best"
+    },
+    "optimization": "Minimum removals equals n minus the maximum non-overlapping set, the classic interval scheduling problem. By an exchange argument, among the intervals still available the one with the earliest end can always be kept: any optimal solution that keeps a different first interval can swap it for the earliest-ending one without creating overlaps, since that one leaves at least as much room to the right. So sort by end, sweep, and greedily keep every interval that starts at or after the last kept end, counting the others as removed. O(n log n), no subsets.",
+    "intuition": "To fit the most intervals, always finish as early as possible: take the interval that ends first, then the next one that starts after it and ends first, and so on. Every interval you skip because it starts before the current kept end is a removal. Sorting by end rather than start is the entire trick.",
+    "geometric": "Bars above a number line, sorted by right edge. A fence stands at the right edge of the last kept bar. Walk the bars in end order: a bar whose left edge is at or past the fence is kept and the fence jumps to its right edge; a bar whose left edge is before the fence crosses it and is removed. Moving the fence as little as possible is what the earliest-end rule achieves.",
+    "visual": "sorted by end: [1,2] [1,3] [2,3] [3,4]   fence = kept end\n0     1     2     3     4\n      [=====]                 keep         fence = 2\n      [===========]           1 < 2: crosses fence -> REMOVE\n            [=====]           2 >= 2: keep   fence = 3\n                  [=====]     3 >= 3: keep   fence = 4\nremoved = 1\n(earliest end first leaves the most room to the right)",
+    "steps": [
+      "Sort intervals by end.",
+      "last_end = -infinity, removed = 0.",
+      "For each [s, e]: if s >= last_end, keep it and set last_end = e; otherwise removed += 1.",
+      "Return removed."
+    ],
+    "complexity": {
+      "time": "O(n log n)",
+      "space": "O(1)",
+      "why": "Sorting dominates; the sweep uses two scalars."
+    },
+    "pitfalls": [
+      "Sorting by start instead of end: a long interval like [1,100] would then block everything.",
+      "Using > instead of >= so touching intervals count as overlapping."
+    ],
+    "hints": [
+      "Minimum removals = n - the largest set of mutually non-overlapping intervals.",
+      "Among the remaining intervals, which one is always safe to keep first? Think about which one leaves the most room.",
+      "Sort by end; keep an interval iff its start >= the last kept end, count the rest as removed."
+    ],
+    "code": "class Solution:\n    def eraseOverlapIntervals(self, intervals: List[List[int]]) -> int:\n        intervals.sort(key=lambda iv: iv[1])  # earliest end first\n        removed, last_end = 0, float(\"-inf\")\n        for start, end in intervals:\n            if start >= last_end:\n                last_end = end  # keep: it starts after the last kept one finishes\n            else:\n                removed += 1  # overlaps the kept one, which ends no later: drop this\n        return removed",
+    "related": [
+      "merge_intervals",
+      "meeting_rooms_ii",
+      "insert_interval"
+    ]
+  },
+  {
+    "slug": "meeting_rooms_ii",
+    "title": "Meeting Rooms II",
+    "leetcode": 253,
+    "difficulty": "Medium",
+    "topic": "intervals",
+    "pattern": "Sort by start + min-heap of end times",
+    "file": "intervals/meeting_rooms_ii.py",
+    "problem": "Given meeting intervals [start, end), return the minimum number of conference rooms needed so that no two meetings in the same room overlap. A meeting may start at the exact moment another one ends. Example: [[0,30],[5,10],[15,20]] -> 2; [[7,10],[2,4]] -> 1.",
+    "brute_force": {
+      "approach": "The answer is the maximum number of meetings in progress at any instant, and that maximum occurs at some meeting's start. For every start time t, count meetings with start <= t < end and take the max. The waste is recounting all n meetings at every start time even though only the meetings that ended between consecutive starts changed the count.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(intervals: List[List[int]]) -> int:\n    # At every meeting's start time, count how many meetings are in progress.\n    best = 0\n    for s, _ in intervals:\n        running = sum(1 for a, b in intervals if a <= s < b)\n        best = max(best, running)\n    return best"
+    },
+    "optimization": "The redundancy is recounting who is still running from scratch at every start time. Process meetings in start order: the set of running meetings only changes by adding the new meeting and removing meetings whose end <= the new start. Removing expired meetings cheaply needs quick access to the smallest end time among running meetings, so keep their end times in a min-heap. When a meeting arrives, pop every end <= its start (those rooms are freed), push its end, and the heap size is the rooms in use now; the max over the sweep is the answer. O(n log n). Using a plain list instead of the heap is the same algorithm with O(n) min-removal, i.e. O(n^2).",
+    "intuition": "Sort by start so meetings arrive chronologically. The heap holds when each occupied room frees up. For an arriving meeting, free every room whose meeting has already ended (the top of the heap is the earliest to finish), then occupy a room by pushing this meeting's end. The peak heap size is the number of rooms you were forced to have.",
+    "geometric": "Bars on a time axis, sorted by left edge. A sweep line moves right to each start. Rooms are shelves stacked vertically; each bar occupies a shelf from its start to its end. The heap is the list of right edges of bars currently on shelves, sorted so the soonest-to-end is on top. The answer is the tallest stack the sweep line ever crosses.",
+    "visual": "sorted by start: [0,30] [5,10] [15,20]\ntime  0    5    10   15   20   25   30\nroom1 [=============================]\nroom2      [====]    [====]\nheap of end times (top = soonest to finish):\nt=0  start [0,30] : push 30        heap [30]      rooms 1\nt=5  start [5,10] : 10 > 5, push   heap [10,30]   rooms 2\nt=15 start [15,20]: pop 10 (<=15)  heap [30]\n                    push 20        heap [20,30]   rooms 2\nanswer = max heap size = 2",
+    "steps": [
+      "Sort intervals by start.",
+      "ends = [] (min-heap of end times), rooms = 0.",
+      "For each [s, e]: while ends and ends[0] <= s, pop (a room freed up).",
+      "Push e; rooms = max(rooms, len(ends)).",
+      "Return rooms."
+    ],
+    "complexity": {
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "why": "Sorting plus one heap push and at most one pop per meeting; the heap holds at most n end times."
+    },
+    "pitfalls": [
+      "Using < instead of <= when freeing rooms, so back-to-back meetings need two rooms.",
+      "Sorting by end instead of start.",
+      "Popping only one expired room per arrival; still gives the right maximum but misreports current usage, so be able to argue why."
+    ],
+    "hints": [
+      "Rooms needed equals the maximum number of meetings overlapping at one instant.",
+      "Process meetings by start time; which room frees up first, and how do you find it quickly?",
+      "Min-heap of end times: pop all ends <= the new start, push the new end, track the max heap size."
+    ],
+    "code": "class Solution:\n    def minMeetingRooms(self, intervals: List[List[int]]) -> int:\n        intervals.sort(key=lambda iv: iv[0])\n        ends = []  # min-heap of end times of meetings currently occupying a room\n        rooms = 0\n        for start, end in intervals:\n            while ends and ends[0] <= start:\n                heapq.heappop(ends)  # that room is free again\n            heapq.heappush(ends, end)\n            rooms = max(rooms, len(ends))\n        return rooms",
+    "related": [
+      "merge_intervals",
+      "non_overlapping_intervals",
+      "network_delay_time"
+    ]
+  }
+]

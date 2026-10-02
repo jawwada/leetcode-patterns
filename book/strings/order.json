@@ -1,0 +1,19 @@
+{"topic": "strings", "title": "Strings: Scanning, Parsing, Canonical Forms", "order": [
+ {"slug": "implement_split", "why_here": "The baseline scan: one read index, one start marker, and always emitting the final piece."},
+ {"slug": "valid_anagram", "why_here": "Introduces the counter: forget order, keep a 26-cell histogram, the first canonical form."},
+ {"slug": "reverse_words_in_a_string", "why_here": "Two pointers on a mutable copy: read/write compaction, then reverse-all and reverse-each."},
+ {"slug": "compare_version_numbers", "why_here": "Two strings scanned in lockstep with integers parsed in place; an exhausted pointer reads as zero."},
+ {"slug": "string_to_integer_atoi", "why_here": "The first explicit state machine (SPACE, SIGN, DIGITS, STOP) with overflow clamped during accumulation."},
+ {"slug": "valid_number", "why_here": "The state machine becomes a grammar: three flags, and exact rules for which transition resets which flag."},
+ {"slug": "simplify_path", "why_here": "The stack arrives: '..' cancels the most recent surviving directory name."},
+ {"slug": "minimum_remove_to_make_valid_parentheses", "why_here": "A stack of indices, so unmatched characters can be marked and dropped in one pass."},
+ {"slug": "zigzag_conversion", "why_here": "Back to a plain scan with a row pointer that bounces between walls; the 2-D picture is unnecessary."},
+ {"slug": "group_shifted_strings", "why_here": "Canonical keys generalised from sorted letters to gaps between letters mod 26."},
+ {"slug": "integer_to_english_words", "why_here": "Formatting instead of parsing: chunk by thousands and apply one rule per chunk with lookup tables."},
+ {"slug": "text_justification", "why_here": "Hard cut-and-reassemble: greedy line packing, then divmod to spread spaces with the remainder on the left."},
+ {"slug": "longest_palindromic_substring", "why_here": "First self-comparison: grow mirrors outward from 2n - 1 centres."},
+ {"slug": "longest_happy_prefix", "why_here": "Borders and the KMP failure function, built incrementally with fallback to the border of the border."},
+ {"slug": "shortest_palindrome", "why_here": "Reuses the failure function on s + '#' + reverse(s) to find the longest palindromic prefix."},
+ {"slug": "palindrome_pairs", "why_here": "Combines palindrome checks with canonical lookup: reversed words in a hash map, every cut of every word."},
+ {"slug": "longest_duplicate_substring", "why_here": "Rolling hash plus binary search on the answer length; windows compared in O(1) each."}
+]}

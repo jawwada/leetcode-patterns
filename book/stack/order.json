@@ -1,0 +1,18 @@
+{"topic": "stack", "title": "Stacks", "order": [
+ {"slug": "valid_parentheses", "why_here": "The purest stack: openers wait, and a closer may only match the newest unclosed opener on top."},
+ {"slug": "minimum_add_to_make_parentheses_valid", "why_here": "One bracket type makes every stack entry identical, so the stack collapses to a counter and strays become the answer."},
+ {"slug": "min_stack", "why_here": "A stack only changes at its top, so a running minimum stored beside each entry stays valid until that entry is popped."},
+ {"slug": "evaluate_reverse_polish_notation", "why_here": "The stack holds values instead of brackets; each operator consumes the two most recent unconsumed values."},
+ {"slug": "decode_string", "why_here": "Nesting with real context: each '[' pushes the unfinished outer text and count, each ']' resumes it, recursion made explicit."},
+ {"slug": "asteroid_collision", "why_here": "The first pop-while loop: a newcomer fights the top repeatedly, and each element is pushed and popped at most once."},
+ {"slug": "basic_calculator_ii", "why_here": "Infix with precedence: '+' and '-' push signed terms, '*' and '/' rewrite the top term, each applied one step late."},
+ {"slug": "basic_calculator", "why_here": "Parentheses with only '+' and '-': the stack holds the sign each group passes down, and numbers go straight into one total."},
+ {"slug": "parsing_a_boolean_expression", "why_here": "A general nested evaluator: push every token, and on ')' collapse back to the matching '(' into a single value."},
+ {"slug": "daily_temperatures", "why_here": "The monotonic stack in its plainest form: cooler days wait on a decreasing stack until a warmer day resolves them."},
+ {"slug": "next_greater_element_ii", "why_here": "The same decreasing stack on a circular array, handled by walking the array twice and pushing only on the first lap."},
+ {"slug": "car_fleet", "why_here": "Sort by position first, then a monotone stack of arrival times where a slower car ahead absorbs the faster ones behind it."},
+ {"slug": "longest_valid_parentheses", "why_here": "Matching meets measuring: a stack of indices with a barrier at the bottom turns each pop into the length of a valid run."},
+ {"slug": "largest_rectangle_in_histogram", "why_here": "An increasing stack where every pop reveals both walls of a maximal rectangle: the staircase used to its fullest."},
+ {"slug": "maximal_rectangle", "why_here": "Turn each matrix row into a histogram of column heights and reuse the previous problem once per row."},
+ {"slug": "create_maximum_number", "why_here": "A monotonic stack with a deletion budget picks the best subsequence per array, followed by a greedy lexicographic merge."}
+]}

@@ -1,0 +1,703 @@
+[
+ {
+  "slug": "sum_of_left_leaves",
+  "title": "Sum of Left Leaves",
+  "leetcode": 404,
+  "difficulty": "Easy",
+  "topic": "trees",
+  "pattern": "DFS carrying path state",
+  "file": "trees/sum_of_left_leaves.py",
+  "problem": "Given the root of a binary tree, return the sum of all left leaves: nodes with no children that are the left child of their parent. A single root node is not a left leaf. Example: [3,9,20,null,null,15,7] -> 24, because 9 and 15 are left leaves while 7 is a right leaf.",
+  "brute_force": {
+   "approach": "Collect every node, pick out the leaves, and for each leaf scan all nodes again to find its parent, then check whether the leaf is parent.left. Finding a parent is an O(n) search, so the total is O(n^2). The waste is rediscovering the parent, which the traversal was standing on one step before it reached the leaf.",
+   "time": "O(n^2)",
+   "space": "O(n)",
+   "code": "def brute_force(root: Optional[TreeNode]) -> int:\n    # Gather all leaves, then re-search from the root to find each leaf's parent: O(n^2).\n    nodes, stack = [], [root] if root else []\n    while stack:\n        node = stack.pop()\n        nodes.append(node)\n        stack.extend(c for c in (node.left, node.right) if c)\n    total = 0\n    for leaf in (n for n in nodes if n.left is None and n.right is None):\n        parent = next((p for p in nodes if p.left is leaf or p.right is leaf), None)\n        if parent is not None and parent.left is leaf:\n            total += leaf.val\n    return total"
+  },
+  "optimization": "The redundancy is searching for each leaf's parent from scratch. Whether a node is a left child is decided by the edge the DFS just walked down, and the DFS knows that edge at the moment it steps into the child. Pass one boolean is_left into the recursion (True for .left, False for .right and for the root). A node with no children contributes its value only when the flag is True, so one pass gives O(n) time and O(h) stack. This is the user's original pre-order approach.",
+  "intuition": "Being a leaf is a property of the node, but being a left node is a property of the edge into it. A pre-order DFS sees both at once if it carries the edge direction as a parameter. Sum the leaves reached through a left edge; ignore everything else. The root has no incoming edge, so it starts with is_left = False.",
+  "geometric": "Picture the tree with every edge labelled L or R. Walk down from the root; whenever you hit a dead end, read the label of the last edge you crossed. The answer is the sum of dead ends whose last label is L.",
+  "visual": "        3\n      L/ \\R\n      9   20\n        L/  \\R\n        15   7\ndfs(3, False)  not a leaf  -> recurse both sides\ndfs(9, True)   leaf, left  -> +9\ndfs(20, False) not a leaf  -> recurse\ndfs(15, True)  leaf, left  -> +15\ndfs(7, False)  leaf, right -> +0\nsum = 9 + 15 = 24",
+  "steps": [
+   "Define dfs(node, is_left); return 0 for None.",
+   "If node has no children, return node.val when is_left else 0.",
+   "Otherwise return dfs(node.left, True) + dfs(node.right, False).",
+   "Call dfs(root, False) so a lone root is not counted."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(h)",
+   "why": "Each node is visited once; the recursion stack is as deep as the tree."
+  },
+  "pitfalls": [
+   "Counting a single-node root as a left leaf.",
+   "Adding every left child, including ones that have children of their own.",
+   "Counting right leaves by checking only node.left is None and node.right is None."
+  ],
+  "hints": [
+   "A left leaf needs two facts: the node has no children, and it was reached through a left edge. Where is the second fact available?",
+   "Carry a flag down the recursion that says which side you came from.",
+   "dfs(node, is_left): leaf -> val if is_left else 0; else dfs(left, True) + dfs(right, False); start with dfs(root, False)."
+  ],
+  "code": "class Solution:\n    def sumOfLeftLeaves(self, root: Optional[TreeNode]) -> int:\n        def dfs(node: Optional[TreeNode], is_left: bool) -> int:\n            if node is None:\n                return 0\n            if node.left is None and node.right is None:\n                return node.val if is_left else 0\n            return dfs(node.left, True) + dfs(node.right, False)\n\n        return dfs(root, False)",
+  "related": [
+   "maximum_depth_of_binary_tree",
+   "count_good_nodes_in_binary_tree",
+   "binary_tree_level_order_traversal"
+  ]
+ },
+ {
+  "slug": "zero_one_matrix",
+  "title": "01 Matrix",
+  "leetcode": 542,
+  "difficulty": "Medium",
+  "topic": "graphs",
+  "pattern": "Multi-source BFS (level = distance)",
+  "file": "graphs/zero_one_matrix.py",
+  "problem": "Given an m x n binary matrix, return a matrix where each cell holds the distance to the nearest 0, moving up, down, left or right. At least one 0 exists. Example: [[0,0,0],[0,1,0],[1,1,1]] -> [[0,0,0],[0,1,0],[1,2,1]].",
+  "brute_force": {
+   "approach": "Run a separate BFS from every cell until it reaches the first 0. One BFS can sweep the whole grid, so the total is O((m*n)^2). The waste is that neighbouring cells run nearly identical searches and nobody reuses the distance a neighbour already found.",
+   "time": "O((m*n)^2)",
+   "space": "O(m*n)",
+   "code": "def brute_force(mat: List[List[int]]) -> List[List[int]]:\n    # Independent BFS from every cell until it finds a 0: O((m*n)^2).\n    m, n = len(mat), len(mat[0])\n    out = [[0] * n for _ in range(m)]\n    for sr in range(m):\n        for sc in range(n):\n            seen, queue = {(sr, sc)}, deque([(sr, sc, 0)])\n            while queue:\n                r, c, d = queue.popleft()\n                if mat[r][c] == 0:\n                    out[sr][sc] = d\n                    break\n                for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):\n                    if 0 <= nr < m and 0 <= nc < n and (nr, nc) not in seen:\n                        seen.add((nr, nc))\n                        queue.append((nr, nc, d + 1))\n    return out"
+  },
+  "optimization": "The redundancy is one BFS per cell when every search looks for the same target set: any 0. Reverse the direction and start a single BFS from all zeros at once, each at distance 0. BFS settles cells in nondecreasing distance order, so the first time the wave reaches a 1-cell, dist[parent] + 1 is its final answer. Each cell is enqueued once, giving O(m*n). The user's original version (initialise 1-cells to m*n, relax when a shorter distance appears) is exactly this BFS.",
+  "intuition": "The nearest 0 to each cell is the distance from the set of all zeros. Treat the zeros as one super-source and run a single BFS from it. The queue processes cells in increasing distance, so the first assignment to each cell is its shortest distance. Every cell gets its answer in one sweep.",
+  "geometric": "Every 0 drops a stone in a pond at the same instant. Ripples grow one ring per step and merge where they meet; the ring number at which a cell first gets wet is its answer. The queue holds the current ring.",
+  "visual": "mat      wave d=0   wave d=1   wave d=2\n0 0 0    0 0 0      0 0 0      0 0 0\n0 1 0    0 . 0      0 1 0      0 1 0\n1 1 1    . . .      1 . 1      1 2 1\nqueue: 6 zeros\n    -> (1,1) (2,0) (2,2)    set to 1\n    -> (2,1)                set to 2\neach cell keeps the distance of the FIRST wave to hit it",
+  "steps": [
+   "Set dist to 0 for every zero and enqueue it; set dist to m*n (unknown) for every one.",
+   "Pop (r, c); for each in-bounds neighbour with dist > dist[r][c] + 1, set it and enqueue it.",
+   "When the queue is empty, return dist."
+  ],
+  "complexity": {
+   "time": "O(m*n)",
+   "space": "O(m*n)",
+   "why": "Every cell is improved and enqueued at most once."
+  },
+  "pitfalls": [
+   "Running one BFS per 1-cell, which is quadratic.",
+   "Using DFS, which does not produce shortest distances.",
+   "Seeding the BFS from only one zero instead of all of them."
+  ],
+  "hints": [
+   "Instead of asking how far each 1 is from a 0, ask how far each cell is from the set of zeros.",
+   "A BFS can start from many sources at once if you enqueue them all at distance 0.",
+   "Enqueue every 0, mark 1s as unknown, BFS outward; a neighbour's distance is the popped cell's distance + 1 the first time it is reached."
+  ],
+  "code": "class Solution:\n    def updateMatrix(self, mat: List[List[int]]) -> List[List[int]]:\n        m, n = len(mat), len(mat[0])\n        dist = [[0 if mat[r][c] == 0 else m * n for c in range(n)] for r in range(m)]\n        queue = deque((r, c) for r in range(m) for c in range(n) if mat[r][c] == 0)\n        while queue:\n            r, c = queue.popleft()\n            nd = dist[r][c] + 1\n            for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):\n                if 0 <= nr < m and 0 <= nc < n and dist[nr][nc] > nd:\n                    dist[nr][nc] = nd  # first (shortest) arrival of the wave\n                    queue.append((nr, nc))\n        return dist",
+  "related": [
+   "rotting_oranges",
+   "walls_and_gates",
+   "flood_fill"
+  ]
+ },
+ {
+  "slug": "flood_fill",
+  "title": "Flood Fill",
+  "leetcode": 733,
+  "difficulty": "Easy",
+  "topic": "graphs",
+  "pattern": "Grid flood fill (DFS/BFS)",
+  "file": "graphs/flood_fill.py",
+  "problem": "Given an image as a grid of colours, a start pixel (sr, sc) and a new colour, recolour the start pixel and every pixel 4-connected to it that has the start pixel's original colour. Example: image=[[1,1,1],[1,1,0],[1,0,1]], sr=1, sc=1, color=2 -> [[2,2,2],[2,2,0],[2,0,1]]; the bottom-right 1 is not connected, so it keeps its colour.",
+  "brute_force": {
+   "approach": "Keep a mask of painted pixels and sweep the whole grid repeatedly, adding any old-coloured pixel next to a painted one, until a sweep adds nothing. A snake-shaped region needs O(m*n) sweeps of O(m*n) each. The waste is rescanning pixels that cannot change instead of only the neighbours of pixels just painted.",
+   "time": "O((m*n)^2)",
+   "space": "O(m*n)",
+   "code": "def brute_force(image: List[List[int]], sr: int, sc: int, color: int) -> List[List[int]]:\n    # Sweep the whole grid until no new pixel joins the painted mask: O((m*n)^2).\n    rows, cols, old = len(image), len(image[0]), image[sr][sc]\n    mask = [[False] * cols for _ in range(rows)]\n    mask[sr][sc] = changed = True\n    while changed:\n        changed = False\n        for r in range(rows):\n            for c in range(cols):\n                if not mask[r][c] and image[r][c] == old and any(\n                        0 <= nr < rows and 0 <= nc < cols and mask[nr][nc]\n                        for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1))):\n                    mask[r][c] = changed = True\n    return [[color if mask[r][c] else image[r][c] for c in range(cols)] for r in range(rows)]"
+  },
+  "optimization": "The redundancy is rescanning the whole grid when only the frontier can spread colour. Keep the frontier explicitly in a stack (DFS) or queue (BFS). Painting a pixel when it is pushed doubles as the visited mark, because a painted pixel no longer matches the old colour. Each pixel is pushed at most once, so O(m*n). The one trap: if the old colour equals the new colour, painting marks nothing, so return the image unchanged immediately.",
+  "intuition": "The pixels to recolour are exactly one connected component of same-coloured pixels. Any traversal from the start pixel enumerates it. Recolouring in place serves as the visited set, so no extra memory is needed beyond the stack. The user's original recursive DFS does the same; an explicit stack avoids recursion limits.",
+  "geometric": "Think of the paint-bucket tool: paint lands on one pixel and spreads to every touching pixel of the same colour, stopping at colour borders. The stack holds the wet edge of the spreading paint.",
+  "visual": "start (1,1): old=1 -> new=2, paint on push\nbefore    after pop (1,1)   final\n1 1 1     1 2 1             2 2 2\n1 1 0     2 2 0             2 2 0\n1 0 1     1 0 1             2 0 1\nstack:    [(0,1), (1,0)]    []\n(2,2) is a 1 walled off by 0s -> never reached",
+  "steps": [
+   "Read old = image[sr][sc]; if old == color, return the image.",
+   "Paint (sr, sc) and push it.",
+   "Pop a pixel; for each in-bounds neighbour still equal to old, paint it and push it.",
+   "Return the image when the stack is empty."
+  ],
+  "complexity": {
+   "time": "O(m*n)",
+   "space": "O(m*n)",
+   "why": "Each pixel is painted and pushed at most once; the stack can hold a whole region."
+  },
+  "pitfalls": [
+   "Infinite loop when the new colour equals the old colour.",
+   "Comparing neighbours with the new colour instead of the original one.",
+   "Deep recursion on large images; an explicit stack is safer."
+  ],
+  "hints": [
+   "The region to recolour is a connected component. Which traversal finds a component?",
+   "If you change a pixel's colour as soon as you reach it, do you still need a visited set?",
+   "Save the old colour, bail out if it equals the new one, then DFS with a stack, painting each matching neighbour as you push it."
+  ],
+  "code": "class Solution:\n    def floodFill(self, image: List[List[int]], sr: int, sc: int, color: int) -> List[List[int]]:\n        old = image[sr][sc]\n        if old == color:  # painting would not mark anything as visited\n            return image\n        rows, cols = len(image), len(image[0])\n        image[sr][sc] = color\n        stack = [(sr, sc)]\n        while stack:\n            r, c = stack.pop()\n            for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):\n                if 0 <= nr < rows and 0 <= nc < cols and image[nr][nc] == old:\n                    image[nr][nc] = color\n                    stack.append((nr, nc))\n        return image",
+  "related": [
+   "number_of_islands",
+   "max_area_of_island",
+   "number_of_enclaves",
+   "surrounded_regions"
+  ]
+ },
+ {
+  "slug": "find_the_town_judge",
+  "title": "Find the Town Judge",
+  "leetcode": 997,
+  "difficulty": "Easy",
+  "topic": "graphs",
+  "pattern": "Degree counting (in-degree minus out-degree)",
+  "file": "graphs/find_the_town_judge.py",
+  "problem": "There are n people labelled 1..n, and trust[i] = [a, b] means a trusts b. The town judge trusts nobody and is trusted by everybody else. Return the judge's label, or -1 if there is none. Example: n=3, trust=[[1,3],[2,3]] -> 3; n=3, trust=[[1,3],[2,3],[3,1]] -> -1 because 3 trusts 1.",
+  "brute_force": {
+   "approach": "For each candidate j, scan the whole trust list to check that j trusts nobody and to collect who trusts j, then test for n - 1 trusters. That is O(n * len(trust)). The waste is re-reading every edge for every candidate when each edge only affects the counts of its two endpoints.",
+   "time": "O(n * t)",
+   "space": "O(n)",
+   "code": "def brute_force(n: int, trust: List[List[int]]) -> int:\n    # For each candidate, rescan every edge: O(n * len(trust)).\n    for j in range(1, n + 1):\n        trusts_someone = any(a == j for a, _ in trust)\n        trusted_by = {a for a, b in trust if b == j}\n        if not trusts_someone and len(trusted_by) == n - 1:\n            return j\n    return -1"
+  },
+  "optimization": "The redundancy is rescanning all edges once per candidate. The judge is exactly the vertex with in-degree n - 1 and out-degree 0, and all degrees can be tallied in one pass over the edges. Fold them into one score = in - out. Because in-degree can be at most n - 1, a score of n - 1 forces in = n - 1 and out = 0. One pass over edges and one over people gives O(n + t). The user's original two-dictionary version is the same idea.",
+  "intuition": "The judge is a sink that every other vertex points at. Give each edge +1 to the person trusted and -1 to the person trusting. Only a perfect sink can reach the maximum score n - 1: one outgoing edge or one missing incoming edge drops it below.",
+  "geometric": "Draw n dots and the trust arrows. The judge is the dot with an arrow arriving from every other dot and none leaving: a star whose spokes all point inward.",
+  "visual": "n=4  trust: 1->3 1->4 2->3 2->4 4->3\nperson :   1   2   3   4\nin     :   0   0   3   2\nout    :   2   2   0   1\nscore  :  -2  -2  +3  +1\n                   ^ score == n-1 == 3 -> judge = 3\n4 is trusted by two people but trusts 3 -> out",
+  "steps": [
+   "Create score = [0] * (n + 1).",
+   "For each (a, b): score[a] -= 1 and score[b] += 1.",
+   "Return the first person with score == n - 1, else -1."
+  ],
+  "complexity": {
+   "time": "O(n + t)",
+   "space": "O(n)",
+   "why": "One pass over the trust pairs and one pass over the people."
+  },
+  "pitfalls": [
+   "n == 1 with no trust pairs: the answer is 1 (score 0 == n - 1).",
+   "Checking only in-degree: someone trusted by everyone may still trust someone.",
+   "Leftover debugging prints, as in the old version, slow it down on large inputs."
+  ],
+  "hints": [
+   "Model trust as directed edges. What do the judge's in- and out-degree look like?",
+   "You can count every person's in-degree and out-degree in one pass over the pairs.",
+   "Keep one score per person: +1 when trusted, -1 when trusting; the judge is the one with score n - 1."
+  ],
+  "code": "class Solution:\n    def findJudge(self, n: int, trust: List[List[int]]) -> int:\n        score = [0] * (n + 1)\n        for a, b in trust:\n            score[a] -= 1  # out-edge disqualifies\n            score[b] += 1\n        for person in range(1, n + 1):\n            if score[person] == n - 1:\n                return person\n        return -1",
+  "related": [
+   "course_schedule",
+   "number_of_connected_components"
+  ]
+ },
+ {
+  "slug": "number_of_enclaves",
+  "title": "Number of Enclaves",
+  "leetcode": 1020,
+  "difficulty": "Medium",
+  "topic": "graphs",
+  "pattern": "Multi-source reverse BFS/DFS from the boundary",
+  "file": "graphs/number_of_enclaves.py",
+  "problem": "In an m x n grid, 1 is land and 0 is sea. A move goes to a 4-adjacent land cell or off the edge of the grid. Return the number of land cells from which you cannot walk off the grid. Example: [[0,0,0,0],[1,0,1,0],[0,1,1,0],[0,0,0,0]] -> 3; the land at (1,0) is on the border, the other three cells are enclosed.",
+  "brute_force": {
+   "approach": "From every land cell, run its own DFS and check whether it can reach a cell on the border. An island of size k costs O(k^2), O((m*n)^2) overall. The waste is that every cell of one island has the same answer, yet each recomputes it from scratch.",
+   "time": "O((m*n)^2)",
+   "space": "O(m*n)",
+   "code": "def brute_force(grid: List[List[int]]) -> int:\n    # Separate search from every land cell to see if it can step off the grid: O((m*n)^2).\n    m, n = len(grid), len(grid[0])\n    count = 0\n    for sr in range(m):\n        for sc in range(n):\n            if grid[sr][sc] != 1:\n                continue\n            seen, stack, escapes = {(sr, sc)}, [(sr, sc)], False\n            while stack and not escapes:\n                r, c = stack.pop()\n                for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):\n                    if not (0 <= nr < m and 0 <= nc < n):\n                        escapes = True\n                    elif grid[nr][nc] == 1 and (nr, nc) not in seen:\n                        seen.add((nr, nc))\n                        stack.append((nr, nc))\n            count += not escapes\n    return count"
+  },
+  "optimization": "The redundancy is asking the same reachability question once per cell of an island. Reverse it: instead of asking whether each cell can reach the border, ask which cells the border can reach. Land paths are undirected, so flood fill from every border land cell and sink everything it touches. The land that remains is exactly the enclaves. Each cell is sunk at most once, O(m*n). This is the user's original approach, with an explicit stack instead of recursion.",
+  "intuition": "A land cell can escape if and only if its island touches the border. Sink every border-touching island in one sweep that starts from the edge cells, then count the land still standing. The count is per cell, not per island.",
+  "geometric": "Picture the sea rising from outside the frame: it pours in through every border land cell and floods that whole island. Islands completely surrounded by inner water stay dry, and the dry cells are the answer.",
+  "visual": "grid       seeds (*)   after sinking\n0 0 0 0    0 0 0 0     0 0 0 0\n1 0 1 0    * 0 1 0     0 0 1 0\n0 1 1 0    0 1 1 0     0 1 1 0\n0 0 0 0    0 0 0 0     0 0 0 0\nstack = [(1,0)] -> sink it; no land neighbours\nremaining 1s: (1,2) (2,1) (2,2) -> answer 3",
+  "steps": [
+   "Push every border cell that is land.",
+   "Pop a cell; if it is in bounds and still land, set it to 0 and push its 4 neighbours.",
+   "When the stack is empty, return the number of remaining 1s."
+  ],
+  "complexity": {
+   "time": "O(m*n)",
+   "space": "O(m*n)",
+   "why": "Every cell is sunk at most once and the grid is scanned twice."
+  },
+  "pitfalls": [
+   "Counting enclosed islands instead of enclosed cells.",
+   "Recursive DFS overflowing the stack on a 500x500 grid.",
+   "Seeding only two borders instead of all four."
+  ],
+  "hints": [
+   "Which land cells can definitely walk off the grid?",
+   "Escape is symmetric: a cell escapes iff it is connected to a border land cell.",
+   "Flood fill from every border land cell and sink what you reach; count the 1s left."
+  ],
+  "code": "class Solution:\n    def numEnclaves(self, grid: List[List[int]]) -> int:\n        m, n = len(grid), len(grid[0])\n        stack = [(r, c) for r in range(m) for c in range(n)\n                 if (r in (0, m - 1) or c in (0, n - 1)) and grid[r][c] == 1]\n        while stack:  # sink everything the border can reach\n            r, c = stack.pop()\n            if 0 <= r < m and 0 <= c < n and grid[r][c] == 1:\n                grid[r][c] = 0\n                stack.extend(((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)))\n        return sum(map(sum, grid))",
+  "related": [
+   "surrounded_regions",
+   "pacific_atlantic_water_flow",
+   "number_of_islands",
+   "flood_fill"
+  ]
+ },
+ {
+  "slug": "integer_replacement",
+  "title": "Integer Replacement",
+  "leetcode": 397,
+  "difficulty": "Medium",
+  "topic": "bit_manipulation",
+  "pattern": "Greedy on the low bits",
+  "file": "bit_manipulation/integer_replacement.py",
+  "problem": "Given a positive integer n, one step replaces an even n with n / 2 and an odd n with n + 1 or n - 1. Return the minimum number of steps to reach 1. Example: 8 -> 3 (8, 4, 2, 1); 7 -> 4 (7, 8, 4, 2, 1).",
+  "brute_force": {
+   "approach": "Recursion that tries both moves at every odd number (the user's original solution): f(even) = 1 + f(n/2), f(odd) = 1 + min(f(n+1), f(n-1)). Each odd level doubles the branches, about 2^(log2 n) = O(n) calls, and the branches re-solve neighbouring values that overlap one level down.",
+   "time": "O(n)",
+   "space": "O(log n)",
+   "code": "def brute_force(n: int) -> int:\n    # Try both moves at every odd number (exponential-shaped recursion tree).\n    if n <= 1:\n        return 0\n    if n % 2 == 0:\n        return 1 + brute_force(n // 2)\n    return 1 + min(brute_force(n + 1), brute_force(n - 1))"
+  },
+  "optimization": "The redundancy is exploring both branches at every odd n. In binary, halving drops the last bit, so the cost is driven by how many 1-bits must be cleared. For odd n look at the low two bits: 01 means n - 1 gives ...00 and two free halvings, while 11 means n + 1 carries through the whole run of 1s and collapses it to a single 1. So the choice is forced: subtract when n & 3 == 1, add when n & 3 == 3, except n == 3 where subtracting is shorter. Every add or subtract is followed by a halving, so O(log n) time and O(1) space.",
+  "intuition": "You want n to become a power of two quickly. A trailing run of 1s is expensive; adding 1 to ...0111 turns it into ...1000, wiping several 1-bits in one step. A lone trailing 1 (...01) is cheaper to subtract. The only case where the carry does not pay off is 3 = 11b, since 3 -> 2 -> 1 is shorter than 3 -> 4 -> 2 -> 1.",
+  "geometric": "Read n as a bit string and consume it from the right. A trailing 0 costs one shift. A trailing 1 is either chipped off (pattern 01) or turned into a carry that ripples left through a block of 1s (pattern 11), erasing the block in one move.",
+  "visual": "n    binary   low 2  move           path\n15   1111     11     +1 (carry)     16\n16   10000    00     >>1 four times 8 4 2 1\n                     15 -> 5 steps\n9    1001     01     -1             8 4 2 1\n                     9  -> 4 steps\n3    11       11     exception: -1  2 1 (2 steps)\nbrute force at 7: tries 8 AND 6, both re-solve 4/3",
+  "steps": [
+   "While n > 1, if n is even shift right.",
+   "Else if n == 3 or n & 3 == 1, subtract 1.",
+   "Otherwise add 1.",
+   "Count every step and return the count."
+  ],
+  "complexity": {
+   "time": "O(log n)",
+   "space": "O(1)",
+   "why": "The bit length shrinks by at least one every two steps."
+  },
+  "pitfalls": [
+   "Forgetting the n == 3 exception.",
+   "Using n / 2 in Python, which produces floats.",
+   "In fixed-width languages, n + 1 overflows at 2^31 - 1; use a wider type."
+  ],
+  "hints": [
+   "Think about n in binary. What does halving do to the bit string?",
+   "For odd n, compare what n + 1 and n - 1 do to the last two bits.",
+   "If the low two bits are 11, add 1 (except for n == 3); if they are 01, subtract 1; shift when even."
+  ],
+  "code": "class Solution:\n    def integerReplacement(self, n: int) -> int:\n        steps = 0\n        while n > 1:\n            if n & 1 == 0:\n                n >>= 1\n            elif n == 3 or n & 3 == 1:  # ...01: subtract; 3 is the lone exception\n                n -= 1\n            else:                       # ...11: add, carry clears the run of 1s\n                n += 1\n            steps += 1\n        return steps",
+  "related": [
+   "number_of_1_bits",
+   "counting_bits",
+   "single_number"
+  ]
+ },
+ {
+  "slug": "counting_bits",
+  "title": "Counting Bits",
+  "leetcode": 338,
+  "difficulty": "Easy",
+  "topic": "bit_manipulation",
+  "pattern": "Reuse the count of i >> 1",
+  "file": "bit_manipulation/counting_bits.py",
+  "problem": "Given n, return an array ans of length n + 1 where ans[i] is the number of 1-bits in the binary form of i. Example: n = 5 -> [0,1,1,2,1,2] for 0, 1, 10, 11, 100, 101.",
+  "brute_force": {
+   "approach": "Popcount every i on its own by testing all 32 bit positions (the user's original solution). That is O(32 * n). The waste is that the upper bits of i are exactly the bits of i >> 1, whose count was computed a moment earlier and is now recounted.",
+   "time": "O(n log U)",
+   "space": "O(1)",
+   "code": "def brute_force(n: int) -> List[int]:\n    # Test all 32 bit positions of every number: O(32 * n).\n    result = []\n    for num in range(n + 1):\n        result.append(sum(1 for b in range(32) if num & (1 << b)))\n    return result"
+  },
+  "optimization": "The redundancy is recounting the high bits of i. Shifting right drops only the lowest bit, so popcount(i) = popcount(i >> 1) + (i & 1). Since i >> 1 < i, that count is already in the output array when the loop reaches i. One left-to-right pass fills the array with a shift, an AND and an add per entry: O(n) time.",
+  "intuition": "Every number is its half with one extra bit appended on the right. Its 1-bit count is its half's count, plus one if the appended bit is 1. Fill the table in increasing order so the half is always ready.",
+  "geometric": "Lay the numbers out as an implicit binary tree where i's parent is i >> 1 and the left/right child appends a 0/1. Each node's count is its parent's count plus the label on the edge, filled in level by level.",
+  "visual": "i  bin   i>>1  bits[i>>1] + (i&1) = bits[i]\n0  000    -        -                  0\n1  001    0        0  +  1            1\n2  010    1        1  +  0            1\n3  011    1        1  +  1            2\n4  100    2        1  +  0            1\n5  101    2        1  +  1            2\n6  110    3        2  +  0            2\n7  111    3        2  +  1            3",
+  "steps": [
+   "Create bits = [0] * (n + 1).",
+   "For i from 1 to n, set bits[i] = bits[i >> 1] + (i & 1).",
+   "Return bits."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)",
+   "why": "Constant work per entry; only the output array is allocated."
+  },
+  "pitfalls": [
+   "Using bits[i - 1] + 1, which is wrong whenever i - 1 ends in 1s.",
+   "Returning n entries instead of n + 1.",
+   "Calling bin(i).count('1') is correct but still O(log i) per number."
+  ],
+  "hints": [
+   "How does the binary form of i relate to the binary form of i // 2?",
+   "Shifting right drops only the last bit; how many 1s does that remove?",
+   "bits[i] = bits[i >> 1] + (i & 1), filled from 1 to n."
+  ],
+  "code": "class Solution:\n    def countBits(self, n: int) -> List[int]:\n        bits = [0] * (n + 1)\n        for i in range(1, n + 1):\n            bits[i] = bits[i >> 1] + (i & 1)  # half's count + lowest bit\n        return bits",
+  "related": [
+   "number_of_1_bits",
+   "reverse_bits",
+   "missing_number",
+   "integer_replacement"
+  ]
+ },
+ {
+  "slug": "decode_ways",
+  "title": "Decode Ways",
+  "leetcode": 91,
+  "difficulty": "Medium",
+  "topic": "dynamic_programming",
+  "pattern": "1-D DP over prefixes (Fibonacci-style)",
+  "file": "dynamic_programming/decode_ways.py",
+  "problem": "Letters map to numbers 'A' -> \"1\" through 'Z' -> \"26\". Given a digit string s, return how many ways it can be decoded back into letters; a code with a leading zero such as \"06\" is invalid. Example: \"226\" -> 3 (2 2 6, 22 6, 2 26); \"06\" -> 0.",
+  "brute_force": {
+   "approach": "Recurse on the start index: ways(i) = ways(i+1) if s[i] is 1..9, plus ways(i+2) if s[i:i+2] is 10..26, with ways(n) = 1. Two branches per call give a Fibonacci-shaped tree, about 1.6^n calls. The waste is that ways(i+2) is solved once directly and again inside ways(i+1).",
+   "time": "O(1.6^n)",
+   "space": "O(n)",
+   "code": "def brute_force(s: str) -> int:\n    # ways(i) = decodings of s[i:]; tries a 1-digit and a 2-digit code: exponential.\n    def ways(i: int) -> int:\n        if i == len(s):\n            return 1\n        if s[i] == \"0\":\n            return 0\n        total = ways(i + 1)\n        if i + 1 < len(s) and int(s[i:i + 2]) <= 26:\n            total += ways(i + 2)\n        return total\n\n    return ways(0)"
+  },
+  "optimization": "Overlapping subproblems: ways(i) depends only on the suffix s[i:], and there are only n + 1 suffixes, yet the recursion evaluates each Fibonacci-many times. State: dp[i] = number of decodings of the prefix s[:i], with dp[0] = 1 for the empty prefix. Recurrence: dp[i] = dp[i-1] if s[i-1] != '0', plus dp[i-2] if s[i-2:i] is between 10 and 26. Evaluate i = 1..n left to right (the user's original table); since each cell reads only the two before it, two rolling variables replace the table for O(n) time and O(1) space.",
+  "intuition": "The last letter of any decoding uses either the last digit or the last two digits. So the count for a prefix is the count for the prefix one shorter (if the last digit is 1..9) plus the count for the prefix two shorter (if the last two digits form 10..26). Zeros are what make this interesting: a '0' can only be the second digit of 10 or 20.",
+  "geometric": "Picture the digits as stepping stones. You hop one stone (a single-digit code) or two stones (a two-digit code), and zeros or values over 26 forbid some hops. The answer counts the hop paths across, accumulated stone by stone like climbing stairs.",
+  "visual": "recursion on \"226\": w(i) = ways for s[i:]\n          w0\n        /    \\\n      w1      w2*      * = same subproblem,\n     /  \\      |         solved twice\n   w2*  w3    w3\ntable: dp[i] = ways for prefix s[:i]\ni      0    1    2    3\ns[:i]  \"\"   2    22   226\ndp     1    1    2    3\ndp[3] = dp[2] ('6' ok) + dp[1] ('26' ok) = 3",
+  "steps": [
+   "Set prev2 = 1 (empty prefix) and prev1 = 1 if s[0] != '0' else 0.",
+   "For i from 2 to n, cur = prev1 if s[i-1] != '0' else 0.",
+   "If 10 <= int(s[i-2:i]) <= 26, add prev2 to cur.",
+   "Shift: prev2, prev1 = prev1, cur; return prev1."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)",
+   "why": "One pass with two rolling counters."
+  },
+  "pitfalls": [
+   "A '0' can only be decoded as part of 10 or 20; \"30\" makes the count 0.",
+   "Treating \"06\" as a valid two-digit code.",
+   "Forgetting that a leading '0' makes the whole answer 0."
+  ],
+  "hints": [
+   "How can the last letter of a decoding be formed from the end of the string?",
+   "The count for a prefix depends only on the counts for the prefixes one and two characters shorter.",
+   "dp[i] = (s[i-1] != '0') * dp[i-1] + (10 <= s[i-2:i] <= 26) * dp[i-2]; keep two rolling values."
+  ],
+  "code": "class Solution:\n    def numDecodings(self, s: str) -> int:\n        prev2, prev1 = 1, 1 if s[0] != \"0\" else 0  # dp[i-2], dp[i-1]\n        for i in range(2, len(s) + 1):\n            cur = prev1 if s[i - 1] != \"0\" else 0\n            if 10 <= int(s[i - 2:i]) <= 26:\n                cur += prev2\n            prev2, prev1 = prev1, cur\n        return prev1",
+  "related": [
+   "min_cost_climbing_stairs",
+   "house_robber",
+   "letter_combinations_of_a_phone_number"
+  ]
+ },
+ {
+  "slug": "longest_increasing_subsequence",
+  "title": "Longest Increasing Subsequence",
+  "leetcode": 300,
+  "difficulty": "Medium",
+  "topic": "dynamic_programming",
+  "pattern": "Patience sorting (tails array + binary search)",
+  "file": "dynamic_programming/longest_increasing_subsequence.py",
+  "problem": "Given an integer array nums, return the length of the longest strictly increasing subsequence, where a subsequence keeps the original order but may skip elements. Example: [10,9,2,5,3,7,101,18] -> 4 (for instance 2, 3, 7, 101); [7,7,7] -> 1.",
+  "brute_force": {
+   "approach": "Recurse over (i, prev): at index i either skip nums[i] or take it if it is larger than nums[prev]. That enumerates all 2^n subsequences. The waste is that the best continuation from index i after a given last-taken element is recomputed for every path that arrives there.",
+   "time": "O(2^n)",
+   "space": "O(n)",
+   "code": "def brute_force(nums: List[int]) -> int:\n    # Take-or-skip recursion over every subsequence: O(2^n).\n    def best(i: int, prev: int) -> int:\n        if i == len(nums):\n            return 0\n        skip = best(i + 1, prev)\n        if prev == -1 or nums[i] > nums[prev]:\n            return max(skip, 1 + best(i + 1, i))\n        return skip\n\n    return best(0, -1)"
+  },
+  "optimization": "Step 1, O(2^n) -> O(n^2) (the user's original DP): the longest increasing subsequence ending at index i is the same no matter how it was reached, so define dp[i] = LIS length ending exactly at nums[i], with dp[i] = 1 + max(dp[j] for j < i with nums[j] < nums[i]), filled left to right; the answer is max(dp). Step 2, O(n^2) -> O(n log n): the redundancy is the linear scan over all j < i. For each length L we only need the smallest possible tail of an increasing subsequence of that length, because a smaller tail is never worse. These tails are strictly increasing, so binary-search the first tail >= x and overwrite it, or append x if it beats every tail; len(tails) is the answer.",
+  "intuition": "tails[L-1] is the lowest value that any increasing subsequence of length L can end on so far. A new x either extends the longest one (it is bigger than every tail) or lowers some tail, which makes future extensions easier. The tails array is not itself an LIS; only its length is meaningful.",
+  "geometric": "Patience solitaire: deal the numbers left to right and put each on the leftmost pile whose top is >= it, or start a new pile on the right. Pile tops increase from left to right, so placing a card is a binary search, and the number of piles equals the LIS length.",
+  "visual": "nums: 10  9  2  5  3  7  101  18\nO(n^2) dp[i] = LIS ending at i:\ndp:    1  1  1  2  2  3   4    4\npatience: tails = smallest tail per length\nx=10   [10]\nx=9    [9]            9 replaces 10\nx=2    [2]\nx=5    [2, 5]         append\nx=3    [2, 3]         3 lowers the tail 5\nx=7    [2, 3, 7]\nx=101  [2, 3, 7, 101]\nx=18   [2, 3, 7, 18]  len(tails) = 4",
+  "steps": [
+   "Start with an empty tails list.",
+   "For each x, find i = bisect_left(tails, x).",
+   "If i == len(tails), append x; otherwise set tails[i] = x.",
+   "Return len(tails)."
+  ],
+  "complexity": {
+   "time": "O(n log n)",
+   "space": "O(n)",
+   "why": "One binary search per element over a tails array of length at most n."
+  },
+  "pitfalls": [
+   "Using bisect_right, which allows equal values (non-strict LIS).",
+   "Treating tails as the actual subsequence.",
+   "In the O(n^2) DP, comparing only with j = i - 1 instead of every j < i."
+  ],
+  "hints": [
+   "Define a subproblem around where an increasing subsequence ends.",
+   "For each possible length, which tail value is the most useful to remember?",
+   "Keep the smallest tail for each length in a sorted list and binary-search where each new number goes."
+  ],
+  "code": "class Solution:\n    def lengthOfLIS(self, nums: List[int]) -> int:\n        tails = []  # tails[L-1] = smallest tail of an increasing run of length L\n        for x in nums:\n            i = bisect_left(tails, x)  # first tail >= x (strictly increasing)\n            if i == len(tails):\n                tails.append(x)\n            else:\n                tails[i] = x\n        return len(tails)",
+  "related": [
+   "longest_common_subsequence",
+   "count_of_smaller_numbers_after_self"
+  ]
+ },
+ {
+  "slug": "min_cost_climbing_stairs",
+  "title": "Min Cost Climbing Stairs",
+  "leetcode": 746,
+  "difficulty": "Easy",
+  "topic": "dynamic_programming",
+  "pattern": "1-D DP over prefixes (Fibonacci-style)",
+  "file": "dynamic_programming/min_cost_climbing_stairs.py",
+  "problem": "cost[i] is the price of stepping on stair i; after paying you may climb one or two stairs, and you may start on stair 0 or 1. Return the minimum cost to reach the top, one position past the last stair. Example: [10,15,20] -> 15 (start on stair 1, pay 15, jump two to the top).",
+  "brute_force": {
+   "approach": "Recurse: f(i) = cost[i] + min(f(i+1), f(i+2)) is the cheapest way from stair i to the top, with f(i) = 0 for i >= n, and the answer is min(f(0), f(1)). Two branches per call give a Fibonacci-shaped tree. The waste is that f(i+2) is solved directly and again inside f(i+1).",
+   "time": "O(1.6^n)",
+   "space": "O(n)",
+   "code": "def brute_force(cost: List[int]) -> int:\n    # f(i) = cost from stair i to the top, trying both jumps: exponential.\n    def f(i: int) -> int:\n        if i >= len(cost):\n            return 0\n        return cost[i] + min(f(i + 1), f(i + 2))\n\n    return min(f(0), f(1))"
+  },
+  "optimization": "Overlapping subproblems: there are only n + 1 distinct positions but the recursion solves each one Fibonacci-many times. State: dp[i] = minimum cost to stand on position i, not yet having paid cost[i]; dp[0] = dp[1] = 0 because both are free starts. Recurrence: dp[i] = min(dp[i-1] + cost[i-1], dp[i-2] + cost[i-2]). Evaluate i = 2..n left to right (the user's original table) and return dp[n]; since each cell reads only the two before it, keep two rolling values for O(1) space.",
+  "intuition": "To arrive at position i you came either from i - 1 and paid for it, or from i - 2 and paid for it. Take the cheaper arrival and repeat up to the top. Starting on stair 0 or 1 is free, which is why both base values are 0.",
+  "geometric": "Picture a staircase with a price tag on each step. Two running totals ride up the stairs side by side: the cheapest way to stand one step below and two steps below. Each new step looks back at just those two.",
+  "visual": "cost:   10   15   20   top\nindex:   0    1    2    3\ndp[i] = cheapest cost to stand on i (unpaid)\ndp[0] = 0      dp[1] = 0\ndp[2] = min(dp[1]+15, dp[0]+10) = 10\ndp[3] = min(dp[2]+20, dp[1]+15) = 15  <- answer\nrecursion: f(0) -> f(1), f(2)\n           f(1) -> f(2)*, f(3)   * f(2) solved twice",
+  "steps": [
+   "Set a = b = 0 (dp values for the two previous positions).",
+   "For i from 2 to n, compute min(b + cost[i-1], a + cost[i-2]).",
+   "Shift: a, b = b, new value.",
+   "Return b, the cost to stand on the top."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)",
+   "why": "One pass with two rolling values."
+  },
+  "pitfalls": [
+   "The top is position n, not n - 1.",
+   "Charging for the starting stair; both stair 0 and stair 1 are free starts.",
+   "Mixing the two conventions (pay when leaving vs pay when landing)."
+  ],
+  "hints": [
+   "How could you have arrived at the top, or at any step?",
+   "The cheapest way to stand on step i depends only on steps i - 1 and i - 2.",
+   "dp[i] = min(dp[i-1] + cost[i-1], dp[i-2] + cost[i-2]) with dp[0] = dp[1] = 0; keep two variables."
+  ],
+  "code": "class Solution:\n    def minCostClimbingStairs(self, cost: List[int]) -> int:\n        a = b = 0  # dp[i-2], dp[i-1]: cheapest cost to stand on those positions\n        for i in range(2, len(cost) + 1):\n            a, b = b, min(b + cost[i - 1], a + cost[i - 2])\n        return b",
+  "related": [
+   "house_robber",
+   "decode_ways",
+   "jump_game"
+  ]
+ },
+ {
+  "slug": "partition_equal_subset_sum",
+  "title": "Partition Equal Subset Sum",
+  "leetcode": 416,
+  "difficulty": "Medium",
+  "topic": "dynamic_programming",
+  "pattern": "0/1 knapsack reachability (bitset)",
+  "file": "dynamic_programming/partition_equal_subset_sum.py",
+  "problem": "Given an array of positive integers, decide whether it can be split into two subsets with equal sums. Example: [1,5,11,5] -> true ([1,5,5] and [11]); [1,2,3,5] -> false because the total 11 is odd.",
+  "brute_force": {
+   "approach": "The total must be even; then look for a subset summing to target = total / 2 by recursing can(i, t): take nums[i] (t - nums[i]) or skip it. That explores all 2^n subsets. The waste is that many take/skip histories reach the same (index, remaining) pair and re-explore the identical suffix.",
+   "time": "O(2^n)",
+   "space": "O(n)",
+   "code": "def brute_force(nums: List[int]) -> bool:\n    # Take-or-skip every element looking for a subset summing to half: O(2^n).\n    total = sum(nums)\n    if total % 2:\n        return False\n\n    def can(i: int, t: int) -> bool:\n        if t == 0:\n            return True\n        if i == len(nums) or t < 0:\n            return False\n        return can(i + 1, t - nums[i]) or can(i + 1, t)\n\n    return can(0, total // 2)"
+  },
+  "optimization": "Overlapping subproblems: can(i, t) depends only on i and t, so there are just n * (target + 1) distinct states (the user's original memo table had exactly that shape). State: reach_i = the set of sums achievable with the first i numbers, reach_0 = {0}. Recurrence: reach_{i+1} = reach_i union {s + nums[i] : s in reach_i}. Each row depends only on the previous one, so one 1-D boolean row suffices; store it as the bits of a single Python int, and reach |= reach << x performs the whole row update at once. The answer is whether bit target is set, for O(n * total / 64) time.",
+  "intuition": "You do not care which subset makes a sum, only whether that sum is possible. Track the set of possible sums: adding a number x copies every possible sum shifted up by x and unions it in. If target becomes possible, the remaining numbers form the other half automatically.",
+  "geometric": "Picture a strip of bulbs numbered 0..total with only bulb 0 lit. Each number x copies the lit pattern, slides the copy x places right and overlays it. At the end check whether the bulb at total / 2 is lit.",
+  "visual": "nums=[1,5,11,5]  total=22  target=11\nbit:          0 1 2 3 4 5 6 7 8 9 10 11\nstart         1 . . . . . . . . .  .  .\nx=1 |= <<1    1 1 . . . . . . . .  .  .\nx=5 |= <<5    1 1 . . . 1 1 . . .  .  .\nx=11 |= <<11  1 1 . . . 1 1 . . .  .  1\nx=5 |= <<5    1 1 . . . 1 1 . . .  1  1\nbit 11 is lit -> true   {11} vs {1,5,5}",
+  "steps": [
+   "Compute total; if it is odd return false.",
+   "Start with reach = 1 (only sum 0 is reachable).",
+   "For each x, update reach |= reach << x.",
+   "Return whether bit total // 2 of reach is set."
+  ],
+  "complexity": {
+   "time": "O(n * total / 64)",
+   "space": "O(total) bits",
+   "why": "One big-integer shift-or per number over a total-bit row."
+  },
+  "pitfalls": [
+   "Skipping the odd-total early exit.",
+   "In the boolean-array version, iterating t upward lets one number be used twice.",
+   "In the memo version, forgetting the remaining < 0 guard."
+  ],
+  "hints": [
+   "If the total is S, what sum must one of the two subsets have?",
+   "You only need to know which subset sums are reachable, not which elements make them.",
+   "Keep the reachable sums as bits of an int: reach |= reach << x for each x, then test bit S/2."
+  ],
+  "code": "class Solution:\n    def canPartition(self, nums: List[int]) -> bool:\n        total = sum(nums)\n        if total % 2:\n            return False\n        reach = 1  # bit s set <=> some subset sums to s\n        for x in nums:\n            reach |= reach << x\n        return (reach >> (total // 2)) & 1 == 1",
+  "related": [
+   "target_sum",
+   "subsets",
+   "combination_sum_ii"
+  ]
+ },
+ {
+  "slug": "coin_change",
+  "title": "Coin Change",
+  "leetcode": 322,
+  "difficulty": "Medium",
+  "topic": "dynamic_programming",
+  "pattern": "Unbounded knapsack (min coins per amount)",
+  "file": "dynamic_programming/coin_change.py",
+  "problem": "Given coin denominations with an unlimited supply of each and an amount, return the fewest coins that add up to the amount, or -1 if it cannot be made. Example: coins=[1,2,5], amount=11 -> 3 (5+5+1); coins=[2], amount=3 -> -1; amount=0 -> 0.",
+  "brute_force": {
+   "approach": "Recurse on the remaining amount: f(a) = 1 + min(f(a - c) for each coin c <= a), with f(0) = 0. The tree branches k ways per level and can be amount levels deep, so it is exponential. The waste is that the same remaining amount, such as 6 after 5 or after 2+2+1, is re-solved along every path that reaches it.",
+   "time": "O(k^amount)",
+   "space": "O(amount)",
+   "code": "def brute_force(coins: List[int], amount: int) -> int:\n    # Try every coin as the next coin, recursively: exponential.\n    def f(a: int) -> float:\n        if a == 0:\n            return 0\n        return min((1 + f(a - c) for c in coins if c <= a), default=float(\"inf\"))\n\n    best = f(amount)\n    return -1 if best == float(\"inf\") else best"
+  },
+  "optimization": "Overlapping subproblems: f(a) depends only on the remaining amount, so there are just amount + 1 distinct subproblems (the user's original memo dict cached exactly these). State: dp[a] = fewest coins summing to exactly a, infinity if impossible, dp[0] = 0. Recurrence: dp[a] = 1 + min(dp[a - c] for c in coins if c <= a). Evaluate a = 1..amount in increasing order so every dp[a - c] is final before it is read; this turns the top-down memo into a loop with no recursion limit, O(amount * k) time and O(amount) space.",
+  "intuition": "Whatever the optimal set of coins is, it has some last coin c, and the rest must be an optimal answer for a - c. So try every possible last coin and keep the best. Greedy largest-coin-first is not safe for arbitrary denominations, which is why every coin must be tried.",
+  "geometric": "Picture the number line 0..amount where every coin is a forward jump. dp[a] is the fewest jumps from 0 to a, a shortest-path problem on a line, filled left to right because every jump goes rightward.",
+  "visual": "coins = [1,2,5]   dp[a] = fewest coins for a\na :  0 1 2 3 4 5 6 7 8 9 10 11\ndp:  0 1 1 2 2 1 2 2 3 3  2  3\ndp[11] = 1 + min(dp[10], dp[9], dp[6])\n       = 1 + min(2, 3, 2) = 3\nrecursion f(11) -> f(10), f(9), f(6)\n          f(10) -> f(9)*, f(8), f(5)\n          f(9)  -> f(8)*, f(7), f(4)\n* = subproblem already being solved elsewhere",
+  "steps": [
+   "Create dp = [0] + [amount + 1] * amount (amount + 1 acts as infinity).",
+   "For a from 1 to amount, for each coin c <= a, set dp[a] = min(dp[a], dp[a - c] + 1).",
+   "Return dp[amount] if it is below amount + 1, else -1."
+  ],
+  "complexity": {
+   "time": "O(amount * k)",
+   "space": "O(amount)",
+   "why": "k transitions for each of amount + 1 states."
+  },
+  "pitfalls": [
+   "Greedy largest-coin-first fails, e.g. coins [1,3,4], amount 6 is 3+3, not 4+1+1.",
+   "Returning the infinity sentinel instead of -1.",
+   "amount == 0 must return 0, not -1."
+  ],
+  "hints": [
+   "Think about the last coin used in an optimal answer.",
+   "The fewest coins for amount a depends only on the fewest coins for smaller amounts.",
+   "dp[a] = 1 + min(dp[a - c]) over coins c <= a, filled from a = 1 upward; -1 if still infinite."
+  ],
+  "code": "class Solution:\n    def coinChange(self, coins: List[int], amount: int) -> int:\n        inf = amount + 1  # more coins than could ever be needed\n        dp = [0] + [inf] * amount\n        for a in range(1, amount + 1):\n            for c in coins:\n                if c <= a and dp[a - c] + 1 < dp[a]:\n                    dp[a] = dp[a - c] + 1  # c is the last coin used\n        return dp[amount] if dp[amount] < inf else -1",
+  "related": [
+   "combination_sum",
+   "partition_equal_subset_sum",
+   "minimum_number_of_refueling_stops"
+  ]
+ },
+ {
+  "slug": "house_robber",
+  "title": "House Robber",
+  "leetcode": 198,
+  "difficulty": "Medium",
+  "topic": "dynamic_programming",
+  "pattern": "1-D DP over prefixes (Fibonacci-style)",
+  "file": "dynamic_programming/house_robber.py",
+  "problem": "Houses in a row hold nums[i] money, and you cannot rob two adjacent houses. Return the most money you can rob. Example: [1,2,3,1] -> 4 (houses 0 and 2); [2,7,9,3,1] -> 12 (houses 0, 2 and 4).",
+  "brute_force": {
+   "approach": "Recurse: best(i) = max(best(i+1), nums[i] + best(i+2)), with best(i) = 0 past the end. Two branches per house give a Fibonacci-shaped tree. The waste is that best(i+2) is solved on the take branch and again inside the skip branch's best(i+1).",
+   "time": "O(1.6^n)",
+   "space": "O(n)",
+   "code": "def brute_force(nums: List[int]) -> int:\n    # Rob-or-skip recursion at every house: exponential.\n    def best(i: int) -> int:\n        if i >= len(nums):\n            return 0\n        return max(best(i + 1), nums[i] + best(i + 2))\n\n    return best(0)"
+  },
+  "optimization": "Overlapping subproblems: best(i) depends only on i (the user's original memo keyed on (i, canRob), which carries the same information), so there are only n distinct subproblems. State: dp[i] = the most money from the first i houses. Recurrence: dp[i] = max(dp[i-1], dp[i-2] + nums[i-1]), meaning skip house i-1 or rob it and fall back to the best from two houses earlier, with dp[0] = 0. Evaluate left to right; each cell reads only the two before it, so two rolling values give O(n) time and O(1) space.",
+  "intuition": "At each house the only decision is rob or skip. Robbing forces the neighbour to be skipped, so it pairs with the best total from two houses back; skipping inherits the best total from one house back. Keep the better of the two as you sweep.",
+  "geometric": "Picture two running totals walking down the street: the best up to the previous house and the best up to the house before that. At each new house the new best is either the first total, or the second total plus this house's money.",
+  "visual": "nums:  2    7    9    3    1\n          prev2 / prev1   new prev1\nx=2  ->    0 / 2         max(0, 0+2)\nx=7  ->    2 / 7         max(2, 0+7)\nx=9  ->    7 / 11        max(7, 2+9)\nx=3  ->   11 / 11        max(11, 7+3)\nx=1  ->   11 / 12        max(11, 11+1)\nanswer 12 = 2 + 9 + 1",
+  "steps": [
+   "Set prev2 = prev1 = 0.",
+   "For each x, compute max(prev1, prev2 + x).",
+   "Shift: prev2, prev1 = prev1, new value.",
+   "Return prev1."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(1)",
+   "why": "One pass with two rolling values."
+  },
+  "pitfalls": [
+   "Greedy odd-vs-even index sums fail on [2,1,1,2] (answer 4).",
+   "Overwriting prev1 before copying it into prev2.",
+   "Mishandling a single-house input."
+  ],
+  "hints": [
+   "At each house you choose rob or skip. What does each choice force?",
+   "The best total up to house i depends only on the best totals up to i - 1 and i - 2.",
+   "best = max(prev1, prev2 + x) for each x, shifting the two rolling values."
+  ],
+  "code": "class Solution:\n    def rob(self, nums: List[int]) -> int:\n        prev2 = prev1 = 0  # best loot up to house i-2, i-1\n        for x in nums:\n            prev2, prev1 = prev1, max(prev1, prev2 + x)\n        return prev1",
+  "related": [
+   "min_cost_climbing_stairs",
+   "decode_ways",
+   "maximum_subarray"
+  ]
+ },
+ {
+  "slug": "longest_common_subsequence",
+  "title": "Longest Common Subsequence",
+  "leetcode": 1143,
+  "difficulty": "Medium",
+  "topic": "dynamic_programming",
+  "pattern": "2-D DP over two prefixes",
+  "file": "dynamic_programming/longest_common_subsequence.py",
+  "problem": "Given two strings text1 and text2, return the length of their longest common subsequence, a sequence of characters appearing in both in the same order but not necessarily contiguously. Example: \"abcde\" and \"ace\" -> 3 (\"ace\"); \"abc\" and \"def\" -> 0.",
+  "brute_force": {
+   "approach": "Recurse on prefix lengths: lcs(i, j) = 1 + lcs(i-1, j-1) if the last characters match, else max(lcs(i-1, j), lcs(i, j-1)). Mismatches branch twice, so the tree can have about 2^(m+n) nodes. The waste is that lcs(i-1, j-1) is reached from both lcs(i-1, j) and lcs(i, j-1), and so on all the way down.",
+   "time": "O(2^(m+n))",
+   "space": "O(m+n)",
+   "code": "def brute_force(text1: str, text2: str) -> int:\n    # Match-or-drop-one recursion on the last characters: exponential.\n    def lcs(i: int, j: int) -> int:\n        if i == 0 or j == 0:\n            return 0\n        if text1[i - 1] == text2[j - 1]:\n            return 1 + lcs(i - 1, j - 1)\n        return max(lcs(i - 1, j), lcs(i, j - 1))\n\n    return lcs(len(text1), len(text2))"
+  },
+  "optimization": "Overlapping subproblems: lcs(i, j) depends only on the pair of prefix lengths, so there are only (m+1)(n+1) distinct states (the user's original memo dict cached these). State: dp[i][j] = LCS length of text1[:i] and text2[:j]. Recurrence: dp[i][j] = dp[i-1][j-1] + 1 on a match, else max(dp[i-1][j], dp[i][j-1]). Fill rows top to bottom and columns left to right so up, left and up-left are ready. Each row reads only the previous row, so keep two rows over the shorter string: O(m*n) time, O(min(m, n)) space.",
+  "intuition": "Look at the last character of each prefix. If they match, that character can end the LCS, so take it and shrink both prefixes. If they differ, at least one of them is not used, so drop one or the other and keep the better result.",
+  "geometric": "Draw a grid with text1 down the side and text2 across the top. Each cell looks up, left, or diagonally up-left; matches are diagonal steps that add 1. The answer sits in the bottom-right corner, and the LCS itself is the staircase of diagonal moves.",
+  "visual": "       \"\"  a  c  e\n   \"\"   0  0  0  0\n   a    0  1  1  1    match: diag + 1\n   b    0  1  1  1    else: max(up, left)\n   c    0  1  2  2\n   d    0  1  2  2\n   e    0  1  2  3  <- answer\nonly the row above is read: keep prev and cur\nlcs(4,2) and lcs(5,1) both call lcs(4,1): repeat",
+  "steps": [
+   "Swap so text2 is the shorter string; set prev = [0] * (len(text2) + 1).",
+   "For each character a of text1, build cur with cur[0] = 0.",
+   "For each j, cur[j] = prev[j-1] + 1 if a == text2[j-1] else max(prev[j], cur[j-1]).",
+   "Set prev = cur; after all rows return prev[-1]."
+  ],
+  "complexity": {
+   "time": "O(m*n)",
+   "space": "O(min(m, n))",
+   "why": "Every cell is computed once and only two rows are stored."
+  },
+  "pitfalls": [
+   "Confusing subsequence with substring (substring resets to 0 on a mismatch).",
+   "Using a single row without saving the diagonal value before it is overwritten.",
+   "Off-by-one between prefix length i and character index i - 1."
+  ],
+  "hints": [
+   "Compare the last characters of the two strings. What happens if they match, and what if they do not?",
+   "The answer for two prefixes depends only on the answers for slightly shorter prefixes: up, left and diagonal.",
+   "dp[i][j] = dp[i-1][j-1] + 1 on a match, else max(dp[i-1][j], dp[i][j-1]); keep two rows."
+  ],
+  "code": "class Solution:\n    def longestCommonSubsequence(self, text1: str, text2: str) -> int:\n        if len(text2) > len(text1):\n            text1, text2 = text2, text1  # columns = shorter string\n        prev = [0] * (len(text2) + 1)\n        for a in text1:\n            cur = [0] * (len(text2) + 1)\n            for j, b in enumerate(text2, 1):\n                cur[j] = prev[j - 1] + 1 if a == b else max(prev[j], cur[j - 1])\n            prev = cur\n        return prev[-1]",
+  "related": [
+   "longest_increasing_subsequence",
+   "wildcard_matching",
+   "longest_palindromic_substring"
+  ]
+ },
+ {
+  "slug": "target_sum",
+  "title": "Target Sum",
+  "leetcode": 494,
+  "difficulty": "Medium",
+  "topic": "dynamic_programming",
+  "pattern": "Count ways per reachable sum",
+  "file": "dynamic_programming/target_sum.py",
+  "problem": "Put a '+' or '-' in front of every number in nums and evaluate the expression. Return how many sign assignments evaluate to target. Example: nums=[1,1,1,1,1], target=3 -> 5, since the single minus sign can go on any of the five 1s.",
+  "brute_force": {
+   "approach": "Recurse ways(i, s) = ways(i+1, s + nums[i]) + ways(i+1, s - nums[i]), counting 1 at the end when s == target. That enumerates all 2^n sign patterns. The waste is that many prefixes reach the same running sum at the same index (+1-1 and -1+1 both give 0), and each re-explores the identical suffix.",
+   "time": "O(2^n)",
+   "space": "O(n)",
+   "code": "def brute_force(nums: List[int], target: int) -> int:\n    # Try '+' and '-' on every number: O(2^n).\n    def ways(i: int, s: int) -> int:\n        if i == len(nums):\n            return 1 if s == target else 0\n        return ways(i + 1, s + nums[i]) + ways(i + 1, s - nums[i])\n\n    return ways(0, 0)"
+  },
+  "optimization": "Overlapping subproblems: the ways to finish depend only on (index, running sum), and the running sum lies in [-total, total], so there are at most n * (2*total + 1) states (the user's original memo dict was keyed on exactly this pair). State: after i numbers, counts[s] = number of sign patterns of nums[:i] with sum s, starting from {0: 1}. Recurrence: counts_next[s + x] += counts[s] and counts_next[s - x] += counts[s]. Process one number per layer, left to right; only the previous layer is needed, so keep one dict of reachable sums and return counts[target]. Paths that merge on the same sum collapse into one count: O(n * total) time, O(total) space.",
+  "intuition": "You never need to remember the signs, only where the running sum currently is and how many ways got there. Each number splits every reachable sum into two (s + x and s - x), and identical sums merge by adding their counts. The answer is the count stored at target after the last number.",
+  "geometric": "Picture a token starting at 0 on a number line with one row per number; each row moves the token left or right by x. Many paths land on the same point, so write the path count on each point instead of tracking paths; with all x = 1 this is Pascal's triangle. Read the count at target in the last row.",
+  "visual": "counts {sum: ways} after each number (all x = 1)\nstart  {0:1}\nx=1    {-1:1, 1:1}\nx=1    {-2:1, 0:2, 2:1}       +1-1 and -1+1 merge\nx=1    {-3:1, -1:3, 1:3, 3:1}\nx=1    {-4:1, -2:4, 0:6, 2:4, 4:1}\nx=1    {-5:1, -3:5, -1:10, 1:10, 3:5, 5:1}\nanswer counts[3] = 5    (Pascal's triangle)",
+  "steps": [
+   "Start with counts = {0: 1}.",
+   "For each x, build a new dict: for every (s, c), add c to nxt[s + x] and to nxt[s - x].",
+   "Replace counts with the new dict.",
+   "Return counts.get(target, 0)."
+  ],
+  "complexity": {
+   "time": "O(n * total)",
+   "space": "O(total)",
+   "why": "Each layer holds at most 2*total + 1 sums and each sum does two updates."
+  },
+  "pitfalls": [
+   "Zeros double the count, because +0 and -0 are different assignments.",
+   "If |target| > total the answer is simply 0.",
+   "The subset-sum rewrite P = (total + target) / 2 needs parity and non-negativity checks."
+  ],
+  "hints": [
+   "Does the order of signs matter, or only the running sum so far?",
+   "Group all sign prefixes by their running sum and keep a count per sum.",
+   "Layer by layer, counts[s + x] += c and counts[s - x] += c for every (s, c); answer counts[target]."
+  ],
+  "code": "class Solution:\n    def findTargetSumWays(self, nums: List[int], target: int) -> int:\n        counts = {0: 1}  # running sum -> number of sign patterns reaching it\n        for x in nums:\n            nxt = defaultdict(int)\n            for s, c in counts.items():\n                nxt[s + x] += c\n                nxt[s - x] += c\n            counts = nxt\n        return counts.get(target, 0)",
+  "related": [
+   "partition_equal_subset_sum",
+   "expression_add_operators",
+   "subsets"
+  ]
+ }
+]

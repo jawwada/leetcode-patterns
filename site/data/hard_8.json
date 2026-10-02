@@ -1,0 +1,579 @@
+[
+  {
+    "slug": "maximum_average_subarray_ii",
+    "title": "Maximum Average Subarray II",
+    "leetcode": 644,
+    "difficulty": "Hard",
+    "topic": "binary_search",
+    "pattern": "Binary search on the answer",
+    "file": "binary_search/maximum_average_subarray_ii.py",
+    "problem": "Given an integer array nums and an integer k, find a contiguous subarray of length at least k with the maximum average and return that average; any answer within 1e-5 of the true value is accepted. Example: nums = [1,12,-5,-6,50,3], k = 4 returns 12.75, the average of [12,-5,-6,50].",
+    "brute_force": {
+      "approach": "For every start i extend the end j to the right with a running sum, and whenever the length is at least k update best = max(best, sum / length). There are Theta(n^2) subarrays and every one is evaluated exactly, although the question 'does some subarray beat a threshold x' can be answered in a single linear pass.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int], k: int) -> float:\n    best = float(\"-inf\")\n    for i in range(len(nums)):\n        total = 0\n        for j in range(i, len(nums)):               # every subarray starting at i\n            total += nums[j]\n            if j - i + 1 >= k:\n                best = max(best, total / (j - i + 1))\n    return best"
+    },
+    "optimization": "The redundancy is computing the exact average of every subarray. Reframe as a decision: 'is there a subarray of length >= k with average >= x?' That predicate is monotone in x (if some subarray averages >= x it also averages >= anything smaller), so the answer is the T|F boundary over the real line and binary search pins it to 1e-5 in about 35 probes. Each probe must be linear: average >= x is equivalent to sum(nums[i] - x) >= 0, so shift every element by -x, take prefix sums P, and ask whether some P[j] is >= min(P[0..j-k]). Carrying the running minimum of the prefixes that lag by at least k answers that in O(n).",
+    "intuition": "Subtracting a candidate average x from every element turns 'average >= x' into 'sum >= 0', and 'max-sum subarray of length >= k' is a prefix-minimum sweep where the minimum is delayed by k positions. Wrap that O(n) yes/no check in a binary search over x between min(nums) and max(nums). The exact enumeration of Theta(n^2) subarrays disappears because we never need the best average, only whether a given average is reachable.",
+    "geometric": "Paint the real line from min(nums) to max(nums): x is T if some long-enough subarray averages at least x, F otherwise. The paint is a solid T block followed by a solid F block and lo/hi squeeze onto the boundary. Inside a probe, picture the prefix-sum curve of (nums[i] - x): the probe succeeds iff some point of the curve sits at or above a point at least k steps to its left.",
+    "visual": "nums = [1,12,-5,-6,50,3], k = 4    x in [-6, 50]\nx:      -6 ... 12  12.5  12.75 | 12.8 ... 50\ncan(x):  T ...  T    T     T   |  F   ...  F\n                     last T ^  ^ first F\nprobe x = 12.75: v - x, then prefix sums P\nv-x: -11.75 -0.75 -17.75 -18.75 37.25 -9.75\nP:  0 -11.75 -12.5 -30.25 -49 -11.75 -21.5\nj=4: P[4]=-49     min P[0..0]=0       -49 < 0\nj=5: P[5]=-11.75  min P[0..1]=-11.75  0 >= 0 -> T\n     i=1..j=5 is [12,-5,-6,50], average 12.75\nlo=-6 hi=50: mid=22 F -> hi=22 ; mid=8 T -> lo=8 ...",
+    "steps": [
+      "lo = min(nums), hi = max(nums); the answer lies in this interval.",
+      "can(x): P[0] = 0, P[j] = P[j-1] + nums[j-1] - x.",
+      "Sweep j from k to n keeping min_prefix = min(P[0..j-k]); return True if P[j] - min_prefix >= 0 for some j.",
+      "While hi - lo > 1e-6: mid = (lo + hi) / 2; if can(mid): lo = mid else hi = mid.",
+      "Return lo."
+    ],
+    "complexity": {
+      "time": "O(n log(R/eps))",
+      "space": "O(n)",
+      "why": "About 35 probes for R = max - min and eps = 1e-6, each an O(n) prefix sweep."
+    },
+    "pitfalls": [
+      "Taking the prefix minimum over all earlier prefixes instead of those at least k behind (violates the length constraint).",
+      "Using the integer 'lo < hi, mid+1' template on a real-valued answer; iterate on hi - lo > eps instead.",
+      "Comparing the running sum with x * length in floating point without the shift; subtracting x per element is the same test but simpler."
+    ],
+    "hints": [
+      "You do not need the best average, only to answer 'is an average of at least x achievable?'. Is that question monotone in x?",
+      "Subtract x from every element. 'Average >= x' becomes 'sum >= 0'. How do you find the max-sum subarray of length at least k in one pass?",
+      "Prefix sums of (v - x); for each j compare P[j] with the minimum of P[0..j-k]. Binary search x on the reals until hi - lo < 1e-6."
+    ],
+    "related": [
+      "koko_eating_bananas",
+      "maximum_subarray",
+      "minimum_size_subarray_sum"
+    ],
+    "code": "class Solution:\n    def findMaxAverage(self, nums: List[int], k: int) -> float:\n        def can(x: float) -> bool:\n            # exists subarray of length >= k with average >= x\n            # <=> exists j - i >= k with P[j] - P[i] >= 0 for P = prefix sums of (v - x)\n            prefix = [0.0]\n            for v in nums:\n                prefix.append(prefix[-1] + v - x)\n            min_prefix = 0.0                          # min of P[0..j-k]\n            for j in range(k, len(nums) + 1):\n                min_prefix = min(min_prefix, prefix[j - k])\n                if prefix[j] - min_prefix >= 0:\n                    return True\n            return False\n\n        lo, hi = float(min(nums)), float(max(nums))   # answer lies in [min, max]\n        while hi - lo > 1e-6:                         # shrink to the T|F boundary\n            mid = (lo + hi) / 2\n            if can(mid):\n                lo = mid                              # mid is achievable: look higher\n            else:\n                hi = mid                              # nobody reaches mid: look lower\n        return lo"
+  },
+  {
+    "slug": "find_in_mountain_array",
+    "title": "Find in Mountain Array",
+    "leetcode": 1095,
+    "difficulty": "Hard",
+    "topic": "binary_search",
+    "pattern": "Binary search on a hidden array (peak, then two sorted halves)",
+    "file": "binary_search/find_in_mountain_array.py",
+    "problem": "A mountain array strictly increases to one peak and then strictly decreases. You can only access it through MountainArray.get(i) and MountainArray.length(), and at most 100 get calls are allowed. Return the minimum index whose value equals target, or -1. Example: arr = [1,2,3,4,5,3,1], target = 3 returns 2 (index 5 also holds 3, but 2 is smaller).",
+    "brute_force": {
+      "approach": "Scan i = 0..n-1 with get(i) and return the first index holding target. This is O(n) get calls, but n can be 10^4 while only 100 calls are allowed, so it fails the budget. Every get reveals which slope we are on and whether we are above or below target, and a linear scan discards all of it.",
+      "time": "O(n)",
+      "space": "O(1)",
+      "code": "def brute_force(target: int, mountainArr: \"MountainArray\") -> int:\n    for i in range(mountainArr.length()):             # one get per index: O(n) calls\n        if mountainArr.get(i) == target:\n            return i\n    return -1"
+    },
+    "optimization": "The redundancy is probing indices whose answer the mountain shape already implies. A mountain is two sorted arrays glued at the peak, so once the peak is known each side admits an ordinary binary search. The peak is itself a binary-search target: the predicate get(i) < get(i+1) reads TTT...TFFF...F along the array, and the first F is the peak, found in log n probes. Search the ascending half [0, peak] first: it holds the smaller index, so a hit there is the answer. Otherwise search the descending half [peak+1, n-1] with the comparison direction flipped. Three binary searches cost about 3 log n <= 45 probes for n = 10^4, and a memo dict guarantees no index is fetched twice.",
+    "intuition": "Reduce an unfamiliar shape to sorted pieces you already know how to search. 'Where does the array stop climbing?' is a monotone yes/no question over indices, so binary search answers it; after that the problem is two textbook searches with opposite orientations. Searching the left half first is what returns the minimum index for free.",
+    "geometric": "Draw the values as a hill. The predicate arr[i] < arr[i+1] paints T up the left slope and F from the summit down the right slope; lo/hi squeeze onto the T|F boundary, which is the summit. The left slope is a sorted array read left to right and the right slope is a sorted array read right to left; binary search each with the matching orientation.",
+    "visual": "arr = [1,2,3,4,5,3,1]   target = 3\nidx:          0 1 2 3 4 5 6\nval:          1 2 3 4 5 3 1\na[i]<a[i+1]:  T T T T F F .    peak = first F = 4\n                      ^\nleft  [0..4] ascending:  1 2 3 4 5\n      lo=0 hi=4 mid=2 -> get(2)=3 == target -> 2\nright [5..6] descending: 3 1   (skipped: left hit)\nthree binary searches, ~3 log n get() calls <= 100",
+    "steps": [
+      "Wrap mountainArr.get in a dict cache so no index costs two calls.",
+      "Peak: lo = 0, hi = n-1; while lo < hi: mid; if get(mid) < get(mid+1): lo = mid + 1 else hi = mid.",
+      "Binary search [0, peak] in ascending order for target; if found return it (it is the smallest index).",
+      "Binary search [peak+1, n-1] in descending order (move left when get(mid) < target).",
+      "Return the found index or -1."
+    ],
+    "complexity": {
+      "time": "O(log n)",
+      "space": "O(log n)",
+      "why": "Three binary searches, each log n get calls; the cache stores only the probed indices."
+    },
+    "pitfalls": [
+      "Searching the descending side first can return the larger of two matching indices.",
+      "Comparing get(mid) with get(mid-1) in the peak search needs extra bounds checks; mid+1 is always valid when hi = n-1.",
+      "Making the right-side search start at the peak again (already covered) or using ascending comparisons on the descending half."
+    ],
+    "hints": [
+      "You are limited to 100 reads, so a scan is out. What shape does the array have, and what familiar structure is each half?",
+      "The predicate arr[i] < arr[i+1] is True then False exactly once. Binary search it to find the peak.",
+      "Binary search the ascending half [0, peak] first; if the target is not there, binary search the descending half with the comparison flipped."
+    ],
+    "related": [
+      "find_peak_element",
+      "binary_search",
+      "search_rotated_sorted_array"
+    ],
+    "code": "class Solution:\n    def findInMountainArray(self, target: int, mountainArr: \"MountainArray\") -> int:\n        n = mountainArr.length()\n        cache = {}\n\n        def get(i: int) -> int:                        # memoised: an index is fetched once\n            if i not in cache:\n                cache[i] = mountainArr.get(i)\n            return cache[i]\n\n        lo, hi = 0, n - 1                              # 1) peak = first i with get(i) > get(i+1)\n        while lo < hi:\n            mid = (lo + hi) // 2\n            if get(mid) < get(mid + 1):\n                lo = mid + 1                           # still climbing\n            else:\n                hi = mid                               # at or past the summit\n        peak = lo\n\n        def search(lo: int, hi: int, ascending: bool) -> int:\n            while lo <= hi:\n                mid = (lo + hi) // 2\n                v = get(mid)\n                if v == target:\n                    return mid\n                if (v < target) == ascending:          # target lies to the right of mid\n                    lo = mid + 1\n                else:\n                    hi = mid - 1\n            return -1\n\n        idx = search(0, peak, True)                    # 2) left slope first: smaller index\n        if idx != -1:\n            return idx\n        return search(peak + 1, n - 1, False)          # 3) right slope, descending order"
+  },
+  {
+    "slug": "maximum_running_time_of_n_computers",
+    "title": "Maximum Running Time of N Computers",
+    "leetcode": 2141,
+    "difficulty": "Hard",
+    "topic": "binary_search",
+    "pattern": "Binary search on the answer",
+    "file": "binary_search/maximum_running_time_of_n_computers.py",
+    "problem": "You have n computers and batteries[i] minutes of charge in battery i. A computer runs on one battery at a time; batteries can be swapped at any integer minute, any number of times, but charge is never pooled or recharged. Return the maximum number of minutes all n computers can run simultaneously. Example: n = 2, batteries = [3,3,3] returns 4 (minutes 1-2: A,B; minute 3: A,C; minute 4: B,C). Example: n = 2, batteries = [1,1,1,1] returns 2.",
+    "brute_force": {
+      "approach": "Simulate minute by minute: each minute put the n batteries with the most remaining charge on the computers (greedy by largest remaining is optimal), subtract one from each, and stop when fewer than n batteries have charge. The simulation re-sorts and re-decides at every single minute, although the outcome of the whole run is determined by one inequality.",
+      "time": "O(T m log m)",
+      "space": "O(m)",
+      "code": "def brute_force(n: int, batteries: List[int]) -> int:\n    heap = [-b for b in batteries]               # max-heap of remaining charge\n    heapq.heapify(heap)\n    minutes = 0\n    while len(heap) >= n:                        # one minute per iteration\n        used = [heapq.heappop(heap) for _ in range(n)]     # n fullest batteries\n        for b in used:\n            if b + 1 < 0:                        # still has charge after this minute\n                heapq.heappush(heap, b + 1)\n        minutes += 1\n    return minutes"
+    },
+    "optimization": "The redundancy is stepping through every minute (T can reach 10^14 / n). Ask instead 'can all n computers run for t minutes?'. This predicate is monotone (t feasible implies t-1 feasible), so binary search over t finds the largest True. For the check: in t minutes one battery contributes at most min(b, t) minutes because it can power only one computer at a time, and the computers need n*t battery-minutes in total, so sum(min(b, t)) >= n*t is necessary. It is also sufficient: lay the clamped batteries end to end along a strip of n rows of length t; no battery of length <= t can wrap onto its own row, so every row is a legal schedule. Each probe is one O(m) pass and there are log(sum/n) probes.",
+    "intuition": "A battery longer than t is wasted beyond t and every other battery is fully usable, so clamp each battery to t and ask whether the clamped total covers n*t. The no-waste ceiling sum(batteries) // n is the upper bound; binary search for the last t where the clamped total still suffices, using the 'last True' template (round mid up, lo = mid on success).",
+    "geometric": "Draw a strip n rows tall and t columns wide (n*t cells to fill). Lay batteries down one after another, wrapping to the next row when a row fills; since every clamped battery has length <= t, no battery lands in the same row twice, so the rows are valid schedules. Over t the predicate reads TTT...TFFF...F and lo/hi squeeze onto the last T.",
+    "visual": "n = 2, batteries = [3,3,3]       hi = 9 // 2 = 4\nt:                 1  2  3  4  5\nsum(min(b,t)):     3  6  9  9  9\nneed n*t:          2  4  6  8 10\ncan(t)?            T  T  T  T  F     last T = 4\nlo=0 hi=4 mid=2 T -> lo=2 ; mid=3 T -> lo=3 ;\nmid=4 T -> lo=4 == hi -> 4\nt = 4 strip (2 rows x 4 cols), batteries end to end:\nrow1 | A A A B |   a battery of length <= t never\nrow2 | B B C C |   wraps onto its own row",
+    "steps": [
+      "lo = 0, hi = sum(batteries) // n (every minute of charge used, no waste).",
+      "can(t) = sum(min(b, t) for b in batteries) >= n * t.",
+      "While lo < hi: mid = (lo + hi + 1) // 2 (round up because we want the last True).",
+      "If can(mid): lo = mid else hi = mid - 1.",
+      "Return lo."
+    ],
+    "complexity": {
+      "time": "O(m log(S/n))",
+      "space": "O(1)",
+      "why": "log(S/n) probes with S = sum(batteries), each a single pass over the m batteries."
+    },
+    "pitfalls": [
+      "Using mid = (lo + hi) // 2 together with lo = mid loops forever; the last-True template rounds mid up.",
+      "Forgetting the min(b, t) clamp: a 100-minute battery cannot power two computers at once.",
+      "Overflow in fixed-width languages; the sum reaches 10^14."
+    ],
+    "hints": [
+      "If all computers can run for t minutes, can they run for t-1? What does that say about searching t?",
+      "In t minutes, how many minutes can one battery of charge b possibly contribute? What total do n computers need?",
+      "Binary search t in [0, sum // n] with can(t) = sum(min(b, t)) >= n * t; keep the largest t that passes."
+    ],
+    "related": [
+      "koko_eating_bananas",
+      "task_scheduler",
+      "gas_station"
+    ],
+    "code": "class Solution:\n    def maxRunTime(self, n: int, batteries: List[int]) -> int:\n        def can(t: int) -> bool:\n            # each battery gives at most t minutes to the n*t minute-slots\n            return sum(min(b, t) for b in batteries) >= n * t\n\n        lo, hi = 0, sum(batteries) // n          # hi: every minute of charge used, no waste\n        while lo < hi:                           # find the LAST t with can(t)\n            mid = (lo + hi + 1) // 2             # round up so lo = mid always progresses\n            if can(mid):\n                lo = mid                         # feasible: try longer\n            else:\n                hi = mid - 1                     # infeasible: must run shorter\n        return lo"
+  },
+  {
+    "slug": "find_kth_smallest_pair_distance",
+    "title": "Find K-th Smallest Pair Distance",
+    "leetcode": 719,
+    "difficulty": "Hard",
+    "topic": "binary_search",
+    "pattern": "Binary search on the answer",
+    "file": "binary_search/find_kth_smallest_pair_distance.py",
+    "problem": "The distance of a pair (i, j) with i < j is |nums[i] - nums[j]|. Return the k-th smallest distance among all n(n-1)/2 pairs. Example: nums = [1,3,1], k = 1 returns 0 (distances 2, 0, 2; sorted 0, 2, 2). Example: nums = [1,6,1], k = 3 returns 5.",
+    "brute_force": {
+      "approach": "Generate all n(n-1)/2 pair distances, sort them, and return index k-1. For n = 10^4 that is 5 * 10^7 distances to store and sort. We materialise and fully order every distance although we only need to know how many fall at or below a threshold.",
+      "time": "O(n^2 log n)",
+      "space": "O(n^2)",
+      "code": "def brute_force(nums: List[int], k: int) -> int:\n    dists = []\n    for i in range(len(nums)):\n        for j in range(i + 1, len(nums)):        # every pair, materialised\n            dists.append(abs(nums[i] - nums[j]))\n    dists.sort()\n    return dists[k - 1]"
+    },
+    "optimization": "Two steps. First, sort the data: after sorting nums, 'how many pairs have distance <= d?' is a two-pointer sweep. For each right end r advance l while nums[r] - nums[l] > d; every index in [l, r) pairs with r, so count += r - l, and l never moves backwards, giving O(n). Second, search the answer: count(d) is monotone non-decreasing in d, and the k-th smallest distance is exactly the smallest d with count(d) >= k. Distances are integers in [0, max - min], so a binary search over that range costs log(range) O(n) probes and the O(n^2) enumeration disappears.",
+    "intuition": "'K-th smallest of an implicit multiset' is a binary-search-on-value problem whenever you can count elements <= v quickly. Sorting makes pairs with small distance cluster together in index space, which is exactly what lets a sliding window count them without listing them. The answer is the first d where the count reaches k.",
+    "geometric": "Draw the sorted values on a number line. For a threshold d slide a window [l, r] whose span nums[r] - nums[l] stays <= d: each time r steps right, l catches up until the span fits, and the r - l elements inside pair with r. Over d on a second line, count(d) climbs in steps; paint count(d) >= k as F...FT...T and binary search the first T.",
+    "visual": "nums sorted = [1,1,3,4,8], k = 6   (10 pairs)\nd:            0 1 2 3 4 5 6 7\ncount(<=d):   1 2 4 6 7 8 8 10\ncount >= 6?   F F F T T T T T     first T -> d = 3\ncount(3) by two pointers (l chases r):\nr=1  l=0  [1,1]      span 0 <= 3  += 1\nr=2  l=0  [1,1,3]    span 2 <= 3  += 2\nr=3  l=0  [1,1,3,4]  span 3 <= 3  += 3\nr=4  l=4  [8]        8-1,8-1,8-3,8-4 > 3 -> l=4, += 0\ntotal 6 >= k   (distances: 0 1 2 2 3 3 | 4 5 7 7)",
+    "steps": [
+      "Sort nums; lo = 0, hi = nums[-1] - nums[0].",
+      "count(d): l = 0; for r in range(n): while nums[r] - nums[l] > d: l += 1; total += r - l.",
+      "While lo < hi: mid = (lo + hi) // 2; if count(mid) >= k: hi = mid else lo = mid + 1.",
+      "Return lo."
+    ],
+    "complexity": {
+      "time": "O(n log n + n log R)",
+      "space": "O(1)",
+      "why": "One sort, then log R probes (R = max - min) each a linear two-pointer sweep."
+    },
+    "pitfalls": [
+      "Counting pairs with distance < d instead of <= d shifts the boundary by one.",
+      "A heap of size k over all pairs is O(n^2 log k), too slow for n = 10^4.",
+      "Starting lo at 1 misses the answer 0 when nums has duplicates."
+    ],
+    "hints": [
+      "You cannot afford to list all pairs. Could you instead count how many pairs have distance at most some d?",
+      "Sort nums. For a fixed d, how do two pointers count pairs with difference <= d in one pass?",
+      "count(d) is monotone in d; binary search d in [0, max - min] for the first d with count(d) >= k."
+    ],
+    "related": [
+      "kth_largest_element_in_an_array",
+      "koko_eating_bananas",
+      "two_sum_ii_input_array_is_sorted"
+    ],
+    "code": "class Solution:\n    def smallestDistancePair(self, nums: List[int], k: int) -> int:\n        nums.sort()\n\n        def count(d: int) -> int:                # pairs with distance <= d\n            total = l = 0\n            for r in range(len(nums)):\n                while nums[r] - nums[l] > d:     # shrink until the window spans <= d\n                    l += 1\n                total += r - l                   # every index in [l, r) pairs with r\n            return total\n\n        lo, hi = 0, nums[-1] - nums[0]           # answer is an integer in this range\n        while lo < hi:                           # first d with count(d) >= k\n            mid = (lo + hi) // 2\n            if count(mid) >= k:\n                hi = mid\n            else:\n                lo = mid + 1\n        return lo"
+  },
+  {
+    "slug": "kth_smallest_number_in_multiplication_table",
+    "title": "Kth Smallest Number in Multiplication Table",
+    "leetcode": 668,
+    "difficulty": "Hard",
+    "topic": "binary_search",
+    "pattern": "Binary search on the answer",
+    "file": "binary_search/kth_smallest_number_in_multiplication_table.py",
+    "problem": "An m x n multiplication table has table[i][j] = i * j with 1-indexed i and j. Return the k-th smallest value in the table, 1 <= k <= m*n. Example: m = 3, n = 3, k = 5 returns 3 (table 1 2 3 / 2 4 6 / 3 6 9; sorted 1,2,2,3,3,4,6,6,9). Example: m = 2, n = 3, k = 6 returns 6.",
+    "brute_force": {
+      "approach": "Generate all m*n products, sort them, return index k-1. With m and n up to 3*10^4 that is 9*10^8 numbers. The whole table is materialised and sorted although it has so much structure (every row is sorted and is a multiple of the first row) that 'how many entries are <= v' can be computed without touching a single entry.",
+      "time": "O(mn log(mn))",
+      "space": "O(mn)",
+      "code": "def brute_force(m: int, n: int, k: int) -> int:\n    table = sorted(i * j for i in range(1, m + 1) for j in range(1, n + 1))\n    return table[k - 1]"
+    },
+    "optimization": "The redundancy is enumerating entries just to rank them. Row i is i, 2i, ..., ni, so the number of entries in row i that are <= v is min(n, v // i), one division. Summing over the m rows gives count(v), the number of table entries <= v, in O(m). count(v) is monotone in v, and the k-th smallest value is the smallest v with count(v) >= k, so binary search v over [1, m*n]. That v is guaranteed to appear in the table: at the first v where the count reaches k the count strictly increased from v-1, and count only increases at values that occur. Total O(m log(mn)), and swapping m and n keeps the loop over the shorter dimension.",
+    "intuition": "You never need the table, only the ability to count below a threshold. Each row is an arithmetic progression, so counting its entries below v is a floor division. Binary search converts 'find the k-th' into log(mn) such counts, and the first value whose count reaches k must itself be in the table.",
+    "geometric": "Draw the grid and shade every cell <= v. The shaded region is a staircase hugging the top-left corner, the cells under the hyperbola i*j = v: row i is shaded for min(n, v // i) cells, fewer as i grows. count(v) is the staircase's area; over v the predicate count(v) >= k reads F...FT...T and lo/hi squeeze onto the first T.",
+    "visual": "m = 3, n = 3, k = 5          v in [1, 9]\n    j: 1 2 3        cells <= v=3 shaded (#)\ni=1    1 2 3        # # #   min(3, 3//1) = 3\ni=2    2 4 6        # . .   min(3, 3//2) = 1\ni=3    3 6 9        # . .   min(3, 3//3) = 1\n                    staircase area = count(3) = 5\nv:         1 2 3 4 5 6 7 8 9\ncount(v):  1 3 5 6 6 8 8 8 9\n>= k=5?    F F T T T T T T T    first T -> 3\nlo=1 hi=9 mid=5 T -> hi=5 ; mid=3 T -> hi=3 ;\nmid=2 F -> lo=3 == hi -> 3",
+    "steps": [
+      "If m > n swap them so the counting loop runs over the shorter side.",
+      "count(v) = sum(min(n, v // i) for i in 1..m).",
+      "lo = 1, hi = m * n; while lo < hi: mid = (lo + hi) // 2; if count(mid) >= k: hi = mid else lo = mid + 1.",
+      "Return lo."
+    ],
+    "complexity": {
+      "time": "O(m log(mn))",
+      "space": "O(1)",
+      "why": "log(mn) probes, each summing one division per row of the shorter dimension."
+    },
+    "pitfalls": [
+      "Forgetting min(n, v // i): a row has only n entries.",
+      "Looping over the larger dimension; swap so the probe costs O(min(m, n)).",
+      "A k-way heap merge of the rows is O(k log m) and k can be m*n."
+    ],
+    "hints": [
+      "The table is too big to build. Can you count how many entries are <= v without building it?",
+      "In row i the entries are i, 2i, ..., ni. How many are <= v? Sum that over rows.",
+      "Binary search v in [1, m*n] for the smallest v whose count is >= k; that v is always a table entry."
+    ],
+    "related": [
+      "koko_eating_bananas",
+      "search_2d_matrix",
+      "kth_largest_element_in_an_array"
+    ],
+    "code": "class Solution:\n    def findKthNumber(self, m: int, n: int, k: int) -> int:\n        if m > n:\n            m, n = n, m                              # loop over the shorter dimension\n\n        def count(v: int) -> int:                    # entries <= v, one division per row\n            return sum(min(n, v // i) for i in range(1, m + 1))\n\n        lo, hi = 1, m * n\n        while lo < hi:                               # first v with count(v) >= k\n            mid = (lo + hi) // 2\n            if count(mid) >= k:\n                hi = mid                             # enough entries at or below mid\n            else:\n                lo = mid + 1\n        return lo                                    # lo is guaranteed to be in the table"
+  },
+  {
+    "slug": "maximum_xor_with_an_element_from_array",
+    "title": "Maximum XOR With an Element From Array",
+    "leetcode": 1707,
+    "difficulty": "Hard",
+    "topic": "bit_manipulation",
+    "pattern": "Offline queries + binary trie (max XOR)",
+    "file": "bit_manipulation/maximum_xor_with_an_element_from_array.py",
+    "problem": "Given nums and queries [x_i, m_i], answer each query with the maximum of x_i XOR nums[j] over all j with nums[j] <= m_i, or -1 if no element is <= m_i. Values are below 10^9 and nums and queries each have up to 10^5 entries. Example: nums = [0,1,2,3,4], queries = [[3,1],[1,3],[5,6]] returns [3,3,7] (3^0, 1^2, 5^2).",
+    "brute_force": {
+      "approach": "For each query scan nums, skip values above m, and keep the maximum XOR, about 10^10 operations. The waste is twofold: every query re-filters nums against its own bound although the allowed sets are nested and would be prefixes of a sorted array, and the XOR maximum is found by exhaustive enumeration although a bit-by-bit greedy settles it in 30 steps.",
+      "time": "O(q n)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int], queries: List[List[int]]) -> List[int]:\n    ans = []\n    for x, m in queries:\n        best = -1\n        for v in nums:                                # re-filter and re-scan per query\n            if v <= m:\n                best = max(best, x ^ v)\n        ans.append(best)\n    return ans"
+    },
+    "optimization": "Step 1 removes the XOR enumeration: insert nums into a binary trie keyed on their 30 bits from most significant to least. To maximise x XOR y walk from the root and at each level take the child whose bit is the opposite of x's bit when it exists, which sets a 1 at the highest possible position; the greedy is correct because a 1 at bit b outweighs all lower bits combined, so each query costs O(30). Step 2 removes the per-query filter: answering in the given order would need a trie restricted to nums <= m per query, so go offline. Sort nums and sort the queries by m, then sweep: before answering a query insert every num <= its m. The trie at that moment holds exactly the allowed elements and each num is inserted once.",
+    "intuition": "XOR maximisation is lexicographic: decide the top bit first and never regret it, because 2^b exceeds the sum of all lower bits. A trie over bit strings is exactly the structure that answers 'does any inserted number have bit b = 1 given these top bits?' in O(1). Sorting the queries turns the per-query bound into a monotone sweep in which the data structure only grows, so the bound costs nothing extra.",
+    "geometric": "Write the numbers in binary as columns from bit 29 down to bit 0 and overlay them into a binary tree: left edge is 0, right edge is 1, depth is bit position. A query x traces one root-to-leaf path that at every depth prefers the edge opposite to x's bit and falls back to the only edge when it must. The sweep over sorted m keeps drawing new paths into the tree.",
+    "visual": "nums = [0,1,2,3,4]  queries sorted by m: (3,1) (1,3) (5,6)\ntrie after inserting nums <= 3   (query x=1, m=3)\nbit:  2 1 0           root\n0  =  0 0 0           0|           x    = 0 0 1\n1  =  0 0 1            o           want = 1 1 0\n2  =  0 1 0         0/   \\1\n3  =  0 1 1         o     o     bit2: no 1-child -> 0\n                  0/ \\1 0/ \\1   bit1: 1-child    -> 1\n                  0   1 2   3   bit0: 0-child    -> 1\npath = 0 1 0 (= 2); result bits 0 1 1 -> 1 ^ 2 = 3",
+    "steps": [
+      "Sort nums; sort the query indices by m.",
+      "Trie as child[node] = [left, right] with 0 meaning absent; insert(x) walks bits 29..0 creating nodes.",
+      "best_xor(x): at each bit b let want = 1 - bit(x, b); if that child exists go there and set bit b of the answer, else take the other child.",
+      "Sweep queries in m order: insert nums[i] while nums[i] <= m; answer -1 if nothing has been inserted, else best_xor(x).",
+      "Store each answer at its original query index."
+    ],
+    "complexity": {
+      "time": "O((n + q) * 30 + n log n + q log q)",
+      "space": "O(30 n)",
+      "why": "Each number is inserted once and each query walks 30 levels; the sorts dominate otherwise."
+    },
+    "pitfalls": [
+      "Forgetting the -1 case when the trie is still empty for a small m.",
+      "Returning answers in sorted-by-m order rather than the original query order.",
+      "Using 31 or 32 bits with negative handling; values here are non-negative and 30 bits suffice."
+    ],
+    "hints": [
+      "Without the bound m, how would you find the number in a set that maximises XOR with x? Think about deciding bits from the top.",
+      "A binary trie answers 'is there a number whose next bit is the opposite of mine?' in O(1) per level.",
+      "Sort nums and the queries by m. Insert numbers into the trie as the bound grows, so each query sees exactly the allowed numbers."
+    ],
+    "related": [
+      "implement_trie_prefix_tree",
+      "single_number",
+      "design_add_and_search_words_data_structure"
+    ],
+    "code": "class Solution:\n    def maximizeXor(self, nums: List[int], queries: List[List[int]]) -> List[int]:\n        BITS = 30                                     # values < 10^9 < 2^30\n        nums.sort()\n        child = [[0, 0]]                              # child[node][bit] -> node index, 0 = none\n\n        def insert(x: int) -> None:\n            node = 0\n            for b in range(BITS - 1, -1, -1):\n                bit = (x >> b) & 1\n                if not child[node][bit]:\n                    child[node][bit] = len(child)\n                    child.append([0, 0])\n                node = child[node][bit]\n\n        def best_xor(x: int) -> int:\n            node, out = 0, 0\n            for b in range(BITS - 1, -1, -1):\n                want = 1 - ((x >> b) & 1)             # opposite bit -> result bit b becomes 1\n                if child[node][want]:\n                    out |= 1 << b\n                    node = child[node][want]\n                else:\n                    node = child[node][1 - want]      # forced: only one branch exists\n            return out\n\n        ans = [-1] * len(queries)\n        i = 0                                         # next num to insert\n        for qi in sorted(range(len(queries)), key=lambda q: queries[q][1]):\n            x, m = queries[qi]\n            while i < len(nums) and nums[i] <= m:     # trie now holds exactly nums <= m\n                insert(nums[i])\n                i += 1\n            if i:\n                ans[qi] = best_xor(x)\n        return ans"
+  },
+  {
+    "slug": "number_of_valid_words_for_each_puzzle",
+    "title": "Number of Valid Words for Each Puzzle",
+    "leetcode": 1178,
+    "difficulty": "Hard",
+    "topic": "bit_manipulation",
+    "pattern": "Bitmask counting + submask enumeration",
+    "file": "bit_manipulation/number_of_valid_words_for_each_puzzle.py",
+    "problem": "A word is valid for a puzzle if it contains the puzzle's first letter and every letter of the word appears in the puzzle. Puzzles have exactly 7 distinct letters; there are up to 10^5 words and 10^4 puzzles. Return, for each puzzle, how many words are valid for it. Example: words = [aaaa, asas, able, ability, actt, actor, access], puzzles = [aboveyz, abrodyz, abslute, absoryz, actresz, gaswxyz] returns [1,1,3,2,4,0].",
+    "brute_force": {
+      "approach": "For each puzzle and each word check set(word) <= set(puzzle) and puzzle[0] in word. Words matter only through their letter set, and many words share the same set, yet every word is re-examined for every puzzle; each check also scans all of the word's letters although a puzzle has only 7.",
+      "time": "O(P W L)",
+      "space": "O(1)",
+      "code": "def brute_force(words: List[str], puzzles: List[str]) -> List[int]:\n    ans = []\n    for puzzle in puzzles:\n        allowed = set(puzzle)\n        ans.append(sum(1 for w in words                # rescan every word per puzzle\n                       if puzzle[0] in w and set(w) <= allowed))\n    return ans"
+    },
+    "optimization": "Step 1 collapses the word side: validity depends only on which letters a word has, so map each word to a 26-bit mask and count how many words share each mask. The words are never looked at again. Step 2 flips the loop to the puzzle side: word mask w is valid for puzzle mask p iff w is a subset of p and w contains the first letter's bit. A 7-letter puzzle has only 2^7 = 128 submasks, so instead of testing every word mask against p, enumerate the submasks of p that include the first bit (64 of them) and sum their counts from the hash map. The trick sub = (sub - 1) & p walks all submasks in decreasing order. Total O(W L + P * 128).",
+    "intuition": "'Every letter of the word is in the puzzle' is a subset relation, and subset relations on tiny sets are cheap to enumerate from the superset side. Flip the loop: each puzzle asks 'how many words have one of my 64 allowed letter sets?' and a counter answers each in O(1). The first-letter condition just fixes one of the seven bits to 1.",
+    "geometric": "Write letters as 26 binary columns. A puzzle is a row with seven 1s; its valid words are rows whose 1s all sit under the puzzle's 1s, with the first-letter column forced to 1. Fixing that column leaves six free columns, 64 patterns, so the puzzle's answer is the counter summed over a 6-dimensional hypercube of rows that (sub - 1) & p visits vertex by vertex.",
+    "visual": "puzzle \"aboveyz\": p = {a,b,o,v,e,y,z}, first = a\nword     letters        subset of p?   has a?\naaaa     a              yes            yes  -> valid\nasas     a s            no (s)              -> no\nable     a b l e        no (l)              -> no\ncnt[mask] = {a}:1 {a,s}:1 {a,b,l,e}:1 {a,c,t}:1 ...\nsubmasks of p (128): sub = p, (sub-1)&p, ..., 0\n   keep only the 64 with bit a set, sum cnt[sub]\n   aboveyz, boveyz(x), aoveyz, oveyz(x), ... a, 0(x)\nanswer = cnt[{a}] = 1\npuzzle \"actresz\": aaaa asas actt access -> 4",
+    "steps": [
+      "mask(s) = OR of 1 << (ord(c) - 97) over the letters of s.",
+      "cnt = Counter(mask(word) for word in words).",
+      "For each puzzle: p = mask(puzzle), first = 1 << (ord(puzzle[0]) - 97).",
+      "sub = p; loop: if sub & first: total += cnt[sub]; if sub == 0: break; sub = (sub - 1) & p.",
+      "Append total to the answer list."
+    ],
+    "complexity": {
+      "time": "O(W L + P * 2^7)",
+      "space": "O(W)",
+      "why": "Each word is hashed once; each puzzle enumerates at most 128 submasks with O(1) lookups."
+    },
+    "pitfalls": [
+      "Enumerating submasks of the word side (26 bits) instead of the 7-bit puzzle side.",
+      "Dropping the first-letter requirement, or testing puzzle[0] against the puzzle instead of the word.",
+      "Off-by-one in the submask loop: sub = p must be processed and the loop must stop after sub = 0."
+    ],
+    "hints": [
+      "Two words with the same set of letters behave identically. How could you collapse the 10^5 words?",
+      "Represent letter sets as 26-bit masks. 'Word letters are a subset of puzzle letters' is a bitwise condition. Which side has only 7 bits?",
+      "Count words per mask, then for each puzzle enumerate the submasks of its mask with sub = (sub - 1) & p, keeping those with the first letter's bit."
+    ],
+    "related": [
+      "single_number",
+      "group_anagrams",
+      "subsets"
+    ],
+    "code": "class Solution:\n    def findNumOfValidWords(self, words: List[str], puzzles: List[str]) -> List[int]:\n        def mask(s: str) -> int:\n            m = 0\n            for c in s:\n                m |= 1 << (ord(c) - 97)\n            return m\n\n        cnt = Counter(mask(w) for w in words)        # words collapse to letter-set masks\n        ans = []\n        for puzzle in puzzles:\n            p, first = mask(puzzle), 1 << (ord(puzzle[0]) - 97)\n            total, sub = 0, p\n            while True:                              # all 2^7 submasks of p, descending\n                if sub & first:                      # must contain the first letter\n                    total += cnt[sub]\n                if sub == 0:\n                    break\n                sub = (sub - 1) & p                  # next smaller submask\n            ans.append(total)\n        return ans"
+  },
+  {
+    "slug": "find_longest_awesome_substring",
+    "title": "Find Longest Awesome Substring",
+    "leetcode": 1542,
+    "difficulty": "Hard",
+    "topic": "bit_manipulation",
+    "pattern": "Prefix parity mask + first-seen positions",
+    "file": "bit_manipulation/find_longest_awesome_substring.py",
+    "problem": "A string of digits is awesome if some rearrangement of it is a palindrome, i.e. at most one digit occurs an odd number of times. Given a digit string s, return the length of its longest awesome substring (a single character always qualifies). Example: s = \"3242415\" returns 5 (\"24241\" rearranges to \"24142\"). Example: s = \"12345678\" returns 1.",
+    "brute_force": {
+      "approach": "For every start i extend j to the right while maintaining ten digit counts; after each extension count how many are odd and record the length when at most one is. For n = 10^5 that is about 10^11 steps. Only the parity of each count matters, and the parities of a substring are determined by two prefix states, yet they are recomputed from scratch for every start.",
+      "time": "O(10 n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(s: str) -> int:\n    best = 0\n    for i in range(len(s)):\n        counts = [0] * 10\n        for j in range(i, len(s)):                    # every substring s[i:j+1]\n            counts[int(s[j])] += 1\n            if sum(c & 1 for c in counts) <= 1:\n                best = max(best, j - i + 1)\n    return best"
+    },
+    "optimization": "Encode the parities of the ten digit counts as a 10-bit mask and let M[j] be the mask of the prefix s[:j]. The parity mask of s[i:j] is M[j] XOR M[i], because even counts cancel. The substring is awesome iff that XOR is 0 (all even) or a single bit (exactly one odd digit), only 11 possible values. So for each right end j, instead of scanning every i, look up the earliest i whose prefix mask equals M[j] or M[j] ^ (1 << d) for d in 0..9. A dictionary first_seen[mask] -> smallest index gives each lookup in O(1), and taking the earliest is what maximises j - i. One pass, 11 lookups per position.",
+    "intuition": "'Can be rearranged into a palindrome' is a parity statement, and parities compose by XOR. That turns a substring question into a two-prefix question: find two prefixes whose masks differ in at most one bit. Store the first time each of the at most 1024 masks appears; every later position asks about its 11 compatible partners and keeps the longest gap.",
+    "geometric": "Write the running parity as a 10-column binary row that flips exactly one column per character and stack the rows downward. A substring is awesome when its top and bottom rows differ in 0 or 1 columns. At each row j, look up the highest earlier row that equals row j or equals it with one column flipped, and measure the vertical distance.",
+    "visual": "s = \"3242415\"     row = parity of each digit so far\n          digit: 5 4 3 2 1   mask  first[mask]\nj=-1  \"\"         0 0 0 0 0     0   -1\nj=0   '3'        0 0 1 0 0     8    0\nj=1   '2'        0 0 1 1 0    12    1\nj=2   '4'        0 1 1 1 0    28    2\nj=3   '2'        0 1 1 0 0    24    3\nj=4   '4'        0 0 1 0 0     8   = row j=0 -> 4-0 = 4\nj=5   '1'        0 0 1 0 1    10   ^bit1 = 8 @0 -> 5\nj=6   '5'        1 0 1 0 1    42   ^bit5 = 10 @5 -> 1\nbest = 5: \"24241\", one odd digit (1) -> \"24142\"",
+    "steps": [
+      "first = {0: -1} (empty prefix), mask = 0, best = 0.",
+      "For each j, c in enumerate(s): mask ^= 1 << int(c).",
+      "If mask in first: best = max(best, j - first[mask]) (all counts even).",
+      "For d in 0..9: partner = mask ^ (1 << d); if partner in first: best = max(best, j - first[partner]).",
+      "If mask not in first: first[mask] = j (keep the earliest occurrence).",
+      "Return best."
+    ],
+    "complexity": {
+      "time": "O(11 n)",
+      "space": "O(2^10)",
+      "why": "One pass with 11 dictionary lookups per character; at most 1024 masks are ever stored."
+    },
+    "pitfalls": [
+      "Overwriting first[mask] with a later index destroys the maximum length.",
+      "Forgetting to seed mask 0 at index -1, which loses substrings that start at position 0.",
+      "Checking only the all-even case and missing the one-odd-digit case (or vice versa)."
+    ],
+    "hints": [
+      "A string rearranges into a palindrome when how many digits have an odd count? Do you need the counts themselves?",
+      "Keep a 10-bit parity mask of the prefix. How does the parity of a substring relate to two prefix masks?",
+      "Store the first index of every prefix mask; at each position look up the mask itself and the 10 masks one bit away, and take the longest gap."
+    ],
+    "related": [
+      "subarray_sum_equals_k",
+      "single_number",
+      "longest_palindromic_substring"
+    ],
+    "code": "class Solution:\n    def longestAwesome(self, s: str) -> int:\n        first = {0: -1}                               # parity mask -> earliest prefix index\n        mask = best = 0\n        for j, c in enumerate(s):\n            mask ^= 1 << int(c)                       # flip this digit's parity bit\n            if mask in first:                         # same parities: all counts even\n                best = max(best, j - first[mask])\n            for d in range(10):                       # exactly one digit odd\n                partner = mask ^ (1 << d)\n                if partner in first:\n                    best = max(best, j - first[partner])\n            if mask not in first:\n                first[mask] = j                       # keep the earliest occurrence only\n        return best"
+  },
+  {
+    "slug": "max_points_on_a_line",
+    "title": "Max Points on a Line",
+    "leetcode": 149,
+    "difficulty": "Hard",
+    "topic": "math_geometry",
+    "pattern": "Anchor point + slope as a reduced fraction",
+    "file": "math_geometry/max_points_on_a_line.py",
+    "problem": "Given n distinct points on the plane (n <= 300, coordinates up to 10^4 in absolute value), return the maximum number of points that lie on one straight line. Example: [[1,1],[2,2],[3,3]] returns 3. Example: [[1,1],[3,2],[5,3],[4,1],[2,3],[1,4]] returns 4, the line through (1,4), (2,3), (3,2), (4,1).",
+    "brute_force": {
+      "approach": "A line is fixed by two points, so for every pair (i, j) count the points k that are collinear with it using the integer cross product (xj-xi)(yk-yi) - (yj-yi)(xk-xi) == 0, and take the maximum. The same line is rediscovered once per pair of points on it, so a line with c points is counted c(c-1)/2 times, each with a full O(n) scan.",
+      "time": "O(n^3)",
+      "space": "O(1)",
+      "code": "def brute_force(points: List[List[int]]) -> int:\n    n = len(points)\n    best = min(n, 2)\n    for i in range(n):\n        for j in range(i + 1, n):                    # the line through i and j\n            (xi, yi), (xj, yj) = points[i], points[j]\n            on_line = sum(1 for xk, yk in points\n                          if (xj - xi) * (yk - yi) - (yj - yi) * (xk - xi) == 0)\n            best = max(best, on_line)                # same line recounted per pair on it\n    return best"
+    },
+    "optimization": "The redundancy is re-identifying the same line through an anchor for every second point. Fix an anchor i: every other point j defines a direction (dx, dy) from i, and all points sharing that direction lie on one line through i. Two directions are the same iff they are equal as reduced fractions, so normalise (dx, dy) by their gcd and a sign rule (dx > 0, or dx == 0 and dy > 0) and use the pair as a hash key. One pass over j fills a counter and the best line through i has max(counter) + 1 points. Repeating for every anchor costs O(n^2) and visits each line once per anchor on it rather than once per pair. Reduced fractions avoid floating-point slope collisions (1/3 vs 2/6) and handle vertical lines (dx = 0) without a special case.",
+    "intuition": "'Max points on a line' equals 'max points sharing a direction from some anchor'. Directions are exactly what a hash map can group, provided the key is canonical, and gcd reduction plus a sign rule is the canonical form of a rational slope. Only points after the anchor need to be examined because earlier pairs were already counted with the earlier point as anchor.",
+    "geometric": "Stand at the anchor and look outward: every other point sits on a ray, and collinear points sit on the same ray or on the opposite ray (the sign normalisation folds both onto one key). The counter is a histogram over directions; its tallest bar plus the anchor itself is the best line through this anchor. Sweep the anchor over all points.",
+    "visual": "points (1,1)(3,2)(5,3)(4,1)(2,3)(1,4)    anchor * = (1,1)\n y\n 4 | A . . . .     A=(1,4)  (0,3) /gcd -> (0,1)\n 3 | . B . . C     B=(2,3)  (1,2)      -> (1,2)\n 2 | . . D . .     C=(5,3)  (4,2) /2   -> (2,1)\n 1 | * . . E .     D=(3,2)  (2,1)      -> (2,1)\n   +-----------    E=(4,1)  (3,0) /3   -> (1,0)\n     1 2 3 4 5\nslopes from *: {(0,1):1 (1,2):1 (2,1):2 (1,0):1}\nbest via * = 2 + 1 = 3  (*, C, D on 2y = x + 1)\nanchor A: B (1,-1), D (2,-2)->(1,-1), E (3,-3)->(1,-1)\n         {(1,-1):3} -> 3 + 1 = 4   <- answer",
+    "steps": [
+      "best = 1; for each anchor i create an empty Counter of directions.",
+      "For each j > i: dx, dy = xj - xi, yj - yi; g = gcd(dx, dy); divide both by g.",
+      "If dx < 0 or (dx == 0 and dy < 0): negate both so each line gets one key.",
+      "slopes[(dx, dy)] += 1; after the inner loop best = max(best, max(slopes.values()) + 1).",
+      "Return best."
+    ],
+    "complexity": {
+      "time": "O(n^2 log C)",
+      "space": "O(n)",
+      "why": "Every pair is reduced once with a gcd on coordinates up to C; one counter per anchor."
+    },
+    "pitfalls": [
+      "Floating-point slopes collide or diverge wrongly (0.1 + 0.2 issues, infinite slope for vertical lines).",
+      "Skipping the sign normalisation so (1,2) and (-1,-2) become different keys for the same line.",
+      "Forgetting to add 1 for the anchor itself, or returning 0 for a single point."
+    ],
+    "hints": [
+      "Checking every pair against every third point is O(n^3). What do all points on one line through a fixed point have in common?",
+      "Group the other points by their direction from an anchor. What key makes (2,4) and (1,2) collide but stays exact?",
+      "Reduce (dx, dy) by the gcd and fix the sign; count directions in a hash map per anchor and take max + 1."
+    ],
+    "related": [
+      "two_sum",
+      "group_anagrams",
+      "k_closest_points_to_origin"
+    ],
+    "code": "class Solution:\n    def maxPoints(self, points: List[List[int]]) -> int:\n        n = len(points)\n        best = 1\n        for i in range(n):\n            slopes = Counter()                       # canonical direction -> points on it\n            xi, yi = points[i]\n            for j in range(i + 1, n):                # j < i were counted with j as anchor\n                dx, dy = points[j][0] - xi, points[j][1] - yi\n                g = gcd(dx, dy)                      # > 0 since points are distinct\n                dx, dy = dx // g, dy // g\n                if dx < 0 or (dx == 0 and dy < 0):   # one sign per line direction\n                    dx, dy = -dx, -dy\n                slopes[(dx, dy)] += 1\n            if slopes:\n                best = max(best, max(slopes.values()) + 1)   # +1 for the anchor itself\n        return best"
+  },
+  {
+    "slug": "erect_the_fence",
+    "title": "Erect the Fence",
+    "leetcode": 587,
+    "difficulty": "Hard",
+    "topic": "math_geometry",
+    "pattern": "Convex hull (monotone chain)",
+    "file": "math_geometry/erect_the_fence.py",
+    "problem": "Given the coordinates of trees in a garden, fence the whole garden with the minimum length of rope and return every tree that lies on the fence, i.e. on the convex hull boundary including trees on an edge between two corners, in any order. Example: [[1,1],[2,2],[2,0],[2,4],[3,3],[4,2]] returns [[1,1],[2,0],[4,2],[3,3],[2,4]] since (2,2) is strictly inside. Example: [[1,2],[2,2],[4,2]] returns all three.",
+    "brute_force": {
+      "approach": "A line through two trees is a supporting line iff every other tree lies on one side of it or on it. For each pair compute the cross-product sign of every third tree; if no two signs disagree, every tree with cross == 0 is on the fence. Each of the n^2 candidate lines is tested against all n trees although only O(n) of them are hull edges, and the hull's defining property (a left turn at every vertex) can be enforced incrementally.",
+      "time": "O(n^3)",
+      "space": "O(n)",
+      "code": "def brute_force(trees: List[List[int]]) -> List[List[int]]:\n    n = len(trees)\n    if n < 3:\n        return [list(p) for p in trees]\n    on_hull = set()\n    for i in range(n):\n        for j in range(i + 1, n):                    # is line (i, j) a supporting line?\n            (xi, yi), (xj, yj) = trees[i], trees[j]\n            crosses = [(xj - xi) * (y - yi) - (yj - yi) * (x - xi) for x, y in trees]\n            if all(c >= 0 for c in crosses) or all(c <= 0 for c in crosses):\n                on_hull.update(tuple(trees[k]) for k, c in enumerate(crosses) if c == 0)\n    return [list(p) for p in on_hull]"
+    },
+    "optimization": "The redundancy is testing every pair as a potential edge. Once the trees are sorted by (x, y), the lower hull is traversed left to right and the upper hull right to left, and along either walk every consecutive triple turns counter-clockwise or goes straight. Build the lower chain with a stack: before pushing p, pop the top while the turn stack[-2] -> stack[-1] -> p is clockwise (cross < 0); popped trees are strictly inside. Repeat over the reversed order for the upper chain. Keeping cross == 0 trees, instead of popping them as the classic hull does, is what retains trees lying on an edge. Sorting dominates at O(n log n); each tree is pushed and popped at most once per chain.",
+    "intuition": "Walk around the garden keeping it on your left; whenever you would have to turn right, the previous post was not a corner, so remove it. A sorted order makes this walk a single sweep and the stack is the fence under construction. Collinear trees are neither left nor right turns, so they stay on the fence. The two end trees appear in both chains, hence the set union.",
+    "geometric": "Picture the trees sorted left to right. The lower chain is a rope stretched under the trees; pushing a new tree and popping clockwise turns is the rope snapping taut. The upper chain is the same rope stretched over the top, built from right to left. Their union is the fence.",
+    "visual": "trees (1,1)(2,2)(2,0)(2,4)(3,3)(4,2)  sorted: x then y\n 4 | . # . .    lower chain, left -> right (pop on cw):\n 3 | . . # .    (1,1) (2,0)             push, push\n 2 | # x . #    (2,2) ccw  keep | (2,4) collinear keep\n 1 | . . . .    (3,3) cw pop (2,4), cw pop (2,2), push\n 0 | . # . .    (4,2) cw pop (3,3), push\n   +---------   lower = (1,1) (2,0) (4,2)\n     1 2 3 4    upper (right -> left) =\n                (4,2) (3,3) (2,4) (1,1)\nfence = lower U upper = 5 trees ; x = (2,2) is inside",
+    "steps": [
+      "Sort the trees by (x, y).",
+      "cross(o, a, b) = (a - o) x (b - o): > 0 counter-clockwise, < 0 clockwise, 0 collinear.",
+      "lower: for p in sorted trees: while len(lower) >= 2 and cross(lower[-2], lower[-1], p) < 0: pop; push p.",
+      "upper: the same loop over the reversed order.",
+      "Return the set union of both chains as lists."
+    ],
+    "complexity": {
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "why": "Sorting dominates; each tree is pushed and popped at most once per chain."
+    },
+    "pitfalls": [
+      "Popping on cross <= 0 drops collinear trees that lie on a fence edge.",
+      "Returning the two end trees twice (they terminate both chains); deduplicate with a set.",
+      "Using floating-point slopes instead of integer cross products.",
+      "Forgetting that with fewer than three trees every tree is on the fence."
+    ],
+    "hints": [
+      "Which trees can be on the fence? Think of a rope stretched around all of them. What kind of turn does the rope make at each post?",
+      "Sort the trees and walk left to right keeping a stack; pop while the last three points make a clockwise turn. Then do the same right to left.",
+      "Use the integer cross product; pop only on strictly clockwise turns (cross < 0) so collinear edge trees survive, and union the two chains."
+    ],
+    "related": [
+      "max_points_on_a_line",
+      "largest_rectangle_in_histogram",
+      "daily_temperatures"
+    ],
+    "code": "class Solution:\n    def outerTrees(self, trees: List[List[int]]) -> List[List[int]]:\n        def cross(o, a, b) -> int:                   # (a - o) x (b - o)\n            return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])\n\n        pts = sorted(map(tuple, trees))\n        lower = []\n        for p in pts:                                # left -> right along the bottom\n            while len(lower) >= 2 and cross(lower[-2], lower[-1], p) < 0:\n                lower.pop()                          # clockwise turn: middle point is inside\n            lower.append(p)\n        upper = []\n        for p in reversed(pts):                      # right -> left along the top\n            while len(upper) >= 2 and cross(upper[-2], upper[-1], p) < 0:\n                upper.pop()\n            upper.append(p)\n        return [list(p) for p in set(lower + upper)]  # ends appear in both chains"
+  },
+  {
+    "slug": "number_of_digit_one",
+    "title": "Number of Digit One",
+    "leetcode": 233,
+    "difficulty": "Hard",
+    "topic": "math_geometry",
+    "pattern": "Digit counting by position",
+    "file": "math_geometry/number_of_digit_one.py",
+    "problem": "Count the total number of digit 1 appearing in all non-negative integers less than or equal to n, with n up to 2*10^9. Example: n = 13 returns 6, because 1, 10, 11, 12, 13 contain 1 + 1 + 2 + 1 + 1 ones. Example: n = 0 returns 0.",
+    "brute_force": {
+      "approach": "For every i from 0 to n convert it to a string and count its '1' characters. For n = 2*10^9 that is billions of conversions. The ones digit cycles 0..9 every 10 numbers, the tens digit every 100, and so on, and the brute force rediscovers these perfectly periodic patterns one number at a time.",
+      "time": "O(n log n)",
+      "space": "O(1)",
+      "code": "def brute_force(n: int) -> int:\n    return sum(str(i).count(\"1\") for i in range(n + 1))   # visits every number"
+    },
+    "optimization": "The redundancy is counting across numbers when the structure lives across digit positions. Fix a position with weight p (1, 10, 100, ...) and split n = high * 10p + cur * p + low, where cur is n's digit at that position. Each full cycle of the higher digits (0..high-1) makes the position show a 1 for exactly p consecutive numbers, contributing high * p. The partial cycle at high itself depends on cur: if cur > 1 the position has already shown 1 for a complete block of p numbers; if cur == 1 it has shown 1 for low + 1 numbers (from ...1000 up to n); if cur == 0, none. Summing the ten positions answers in O(log n).",
+    "intuition": "Count ones column by column, not number by number. In any column the digit 1 appears in a strict rhythm (p numbers on, 9p off) and n simply truncates that rhythm. The truncation is fully described by the digit above the cut (cur) and the remainder below it (low), so each column is a constant-time formula.",
+    "geometric": "Write 0..n as rows of digits and look at one column. Reading down, the column is 0...0 1...1 2...2 ... 9...9 repeated, each run p rows long. high complete repetitions give high * p ones; the last partial repetition is cut at row n, either before the 1-run (cur = 0), inside it (cur = 1, low + 1 rows), or after it (cur > 1, all p rows).",
+    "visual": "n = 13 -> 6 ones.  Count column by column.\n      0  1  2  3  4  5  6  7  8  9    ones column\n     10 11 12 13                      cycles every 10\nones place  p=1 : high=1 cur=3 low=0\n   full cycle 0..9     -> high*p = 1   (the 1 in 1)\n   cur=3 > 1, run done -> + p     = 1   (the 1 in 11)\ntens place  p=10: high=0 cur=1 low=3\n   cur == 1, inside run -> low+1  = 4   (10 11 12 13)\ntotal = 1 + 1 + 4 = 6",
+    "steps": [
+      "total = 0, p = 1.",
+      "While p <= n: high = n // (10p), cur = (n // p) % 10, low = n % p.",
+      "total += high * p (complete cycles above this position).",
+      "If cur > 1: total += p; elif cur == 1: total += low + 1.",
+      "p *= 10; return total."
+    ],
+    "complexity": {
+      "time": "O(log n)",
+      "space": "O(1)",
+      "why": "One constant-time step per decimal position of n."
+    },
+    "pitfalls": [
+      "Forgetting the +1 in low + 1: the number n itself counts when cur == 1.",
+      "Looping while p < n instead of p <= n misses the leading digit when n is a power of ten.",
+      "Overflow of p * 10 in fixed-width languages near n = 2*10^9."
+    ],
+    "hints": [
+      "Scanning every number is too slow. How often does the ones digit equal 1? The tens digit? Is there a pattern per position?",
+      "Split n around one position: n = high * 10p + cur * p + low. How many ones does that position contribute from the complete cycles?",
+      "Add high * p, then handle the partial cycle: + p if cur > 1, + low + 1 if cur == 1; repeat for p = 1, 10, 100, ..."
+    ],
+    "related": [
+      "missing_number",
+      "string_to_integer_atoi",
+      "number_of_1_bits"
+    ],
+    "code": "class Solution:\n    def countDigitOne(self, n: int) -> int:\n        total, p = 0, 1                              # p = weight of the current position\n        while p <= n:\n            high, cur, low = n // (p * 10), (n // p) % 10, n % p\n            total += high * p                        # full cycles above this position\n            if cur > 1:\n                total += p                           # partial cycle already passed its 1-run\n            elif cur == 1:\n                total += low + 1                     # inside the 1-run: 0..low below it\n            p *= 10\n        return total"
+  },
+  {
+    "slug": "kth_smallest_in_lexicographical_order",
+    "title": "K-th Smallest in Lexicographical Order",
+    "leetcode": 440,
+    "difficulty": "Hard",
+    "topic": "math_geometry",
+    "pattern": "Denary trie traversal with subtree skipping",
+    "file": "math_geometry/kth_smallest_in_lexicographical_order.py",
+    "problem": "Return the k-th smallest integer in [1, n] when the integers are ordered lexicographically as strings; n and k are up to 10^9. Example: n = 13, k = 2 returns 10, because the order is 1, 10, 11, 12, 13, 2, 3, 4, 5, 6, 7, 8, 9. Example: n = 1, k = 1 returns 1.",
+    "brute_force": {
+      "approach": "Create the strings '1'..'n', sort them, and return the k-th. With n = 10^9 that is impossible in time and memory. Sorting enumerates every number although the lexicographic order is a pre-order walk of a fixed tree, so the position of any node can be computed from the tree's shape without listing its contents.",
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "code": "def brute_force(n: int, k: int) -> int:\n    return int(sorted(str(i) for i in range(1, n + 1))[k - 1])   # lists every number"
+    },
+    "optimization": "The redundancy is visiting numbers one at a time. Lexicographic order is a pre-order traversal of the denary trie whose roots are 1..9 and where node v has children 10v..10v+9. In pre-order, all descendants of v are visited before v+1, so the k-th element can be reached by jumping: standing at cur with k steps left, compute steps = size of cur's subtree within [1, n]. If steps <= k the target is not under cur, so skip the whole subtree (k -= steps, cur += 1); otherwise it is, so descend (k -= 1, cur *= 10). The subtree size is the count of numbers in [cur, cur+1), [10cur, 10cur+10), [100cur, ...) clipped at n+1, computed level by level in O(log n), so the entire walk is O(log^2 n).",
+    "intuition": "Treat the numbers as a trie of digit strings; pre-order equals lexicographic order. At each level ask 'is the target inside this subtree?' by comparing k with the subtree size, the same move as finding the k-th element of a list of blocks by block sizes, and either hop to the next sibling or dive to the first child.",
+    "geometric": "Draw the roots 1..9 across the top; under each hang its ten children 10..19, 20..29, and so on, with the tree ragged on the right where values exceed n. The answer is the k-th node met walking depth-first, left to right. The algorithm hops sibling to sibling when a subtree is small enough to skip and steps down one level when the target lies inside.",
+    "visual": "n = 13, k = 2      pre-order of the denary trie = lex order\n        1          2   3   4   5   6   7   8   9\n     / / \\ \\\n  10 11 12 13      (14..19 exceed n: pruned)\nvisit order: 1 10 11 12 13 2 3 4 5 6 7 8 9\ncur=1, k=1 after counting cur itself\n  subtree(1) = [1,2):1 + [10,14):4 = 5 > 1 -> descend\n  cur=10, k=0 -> answer 10\nif k were 6: k=5, subtree(1)=5 <= 5 -> skip: cur=2, k=0",
+    "steps": [
+      "cur = 1, k -= 1 (cur is the first element).",
+      "subtree(a): b = a + 1, total = 0; while a <= n: total += min(n + 1, b) - a; a *= 10; b *= 10.",
+      "While k > 0: steps = subtree(cur).",
+      "If steps <= k: k -= steps; cur += 1 (skip this subtree, go to the next sibling).",
+      "Else: k -= 1; cur *= 10 (visit the first child).",
+      "Return cur."
+    ],
+    "complexity": {
+      "time": "O(log^2 n)",
+      "space": "O(1)",
+      "why": "At most about 10 levels of descent plus 9 sibling hops per level, each with an O(log n) subtree count."
+    },
+    "pitfalls": [
+      "Clipping with min(n, b) instead of min(n + 1, b) drops the number n itself.",
+      "Forgetting to decrement k for cur before the loop, or decrementing twice when descending.",
+      "Trying to build the strings or a heap; even partially listing 10^9 numbers is too slow."
+    ],
+    "hints": [
+      "Write the order for n = 13. What tree does it look like if each number's children are formed by appending a digit?",
+      "Lexicographic order is pre-order on that tree. How many numbers <= n lie in the subtree rooted at cur?",
+      "If the subtree size is <= the remaining k, skip it (cur += 1); otherwise step into the first child (cur *= 10). Count levels with min(n+1, b) - a."
+    ],
+    "related": [
+      "kth_smallest_element_in_a_bst",
+      "implement_trie_prefix_tree",
+      "number_of_digit_one"
+    ],
+    "code": "class Solution:\n    def findKthNumber(self, n: int, k: int) -> int:\n        def subtree(a: int) -> int:                  # how many numbers in [1, n] start with a\n            b, total = a + 1, 0\n            while a <= n:                            # one level of the trie at a time\n                total += min(n + 1, b) - a           # numbers in [a, b) that are <= n\n                a, b = a * 10, b * 10\n            return total\n\n        cur, k = 1, k - 1                            # cur is the 1st element\n        while k:\n            steps = subtree(cur)\n            if steps <= k:                           # target is past this whole subtree\n                k -= steps\n                cur += 1                             # jump to the next sibling\n            else:                                    # target is inside: visit the first child\n                k -= 1\n                cur *= 10\n        return cur"
+  }
+]

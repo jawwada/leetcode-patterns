@@ -1,0 +1,16 @@
+{"topic": "greedy", "title": "Greedy", "order": [
+ {"slug": "maximum_subarray", "why_here": "The purest running-state carry: drop a negative prefix and keep one running sum."},
+ {"slug": "maximum_product_subarray", "why_here": "Same carry, but a negative flips the order, so the carry holds both the max and the min."},
+ {"slug": "jump_game", "why_here": "Introduces the reach invariant: the reachable set is a prefix described by one integer."},
+ {"slug": "jump_game_ii", "why_here": "Reuses the reach, now split into BFS levels that are intervals, to count the minimum jumps."},
+ {"slug": "minimum_number_of_taps_to_open_to_water_a_garden", "why_here": "Converts tap intervals into jump lengths and runs Jump Game II with an impossibility check."},
+ {"slug": "gas_station", "why_here": "A running sum with restart, justified by an argument that discards whole blocks of starts at once."},
+ {"slug": "partition_labels", "why_here": "Each letter becomes a span; a required end is extended and cut when the sweep catches it."},
+ {"slug": "candy", "why_here": "Constraints from both neighbours, each solved by its own directional greedy pass and combined with max."},
+ {"slug": "min_number_operations", "why_here": "Count only the rises: the first of the lower-bound-equals-answer problems."},
+ {"slug": "super_washing_machines", "why_here": "Two lower bounds (flow across a boundary, surplus at a machine), and the larger one is achievable."},
+ {"slug": "patching_array", "why_here": "The reach idea returns over subset sums; a forced hole is patched with the hole itself."},
+ {"slug": "set_intersection_size_at_least_two", "why_here": "Sort by end and place points as far right as possible, an exchange argument applied twice."},
+ {"slug": "couples_holding_hands", "why_here": "Greedy swaps are optimal because the seating decomposes into cycles, counted with union-find."},
+ {"slug": "stamping_the_sequence", "why_here": "Greedy that only works with time reversed: peel off the last stamp first."}
+]}

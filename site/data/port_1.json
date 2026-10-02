@@ -1,0 +1,717 @@
+[
+  {
+    "slug": "max_consecutive_ones",
+    "title": "Max Consecutive Ones",
+    "leetcode": 485,
+    "difficulty": "Easy",
+    "topic": "arrays_hashing",
+    "pattern": "Running counter with reset",
+    "file": "arrays_hashing/max_consecutive_ones.py",
+    "problem": "Given a binary array nums, return the length of the longest run of consecutive 1s. Example: nums = [1,1,0,1,1,1] -> 3 (the last three 1s).",
+    "brute_force": {
+      "approach": "For every start index i, walk right while nums[j] == 1 and record the run length. A run of k ones is re-walked from each of its k starting positions, so the same 1s are counted over and over.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> int:\n    best = 0\n    for i in range(len(nums)):\n        j = i\n        while j < len(nums) and nums[j] == 1:   # re-walks the same run from every start\n            j += 1\n        best = max(best, j - i)\n    return best"
+    },
+    "optimization": "The redundancy is restarting the count at every index inside a run we have already measured. Observation: the run ending at index j has length run(j-1) + 1 if nums[j] == 1, and 0 otherwise, so it depends only on the previous count. One integer carried left to right replaces the inner loop: increment on 1, reset on 0, and keep the best value seen. Every element is touched exactly once.",
+    "intuition": "A 0 is a wall: no run can cross it. Between walls the run simply grows by one per step, so the current run length is all the state needed, and the answer is the largest value it ever reaches. Updating best inside the run (not only when a 0 appears) makes a run that ends at the last index count too.",
+    "geometric": "Picture the array as a strip of tiles. A counter rides along the strip, climbing by one on each 1 tile and dropping to the floor on each 0 tile. The answer is the highest peak of that sawtooth.",
+    "visual": "nums: [ 1, 1, 0, 1, 1, 1 ]\n        ^                    run=1  best=1\n           ^                 run=2  best=2\n              ^              0 = wall: run=0\n                 ^           run=1  best=2\n                    ^        run=2  best=2\n                       ^     run=3  best=3  <- answer\nrun:    1  2  0  1  2  3     (sawtooth; take the peak)",
+    "steps": [
+      "Set best = run = 0.",
+      "For each x: if x == 1, run += 1 and best = max(best, run).",
+      "Otherwise reset run = 0 (a 0 breaks every run that crosses it).",
+      "Return best."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "single pass with two integers."
+    },
+    "pitfalls": [
+      "Updating best only when a 0 appears, which misses a run ending at the last index.",
+      "Forgetting to reset the counter on 0."
+    ],
+    "hints": [
+      "Does the length of the run ending at index j depend on anything except the run ending at j-1?",
+      "Carry one counter: it grows on a 1 and drops to 0 on a 0.",
+      "run = run + 1 if x == 1 else 0; best = max(best, run) every step; return best."
+    ],
+    "code": "class Solution:\n    def findMaxConsecutiveOnes(self, nums: List[int]) -> int:\n        best = run = 0\n        for x in nums:\n            if x == 1:\n                run += 1\n                best = max(best, run)   # update inside the run so a trailing run counts\n            else:\n                run = 0                 # a 0 breaks every run that crosses it\n        return best",
+    "related": [
+      "max_consecutive_ones_iii",
+      "maximum_subarray",
+      "best_time_to_buy_and_sell_stock"
+    ]
+  },
+  {
+    "slug": "maximum_product_subarray",
+    "title": "Maximum Product Subarray",
+    "leetcode": 152,
+    "difficulty": "Medium",
+    "topic": "greedy",
+    "pattern": "Running max & min carry (Kadane variant)",
+    "file": "greedy/maximum_product_subarray.py",
+    "problem": "Given an integer array nums (values may be negative or zero), return the largest product of any non-empty contiguous subarray. Example: nums = [2,3,-2,4] -> 6 (subarray [2,3]); nums = [-2,0,-1] -> 0.",
+    "brute_force": {
+      "approach": "Fix every start i, extend the end j rightward multiplying a running product, and keep the best. For each new end j the products of all starts are redone, although the extreme products ending at j depend only on those ending at j-1.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> int:\n    best = nums[0]\n    for i in range(len(nums)):\n        prod = 1\n        for j in range(i, len(nums)):   # every end re-extends from every start\n            prod *= nums[j]\n            best = max(best, prod)\n    return best"
+    },
+    "optimization": "The redundancy is recomputing every product that ends at j. Plain Kadane (keep only the best product ending here) fails because a negative number flips order: the most negative product becomes the largest after multiplying by a negative. Observation: the extreme products ending at j can only be x, x * (max ending at j-1) or x * (min ending at j-1). So carry two numbers, hi and lo, and update both from the previous pair in O(1); a 0 collapses both to 0, restarting the run. (The original solution scanned prefix products left-to-right and right-to-left, resetting at zeros; also O(n)/O(1), since the best product inside a zero-free block is always a prefix or a suffix of it.)",
+    "intuition": "Sign is the whole difficulty. Keeping both the largest and the smallest product ending at the current index means that whichever one a negative number flips into the lead is already in hand. A large negative lo is not garbage; it is a future maximum waiting for the next negative. The answer is the best hi seen at any index. Both new values must be computed from the old pair, simultaneously.",
+    "geometric": "Picture two lines riding over the array: hi on top, lo on the bottom. A positive x stretches both away from zero; a negative x mirrors them across zero (swapping roles) before stretching; a zero collapses both onto 0. The answer is the highest point the top line ever reaches.",
+    "visual": "nums:   2     3    -2     4\nhi:     2     6    -2     4\nlo:     2     3   -12   -48\nbest:   2     6     6     6   -> 6\n\nnums:  -2     3    -4          (negative flips hi/lo)\nhi:    -2     3    24   <- lo*x = -6*-4 wins\nlo:    -2    -6   -12\nbest:  -2     3    24   -> 24",
+    "steps": [
+      "Initialise hi = lo = best = nums[0].",
+      "For each later x form the candidates (x, hi*x, lo*x).",
+      "Set hi = max(candidates) and lo = min(candidates), both from the old hi/lo.",
+      "Update best = max(best, hi).",
+      "Return best."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "one pass carrying two products."
+    },
+    "pitfalls": [
+      "Updating hi first and then using the new hi to compute lo.",
+      "Initialising best to 0, which is wrong for a single negative like [-3].",
+      "Forgetting that x alone can beat extending (needed to restart after a zero)."
+    ],
+    "hints": [
+      "Why does keeping only the best product ending at each index (plain Kadane) fail here?",
+      "A negative x turns the smallest product ending at j-1 into the largest one ending at j, so track both extremes.",
+      "hi, lo = max(x, hi*x, lo*x), min(x, hi*x, lo*x) from the old values; best = max(best, hi)."
+    ],
+    "code": "class Solution:\n    def maxProduct(self, nums: List[int]) -> int:\n        hi = lo = best = nums[0]\n        for x in nums[1:]:\n            # a negative x turns the smallest product into the largest, so carry both\n            cands = (x, hi * x, lo * x)\n            hi, lo = max(cands), min(cands)\n            best = max(best, hi)\n        return best",
+    "related": [
+      "maximum_subarray",
+      "best_time_to_buy_and_sell_stock",
+      "product_of_array_except_self"
+    ]
+  },
+  {
+    "slug": "move_zeroes",
+    "title": "Move Zeroes",
+    "leetcode": 283,
+    "difficulty": "Easy",
+    "topic": "two_pointers",
+    "pattern": "Read/write pointers (stable compaction)",
+    "file": "two_pointers/move_zeroes.py",
+    "problem": "Move all 0s in nums to the end in place, keeping the relative order of the non-zero elements; return nothing. Example: nums = [0,1,0,3,12] -> [1,3,12,0,0].",
+    "brute_force": {
+      "approach": "Bubble zeros rightward: whenever nums[i] == 0 and nums[i+1] != 0 swap them, and repeat passes until nothing moves. A non-zero value hops left one slot per pass, so it is moved once per zero in front of it instead of jumping straight to its final slot.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> None:\n    moved = True\n    while moved:                                # one bubble pass per iteration\n        moved = False\n        for i in range(len(nums) - 1):\n            if nums[i] == 0 and nums[i + 1] != 0:\n                nums[i], nums[i + 1] = nums[i + 1], nums[i]\n                moved = True"
+    },
+    "optimization": "The redundancy is moving each non-zero one step at a time. Observation: the final slot of the k-th non-zero is simply index k, because order is preserved and zeros fill the tail. So keep a write pointer w (non-zeros placed so far) while a read pointer r scans; on each non-zero, swap it into slot w and advance w. Invariant: nums[0:w] are the non-zeros seen so far in order and nums[w:r] are all zeros, so a swap carries a zero forward to r.",
+    "intuition": "The array is being split into a kept prefix and a zero middle. Swapping rather than overwriting moves the zero at w to position r, so after one pass the zeros have gathered at the end with no second fill-in pass. When there are no zeros yet, w == r and the swap is a harmless self-swap. Relative order of non-zeros is preserved because they are written in the order they are read.",
+    "geometric": "Two arrows move right. The read arrow r visits every cell; the write arrow w trails behind, advancing only when a non-zero is dropped at its position. The gap between them is a bubble of zeros that slides toward the end of the array.",
+    "visual": "mid-flight (r=3, before the swap):\n  [ 1, 0, 0, 3, 12 ]\n       w     r          zeros live in [w, r)\nr  val  action      nums after          w\n0   0   skip        [0, 1, 0, 3, 12]    0\n1   1   swap 0<->1  [1, 0, 0, 3, 12]    1\n2   0   skip        [1, 0, 0, 3, 12]    1\n3   3   swap 1<->3  [1, 3, 0, 0, 12]    2\n4  12   swap 2<->4  [1, 3, 12, 0, 0]    3",
+    "steps": [
+      "Set w = 0.",
+      "Scan r over every index.",
+      "If nums[r] != 0, swap nums[w] and nums[r] and increment w.",
+      "When the scan ends, nums[:w] holds the non-zeros in order and nums[w:] holds zeros."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "every index is read once and swapped at most once."
+    },
+    "pitfalls": [
+      "Using remove/append inside a loop (O(n^2) and mutates while iterating).",
+      "Building a new list instead of modifying nums in place.",
+      "Sorting, which destroys the relative order."
+    ],
+    "hints": [
+      "Where does the k-th non-zero element end up in the final array?",
+      "Keep a write index for the next non-zero slot while a read index scans everything.",
+      "For each non-zero at r: swap nums[w], nums[r]; w += 1. The zeros are carried to the tail by the swaps."
+    ],
+    "code": "class Solution:\n    def moveZeroes(self, nums: List[int]) -> None:\n        w = 0                                   # next slot for a non-zero\n        for r in range(len(nums)):\n            if nums[r] != 0:\n                nums[w], nums[r] = nums[r], nums[w]   # zero at w is carried forward to r\n                w += 1",
+    "related": [
+      "sort_colors",
+      "remove_duplicates_from_sorted_array_ii",
+      "squares_of_a_sorted_array"
+    ]
+  },
+  {
+    "slug": "intersection_of_two_linked_lists",
+    "title": "Intersection of Two Linked Lists",
+    "leetcode": 160,
+    "difficulty": "Easy",
+    "topic": "linked_list",
+    "pattern": "Length alignment, then lockstep walk",
+    "file": "linked_list/intersection_of_two_linked_lists.py",
+    "problem": "Given the heads of two singly linked lists that may merge into a shared tail, return the first node they have in common (by identity, not value), or None. The lists have no cycles and must not be modified. Example: A = 4->1->8->4->5 and B = 5->6->1->8->4->5 sharing the tail 8->4->5 -> node 8.",
+    "brute_force": {
+      "approach": "For every node of A, walk all of B and check whether that exact node appears. B is re-scanned from its head for every node of A, although once the shared tail starts the two lists move in perfect step.",
+      "time": "O(m*n)",
+      "space": "O(1)",
+      "code": "def brute_force(headA: ListNode, headB: ListNode) -> Optional[ListNode]:\n    a = headA\n    while a:\n        b = headB\n        while b:                      # rescans all of B for every node of A\n            if a is b:\n                return a\n            b = b.next\n        a = a.next\n    return None"
+    },
+    "optimization": "The redundancy is searching B from scratch for each node of A. Observation: after the merge point both lists share the exact same tail, so they differ only in the lengths of their private prefixes, |m - n|. Advancing the longer list's pointer by that difference puts both pointers the same distance from the end; walking them in lockstep then lands them on the merge node at the same moment, or on None together. Two length counts and one lockstep walk replace the nested scan, with no hash set.",
+    "intuition": "Shared tails line up from the right. Counting lengths lets us line the lists up from the left as well, so 'same node' becomes a single identity check per step. If the lists never merge, both pointers hit None at the same step and the loop returns None naturally. (A well-known variant switches each pointer to the other head when it reaches the end, which equalises the distances without counting.)",
+    "geometric": "Draw the lists as a Y: two arms joining into one stem. Slide the longer arm's pointer down until both pointers are equally far from the bottom; then drop them together one step at a time. They collide exactly at the fork.",
+    "visual": "A:       4 -> 1 \\\n                  8 -> 4 -> 5 -> None\nB:  5 -> 6 -> 1 /\nm=5, n=6: advance b by 1 -> start a=4, b=6\nstep 1:  a=1  b=1   (different nodes!)\nstep 2:  a=8  b=8   a is b -> return node 8",
+    "steps": [
+      "Count m = len(A) and n = len(B).",
+      "Advance the head of the longer list by |m - n| nodes.",
+      "Walk a and b together until a is b.",
+      "Return a (None if the lists never meet)."
+    ],
+    "complexity": {
+      "time": "O(m + n)",
+      "space": "O(1)",
+      "why": "each list is walked at most twice."
+    },
+    "pitfalls": [
+      "Comparing node values instead of node identity (the value 1 appears in both private prefixes).",
+      "Forgetting the no-intersection case; both pointers reach None together.",
+      "Modifying the lists (e.g. marking visited nodes)."
+    ],
+    "hints": [
+      "After the merge point, how do the two lists differ? Only before it.",
+      "If both pointers were the same distance from the end, a lockstep walk would meet at the merge node.",
+      "Count both lengths, advance the longer one by the difference, then step both until a is b."
+    ],
+    "code": "class Solution:\n    def getIntersectionNode(self, headA: ListNode, headB: ListNode) -> Optional[ListNode]:\n        def length(node: Optional[ListNode]) -> int:\n            count = 0\n            while node:\n                count, node = count + 1, node.next\n            return count\n\n        m, n = length(headA), length(headB)\n        a, b = headA, headB\n        for _ in range(m - n):        # skip the longer private prefix\n            a = a.next\n        for _ in range(n - m):\n            b = b.next\n        while a is not b:             # equal distance to the end now: lockstep walk\n            a, b = a.next, b.next\n        return a",
+    "related": [
+      "linked_list_cycle",
+      "linked_list_cycle_ii",
+      "remove_nth_from_end",
+      "merge_two_sorted_lists"
+    ]
+  },
+  {
+    "slug": "linked_list_cycle",
+    "title": "Linked List Cycle",
+    "leetcode": 141,
+    "difficulty": "Easy",
+    "topic": "linked_list",
+    "pattern": "Floyd's tortoise and hare (fast/slow pointers)",
+    "file": "linked_list/linked_list_cycle.py",
+    "problem": "Given the head of a singly linked list, return True if some node can be reached again by following next pointers (the list has a cycle), else False. Example: 3->2->0->-4 with -4.next = node 2 -> True; a single node 1 -> None -> False.",
+    "brute_force": {
+      "approach": "Walk the list and remember every visited node in a hash set; meeting a node twice means a cycle, reaching None means none. It is O(n) time, but stores the whole path just to answer a yes/no question.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "code": "def brute_force(head: Optional[ListNode]) -> bool:\n    seen = set()\n    node = head\n    while node:\n        if id(node) in seen:          # remembers every node just to spot a repeat\n            return True\n        seen.add(id(node))\n        node = node.next\n    return False"
+    },
+    "optimization": "The set exists only to notice that the walk is going in circles. Observation: inside a cycle of length c, a pointer moving 2 steps per tick gains exactly 1 step per tick on a pointer moving 1 step, so the gap shrinks by one every tick and must reach 0 within c ticks: they meet. Without a cycle the fast pointer simply falls off the end. Two pointers replace the visited set, giving O(1) space at the same O(n) time. (The original solution started fast two nodes ahead and checked before moving; the standard form starts both at head and checks after moving.)",
+    "intuition": "On a straight road the faster runner just finishes; on a circular track the faster runner must eventually lap the slower one. Meeting means a cycle, falling off means none. Because the relative speed is exactly 1, fast can never jump over slow, so a meeting is guaranteed rather than probable.",
+    "geometric": "Draw the list as the Greek letter rho: a tail leading into a loop. Both pointers enter the loop; think of fast chasing slow around the circle, closing the gap by one node per tick until they stand on the same node.",
+    "visual": "3 -> 2 -> 0 -> -4\n     ^          |\n     +----------+         (tail -4 links back to 2)\ntick   slow   fast\n 0      3      3\n 1      2      0\n 2      0      2\n 3     -4     -4    slow is fast -> True",
+    "steps": [
+      "Set slow = fast = head.",
+      "While fast and fast.next exist, move slow one step and fast two steps.",
+      "If slow is fast after a move, return True.",
+      "If the loop exits, fast reached the end: return False."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "fast catches slow within one lap of the cycle, and only two pointers are stored."
+    },
+    "pitfalls": [
+      "Checking slow is fast before the first move (they start equal).",
+      "Not guarding fast.next before reading fast.next.next.",
+      "Comparing values instead of node identity."
+    ],
+    "hints": [
+      "Can you detect repetition without remembering every node?",
+      "Two pointers at different speeds: on a loop the faster must catch the slower; on a line it falls off.",
+      "slow = slow.next, fast = fast.next.next while fast and fast.next; return True when slow is fast."
+    ],
+    "code": "class Solution:\n    def hasCycle(self, head: Optional[ListNode]) -> bool:\n        slow = fast = head\n        while fast and fast.next:\n            slow, fast = slow.next, fast.next.next\n            if slow is fast:          # fast lapped slow inside the loop\n                return True\n        return False",
+    "related": [
+      "linked_list_cycle_ii",
+      "find_the_duplicate_number",
+      "intersection_of_two_linked_lists",
+      "palindrome_linked_list"
+    ]
+  },
+  {
+    "slug": "find_the_duplicate_number",
+    "title": "Find the Duplicate Number",
+    "leetcode": 287,
+    "difficulty": "Medium",
+    "topic": "linked_list",
+    "pattern": "Floyd's tortoise and hare (fast/slow pointers)",
+    "file": "linked_list/find_the_duplicate_number.py",
+    "problem": "nums has n + 1 integers, each in [1, n], and exactly one value repeats (possibly many times). Return it without modifying nums and with O(1) extra space. Example: nums = [1,3,4,2,2] -> 2; nums = [3,1,3,4,2] -> 3.",
+    "brute_force": {
+      "approach": "Compare every pair (i, j) and return nums[i] when nums[i] == nums[j]. A hash set would be O(n) time but breaks the O(1)-space rule, and sorting breaks the no-modify rule. The pairwise scan ignores the structure guaranteed by n + 1 values in [1, n].",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> int:\n    for i in range(len(nums)):\n        for j in range(i + 1, len(nums)):   # compares every pair of positions\n            if nums[i] == nums[j]:\n                return nums[i]\n    return -1"
+    },
+    "optimization": "Step 1 (the original solution): binary search on the value. For a guess mid, count how many nums are <= mid; without a duplicate in [1, mid] that count is at most mid, so count > mid means the duplicate is <= mid. That uses the pigeonhole structure for O(n log n) time and O(1) space, but rereads the array log n times. Step 2: read the array as a linked list i -> nums[i]. Every value is a valid index and index 0 is never a target, so the walk from 0 traces a rho; two indices holding the same value are two arrows into one node, which is exactly where the cycle begins. Floyd's cycle-entrance algorithm finds it in O(n) time and O(1) space without writing to nums.",
+    "intuition": "The duplicate value is the node with two incoming arrows in the functional graph i -> nums[i]. A walk from 0 must eventually loop because there are finitely many nodes, and the first node visited twice is the one reached by two different arrows: the duplicate. Floyd phase 1 proves a loop and lands somewhere inside it; phase 2 uses the fact that the head and the meeting point are the same distance from the entrance (mod the cycle length).",
+    "geometric": "Draw indices as dots and nums[i] as arrows. From 0 the arrows trace a tail into a loop. Phase 1: slow hops once and fast hops twice until they meet inside the loop. Phase 2: one pointer restarts at 0, both hop once per step, and they meet at the junction of the rho.",
+    "visual": "idx:   0  1  2  3  4\nnums: [1, 3, 4, 2, 2]\ngraph: 0 -> 1 -> 3 -> 2 -> 4\n                     ^       |\n                     +-------+   2 has two in-arrows\nphase 1: slow 1,3,2,4   fast 3,4,4,4 -> meet at 4\nphase 2: p restarts at 0, q stays at 4, 1 hop each\n   p=0,q=4 -> p=1,q=2 -> p=3,q=4 -> p=2,q=2 -> dup=2",
+    "steps": [
+      "Phase 1: slow = fast = 0; repeat slow = nums[slow], fast = nums[nums[fast]] until slow == fast.",
+      "Phase 2: reset slow = 0.",
+      "While slow != fast: slow = nums[slow], fast = nums[fast].",
+      "Return slow, the cycle entrance, which is the duplicate value."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "two pointer phases of O(n) hops each, storing only two indices."
+    },
+    "pitfalls": [
+      "Checking slow == fast before the first move (they start equal at 0).",
+      "Returning the phase-1 meeting point instead of the cycle entrance.",
+      "Assuming the duplicate appears only twice (sum or XOR tricks fail when it repeats many times)."
+    ],
+    "hints": [
+      "Every value is in [1, n]; what happens if you treat each value as a pointer to an index?",
+      "Following i -> nums[i] from index 0 forms a linked list with a cycle, and the duplicate is where two arrows enter the same node.",
+      "Run Floyd: race slow (1 hop) and fast (2 hops) to a meeting, restart one pointer at 0, step both by 1; they meet at the duplicate."
+    ],
+    "code": "class Solution:\n    def findDuplicate(self, nums: List[int]) -> int:\n        slow = fast = 0\n        while True:                      # phase 1: meet somewhere inside the cycle\n            slow = nums[slow]\n            fast = nums[nums[fast]]\n            if slow == fast:\n                break\n        slow = 0                         # phase 2: head and meeting point converge on entrance\n        while slow != fast:\n            slow, fast = nums[slow], nums[fast]\n        return slow",
+    "related": [
+      "linked_list_cycle_ii",
+      "linked_list_cycle",
+      "first_missing_positive",
+      "missing_number"
+    ]
+  },
+  {
+    "slug": "next_greater_element_ii",
+    "title": "Next Greater Element II",
+    "leetcode": 503,
+    "difficulty": "Medium",
+    "topic": "stack",
+    "pattern": "Monotonic stack",
+    "file": "stack/next_greater_element_ii.py",
+    "problem": "nums is circular: after the last element comes the first. For every index return the first strictly greater value found by walking forward (wrapping around), or -1 if none exists. Example: nums = [1,2,1] -> [2,-1,2]; nums = [1,2,3,4,3] -> [2,3,4,-1,4].",
+    "brute_force": {
+      "approach": "For each i, step j = i+1, i+2, ... (mod n) for up to n-1 steps and stop at the first larger value. A long descending run is rescanned from every one of its elements, although a single bigger value would answer all of them at once.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> List[int]:\n    n = len(nums)\n    ans = [-1] * n\n    for i in range(n):\n        for k in range(1, n):                 # re-walks the circle from every index\n            if nums[(i + k) % n] > nums[i]:\n                ans[i] = nums[(i + k) % n]\n                break\n    return ans"
+    },
+    "optimization": "The redundancy is that every waiting index rescans the same stretch of the array. Observation: indices still waiting for an answer always have non-increasing values, because a later bigger one would already have answered the earlier one. Keep those indices on a stack; each new value pops and answers every waiting index with a smaller value, then waits itself. Circularity is handled with a second pass that only pops, answering leftovers with values from the start without pushing anything new. Each index is pushed once and popped at most once: O(n).",
+    "intuition": "Each index is a person waiting for someone taller to appear to their right. The waiting line is sorted tallest at the bottom and shortest on top, so a newcomer only has to look at the top to settle everyone shorter than them. Wrapping around is just letting the people at the start of the array walk past the line one more time. Whatever is still on the stack at the end (the maximum and its equals) keeps -1.",
+    "geometric": "Draw nums as bars. The stack holds a descending staircase of bars still looking right. A taller bar knocks down the lower steps (becoming their answer) and becomes the new top step. The second lap reuses bars from the left edge to knock down what remains.",
+    "visual": "nums: [1, 2, 3, 4, 3]       stack holds indices (vals)\npass 1:\n i=0 v=1  stack [0(1)]\n i=1 v=2  pop 0 -> ans[0]=2       stack [1(2)]\n i=2 v=3  pop 1 -> ans[1]=3       stack [2(3)]\n i=3 v=4  pop 2 -> ans[2]=4       stack [3(4)]\n i=4 v=3  3<4, push               stack [3(4),4(3)]\npass 2 (wrap, no pushes):\n i=0..2: 1,2,3 pop nothing  i=3 v=4: pop 4 -> ans[4]=4\nans: [2, 3, 4, -1, 4]   index 3 stays -1 (global max)",
+    "steps": [
+      "Set ans = [-1] * n and an empty stack of indices.",
+      "Pass 1: for each i, pop every index whose value is < nums[i] and set its answer to nums[i]; push i.",
+      "Pass 2: scan i = 0..n-1 again with the same popping loop but no pushes, answering the wrap-around.",
+      "Return ans; anything left on the stack keeps -1."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "each index is pushed once and popped at most once across both passes."
+    },
+    "pitfalls": [
+      "Popping on <= (equal values are not greater).",
+      "Pushing again in the second pass, which duplicates indices.",
+      "Storing values instead of indices, which leaves no way to write the answer slot."
+    ],
+    "hints": [
+      "Which indices are still waiting for an answer at any moment, and how are their values ordered?",
+      "The waiting values are non-increasing, so a stack lets a new value answer all smaller waiters from the top.",
+      "Run the monotonic stack over the array twice (or over i in range(2n) with i % n), pushing only in the first lap."
+    ],
+    "code": "class Solution:\n    def nextGreaterElements(self, nums: List[int]) -> List[int]:\n        n = len(nums)\n        ans = [-1] * n\n        stack: List[int] = []                 # indices waiting, values non-increasing\n        for i in range(n):\n            while stack and nums[stack[-1]] < nums[i]:\n                ans[stack.pop()] = nums[i]\n            stack.append(i)\n        for i in range(n):                    # wrap-around lap: answer leftovers, push nothing\n            while stack and nums[stack[-1]] < nums[i]:\n                ans[stack.pop()] = nums[i]\n        return ans",
+    "related": [
+      "daily_temperatures",
+      "largest_rectangle_in_histogram",
+      "asteroid_collision",
+      "sliding_window_maximum"
+    ]
+  },
+  {
+    "slug": "minimum_add_to_make_parentheses_valid",
+    "title": "Minimum Add to Make Parentheses Valid",
+    "leetcode": 921,
+    "difficulty": "Medium",
+    "topic": "stack",
+    "pattern": "Balance counter (stack collapsed to a count)",
+    "file": "stack/minimum_add_to_make_parentheses_valid.py",
+    "problem": "s contains only '(' and ')'. In one move you may insert a single parenthesis anywhere. Return the minimum number of insertions that make s valid. Example: s = \"())\" -> 1; s = \"(((\" -> 3; s = \"()))((\" -> 4.",
+    "brute_force": {
+      "approach": "Repeatedly delete every adjacent \"()\" pair until none is left; the remainder looks like \")))(((\" and each leftover character needs one partner, so the answer is its length. Each round rescans and copies the whole string to remove pairs that one left-to-right pass could match immediately.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(s: str) -> int:\n    while \"()\" in s:\n        s = s.replace(\"()\", \"\")   # one O(n) rebuild per round of cancellations\n    return len(s)"
+    },
+    "optimization": "The deletions are just stack matching: a ')' cancels the most recent unmatched '('. A stack of '(' would do it in one pass, but every entry is identical, so the stack collapses to its height: open = unmatched '(' so far. A ')' with open > 0 is matched; with open == 0 nothing to its right can ever match it, so it costs one insertion immediately. At the end each of the open '(' needs one ')'. Answer = unmatched ')' + leftover open, in one pass with two integers (the original Java solution's idea).",
+    "intuition": "Read left to right keeping a balance. The balance must never go below zero; each time it would, a '(' must be inserted before that ')', so count it and stay at zero. The balance left at the end is the number of ')' to append. A later '(' can never repay an earlier deficit, which is why the two counts are added, not netted.",
+    "geometric": "Draw the balance as a mountain path: '(' steps up, ')' steps down. A valid string stays at or above sea level and ends at sea level. Every dip below sea level is clipped (one insertion each), and the final altitude is how far you must descend at the end.",
+    "visual": "s:     (  )  )  )  (  (\nopen:  1  0  0  0  1  2\nadds:  0  0  1  2  2  2\n             ^  ^   ')' with open==0 -> insert '('\nraw:   1  0 -1 -2 -1  0   naive balance ends at 0 (wrong)\n             x  x         dips clipped: 2 inserted '('\nanswer = adds + open = 2 + 2 = 4",
+    "steps": [
+      "Set open = 0 and adds = 0.",
+      "On '(' increment open.",
+      "On ')' decrement open if open > 0, otherwise increment adds.",
+      "Return adds + open."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "single pass; the stack of identical '(' is reduced to a counter."
+    },
+    "pitfalls": [
+      "Returning |count('(') - count(')')|, which gives 0 for \")(\" instead of 2.",
+      "Letting the balance go negative and repaying it with a later '(' (a later '(' cannot fix an earlier ')')."
+    ],
+    "hints": [
+      "What does a stack of unmatched '(' look like, and do you need anything but its size?",
+      "Track open; a ')' arriving when open is 0 can never be matched by anything to its right.",
+      "Count those unmatchable ')' as insertions, then add the leftover open at the end."
+    ],
+    "code": "class Solution:\n    def minAddToMakeValid(self, s: str) -> int:\n        open_ = 0          # unmatched '(' so far (height of the would-be stack)\n        adds = 0           # ')' that had nothing to match: each needs an inserted '('\n        for c in s:\n            if c == \"(\":\n                open_ += 1\n            elif open_ > 0:\n                open_ -= 1\n            else:\n                adds += 1\n        return adds + open_",
+    "related": [
+      "valid_parentheses",
+      "minimum_remove_to_make_valid_parentheses",
+      "longest_valid_parentheses",
+      "generate_parentheses"
+    ]
+  },
+  {
+    "slug": "search_insert_position",
+    "title": "Search Insert Position",
+    "leetcode": 35,
+    "difficulty": "Easy",
+    "topic": "binary_search",
+    "pattern": "Binary search for a boundary (lower / upper bound)",
+    "file": "binary_search/search_insert_position.py",
+    "problem": "Given a sorted array of distinct integers and a target, return the index of target if present, otherwise the index where it would be inserted to keep the array sorted, in O(log n). Example: nums = [1,3,5,6], target = 5 -> 2; target = 2 -> 1; target = 7 -> 4.",
+    "brute_force": {
+      "approach": "Scan left to right and return the first index with nums[i] >= target, or n if none. Sortedness is ignored: after seeing nums[i] < target we already know every earlier index is too small, yet we keep checking one by one.",
+      "time": "O(n)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int], target: int) -> int:\n    for i, x in enumerate(nums):         # ignores sortedness: checks every index\n        if x >= target:\n            return i\n    return len(nums)"
+    },
+    "optimization": "Both 'found' and 'insert here' are the same question: the first index whose value is >= target (the lower bound). Observation: the predicate nums[i] >= target reads False...False True...True across a sorted array, so one comparison at mid discards half the candidates. Keep ans = n for the insert-at-end case; when nums[mid] >= target record mid and search left for an earlier qualifier, otherwise search right. This is the original solution's structure unchanged.",
+    "intuition": "We are hunting the boundary between 'too small' and 'big enough'. Every probe tells us on which side of the boundary mid lies, so the boundary's possible range halves each step. Recording ans whenever mid qualifies means the loop can end with lo > hi and still return the right slot, including n when every value is smaller.",
+    "geometric": "Picture the array as F F F T T T under the predicate value >= target. [lo, hi] is a shrinking bracket around the first T; each probe chops off the half that cannot contain it, and the bracket collapses onto the boundary in log n steps.",
+    "visual": "target = 2\nidx:        0   1   2   3\nnums:     [ 1,  3,  5,  6 ]\n>= 2 ?      F   T   T   T     want the first T\niter 1:     lo  mid     hi    3>=2 -> ans=1, hi=0\niter 2:     lo,hi,mid         1<2  -> lo=1\nlo > hi: stop, return ans = 1 (insert before 3)",
+    "steps": [
+      "Set lo = 0, hi = n - 1 and ans = n.",
+      "While lo <= hi take mid = (lo + hi) // 2.",
+      "If nums[mid] >= target, record ans = mid and set hi = mid - 1 to look for an earlier slot.",
+      "Otherwise set lo = mid + 1.",
+      "Return ans."
+    ],
+    "complexity": {
+      "time": "O(log n)",
+      "space": "O(1)",
+      "why": "the search bracket halves every iteration."
+    },
+    "pitfalls": [
+      "Returning -1 when target is missing instead of the insert position.",
+      "Forgetting the insert-at-end case (ans must start at n).",
+      "Mixing hi = mid with while lo <= hi, which can loop forever."
+    ],
+    "hints": [
+      "Is 'index of target' different from 'where target would be inserted' when target is present?",
+      "Both are the first index with nums[i] >= target, and that predicate is monotone over a sorted array.",
+      "Binary search with ans = n; on nums[mid] >= target set ans = mid, hi = mid - 1, else lo = mid + 1."
+    ],
+    "code": "class Solution:\n    def searchInsert(self, nums: List[int], target: int) -> int:\n        lo, hi = 0, len(nums) - 1\n        ans = len(nums)                  # if nothing is >= target, insert at the end\n        while lo <= hi:\n            mid = (lo + hi) // 2\n            if nums[mid] >= target:      # mid is a candidate; look for an earlier one\n                ans = mid\n                hi = mid - 1\n            else:\n                lo = mid + 1\n        return ans",
+    "related": [
+      "binary_search",
+      "find_first_and_last_position",
+      "search_2d_matrix",
+      "koko_eating_bananas"
+    ]
+  },
+  {
+    "slug": "magnetic_force_between_two_balls",
+    "title": "Magnetic Force Between Two Balls",
+    "leetcode": 1552,
+    "difficulty": "Medium",
+    "topic": "binary_search",
+    "pattern": "Binary search on the answer",
+    "file": "binary_search/magnetic_force_between_two_balls.py",
+    "problem": "Baskets sit at distinct integer positions. Place m balls in m different baskets so that the minimum distance between any two balls is as large as possible, and return that distance. Example: position = [1,2,3,4,7], m = 3 -> 3 (balls at 1, 4 and 7).",
+    "brute_force": {
+      "approach": "Sort the positions, then try every gap d = 1, 2, ..., max - min and keep the largest d for which a greedy left-to-right placement fits m balls. With R = max - min up to 1e9 this is O(n log n + R * n); feasibility is monotone in d, yet every d is tested one at a time.",
+      "time": "O(n log n + R*n)",
+      "space": "O(n)",
+      "code": "def brute_force(position: List[int], m: int) -> int:\n    pos = sorted(position)\n    best = 1\n    for d in range(1, pos[-1] - pos[0] + 1):   # tries every gap, one at a time\n        count, last = 1, pos[0]\n        for p in pos[1:]:\n            if p - last >= d:\n                count, last = count + 1, p\n        if count >= m:\n            best = d\n    return best"
+    },
+    "optimization": "Two observations. First, a fixed gap d is easy to check greedily: put the first ball in the leftmost basket and each next ball in the first basket at least d past the previous one, since placing a ball as early as possible never hurts later balls. Second, if gap d is achievable then every smaller gap is too, so feasible(d) reads True...True False...False. The answer is the last True, and a monotone predicate can be searched by halving [1, max - min], giving O(n log R) work instead of O(n R). This is the original solution's approach.",
+    "intuition": "Turn 'maximise the minimum gap' into a yes/no question: can every gap be kept >= d? That question has a cheap greedy answer and a monotone shape, so binary search finds the largest yes. The greedy is safe because any valid placement can be shifted so its first ball is at the leftmost basket and each ball is as far left as possible without breaking the gaps.",
+    "geometric": "Picture baskets as dots on a number line. For a trial d, drop a ball on the leftmost dot, then hop right to the first dot at least d away, and so on. A large d makes long hops and runs off the line before m balls; a small d fits easily. Binary search slides d to the exact edge where the hops still fit.",
+    "visual": "pos: 1  2  3  4  .  .  7          m = 3\n     o--------o--------o   d=3: 1 -> 4 -> 7  fits 3\n     o-----------------o   d=4: 1 -> 7, only 2  no\nd:   1   2   3 | 4   5   6\n     T   T   T | F   F   F   <- last T is the answer\nlo=1 hi=6: mid=3 T -> lo=4; mid=5 F -> hi=4;\n           mid=4 F -> hi=3; stop, ans=3",
+    "steps": [
+      "Sort the positions; set lo = 1, hi = pos[-1] - pos[0], ans = 1.",
+      "fits(d): place a ball at pos[0], then at every position at least d past the last placed ball; return count >= m.",
+      "While lo <= hi: mid = (lo + hi) // 2; if fits(mid) then ans = mid and lo = mid + 1, else hi = mid - 1.",
+      "Return ans."
+    ],
+    "complexity": {
+      "time": "O(n log n + n log R)",
+      "space": "O(n)",
+      "why": "sorting plus log R greedy checks of O(n) each; the sorted copy uses O(n)."
+    },
+    "pitfalls": [
+      "Forgetting to sort the positions.",
+      "Binary searching over indices instead of over distances.",
+      "Using > d instead of >= d in the greedy check."
+    ],
+    "hints": [
+      "Instead of maximising directly, can you answer 'is a minimum gap of d achievable?' quickly?",
+      "Greedy placement from the left answers it in O(n), and achievable gaps form a prefix 1..answer.",
+      "Binary search d over [1, max - min], keeping the largest d for which the greedy places at least m balls."
+    ],
+    "code": "class Solution:\n    def maxDistance(self, position: List[int], m: int) -> int:\n        pos = sorted(position)\n\n        def fits(d: int) -> bool:          # greedy: drop each ball as early as allowed\n            count, last = 1, pos[0]\n            for p in pos[1:]:\n                if p - last >= d:\n                    count, last = count + 1, p\n            return count >= m\n\n        lo, hi, ans = 1, pos[-1] - pos[0], 1\n        while lo <= hi:                    # find the last d where fits(d) is True\n            mid = (lo + hi) // 2\n            if fits(mid):\n                ans, lo = mid, mid + 1\n            else:\n                hi = mid - 1\n        return ans",
+    "related": [
+      "koko_eating_bananas",
+      "split_array_largest_sum",
+      "maximum_running_time_of_n_computers",
+      "find_kth_smallest_pair_distance"
+    ]
+  },
+  {
+    "slug": "binary_tree_inorder_traversal",
+    "title": "Binary Tree Inorder Traversal",
+    "leetcode": 94,
+    "difficulty": "Easy",
+    "topic": "trees",
+    "pattern": "Iterative traversal with an explicit stack",
+    "file": "trees/binary_tree_inorder_traversal.py",
+    "problem": "Return the values of a binary tree in inorder: left subtree, then the node, then the right subtree. The follow-up asks for an iterative solution. Example: root = [1,null,2,3] -> [1,3,2].",
+    "brute_force": {
+      "approach": "The first idea is the textbook recursion inorder(left); visit(node); inorder(right), which was the original solution. Nothing is recomputed, but the stack is hidden in the interpreter: a skewed tree of 10^4+ nodes overflows Python's recursion limit, and the traversal cannot be paused, resumed or stopped early.",
+      "time": "O(n)",
+      "space": "O(h)",
+      "code": "def brute_force(root: Optional[TreeNode]) -> List[int]:\n    out: List[int] = []\n\n    def inorder(node: Optional[TreeNode]) -> None:   # call stack holds the pending nodes\n        if node:\n            inorder(node.left)\n            out.append(node.val)\n            inorder(node.right)\n\n    inorder(root)\n    return out"
+    },
+    "optimization": "The recursion's only state is which ancestors are still waiting to be visited: each pending frame is a node whose left subtree is in progress. Observation: that is exactly a stack of nodes, and frames are always created by sliding left. So simulate it: slide left from the current node pushing every node on the way; at None, pop (that node's left side is done), visit it, and continue from its right child. Same O(n) time and O(h) space, but explicit, iterative and pausable, which is the basis of BST iterators and early-stop kth-smallest.",
+    "intuition": "Inorder visits a node only after its whole left spine is finished. The stack holds the left spine of the current position; popping means 'left is done, my turn', and moving to the right child starts a fresh left spine. Each node is pushed exactly once and popped exactly once, so the work is linear.",
+    "geometric": "Picture a cursor diving diagonally to the bottom-left, dropping a breadcrumb (push) at every node. At the bottom it picks up the latest breadcrumb (pop and visit), takes one step right, and dives bottom-left again. The output reads the tree left to right as if projected onto the x-axis.",
+    "visual": "        4\n      /   \\\n     2     6          dive left: push 4, 2, 1\n    / \\   / \\\n   1   3 5   7\nstack (bottom->top)    out\n[4, 2, 1]              []        hit None under 1\n[4, 2]                 [1]       pop 1, go right (None)\n[4]                    [1,2]     pop 2, go right -> 3\n[4, 3] -> [4]          [1,2,3]   pop 3\n[]                     [1,2,3,4] pop 4, go right -> 6",
+    "steps": [
+      "Set node = root, stack = [], out = [].",
+      "While node or stack is non-empty, repeat the next two steps.",
+      "Slide left: while node, push node and move to node.left.",
+      "Pop a node, append its value, and move to its right child.",
+      "Return out."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "each node is pushed and popped once; the stack holds at most one root-to-leaf spine."
+    },
+    "pitfalls": [
+      "Using while stack alone, which exits when the stack empties (e.g. after popping the root) and skips its right subtree.",
+      "Appending a node when it is pushed instead of when it is popped (that yields preorder)."
+    ],
+    "hints": [
+      "What does each pending recursive call remember while the left subtree is being processed?",
+      "It remembers a node waiting to be visited; those waiting nodes form a stack built by sliding left.",
+      "Loop: push the whole left spine, pop one node, record it, then move to its right child; stop when node is None and the stack is empty."
+    ],
+    "code": "class Solution:\n    def inorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        out: List[int] = []\n        stack: List[TreeNode] = []\n        node = root\n        while node or stack:\n            while node:                   # slide down the left spine, leaving breadcrumbs\n                stack.append(node)\n                node = node.left\n            node = stack.pop()            # left side finished: visit this node\n            out.append(node.val)\n            node = node.right             # then start the right subtree's left spine\n        return out",
+    "related": [
+      "kth_smallest_element_in_a_bst",
+      "validate_binary_search_tree",
+      "closest_binary_search_tree_value_ii",
+      "recover_binary_search_tree"
+    ]
+  },
+  {
+    "slug": "path_sum",
+    "title": "Path Sum",
+    "leetcode": 112,
+    "difficulty": "Easy",
+    "topic": "trees",
+    "pattern": "DFS carrying path state",
+    "file": "trees/path_sum.py",
+    "problem": "Given a binary tree and targetSum, return True if some root-to-leaf path has node values summing to targetSum; a leaf has no children and an empty tree has no paths. Example: root = [5,4,8,11,null,13,4,7,2,null,null,null,1], targetSum = 22 -> True via 5 -> 4 -> 11 -> 2.",
+    "brute_force": {
+      "approach": "Enumerate every root-to-leaf path as an explicit list of values, then sum each list and compare with the target. The prefix shared by sibling paths is copied and re-added for every leaf beneath it.",
+      "time": "O(n*h)",
+      "space": "O(n*h)",
+      "code": "def brute_force(root: Optional[TreeNode], targetSum: int) -> bool:\n    paths: List[List[int]] = []\n\n    def collect(node: Optional[TreeNode], path: List[int]) -> None:\n        if node is None:\n            return\n        path = path + [node.val]                         # copies the shared prefix each time\n        if node.left is None and node.right is None:\n            paths.append(path)\n        collect(node.left, path)\n        collect(node.right, path)\n\n    collect(root, [])\n    return any(sum(p) == targetSum for p in paths)"
+    },
+    "optimization": "The only thing a leaf needs from its path is the total, and a child's path total is the parent's total plus the child's value. Observation: pass that running number down the recursion instead of the whole list, so each node does O(1) work and shares its prefix sum with both subtrees. Checking only at leaves (both children None) enforces root-to-leaf, and an 'or' short-circuits as soon as one path matches. This is the original solution's preorder idea with an early exit added.",
+    "intuition": "Instead of a running sum, carry the remaining amount: subtract each node's value on the way down. At a leaf the question becomes whether the remainder is exactly zero. Values can be negative, so no branch can be pruned just because the running sum overshoots.",
+    "geometric": "Picture pouring targetSum units of water in at the root; every node on the way drinks its value. A leaf where the level is exactly 0 is a hit. The DFS explores branches in order and stops the moment one leaf reports a hit.",
+    "visual": "target 22, carry 'remaining' down\n            5 (17)\n          /       \\\n      4 (13)      8 (9)\n      /          /    \\\n  11 (2)     13(-4)   4 (5)\n  /    \\                 \\\n7(-5)  2 (0) <- leaf, 0   1 (4)\n               -> True, stop",
+    "steps": [
+      "If root is None return False.",
+      "Compute remaining = targetSum - root.val.",
+      "If root is a leaf, return remaining == 0.",
+      "Otherwise return hasPathSum(left, remaining) or hasPathSum(right, remaining)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "each node is visited at most once; recursion depth equals the height."
+    },
+    "pitfalls": [
+      "Accepting a match at an internal node; the path must end at a leaf.",
+      "Returning True for an empty tree with targetSum 0.",
+      "Pruning when the running sum exceeds the target, which is wrong with negative values."
+    ],
+    "hints": [
+      "What does a leaf need to know about the path above it to decide?",
+      "Only the sum so far, or equivalently the remaining target, which can be passed down as an argument.",
+      "Recurse with targetSum - node.val; at a leaf return remaining == 0; combine children with or."
+    ],
+    "code": "class Solution:\n    def hasPathSum(self, root: Optional[TreeNode], targetSum: int) -> bool:\n        if root is None:\n            return False\n        remaining = targetSum - root.val\n        if root.left is None and root.right is None:    # only leaves end a path\n            return remaining == 0\n        return (self.hasPathSum(root.left, remaining)\n                or self.hasPathSum(root.right, remaining))",
+    "related": [
+      "path_sum_ii",
+      "count_good_nodes_in_binary_tree",
+      "maximum_depth_of_binary_tree",
+      "binary_tree_maximum_path_sum"
+    ]
+  },
+  {
+    "slug": "path_sum_ii",
+    "title": "Path Sum II",
+    "leetcode": 113,
+    "difficulty": "Medium",
+    "topic": "trees",
+    "pattern": "DFS backtracking with a shared path list",
+    "file": "trees/path_sum_ii.py",
+    "problem": "Given a binary tree and targetSum, return every root-to-leaf path, as a list of node values, whose values sum to targetSum. Example: root = [5,4,8,11,null,13,4,7,2,null,null,5,1], targetSum = 22 -> [[5,4,11,2],[5,8,4,5]].",
+    "brute_force": {
+      "approach": "Build a fresh copy of the path at every node (path + [val]), collect every root-to-leaf path, then sum each and keep the matches. Every internal node copies the whole prefix and every leaf re-sums a prefix its ancestors already added, even when nothing matches.",
+      "time": "O(n*h)",
+      "space": "O(n*h)",
+      "code": "def brute_force(root: Optional[TreeNode], targetSum: int) -> List[List[int]]:\n    paths: List[List[int]] = []\n\n    def collect(node: Optional[TreeNode], path: List[int]) -> None:\n        if node is None:\n            return\n        path = path + [node.val]                 # fresh copy at every node\n        if node.left is None and node.right is None:\n            paths.append(path)\n        collect(node.left, path)\n        collect(node.right, path)\n\n    collect(root, [])\n    return [p for p in paths if sum(p) == targetSum]"
+    },
+    "optimization": "There are two redundancies. Re-summing: carry the remaining target down so each node does one subtraction and a leaf only checks remaining == 0. Re-copying: all paths share prefixes, so keep one mutable list, append the node on entry and pop it on exit (backtracking), and copy it only when a leaf actually matches. Copies are then paid only for output, which is unavoidable. This is the original solution's shape: preorder, shared path, pop on return.",
+    "intuition": "The path list mirrors the recursion stack exactly: it always holds the values from the root to the node being visited. Snapshot it at a matching leaf, and undo each append on the way back so siblings see the correct prefix. Forgetting the copy would store the same list object repeatedly, which ends up empty.",
+    "geometric": "Picture a cursor tracing the outline of the tree. Going down an edge pushes that node onto the path; coming back up pops it. Whenever the cursor stands on a leaf with zero remaining, a photo of the current path goes into the answer.",
+    "visual": "target 22\n              5\n           /     \\\n          4       8\n         /       / \\\n       11      13   4\n       / \\         / \\\n      7   2       5   1\npath at leaf 2: [5,4,11,2]  rem 0 -> copy into ans\npop 2, pop 11, pop 4 ... go right\npath at leaf 5: [5,8,4,5]   rem 0 -> copy into ans\nans = [[5,4,11,2], [5,8,4,5]]",
+    "steps": [
+      "Create ans = [] and one shared path = [].",
+      "dfs(node, remaining): return on None; append node.val and subtract it from remaining.",
+      "At a leaf with remaining == 0, append a copy path[:] to ans.",
+      "Otherwise recurse into the left and right children with the new remaining.",
+      "Pop the node from path before returning, then return ans after dfs(root, targetSum)."
+    ],
+    "complexity": {
+      "time": "O(n*h)",
+      "space": "O(h)",
+      "why": "each node is visited once but each match copies a path of length h; besides the output only one path and the recursion stack are kept."
+    },
+    "pitfalls": [
+      "Appending path itself instead of a copy, so every answer is the same (eventually empty) list.",
+      "Forgetting to pop on every return route, which corrupts sibling paths.",
+      "Checking the sum at internal nodes instead of only at leaves."
+    ],
+    "hints": [
+      "Can all paths share a single list if you undo your changes when you return?",
+      "Append on entry, pop on exit; carry the remaining target so leaves only test remaining == 0.",
+      "At a matching leaf append path[:] to the answer; recurse on children; then path.pop()."
+    ],
+    "code": "class Solution:\n    def pathSum(self, root: Optional[TreeNode], targetSum: int) -> List[List[int]]:\n        ans: List[List[int]] = []\n        path: List[int] = []\n\n        def dfs(node: Optional[TreeNode], remaining: int) -> None:\n            if node is None:\n                return\n            path.append(node.val)\n            remaining -= node.val\n            if node.left is None and node.right is None:\n                if remaining == 0:\n                    ans.append(path[:])          # snapshot; path keeps mutating\n            else:\n                dfs(node.left, remaining)\n                dfs(node.right, remaining)\n            path.pop()                           # backtrack so siblings see the right prefix\n\n        dfs(root, targetSum)\n        return ans",
+    "related": [
+      "path_sum",
+      "subsets",
+      "combination_sum",
+      "binary_tree_maximum_path_sum"
+    ]
+  },
+  {
+    "slug": "symmetric_tree",
+    "title": "Symmetric Tree",
+    "leetcode": 101,
+    "difficulty": "Easy",
+    "topic": "trees",
+    "pattern": "Simultaneous tree recursion",
+    "file": "trees/symmetric_tree.py",
+    "problem": "Return True if a binary tree is a mirror image of itself around its centre line. Example: [1,2,2,3,4,4,3] -> True; [1,2,2,null,3,null,3] -> False.",
+    "brute_force": {
+      "approach": "Do a level-order walk that lists every child slot of each level (None for a missing child) and check that each level's list reads the same forwards and backwards. Whole levels are materialised and copied before any comparison, so a mismatch deep in one corner is only found after every level above it is fully built.",
+      "time": "O(n)",
+      "space": "O(w)",
+      "code": "def brute_force(root: Optional[TreeNode]) -> bool:\n    level = [root]\n    while level:\n        vals = [n.val if n else None for n in level]\n        if vals != vals[::-1]:                    # each level (with None slots) must be a palindrome\n            return False\n        level = [c for n in level if n for c in (n.left, n.right)]\n    return True"
+    },
+    "optimization": "A level palindrome is just slot k from the left paired with slot k from the right. Observation: those pairs are generated recursively, since mirror(a, b) holds exactly when a.val == b.val, mirror(a.left, b.right) and mirror(a.right, b.left). Walking the two halves in lockstep compares each mirror pair directly, needs no padding lists, and the 'and' short-circuits at the first mismatch. Space drops to O(h). This is the original solution.",
+    "intuition": "Symmetry is not a property of one subtree but a relation between two: the left subtree must be the mirror of the right one. So recurse on pairs of nodes, crossing over at every step: outer with outer and inner with inner. Two Nones mirror each other; exactly one None breaks the symmetry.",
+    "geometric": "Fold the tree along the vertical line through the root. Two fingers start on the root's children and move in mirror image: when one goes left the other goes right. Every pair of nodes the fingers touch together must land on top of each other with equal values.",
+    "visual": "            1\n         /  |  \\\n        2   |   2          mirror(2, 2)\n       / \\  |  / \\\n      3   4 | 4   3\nouter pair: (3, 3)   = left.left  vs right.right\ninner pair: (4, 4)   = left.right vs right.left\n            1\n          /   \\\n         2     2           [1,2,2,null,3,null,3]\n          \\     \\\n           3     3   outer: (None, 3) -> False",
+    "steps": [
+      "Define mirror(a, b): if either is None, return a is b.",
+      "Otherwise return a.val == b.val and mirror(a.left, b.right) and mirror(a.right, b.left).",
+      "Answer is True for an empty tree, else mirror(root.left, root.right)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "each mirror pair is compared once and the recursion depth equals the height."
+    },
+    "pitfalls": [
+      "Comparing left.left with right.left, which tests sameness rather than mirroring.",
+      "Comparing level values without None placeholders, so [1,2,2,null,3,null,3] wrongly passes."
+    ],
+    "hints": [
+      "Is symmetry a property of a single subtree, or a relation between two subtrees?",
+      "Recurse on a pair (a, b): values equal, plus a's children mirrored against b's children.",
+      "mirror(a, b) = a.val == b.val and mirror(a.left, b.right) and mirror(a.right, b.left); start with the root's children."
+    ],
+    "code": "class Solution:\n    def isSymmetric(self, root: Optional[TreeNode]) -> bool:\n        def mirror(a: Optional[TreeNode], b: Optional[TreeNode]) -> bool:\n            if a is None or b is None:\n                return a is b                     # both missing -> mirror; one missing -> not\n            return (a.val == b.val\n                    and mirror(a.left, b.right)   # outer pair\n                    and mirror(a.right, b.left))  # inner pair\n\n        return root is None or mirror(root.left, root.right)",
+    "related": [
+      "same_tree",
+      "invert_binary_tree",
+      "subtree_of_another_tree"
+    ]
+  },
+  {
+    "slug": "cousins_in_binary_tree",
+    "title": "Cousins in Binary Tree",
+    "leetcode": 993,
+    "difficulty": "Easy",
+    "topic": "trees",
+    "pattern": "DFS carrying path state",
+    "file": "trees/cousins_in_binary_tree.py",
+    "problem": "In a binary tree with unique values, two nodes are cousins if they are at the same depth but have different parents. Given values x and y, return whether their nodes are cousins. Example: root = [1,2,3,null,4,null,5], x = 5, y = 4 -> True; root = [1,2,3,4], x = 4, y = 3 -> False.",
+    "brute_force": {
+      "approach": "Answer four separate questions with four separate searches from the root: depth(x), depth(y), parent(x) and parent(y). The same nodes are walked four times, and each walk rediscovers depth and parent information that a single walk sees for every node.",
+      "time": "O(n)",
+      "space": "O(h)",
+      "code": "def brute_force(root: Optional[TreeNode], x: int, y: int) -> bool:\n    def depth(node, target, d=0):               # separate full search per question\n        if node is None:\n            return -1\n        if node.val == target:\n            return d\n        return max(depth(node.left, target, d + 1), depth(node.right, target, d + 1))\n\n    def parent(node, target):\n        if node is None:\n            return None\n        for child in (node.left, node.right):\n            if child and child.val == target:\n                return node\n        return parent(node.left, target) or parent(node.right, target)\n\n    return depth(root, x) == depth(root, y) and parent(root, x) is not parent(root, y)"
+    },
+    "optimization": "Depth and parent are both path state a DFS already knows on arrival at a node: the depth is one more than the caller's and the parent is the caller. Observation: carry (parent, depth) as arguments and, when the node's value is x or y, record that pair. One traversal fills both records; then check equal depths and different parents. This is the original solution's single preorder walk, with the two records kept in a small dict.",
+    "intuition": "Cousin-ness needs only two facts per target node: how deep it is and who its parent is. Both arrive for free as the walk goes down, so collect them for x and y in a single pass. Comparing parents by identity makes siblings (same parent) fail the test even when their depths match.",
+    "geometric": "Picture the tree in horizontal layers. x and y must sit on the same layer but hang from different hooks directly above them. One sweep down the tree tags each target with its (layer, hook) pair.",
+    "visual": "depth 0          1\n               /   \\\ndepth 1       2     3\n               \\     \\\ndepth 2         4     5\nx=5: (parent 3, depth 2)\ny=4: (parent 2, depth 2)\nsame layer, different hooks -> cousins: True",
+    "steps": [
+      "Create an empty dict info.",
+      "dfs(node, parent, depth): return on None; if node.val is x or y store info[node.val] = (parent, depth).",
+      "Recurse into both children with (node, depth + 1).",
+      "Call dfs(root, None, 0).",
+      "Return True when the two depths are equal and the two parents are different nodes."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "one traversal; recursion depth equals the height."
+    },
+    "pitfalls": [
+      "Treating siblings (same parent) as cousins.",
+      "Checking only depth or only parent instead of both.",
+      "Forgetting the root has parent None."
+    ],
+    "hints": [
+      "What two facts about a node decide whether it is a cousin of another node?",
+      "Depth and parent are both known when a DFS arrives at a node; pass them down as arguments.",
+      "One DFS records (parent, depth) for x and y; answer depth_x == depth_y and parent_x is not parent_y."
+    ],
+    "code": "class Solution:\n    def isCousins(self, root: Optional[TreeNode], x: int, y: int) -> bool:\n        info: Dict[int, Tuple[Optional[TreeNode], int]] = {}   # val -> (parent, depth)\n\n        def dfs(node: Optional[TreeNode], parent: Optional[TreeNode], depth: int) -> None:\n            if node is None:\n                return\n            if node.val == x or node.val == y:\n                info[node.val] = (parent, depth)\n            dfs(node.left, node, depth + 1)\n            dfs(node.right, node, depth + 1)\n\n        dfs(root, None, 0)\n        (px, dx), (py, dy) = info[x], info[y]\n        return dx == dy and px is not py",
+    "related": [
+      "binary_tree_level_order_traversal",
+      "binary_tree_right_side_view",
+      "lowest_common_ancestor_of_a_binary_tree"
+    ]
+  }
+]

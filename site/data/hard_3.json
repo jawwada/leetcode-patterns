@@ -1,0 +1,582 @@
+[
+  {
+    "slug": "recover_binary_search_tree",
+    "title": "Recover Binary Search Tree",
+    "leetcode": 99,
+    "difficulty": "Hard",
+    "topic": "trees",
+    "pattern": "Inorder traversal with previous-node pointer",
+    "file": "trees/recover_binary_search_tree.py",
+    "problem": "Exactly two nodes of a BST had their values swapped by mistake. Restore the tree without changing its structure, by swapping the two values back. Example: [3,1,4,null,null,2] becomes [2,1,4,null,null,3] because 2 and 3 were swapped.",
+    "brute_force": {
+      "approach": "Collect the inorder sequence of nodes, sort a copy of their values and write the sorted values back in inorder; only the two misplaced positions actually change. The sort recomputes an order that is already almost perfect, and storing all n values is unnecessary when the walk can inspect adjacent pairs as it produces them.",
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "code": "def brute_force(root: Optional[TreeNode]) -> None:\n    # Inorder -> list, sort a copy, diff the two; then rewrite the tree in inorder. O(n log n).\n    def inorder(node: Optional[TreeNode], out: List[TreeNode]) -> None:\n        if node:\n            inorder(node.left, out)\n            out.append(node)\n            inorder(node.right, out)\n\n    nodes: List[TreeNode] = []\n    inorder(root, nodes)\n    target = sorted(n.val for n in nodes)\n    for node, want in zip(nodes, target):\n        node.val = want                            # only the two swapped positions actually change"
+    },
+    "optimization": "Inorder of a valid BST is strictly increasing, so a swap shows up as a 'dip' where prev > cur. If the swapped nodes are inorder-adjacent (1,3,2,4) there is one dip and its two elements are the culprits. If they are far apart (1,5,3,4,2,6) there are two dips, and the culprits are the LARGER element of the first dip (5) and the SMALLER element of the last dip (2). One rule covers both cases: on each dip set first = prev if it is unset, and always set second = cur. The walk only needs the previous node, so the sort and the list disappear and only the O(h) stack remains (Morris traversal would make it O(1)).",
+    "intuition": "The inorder walk is a ruler laid along the tree, and a swap makes the ruler read backwards in one or two places. The larger value of the first dip was pushed too far left, and the smaller value of the last dip was pushed too far right. Track only the previous node during an iterative inorder walk, remember those two nodes, and swap their values at the end. Swapping values, not nodes, keeps the structure unchanged.",
+    "geometric": "Flatten the BST into its inorder line. A valid BST is a rising staircase. A swap creates a bump (a high step that belongs later) and a pit (a low step that belongs earlier). The first falling edge sits just after the bump and the last falling edge sits just before the pit, so you grab both and exchange them.",
+    "visual": "      3            inorder walk, prev -> cur\n     / \\           1 -> 3   ok\n    1   4          3 -> 2   DIP: first = 3 (prev)\n       /                         second = 2 (cur)\n      2            2 -> 4   ok\n                   swap 3 <-> 2  =>  [2,1,4,_,_,3]\nfar-apart swap:  1 5 3 4 2 6   dips 5>3 and 4>2\n  first = 5 (prev of FIRST dip)\n  second = 2 (cur of LAST dip, overwrites 3)",
+    "steps": [
+      "Run an iterative inorder walk with a stack, keeping prev = the last visited node.",
+      "When visiting cur, a dip is prev.val > cur.val.",
+      "On a dip, set first = prev if first is unset, and always set second = cur.",
+      "Finish the walk, then swap first.val and second.val."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "One inorder pass; the explicit stack holds at most one root-to-leaf path."
+    },
+    "pitfalls": [
+      "Stopping after the first dip misses the far-apart case.",
+      "Setting second = prev instead of cur.",
+      "Swapping nodes instead of values, which changes the structure the problem says to keep.",
+      "Forgetting the adjacent case, where one dip supplies both culprits."
+    ],
+    "hints": [
+      "What property does the inorder sequence of a valid BST have, and how does swapping two values break it?",
+      "Walk inorder while remembering only the previous node. Count the places where prev > cur: there are one or two of them.",
+      "On every dip: first = prev (only the first time), second = cur (every time). Swap their values at the end."
+    ],
+    "code": "class Solution:\n    def recoverTree(self, root: Optional[TreeNode]) -> None:\n        first = second = prev = None\n        stack: List[TreeNode] = []\n        node = root\n        while stack or node:\n            while node:                            # go as far left as possible\n                stack.append(node)\n                node = node.left\n            node = stack.pop()\n            if prev and prev.val > node.val:       # a \"dip\" in what should be increasing\n                if first is None:\n                    first = prev                   # the bump: larger value of the first dip\n                second = node                      # the pit: smaller value of the LAST dip\n            prev = node\n            node = node.right\n        first.val, second.val = second.val, first.val",
+    "related": [
+      "validate_binary_search_tree",
+      "kth_smallest_element_in_a_bst",
+      "closest_binary_search_tree_value_ii"
+    ]
+  },
+  {
+    "slug": "binary_tree_cameras",
+    "title": "Binary Tree Cameras",
+    "leetcode": 968,
+    "difficulty": "Hard",
+    "topic": "trees",
+    "pattern": "Greedy post-order with 3-state return",
+    "file": "trees/binary_tree_cameras.py",
+    "problem": "A camera on a node monitors that node, its parent and its children. Return the minimum number of cameras needed to monitor every node. Example: [0,0,null,0,0] returns 1, because one camera on the middle node covers the root and both leaves.",
+    "brute_force": {
+      "approach": "Try every subset of nodes as camera positions, smallest subsets first, and return the size of the first subset that covers every node. This is exponential. Almost every subset is hopeless, and the same local question ('is this subtree covered, and does it need its parent?') is answered again for every global subset that shares the subtree's placement.",
+      "time": "O(2^n * n)",
+      "space": "O(n)",
+      "code": "def brute_force(root: Optional[TreeNode]) -> int:\n    # Try every subset of nodes as camera positions, smallest first: O(2^n * n), exponential.\n    nodes: List[TreeNode] = []\n    parent = {}\n\n    def collect(node: Optional[TreeNode], par: Optional[TreeNode]) -> None:\n        if node:\n            nodes.append(node)\n            parent[node] = par\n            collect(node.left, node)\n            collect(node.right, node)\n\n    collect(root, None)\n    for k in range(len(nodes) + 1):\n        for cams in combinations(nodes, k):\n            cam_set = set(cams)\n            if all(n in cam_set or parent[n] in cam_set\n                   or n.left in cam_set or n.right in cam_set for n in nodes):\n                return k\n    return 0"
+    },
+    "optimization": "The decision at a node depends only on what its children report, so summarise each subtree with one of three states: NEEDS (uncovered, so the parent must place a camera), COVERED (no camera here) and HAS_CAMERA. Greedy observation: never put a camera on a leaf, because its parent covers strictly more. More generally, place a camera only when a child reports NEEDS. A camera pushed one level up covers everything the lower one would have covered, plus more. Null children report COVERED so that leaves report NEEDS, and if the root ends up NEEDS it gets its own camera.",
+    "intuition": "Work bottom-up and be lazy: add a camera only when a child forces you to. A child that reports NEEDS forces a camera here. A child with a camera makes you COVERED for free. If both children are merely COVERED, you report NEEDS and leave it to your parent. Every camera sits at the highest node that can still cover its uncovered child, so none is wasted.",
+    "geometric": "Picture light spreading up from the leaves. A dark leaf shouts to its parent, the parent switches on a camera, and that camera also lights the grandparent and the siblings. The grandparent sees light from below and stays calm. Along any chain the cameras land on every third node, the densest pattern that radius-1 lamps need.",
+    "visual": "     A              post-order, children first:\n    /               C, D: null kids COVERED -> NEEDS\n   B  [CAM]         B: a child NEEDS -> camera\n  / \\               A: child has CAM -> COVERED\n C   D              root not NEEDS -> total 1\nchain of 5, leaf at the bottom:\n n1 [CAM]  child NEEDS        -> camera (2nd)\n n2        both kids COVERED  -> NEEDS\n n3        child has CAM      -> COVERED\n n4 [CAM]  child NEEDS        -> camera (1st)\n n5        leaf               -> NEEDS\nstates: 0 NEEDS  1 COVERED  2 HAS_CAMERA   total = 2",
+    "steps": [
+      "States: 0 = NEEDS, 1 = COVERED, 2 = HAS_CAMERA; a None child returns COVERED.",
+      "dfs(node): left = dfs(node.left), right = dfs(node.right).",
+      "If either child is NEEDS: cameras += 1 and return HAS_CAMERA.",
+      "Else if either child is HAS_CAMERA: return COVERED.",
+      "Else return NEEDS.",
+      "If dfs(root) is NEEDS, add one camera for the root, then return cameras."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "One post-order visit per node; the recursion stack is the tree height."
+    },
+    "pitfalls": [
+      "Letting None report NEEDS, which puts a camera on every leaf.",
+      "Forgetting the final check for an uncovered root.",
+      "Treating COVERED and HAS_CAMERA as one state: a COVERED child does not cover its parent."
+    ],
+    "hints": [
+      "Would you ever put a camera on a leaf? Compare it with putting one on the leaf's parent.",
+      "Process children before parents, and have each subtree report one of three states to its parent.",
+      "Use the states NEEDS / COVERED / HAS_CAMERA, with None = COVERED. A child that NEEDS forces a camera here, and a child with a camera makes you COVERED. Check the root at the end."
+    ],
+    "code": "class Solution:\n    def minCameraCover(self, root: Optional[TreeNode]) -> int:\n        NEEDS, COVERED, HAS_CAMERA = 0, 1, 2\n        self.cameras = 0\n\n        def dfs(node: Optional[TreeNode]) -> int:\n            if node is None:\n                return COVERED                     # null never asks for coverage -> leaves report NEEDS\n            left, right = dfs(node.left), dfs(node.right)\n            if left == NEEDS or right == NEEDS:\n                self.cameras += 1                  # forced: a child is still dark\n                return HAS_CAMERA\n            if left == HAS_CAMERA or right == HAS_CAMERA:\n                return COVERED                     # lit from below, no camera of our own\n            return NEEDS                           # both children covered, nobody lights us\n\n        if dfs(root) == NEEDS:\n            self.cameras += 1                      # the root has no parent to defer to\n        return self.cameras",
+    "related": [
+      "binary_tree_maximum_path_sum",
+      "diameter_of_binary_tree",
+      "balanced_binary_tree"
+    ]
+  },
+  {
+    "slug": "vertical_order_traversal_of_a_binary_tree",
+    "title": "Vertical Order Traversal of a Binary Tree",
+    "leetcode": 987,
+    "difficulty": "Hard",
+    "topic": "trees",
+    "pattern": "DFS with (column, row) coordinates, then group-sort",
+    "file": "trees/vertical_order_traversal_of_a_binary_tree.py",
+    "problem": "The root is at (row 0, col 0); a left child sits at (row+1, col-1) and a right child at (row+1, col+1). Report the nodes column by column from left to right. Within a column, order by row, and break ties at the same (row, col) by value. Example: [1,2,3,4,5,6,7] returns [[4],[2],[1,5,6],[3],[7]], since 5 and 6 share (2,0).",
+    "brute_force": {
+      "approach": "Find the column range with one DFS. Then, for every column c, run another full DFS that collects the (row, val) pairs whose col equals c, sort them and emit them. Each of the W passes walks all n nodes to pick out the few that belong to one column.",
+      "time": "O(n * W + n log n)",
+      "space": "O(n)",
+      "code": "def brute_force(root: Optional[TreeNode]) -> List[List[int]]:\n    # One full traversal per column: find the column range, then re-walk the tree for each column.\n    def span(node: Optional[TreeNode], col: int) -> Tuple[int, int]:\n        if node is None:\n            return (0, 0)\n        l_lo, l_hi = span(node.left, col - 1)\n        r_lo, r_hi = span(node.right, col + 1)\n        return (min(col, l_lo, r_lo), max(col, l_hi, r_hi))\n\n    def collect(node: Optional[TreeNode], row: int, col: int, want: int, out: List[Tuple[int, int]]) -> None:\n        if node is None:\n            return\n        if col == want:\n            out.append((row, node.val))\n        collect(node.left, row + 1, col - 1, want, out)\n        collect(node.right, row + 1, col + 1, want, out)\n\n    if root is None:\n        return []\n    lo, hi = span(root, 0)\n    result = []\n    for c in range(lo, hi + 1):\n        bucket: List[Tuple[int, int]] = []\n        collect(root, 0, 0, c, bucket)\n        result.append([val for _, val in sorted(bucket)])\n    return result"
+    },
+    "optimization": "A node's column is known the moment we visit it, so one traversal can drop every node straight into a bucket col -> [(row, val)]. That removes the W repeated walks. What remains is ordering: columns go left to right, and inside a column the order is by (row, val). Sorting each bucket's tuples handles both tie rules at once, and sorting the dict keys orders the columns. A BFS would give rows for free, but ties by value would still need a sort, so the tuple sort is the simplest correct form.",
+    "intuition": "The task is really 'sort the nodes by the key (col, row, val), then group by col'. Once every node carries its coordinates, the tree shape no longer matters: a flat set of keyed records and one sort per bucket finish the job.",
+    "geometric": "Draw the tree on graph paper with the root at the origin, each level one unit lower, and children one unit left or right. Vertical lines x = c slice the tree into columns. Read each line from top to bottom, and when two nodes land on the same grid point, read the smaller value first.",
+    "visual": "tree [1,2,3,4,6,5,7]\ncol:    -2  -1   0   1   2\nrow 0            1\nrow 1        2       3\nrow 2    4      6 5      7      6 and 5 share (2,0)\nDFS buckets (append order):\n  -2: (2,4)   -1: (1,2)   0: (0,1) (2,6) (2,5)\n   1: (1,3)    2: (2,7)\nsort col 0 by (row,val): (0,1) (2,5) (2,6) -> [1,5,6]\nanswer: [[4],[2],[1,5,6],[3],[7]]",
+    "steps": [
+      "DFS(node, row, col): append (row, node.val) to cols[col].",
+      "Recurse left with (row+1, col-1) and right with (row+1, col+1).",
+      "For each col in sorted(cols), sort its (row, val) tuples.",
+      "Emit the values of each column in that order."
+    ],
+    "complexity": {
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "why": "One traversal, then each (row, val) record is sorted once inside its column."
+    },
+    "pitfalls": [
+      "A plain BFS without sorting by value at an equal (row, col).",
+      "Sorting by value only, when row must take priority.",
+      "Indexing a list by col without offsetting negative columns."
+    ],
+    "hints": [
+      "Give every node a coordinate (row, col). What does the final order look like in terms of those coordinates?",
+      "One traversal can put each node into a bucket keyed by column. What order is needed inside a bucket?",
+      "Store (row, val) tuples per column, sort each bucket's tuples (row first, then value), and emit the columns in sorted key order."
+    ],
+    "code": "class Solution:\n    def verticalTraversal(self, root: Optional[TreeNode]) -> List[List[int]]:\n        cols: Dict[int, List[Tuple[int, int]]] = defaultdict(list)   # col -> [(row, val)]\n\n        def dfs(node: Optional[TreeNode], row: int, col: int) -> None:\n            if node is None:\n                return\n            cols[col].append((row, node.val))\n            dfs(node.left, row + 1, col - 1)\n            dfs(node.right, row + 1, col + 1)\n\n        dfs(root, 0, 0)\n        # tuple sort = by row, then by value for nodes sharing the same (row, col)\n        return [[val for _, val in sorted(cols[c])] for c in sorted(cols)]",
+    "related": [
+      "binary_tree_level_order_traversal",
+      "binary_tree_right_side_view",
+      "serialize_and_deserialize_binary_tree"
+    ]
+  },
+  {
+    "slug": "recover_a_tree_from_preorder_traversal",
+    "title": "Recover a Tree From Preorder Traversal",
+    "leetcode": 1028,
+    "difficulty": "Hard",
+    "topic": "trees",
+    "pattern": "Stack of ancestors indexed by depth",
+    "file": "trees/recover_a_tree_from_preorder_traversal.py",
+    "problem": "A tree was serialised by preorder DFS: each node is written as D dashes followed by its value, where D is its depth (the root has none). A node with a single child always has it on the left. Rebuild the tree. Example: \"1-2--3--4-5--6--7\" gives [1,2,5,3,4,6,7].",
+    "brute_force": {
+      "approach": "Tokenise into (depth, value) pairs. Recursively, the first token is the root; scan ahead for the second token at depth+1, which starts the right subtree, and recurse on the two slices. A left-leaning chain makes every level rescan nearly the whole remaining list, re-reading depths that were already parsed.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(traversal: str) -> Optional[TreeNode]:\n    # Tokenise, then recursively split each subtree's token list by scanning for the right child: O(n^2).\n    tokens: List[Tuple[int, int]] = []\n    i, n = 0, len(traversal)\n    while i < n:\n        depth = 0\n        while traversal[i] == \"-\":\n            depth, i = depth + 1, i + 1\n        j = i\n        while j < n and traversal[j] != \"-\":\n            j += 1\n        tokens.append((depth, int(traversal[i:j])))\n        i = j\n\n    def build_from(toks: List[Tuple[int, int]]) -> Optional[TreeNode]:\n        if not toks:\n            return None\n        depth, val = toks[0]\n        node = TreeNode(val)\n        split = len(toks)\n        for k in range(2, len(toks)):              # second token at depth+1 starts the right subtree\n            if toks[k][0] == depth + 1:\n                split = k\n                break\n        node.left = build_from(toks[1:split])\n        node.right = build_from(toks[split:])\n        return node\n\n    return build_from(tokens)"
+    },
+    "optimization": "The rescan exists only to find where a subtree ends. Preorder gives a cheaper signal: when a token at depth d appears, its parent is the most recent token at depth d-1, and everything seen deeper than d-1 is finished. Keep the current root-to-node path as a stack, whose length is the current depth. Pop until the stack has d entries; the top is then the parent. Attach the node as the left child if that slot is free, otherwise as the right child. Each token is pushed and popped once, so the build is a single linear pass.",
+    "intuition": "The dash count tells you exactly how many ancestors a node has. Keep that ancestor chain as an explicit stack, cut it back to the stated depth, and hang the new node on the top. The left slot fills first because preorder lists the whole left subtree before the right one.",
+    "geometric": "Read the string like a hiker reporting altitude: \"--3\" means two levels below the root. The stack is the rope of ancestors behind the hiker. When the altitude rises the rope is shortened by popping, and when it drops by one the hiker steps down to a new child. The rope is never longer than the tree is tall.",
+    "visual": "\"1-2--3--4-5--6--7\"\ntok depth  stack after            attach\n 1    0    [1]                    root\n 2    1    [1,2]                  1.left\n 3    2    [1,2,3]                2.left\n 4    2    pop 3 -> [1,2,4]       2.right\n 5    1    pop 4,2 -> [1,5]       1.right\n 6    2    [1,5,6]                5.left\n 7    2    pop 6 -> [1,5,7]       5.right\nresult:      1\n           2   5\n          3 4 6 7",
+    "steps": [
+      "Scan the string: count dashes to get the depth, then read all the digits of the value.",
+      "Create the node, then pop while len(stack) > depth, because those ancestors are finished.",
+      "If the stack is non-empty, the parent is stack[-1]: attach as left if it is free, else as right.",
+      "Push the node and continue to the end of the string.",
+      "Return stack[0], the root."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(h)",
+      "why": "Each character is read once and each node is pushed and popped once; the stack holds one root-to-node path."
+    },
+    "pitfalls": [
+      "Reading one digit instead of the whole multi-digit value.",
+      "Attaching to the right while the left slot is still empty.",
+      "Reading the parent before cutting the stack back to the new depth.",
+      "Recursing with list slicing, which is quadratic."
+    ],
+    "hints": [
+      "When you read a node at depth d, which earlier node must be its parent?",
+      "Keep the chain of ancestors from the root to the last node. How does a smaller depth change that chain?",
+      "Use a stack where stack[i] is the ancestor at depth i. Pop until len(stack) == depth, attach to stack[-1] (left first, then right), and push."
+    ],
+    "code": "class Solution:\n    def recoverFromPreorder(self, traversal: str) -> Optional[TreeNode]:\n        stack: List[TreeNode] = []                 # stack[i] is the current ancestor at depth i\n        i, n = 0, len(traversal)\n        while i < n:\n            depth = 0\n            while traversal[i] == \"-\":\n                depth += 1\n                i += 1\n            j = i\n            while j < n and traversal[j] != \"-\":\n                j += 1\n            node = TreeNode(int(traversal[i:j]))   # multi-digit values\n            i = j\n            while len(stack) > depth:              # cut the ancestor chain back to depth-1\n                stack.pop()\n            if stack:\n                parent = stack[-1]\n                if parent.left is None:            # preorder: the left subtree always comes first\n                    parent.left = node\n                else:\n                    parent.right = node\n            stack.append(node)\n        return stack[0] if stack else None",
+    "related": [
+      "construct_binary_tree_from_preorder_and_inorder_traversal",
+      "serialize_and_deserialize_binary_tree",
+      "serialize_and_deserialize_n_ary_tree"
+    ]
+  },
+  {
+    "slug": "closest_binary_search_tree_value_ii",
+    "title": "Closest Binary Search Tree Value II",
+    "leetcode": 272,
+    "difficulty": "Hard",
+    "topic": "trees",
+    "pattern": "Two lazy inorder iterators (predecessor / successor stacks)",
+    "file": "trees/closest_binary_search_tree_value_ii.py",
+    "problem": "Given a BST, a float target and an integer k (at most the number of nodes), return the k values closest to target in any order. Example: root=[4,2,5,1,3], target=3.714286, k=2 returns [4,3].",
+    "brute_force": {
+      "approach": "Inorder the whole tree into a list, sort that list by |value - target| and take the first k. This materialises all n values when only k matter, and it re-sorts a list that inorder already delivered in order. The answer is just a contiguous window of that sorted list around target.",
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "code": "def brute_force(root: Optional[TreeNode], target: float, k: int) -> List[int]:\n    # Inorder every value into a list, sort all n of them by distance to target, keep k: O(n log n).\n    vals: List[int] = []\n\n    def inorder(node: Optional[TreeNode]) -> None:\n        if node:\n            inorder(node.left)\n            vals.append(node.val)\n            inorder(node.right)\n\n    inorder(root)\n    vals.sort(key=lambda v: abs(v - target))\n    return vals[:k]"
+    },
+    "optimization": "First step, O(n): inorder is sorted, so the answer is a window of k consecutive values around target. Slide a deque of size k and stop once the next value is farther than the window's front. That is still O(n) when the window sits at the far right. Second step, O(h + k): never walk the whole inorder. The search path from the root splits into a predecessor stack (nodes <= target, top = largest) and a successor stack (nodes > target, top = smallest). Each stack is a lazy inorder iterator running away from target. Merge the two streams like sorted lists: k times, take the closer top and refill that stack, which costs amortised O(1).",
+    "intuition": "Target splits the sorted inorder sequence into a left half read right-to-left and a right half read left-to-right. Both halves get farther from target as you move along them, so the k closest values come out of a k-step merge of the two halves. Two stack-based iterators produce exactly those halves lazily, without listing the tree.",
+    "geometric": "Stand on the number line at target. The descent from the root leaves a trail of nodes, some to your left (the pred stack) and some to your right (the succ stack). Each stack is a flashlight pointing away from target that lights one value at a time. k times, read the nearer lit value and move that flashlight one value further out.",
+    "visual": "               8              target = 6.5, k = 4\n        4             12\n    2       6      10    14\n   1 3     5 7    9 11  13 15\ndescent: 8>t succ, 4<=t pred, 6<=t pred, 7>t succ\npred (top at right) [4, 6]    succ (top at right) [8, 7]\ntake 6  (0.5 tie -> pred)  push 6.left=5  pred [4, 5]\ntake 7  (0.5 < 1.5)        7 has no right succ [8]\ntake 5  (1.5 tie -> pred)                  pred [4]\ntake 8  (1.5 < 2.5)        -> [6, 7, 5, 8]",
+    "steps": [
+      "Walk from the root toward target: push nodes with val <= target onto pred and go right; push the others onto succ and go left.",
+      "next_pred(): pop the top p, then push p.left followed by its chain of right children; return p.val.",
+      "next_succ() mirrors it: pop, then push node.right followed by its chain of left children.",
+      "Repeat k times: take from pred if succ is empty or (pred is non-empty and target - pred.top <= succ.top - target); otherwise take from succ.",
+      "Return the collected values."
+    ],
+    "complexity": {
+      "time": "O(h + k)",
+      "space": "O(h)",
+      "why": "The descent is O(h), each of the k steps is amortised O(1), and each stack holds at most one root-to-leaf path."
+    },
+    "pitfalls": [
+      "Refilling a stack from the wrong subtree: pred goes left, then all the way right.",
+      "Putting a node equal to target on both stacks, which duplicates it.",
+      "Settling for an O(n) inorder list when the interviewer asks for the follow-up."
+    ],
+    "hints": [
+      "In the sorted inorder sequence, where do the k closest values sit relative to target?",
+      "They form a window around target. Can you produce the values just below and just above target one at a time, without listing the whole tree?",
+      "Build a predecessor stack and a successor stack from the root-to-target search path, then merge them k times, refilling the stack you took from like an inorder iterator."
+    ],
+    "code": "class Solution:\n    def closestKValues(self, root: Optional[TreeNode], target: float, k: int) -> List[int]:\n        pred: List[TreeNode] = []                  # nodes <= target; top is the largest of them\n        succ: List[TreeNode] = []                  # nodes >  target; top is the smallest of them\n        node = root\n        while node:                                # the search path splits into the two stacks\n            if node.val <= target:\n                pred.append(node)\n                node = node.right\n            else:\n                succ.append(node)\n                node = node.left\n\n        def next_pred() -> int:                    # pop the largest, then expose the next largest\n            node = pred.pop()\n            child = node.left\n            while child:\n                pred.append(child)\n                child = child.right\n            return node.val\n\n        def next_succ() -> int:                    # pop the smallest, then expose the next smallest\n            node = succ.pop()\n            child = node.right\n            while child:\n                succ.append(child)\n                child = child.left\n            return node.val\n\n        out: List[int] = []\n        for _ in range(k):                         # k-way merge of two sorted streams\n            if not succ or (pred and target - pred[-1].val <= succ[-1].val - target):\n                out.append(next_pred())\n            else:\n                out.append(next_succ())\n        return out",
+    "related": [
+      "kth_smallest_element_in_a_bst",
+      "k_closest_points_to_origin",
+      "recover_binary_search_tree"
+    ]
+  },
+  {
+    "slug": "serialize_and_deserialize_n_ary_tree",
+    "title": "Serialize and Deserialize N-ary Tree",
+    "leetcode": 428,
+    "difficulty": "Hard",
+    "topic": "trees",
+    "pattern": "Preorder with child counts, consumed by a single cursor",
+    "file": "trees/serialize_and_deserialize_n_ary_tree.py",
+    "problem": "Design Codec.serialize(root) -> str and Codec.deserialize(data) -> root for an N-ary tree in which each node has a value and a list of children. Any format works as long as deserialize(serialize(t)) rebuilds t. Example: 1 -> [3 -> [5, 6], 2, 4] must round-trip, and so must the empty tree.",
+    "brute_force": {
+      "approach": "Write each node as nested parentheses, such as \"1(3(5,6),2,4)\". To deserialize, split the inside of the outer brackets at depth-0 commas and recurse on each piece. On a deep chain every level rescans almost the whole remaining string to find its matching bracket, so characters are re-read once per ancestor.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    \"\"\"Nested parentheses \"1(3(5,6),2,4)\"; deserialize rescans for depth-0 commas at every level: O(n^2).\"\"\"\n\n    def serialize(self, root: Optional[Node]) -> str:\n        if root is None:\n            return \"\"\n        return f\"{root.val}({','.join(self.serialize(c) for c in root.children)})\"\n\n    def deserialize(self, data: str) -> Optional[Node]:\n        if not data:\n            return None\n        open_at = data.index(\"(\")\n        node = Node(int(data[:open_at]))\n        inner = data[open_at + 1:-1]\n        depth, start = 0, 0\n        for i, ch in enumerate(inner):             # rescan the whole remainder to find split points\n            if ch == \"(\":\n                depth += 1\n            elif ch == \")\":\n                depth -= 1\n            elif ch == \",\" and depth == 0:\n                node.children.append(self.deserialize(inner[start:i]))\n                start = i + 1\n        if inner:\n            node.children.append(self.deserialize(inner[start:]))\n        return node"
+    },
+    "optimization": "The rescan exists only to find where a subtree ends. Preorder has a cheaper signal: if each node records HOW MANY children it has, the reader knows exactly how many subtrees to consume next and never needs to look ahead. Serialize as 'val count' pairs in preorder. Deserialize with one forward iterator that reads a value and a count, then recursively builds exactly count children. Each token is consumed once, so the rebuild is O(n) and there are no brackets to balance. A '#' sentinel after the last child also works, but it costs an extra token per node.",
+    "intuition": "A binary tree uses null markers because every node has exactly two slots. An N-ary node has no fixed number of slots, so the missing information is 'how many children follow'. Store that count next to the value and preorder becomes self-delimiting: the stream itself tells the reader when each subtree is complete.",
+    "geometric": "Picture the tree flattened onto a tape of (val, count) pairs with a single read head moving right. Each count is a promise of that many complete subtrees. The recursion stack holds the promises still outstanding, and when one is fulfilled the head already sits on the next sibling. The head never moves backwards.",
+    "visual": "        1            serialize = preorder of (val, #kids)\n     /  |  \\         \"1 3 3 2 5 0 6 0 2 0 4 0\"\n    3   2   4\n   / \\\n  5   6\ntape:  1 3 | 3 2 | 5 0 | 6 0 | 2 0 | 4 0\n             ^ cursor (only moves right)\nbuild(): read 1, count 3 -> owes 3 subtrees\n  build(): read 3, count 2 -> 5 (leaf), 6 (leaf)\n  build(): read 2, count 0 -> leaf\n  build(): read 4, count 0 -> leaf    1 has [3, 2, 4]",
+    "steps": [
+      "serialize: preorder DFS; for each node append str(val) and str(len(children)), then join with spaces. The empty tree becomes \"\".",
+      "deserialize: return None for \"\"; otherwise create an iterator over the tokens.",
+      "build(): val = next(it), count = next(it), node.children = [build() for _ in range(count)], return node.",
+      "Return build()."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "Each node emits and consumes two tokens; the string and the recursion stack are linear."
+    },
+    "pitfalls": [
+      "Forgetting the empty tree: serialize it to \"\" and check for that.",
+      "Splitting a nested format on ',' without tracking bracket depth.",
+      "Recursing on a chain 10^4 deep: switch to an explicit stack if the depth limit bites."
+    ],
+    "hints": [
+      "Binary-tree serialization uses null markers. What plays that role when a node can have any number of children?",
+      "If the reader knew how many children each node has, would it ever need to look ahead?",
+      "Write preorder 'val childCount' pairs, then deserialize with a single iterator: read val and count, then recursively build exactly count children."
+    ],
+    "code": "class Codec:\n    def serialize(self, root: Optional[Node]) -> str:\n        out: List[str] = []\n\n        def dfs(node: Node) -> None:\n            out.append(str(node.val))\n            out.append(str(len(node.children)))    # the child count makes preorder self-delimiting\n            for child in node.children:\n                dfs(child)\n\n        if root is not None:\n            dfs(root)\n        return \" \".join(out)\n\n    def deserialize(self, data: str) -> Optional[Node]:\n        if not data:\n            return None\n        tokens = iter(data.split())                # a single forward-moving cursor\n\n        def build() -> Node:\n            node = Node(int(next(tokens)))\n            count = int(next(tokens))\n            node.children = [build() for _ in range(count)]   # consume exactly `count` subtrees\n            return node\n\n        return build()",
+    "related": [
+      "serialize_and_deserialize_binary_tree",
+      "recover_a_tree_from_preorder_traversal",
+      "encode_and_decode_strings"
+    ]
+  },
+  {
+    "slug": "word_squares",
+    "title": "Word Squares",
+    "leetcode": 425,
+    "difficulty": "Hard",
+    "topic": "tries",
+    "pattern": "Prefix trie + row-by-row backtracking",
+    "file": "tries/word_squares.py",
+    "problem": "Given distinct words that all have length n, return every word square: n words (reuse allowed) such that the k-th row and the k-th column read the same word. Example: [\"area\",\"lead\",\"wall\",\"lady\",\"ball\"] returns [[\"ball\",\"area\",\"lead\",\"lady\"], [\"wall\",\"area\",\"lead\",\"lady\"]].",
+    "brute_force": {
+      "approach": "Try every ordered n-tuple of words, repetition allowed, and keep those whose letter matrix is symmetric. This is exponential. Most tuples are already dead at row 2, because row 2 must start with the second letter of row 1, yet the brute force fills all n rows and checks symmetry only at the end.",
+      "time": "O(W^n * n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(words: List[str]) -> List[List[str]]:\n    # Every ordered n-tuple of words (repetition allowed), symmetry checked only at the end: O(W^n * n^2).\n    n = len(words[0])\n    out = []\n    for rows in product(words, repeat=n):\n        if all(rows[r][c] == rows[c][r] for r in range(n) for c in range(n)):\n            out.append(list(rows))\n    return out"
+    },
+    "optimization": "Symmetry gives an incremental constraint. Once rows 0..k-1 are placed, row k must start with column k of those rows (square[0][k] + ... + square[k-1][k]). So backtrack row by row and try only words with that prefix. The remaining cost is the prefix query, which is O(W * n) as a scan. A trie whose every node stores the indices of the words passing through it answers it with an O(n) walk. Invariant at depth k: the first k rows and the first k columns already agree, so a partial square never needs repair.",
+    "intuition": "Build the square one row at a time, and let the columns already written dictate how the next row must begin. The trie turns 'all words with this prefix' into a pointer walk, and pruning happens as early as possible because an impossible prefix has no trie node at all.",
+    "geometric": "Fill the n x n grid from the top. After k rows, symmetry also fixes the first k columns, which fixes the top k letters of column k: the required prefix of row k. That prefix is a path down the trie, and the words listed at the end of the path are exactly the legal next rows.",
+    "visual": "words: area lead wall lady ball      n = 4\nsquare so far        column k read downward = prefix\nrow0  b a l l        k=1: prefix \"a\"   -> [area]\nrow1  a r e a        k=2: prefix \"le\"  -> [lead]\nrow2  l e a d        k=3: prefix \"lad\" -> [lady]\nrow3  l a d y        k=4 == n -> record the square\n          ^ column 2 = \"lead\" = row 2\ntrie node for \"le\" stores $ = [lead]\ndead end: row0 = lead -> prefix \"e\" has no trie edge",
+    "steps": [
+      "Build a trie in which every node keeps a list of the indices of the words passing through it, so a prefix maps to its candidates in O(n).",
+      "backtrack(): if len(square) == n, record a copy and return.",
+      "k = len(square); prefix = ''.join(row[k] for row in square).",
+      "Walk the trie along the prefix and return early if a letter is missing.",
+      "For each word index at the final node: push the word, recurse, pop.",
+      "Start from the empty prefix, which matches every word as row 0."
+    ],
+    "complexity": {
+      "time": "O(W * n * 26^(n-1))",
+      "space": "O(W * n)",
+      "why": "Worst case, each of the n-1 later rows picks from all words sharing a prefix; the trie stores W*n characters, each with an index list."
+    },
+    "pitfalls": [
+      "Building the prefix from the wrong column: it is letter k of each previous row.",
+      "Storing words only at terminal nodes, so every prefix query needs a subtree walk.",
+      "Forbidding word reuse, which the problem allows."
+    ],
+    "hints": [
+      "Place rows one at a time. After k rows, what do you already know about row k?",
+      "Row k must start with column k of the rows so far. What data structure lists all words with a given prefix quickly?",
+      "Build a trie that stores, at each node, the indices of every word passing through it. Backtrack row by row, querying the prefix formed by column k."
+    ],
+    "code": "class Solution:\n    def wordSquares(self, words: List[str]) -> List[List[str]]:\n        n = len(words[0])\n        trie: Dict = {\"$\": list(range(len(words)))}   # the empty prefix (row 0) matches every word\n        for i, w in enumerate(words):\n            node = trie\n            for ch in w:\n                node = node.setdefault(ch, {})\n                node.setdefault(\"$\", []).append(i)   # every word passing through this prefix\n\n        def candidates(prefix: str) -> List[int]:\n            node = trie\n            for ch in prefix:\n                if ch not in node:\n                    return []\n                node = node[ch]\n            return node.get(\"$\", [])\n\n        squares: List[List[str]] = []\n        square: List[str] = []\n\n        def backtrack() -> None:\n            k = len(square)\n            if k == n:\n                squares.append(square[:])\n                return\n            prefix = \"\".join(row[k] for row in square)   # column k of the rows so far\n            for i in candidates(prefix):\n                square.append(words[i])\n                backtrack()\n                square.pop()\n\n        backtrack()\n        return squares",
+    "related": [
+      "word_search_ii",
+      "implement_trie_prefix_tree",
+      "n_queens"
+    ]
+  },
+  {
+    "slug": "design_search_autocomplete_system",
+    "title": "Design Search Autocomplete System",
+    "leetcode": 642,
+    "difficulty": "Hard",
+    "topic": "tries",
+    "pattern": "Trie with per-node frequency map + cursor that follows keystrokes",
+    "file": "tries/design_search_autocomplete_system.py",
+    "problem": "AutocompleteSystem(sentences, times) seeds a history in which sentences[i] was typed times[i] times. input(c) receives one character. If c is '#', the typed sentence is saved with +1 count and [] is returned. Otherwise it returns up to 3 historical sentences that start with everything typed so far, ordered by count descending and then ASCII. Example: with history {\"i love you\":5, \"island\":3, \"ironman\":2, \"i love leetcode\":2}, input('i') returns [\"i love you\",\"island\",\"i love leetcode\"].",
+    "brute_force": {
+      "approach": "Keep a dict sentence -> count and the typed string. On every keystroke, scan all S sentences for startswith(prefix), sort the matches by (-count, sentence) and return 3. Typing 'i love y' rescans everything 8 times, even though each keystroke only narrows the previous keystroke's candidate set.",
+      "time": "O(S * L + S log S) per keystroke",
+      "space": "O(S * L)",
+      "code": "class BruteForce:\n    \"\"\"Flat dict sentence -> count; every keystroke rescans and re-sorts all sentences: O(S*L + S log S).\"\"\"\n\n    def __init__(self, sentences: List[str], times: List[int]):\n        self.counts = dict(zip(sentences, times))\n        self.typed = \"\"\n\n    def input(self, c: str) -> List[str]:\n        if c == \"#\":\n            self.counts[self.typed] = self.counts.get(self.typed, 0) + 1\n            self.typed = \"\"\n            return []\n        self.typed += c\n        matches = [s for s in self.counts if s.startswith(self.typed)]   # full rescan per keystroke\n        matches.sort(key=lambda s: (-self.counts[s], s))\n        return matches[:3]"
+    },
+    "optimization": "Narrowing a prefix is exactly what a trie models, since node(p + c) is a child of node(p). So keep a CURSOR into the trie that moves one edge per keystroke instead of rescanning. To avoid walking the subtree under the cursor, every node stores a map sentence -> count for all sentences passing through it, and a query takes the top 3 of that map with heapq.nsmallest on (-count, sentence). '#' inserts or bumps the sentence along its O(L) path and resets the cursor. Once the cursor falls off the trie it stays None until '#'. The price is O(S * L^2) space, because each sentence appears in L prefix maps.",
+    "intuition": "Autocomplete is a conversation with a prefix that only grows until '#'. In a trie, growing the prefix by one letter is a single pointer step, and caching the ranked candidates at each node means that step also delivers the answer.",
+    "geometric": "Draw the trie with a marker that slides down one edge per keystroke. Each node is annotated with the sentences flowing through it and their counts, and the three heaviest annotations at the marker are the suggestions. Pressing '#' walks the typed path once more, incrementing counts, and lifts the marker back to the root.",
+    "visual": "root\n +- i   {i love you:5, island:3,\n    |    iroman:2, i love leetcode:2}\n    +- s ... (island)     +- r ... (iroman)\n    +- ' '  {i love you:5, i love leetcode:2}\n         +- l ...\ninput('i') -> cursor=node(i):\n              [i love you, island, i love leetcode]\ninput(' ') -> cursor=node(' '):\n              [i love you, i love leetcode]\ninput('a') -> no edge 'a' -> cursor = None -> []\ninput('#') -> add \"i a\" +1 on i,' ',a; cursor = root",
+    "steps": [
+      "_add(sentence, t): walk or create the trie path and, at each node, do node['$'][sentence] += t.",
+      "__init__: _add every seeded sentence; cursor = root; typed = [].",
+      "input('#'): _add(''.join(typed), 1), reset cursor and typed, return [].",
+      "Otherwise append c to typed and step the cursor = cursor.get(c), which is None once dead.",
+      "If the cursor is None return []; else return the 3 smallest items of cursor['$'] by (-count, sentence)."
+    ],
+    "complexity": {
+      "time": "O(L + m log 3) per keystroke",
+      "space": "O(S * L^2)",
+      "why": "One pointer step plus a top-3 selection over the m sentences under the prefix; each sentence is stored in each of its L prefix nodes."
+    },
+    "pitfalls": [
+      "Ranking by count only: ties must be broken in ASCII order.",
+      "Not resetting the cursor and the typed buffer after '#'.",
+      "Continuing to walk from a dead cursor after the prefix has left the trie.",
+      "Treating the partially typed string as a sentence before '#' arrives."
+    ],
+    "hints": [
+      "Each keystroke only extends the previous prefix. Which structure makes 'extend by one letter' a single step?",
+      "Keep a cursor into a trie. How can you get the top 3 sentences under the cursor without walking its subtree?",
+      "Store at each node a map sentence -> count for every sentence passing through it, take the top 3 by (-count, sentence), and on '#' bump counts along the path and reset the cursor."
+    ],
+    "code": "class AutocompleteSystem:\n    def __init__(self, sentences: List[str], times: List[int]):\n        self.root: Dict = {\"$\": {}}               # child chars -> node; \"$\" -> {sentence: count}\n        for sentence, count in zip(sentences, times):\n            self._add(sentence, count)\n        self.cursor: Dict = self.root             # trie node for the prefix typed so far (None = dead)\n        self.typed: List[str] = []\n\n    def _add(self, sentence: str, count: int) -> None:\n        node = self.root\n        for ch in sentence:\n            node = node.setdefault(ch, {\"$\": {}})\n            node[\"$\"][sentence] = node[\"$\"].get(sentence, 0) + count   # every prefix node records it\n\n    def input(self, c: str) -> List[str]:\n        if c == \"#\":\n            self._add(\"\".join(self.typed), 1)\n            self.cursor, self.typed = self.root, []\n            return []\n        self.typed.append(c)\n        if self.cursor is not None:\n            self.cursor = self.cursor.get(c)      # one pointer step per keystroke\n        if self.cursor is None:\n            return []\n        top = heapq.nsmallest(3, self.cursor[\"$\"].items(), key=lambda kv: (-kv[1], kv[0]))\n        return [sentence for sentence, _ in top]",
+    "related": [
+      "implement_trie_prefix_tree",
+      "top_k_frequent_words",
+      "design_add_and_search_words_data_structure"
+    ]
+  },
+  {
+    "slug": "stream_of_characters",
+    "title": "Stream of Characters",
+    "leetcode": 1032,
+    "difficulty": "Hard",
+    "topic": "tries",
+    "pattern": "Reversed trie walked backwards over a bounded recent-history buffer",
+    "file": "tries/stream_of_characters.py",
+    "problem": "StreamChecker(words) is fed one character at a time through query(letter), which returns True when some word is a suffix of everything queried so far. Example: words=[\"cd\",\"f\",\"kl\"] with the stream a..l returns True exactly at d, f and l.",
+    "brute_force": {
+      "approach": "Append each letter to a growing string and test stream.endswith(w) for every word. Every query re-examines all W words even though most cannot match the latest letter, and the whole stream is kept although only the last L characters can ever be part of a match.",
+      "time": "O(W * L) per query",
+      "space": "O(stream length)",
+      "code": "class BruteForce:\n    \"\"\"Keeps the whole stream and tests endswith for every word on each query: O(W*L) per query.\"\"\"\n\n    def __init__(self, words: List[str]):\n        self.words = words\n        self.stream = \"\"\n\n    def query(self, letter: str) -> bool:\n        self.stream += letter\n        return any(self.stream.endswith(w) for w in self.words)"
+    },
+    "optimization": "First bound the memory: a word of length <= L can only match the last L letters, so a deque of at most L recent characters is enough. Then collapse the W separate endswith checks. A word is a suffix of the stream iff the stream read BACKWARDS from its newest letter spells the word reversed. Insert every reversed word into a trie, and on each query walk the trie while reading the deque from newest to oldest. Every word is tested at once, and the walk stops on a missing edge (False) or on the first terminal node (True), so a query costs at most O(L).",
+    "intuition": "Suffix matching is prefix matching on the reversed string. Reverse the dictionary once, and the newest character becomes the first letter of whatever is being matched, so one backward walk from the root tests every word simultaneously.",
+    "geometric": "Picture a tape of the last L letters with its head on the newest one, laid against a trie of reversed words. Each step reads one letter older and goes one edge deeper. The walk either falls off the trie (no word ends here) or lands on a marked node (a word ends here). It never looks further back than the deepest leaf.",
+    "visual": "words cd, f, kl  -> reversed trie:\n  root -+- d -- c ($ \"cd\")\n        +- f ($ \"f\")\n        +- l -- k ($ \"kl\")\nmax_len = 2: buffer keeps the last 2 letters\nquery('d'): buffer [c, d]\n  read d -> edge ok; read c -> edge ok, $ -> True\nquery('e'): buffer [d, e]\n  read e -> no edge from root          -> False\nquery('l'): buffer [k, l]\n  read l -> ok; read k -> $            -> True",
+    "steps": [
+      "Build a trie from each word reversed, mark the end node with '$', and record L = the maximum word length.",
+      "query(letter): append to the deque and drop the oldest letter if len > L.",
+      "node = root; for ch in reversed(deque): return False if ch is not in node, step node = node[ch], and return True if '$' is in node.",
+      "Return False when the deque is exhausted."
+    ],
+    "complexity": {
+      "time": "O(L) per query",
+      "space": "O(sum of word lengths + L)",
+      "why": "One backward walk bounded by the longest word; the trie stores each character once and the buffer holds L letters."
+    },
+    "pitfalls": [
+      "Building the trie forward, which matches prefixes instead of suffixes.",
+      "Keeping the whole stream instead of the last L letters.",
+      "Not returning at the first terminal node: a shorter word can match before a longer walk fails."
+    ],
+    "hints": [
+      "Only the most recent letters can complete a word. How many of them do you ever need?",
+      "Checking 'stream ends with w' for every word is slow. What if you read the stream backwards from the newest letter?",
+      "Insert reversed words into a trie, keep a deque of the last maxLen letters, and on each query walk the trie newest-to-oldest, returning True at the first terminal node."
+    ],
+    "code": "class StreamChecker:\n    def __init__(self, words: List[str]):\n        self.trie: Dict = {}\n        self.max_len = 0\n        for w in words:\n            node = self.trie\n            for ch in reversed(w):                 # reversed: the newest stream letter is matched first\n                node = node.setdefault(ch, {})\n            node[\"$\"] = True\n            self.max_len = max(self.max_len, len(w))\n        self.recent: Deque[str] = deque()          # only the last max_len letters can matter\n\n    def query(self, letter: str) -> bool:\n        self.recent.append(letter)\n        if len(self.recent) > self.max_len:\n            self.recent.popleft()\n        node = self.trie\n        for ch in reversed(self.recent):           # walk newest -> oldest, one trie edge per letter\n            if ch not in node:\n                return False\n            node = node[ch]\n            if \"$\" in node:\n                return True\n        return False",
+    "related": [
+      "implement_trie_prefix_tree",
+      "word_search_ii",
+      "prefix_and_suffix_search"
+    ]
+  },
+  {
+    "slug": "prefix_and_suffix_search",
+    "title": "Prefix and Suffix Search",
+    "leetcode": 745,
+    "difficulty": "Hard",
+    "topic": "tries",
+    "pattern": "Trie over \"suffix#word\" rotations, max index stored per node",
+    "file": "tries/prefix_and_suffix_search.py",
+    "problem": "WordFilter(words) is built once, and f(pref, suff) returns the largest index i such that words[i] starts with pref and ends with suff, or -1 if there is none. Example: words=[\"apple\"] gives f(\"a\",\"e\") = 0 and f(\"b\",\"\") = -1.",
+    "brute_force": {
+      "approach": "For each query, scan the words from the last index backwards and return the first one that startswith(pref) and endswith(suff). Every query re-tests all W words, although the set of words with a given prefix or suffix never changes after construction.",
+      "time": "O(W * L) per query",
+      "space": "O(W * L)",
+      "code": "class BruteForce:\n    \"\"\"Scans the whole word list from the back for each query: O(W*L) per query.\"\"\"\n\n    def __init__(self, words: List[str]):\n        self.words = words\n\n    def f(self, pref: str, suff: str) -> int:\n        for i in range(len(self.words) - 1, -1, -1):\n            if self.words[i].startswith(pref) and self.words[i].endswith(suff):\n                return i\n        return -1"
+    },
+    "optimization": "A prefix trie plus a reversed-word trie give the index SETS for pref and for suff, but intersecting them is still O(W) per query. The trick is to turn the pair into ONE prefix query. For every word, insert suffix + '#' + word for each of its suffixes, including the empty one. Then f(pref, suff) asks whether the trie contains the prefix suff + '#' + pref: the part before '#' pins the suffix and the part after pins the prefix. Each node stores the largest index inserted through it, and inserting in increasing index order makes a plain overwrite correct. The build costs O(W * L^2) once, and each query is an O(L) walk.",
+    "intuition": "Rotate the word so that a two-sided constraint becomes a one-sided one. 'Ends with e and starts with a' is the same as 'has prefix e#a' in the family {e#apple, le#apple, ple#apple, ...}. That needs one trie and one walk, with no set intersection, and the answer is stored on the node where the walk stops.",
+    "geometric": "The trie's top layers spell suffixes, then comes a '#' rung, then layers that spell the word from its first letter. Every word hangs from the trie L+1 times, once per suffix. A query is a single path down the suffix, through '#', and down the prefix. The number written on the final node is the answer, and falling off the trie means -1.",
+    "visual": "\"apple\" (index 0) inserts one key per suffix:\n  #apple  e#apple  le#apple  ple#apple  ...\nf(pref=\"ap\", suff=\"le\") walks \"le#ap\":\n  root -l-> o -e-> o -#-> o -a-> o -p-> [$=0] -> 0\nf(\"b\", \"\") walks \"#b\":\n  root -#-> o -b-> (missing)              -> -1\nevery node on a key's path stores $ = its index\nwords [cabaa, ab, ab]: node \"#ab\" gets $=1, then $=2\n  -> f(\"ab\", \"\") = 2 (the later duplicate wins)",
+    "steps": [
+      "For each (i, word) and each k in 0..len(word), set key = word[k:] + '#' + word.",
+      "Walk or create the trie along key, setting node['$'] = i at every node; a later i overwrites, so the stored value is the max.",
+      "f(pref, suff): walk suff + '#' + pref and return -1 on a missing edge.",
+      "Return the index stored at the final node."
+    ],
+    "complexity": {
+      "time": "O(W * L^2) build, O(L) per query",
+      "space": "O(W * L^2)",
+      "why": "Each word adds L+1 keys of length up to 2L+1, and a query touches at most 2L+1 nodes."
+    },
+    "pitfalls": [
+      "Storing the index only at terminal nodes, when queries end mid-path.",
+      "Choosing a separator character that can appear in the words.",
+      "Forgetting the empty suffix, so f(\"ab\", \"\") fails.",
+      "Keeping the minimum index instead of the maximum for duplicate words."
+    ],
+    "hints": [
+      "A prefix trie answers 'starts with' quickly. Can a single query string express both the prefix and the suffix constraint?",
+      "Glue them with a separator: suff + '#' + pref. Which strings would you insert so that this is a prefix of one of them?",
+      "Insert word[k:] + '#' + word for every k, store the latest (largest) index on every node of the path, and answer by walking suff + '#' + pref."
+    ],
+    "code": "class WordFilter:\n    def __init__(self, words: List[str]):\n        self.trie: Dict = {}\n        for index, word in enumerate(words):             # increasing index: overwrite == max\n            for k in range(len(word) + 1):               # every suffix, including the empty one\n                node = self.trie\n                for ch in word[k:] + \"#\" + word:\n                    node = node.setdefault(ch, {})\n                    node[\"$\"] = index                    # every node on the path knows its best index\n\n    def f(self, pref: str, suff: str) -> int:\n        node = self.trie\n        for ch in suff + \"#\" + pref:                     # the pair becomes one prefix query\n            if ch not in node:\n                return -1\n            node = node[ch]\n        return node[\"$\"]",
+    "related": [
+      "implement_trie_prefix_tree",
+      "stream_of_characters",
+      "replace_words"
+    ]
+  },
+  {
+    "slug": "design_in_memory_file_system",
+    "title": "Design In-Memory File System",
+    "leetcode": 588,
+    "difficulty": "Hard",
+    "topic": "design",
+    "pattern": "Trie of directories (path components as edges)",
+    "file": "design/design_in_memory_file_system.py",
+    "problem": "Implement FileSystem with: ls(path), which returns the sorted names inside a directory, or [filename] if path is a file; mkdir(path), which creates every missing directory; addContentToFile(path, content), which creates the file or appends to it; and readContentFromFile(path). Example: mkdir(\"/a/b/c\"); addContentToFile(\"/a/b/c/d\",\"hello\"); ls(\"/\") returns [\"a\"] and readContentFromFile(\"/a/b/c/d\") returns \"hello\".",
+    "brute_force": {
+      "approach": "Keep a flat dict full_path -> content, with None for directories. mkdir inserts every prefix path, and add and read index the dict directly. ls must scan all P stored paths for those that start with path + '/' and contain no further '/'. Every ls touches every path in the system.",
+      "time": "O(P * L) per ls",
+      "space": "O(P * L)",
+      "code": "class BruteForce:\n    \"\"\"Flat dict full_path -> content (None for dirs); ls scans every stored path: O(P*L).\"\"\"\n\n    def __init__(self):\n        self.entries: Dict[str, Optional[str]] = {\"/\": None}\n\n    def _ensure_dirs(self, path: str) -> None:\n        parts = [p for p in path.split(\"/\") if p]\n        for i in range(1, len(parts) + 1):\n            self.entries.setdefault(\"/\" + \"/\".join(parts[:i]), None)\n\n    def ls(self, path: str) -> List[str]:\n        if self.entries.get(path) is not None:\n            return [path.rsplit(\"/\", 1)[-1]]\n        prefix = path.rstrip(\"/\") + \"/\"\n        names = [p[len(prefix):] for p in self.entries                 # full scan of every path\n                 if p.startswith(prefix) and p != prefix and \"/\" not in p[len(prefix):]]\n        return sorted(names)\n\n    def mkdir(self, path: str) -> None:\n        self._ensure_dirs(path)\n\n    def addContentToFile(self, filePath: str, content: str) -> None:\n        self._ensure_dirs(filePath.rsplit(\"/\", 1)[0])\n        self.entries[filePath] = (self.entries.get(filePath) or \"\") + content\n\n    def readContentFromFile(self, filePath: str) -> str:\n        return self.entries.get(filePath) or \"\""
+    },
+    "optimization": "A path is a sequence of components, each meaningful only relative to its parent, which is exactly a trie keyed by component instead of by character. Each node is a directory (a dict name -> child) or a file (a content string). Walking a path is one dict lookup per component and lands on the node that ls, add and read need. A directory node's children ARE its ls result, so the scan disappears and only that directory's names are sorted. mkdir and addContentToFile share the same walk using setdefault, which creates missing directories along the way.",
+    "intuition": "A file system is already a tree. Representing it as one makes every operation a path walk followed by O(1) work at the destination. The only non-constant step left is sorting one directory's names for ls, which the problem requires.",
+    "geometric": "Draw the trie rooted at '/': edges are directory or file names, internal nodes are folders, and leaves carrying content are files. ls on a folder reads the labels of its outgoing edges, mkdir extends a chain of edges downward, and addContentToFile walks to a leaf and lengthens its string.",
+    "visual": "mkdir /a/b/c; add /a/b/c/d \"hello\"; mkdir /a/b/a\nroot \"/\"\n +- a\n     +- b          ls(\"/a/b\") = sorted(children)\n         |                    = [a, c]\n         +- c\n         |   +- d  content \"hello\"\n         |         ls(\"/a/b/c/d\") = [d] (a file)\n         +- a\n_walk(\"/a/b/c/d\"): split -> [\"\", a, b, c, d]\n  skip \"\"; root -> a -> b -> c -> d  (setdefault)",
+    "steps": [
+      "Node: a children dict, and content = None for a directory or a str for a file.",
+      "_walk(path): split on '/', skip empty parts, and descend with children.setdefault(part, Node()) so missing directories are created.",
+      "ls: node = _walk(path); return [last component] if node.content is not None, else sorted(node.children).",
+      "mkdir: _walk(path).",
+      "addContentToFile: node = _walk(path); node.content = (node.content or '') + content.",
+      "readContentFromFile: return _walk(path).content."
+    ],
+    "complexity": {
+      "time": "O(L) per mkdir/add/read, O(L + k log k) per ls",
+      "space": "O(total components + content)",
+      "why": "Each operation walks one component per level, and ls also sorts the k names in that directory."
+    },
+    "pitfalls": [
+      "Splitting \"/\" yields empty strings; skip them instead of creating a node named \"\".",
+      "ls of a file must return just the file name, not the full path.",
+      "Appending must create the file when it does not exist yet.",
+      "Returning a directory's children unsorted."
+    ],
+    "hints": [
+      "A file system is naturally a tree. What should one edge of that tree represent?",
+      "Use a trie keyed by path component, where each node is either a directory with children or a file with content.",
+      "Write one _walk(path) that uses setdefault to create missing directories, and build every method on it; ls returns sorted(children) or [name] for a file."
+    ],
+    "code": "class _Node:\n    __slots__ = (\"children\", \"content\")\n\n    def __init__(self):\n        self.children: Dict[str, \"_Node\"] = {}\n        self.content: Optional[str] = None        # None = directory, str = file\n\n\nclass FileSystem:\n    def __init__(self):\n        self.root = _Node()\n\n    def _walk(self, path: str) -> _Node:\n        node = self.root\n        for part in path.split(\"/\"):\n            if part:                               # skip the empty component before the leading \"/\"\n                node = node.children.setdefault(part, _Node())   # creates missing directories\n        return node\n\n    def ls(self, path: str) -> List[str]:\n        node = self._walk(path)\n        if node.content is not None:               # a file: list just its own name\n            return [path.rsplit(\"/\", 1)[-1]]\n        return sorted(node.children)\n\n    def mkdir(self, path: str) -> None:\n        self._walk(path)\n\n    def addContentToFile(self, filePath: str, content: str) -> None:\n        node = self._walk(filePath)\n        node.content = (node.content or \"\") + content\n\n    def readContentFromFile(self, filePath: str) -> str:\n        return self._walk(filePath).content or \"\"",
+    "related": [
+      "implement_trie_prefix_tree",
+      "simplify_path",
+      "design_search_autocomplete_system"
+    ]
+  },
+  {
+    "slug": "design_skiplist",
+    "title": "Design Skiplist",
+    "leetcode": 1206,
+    "difficulty": "Hard",
+    "topic": "design",
+    "pattern": "Multi-level sorted linked list with randomised express lanes",
+    "file": "design/design_skiplist.py",
+    "problem": "Implement a Skiplist with search(target) -> bool, add(num) and erase(num) -> bool, which returns False if num is absent. Duplicates are allowed and erase removes one copy. All three should run in O(log n) expected time without any built-in ordered structure. Example: after add 1, 2, 3, search(0) is False; after add 4, erase(1) is True and then search(1) is False.",
+    "brute_force": {
+      "approach": "Keep a sorted Python list: search scans for the value, add walks to the insertion point and inserts, and erase removes. A sorted linked list cannot jump, so reaching position k costs k steps, and an array shifts every later element on each add and erase.",
+      "time": "O(n) per operation",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    \"\"\"Sorted Python list; every operation scans linearly and shifts elements: O(n).\"\"\"\n\n    def __init__(self):\n        self.items: List[int] = []\n\n    def search(self, target: int) -> bool:\n        return target in self.items\n\n    def add(self, num: int) -> None:\n        i = 0\n        while i < len(self.items) and self.items[i] < num:   # linear walk to the insertion point\n            i += 1\n        self.items.insert(i, num)                              # O(n) shift\n\n    def erase(self, num: int) -> bool:\n        if num in self.items:\n            self.items.remove(num)\n            return True\n        return False"
+    },
+    "optimization": "A sorted linked list is slow only because it cannot skip ahead. Add express lanes: each node gets a random height (1 with probability 1/2, 2 with 1/4, ...) and joins the lists of rows 0..h-1, so row i holds about n / 2^i nodes. A search starts on the top row, moves right while the next value is smaller than the target, and drops a row when it cannot move. Each row costs O(1) expected steps, so the descent is O(log n) expected. The descent records update[i], the last node visited on row i. add splices the new node in after update[i] on each of its rows, and erase unlinks it the same way. Randomisation replaces the rebalancing a tree would need: there are no rotations, only pointer splices.",
+    "intuition": "Think of a highway: a local road at row 0 and sparser express roads above it. Drive the fastest road that does not overshoot, then switch to the next slower one, until the local road delivers you to the exact spot. Coin flips decide which exits get which roads, and on average the trip is logarithmic.",
+    "geometric": "Draw the rows as horizontal lines: row 0 is the full sorted chain, each higher row keeps about half the nodes, and a tall node is a column spanning several rows. A search zigzags right along a row, down a column, and right again toward the bottom-right. update[i] is where the path turned down on row i, and new nodes are spliced in right after those turning points.",
+    "visual": "L2: H -----------> 3 ------------------> None\nL1: H ------> 2 -> 3 ------> 6 --------> None\nL0: H -> 1 -> 2 -> 3 -> 5 -> 6 -> 9 ---> None\nsearch(5), from the top row down:\n  L2: H -> 3 (3 < 5); next None   update[2] = 3\n  L1: at 3, next 6 >= 5, drop     update[1] = 3\n  L0: at 3, next 5 >= 5, drop     update[0] = 3\n  update[0].forward[0] = 5 == target -> True\nadd(4) with height 2: splice after update[1], update[0]\n  L1: ... 3 -> 4 -> 6     L0: ... 3 -> 4 -> 5\nerase(num): unlink after update[i] on every row it has",
+    "steps": [
+      "Node(val, height) has forward[0..height-1]; head is a MAX_LEVEL sentinel, and level is the number of rows in use.",
+      "_path(target): from the top row down, move right while forward[i].val < target, and record update[i] = the last node on row i.",
+      "search: check whether the node after update[0] on row 0 equals target.",
+      "add: draw a random height h, raise level to h if needed (update already holds head on the new rows), and splice the node after update[i] on rows 0..h-1.",
+      "erase: node = update[0].forward[0]; return False if it is not target; otherwise unlink it on every row it occupies, shrink level while the top row is empty, and return True."
+    ],
+    "complexity": {
+      "time": "O(log n) expected per operation",
+      "space": "O(n) expected",
+      "why": "There are O(log n) rows with O(1) expected steps on each, and about 2n pointers in expectation."
+    },
+    "pitfalls": [
+      "Mixing < and <= between the descent and the check, which breaks erase with duplicates.",
+      "Not using head as update[i] on rows above the current level when a new node is taller.",
+      "Unlinking the node only on row 0, which leaves dangling pointers on the higher rows.",
+      "Unseeded randomness, which makes failures irreproducible."
+    ],
+    "hints": [
+      "A sorted linked list is O(n) only because it cannot skip ahead. What if some nodes also linked to nodes far ahead?",
+      "Stack sparser and sparser sorted lists on top of each other, giving each node a random height with P(h > k) = 1/2^k.",
+      "Search from the top row, moving right while next.val < target and dropping a row otherwise; record the turning node on each row (update[i]) and splice nodes in or out right after those nodes."
+    ],
+    "code": "class _Node:\n    __slots__ = (\"val\", \"forward\")\n\n    def __init__(self, val: int, height: int):\n        self.val = val\n        self.forward: List[Optional[\"_Node\"]] = [None] * height   # forward[i] = next node on row i\n\n\nclass Skiplist:\n    MAX_LEVEL = 16                                     # enough for ~65k elements with p = 1/2\n    P = 0.5\n\n    def __init__(self):\n        self.head = _Node(-1, self.MAX_LEVEL)          # sentinel, smaller than every value\n        self.level = 1                                 # number of rows currently in use\n        self.rng = random.Random(1206)                 # seeded: reproducible structure\n\n    def _random_level(self) -> int:\n        height = 1\n        while height < self.MAX_LEVEL and self.rng.random() < self.P:\n            height += 1\n        return height\n\n    def _path(self, target: int) -> List[_Node]:\n        # update[i] = last node on row i whose value is < target (the point where we step down)\n        update: List[_Node] = [self.head] * self.MAX_LEVEL\n        node = self.head\n        for i in range(self.level - 1, -1, -1):\n            while node.forward[i] and node.forward[i].val < target:\n                node = node.forward[i]\n            update[i] = node\n        return update\n\n    def search(self, target: int) -> bool:\n        node = self._path(target)[0].forward[0]\n        return node is not None and node.val == target\n\n    def add(self, num: int) -> None:\n        update = self._path(num)\n        height = self._random_level()\n        self.level = max(self.level, height)           # update[] already holds head for new rows\n        node = _Node(num, height)\n        for i in range(height):                        # splice in after the turning point on each row\n            node.forward[i] = update[i].forward[i]\n            update[i].forward[i] = node\n\n    def erase(self, num: int) -> bool:\n        update = self._path(num)\n        node = update[0].forward[0]\n        if node is None or node.val != num:\n            return False\n        for i in range(len(node.forward)):             # node is the first >= num, so it follows update[i] on every row\n            update[i].forward[i] = node.forward[i]\n        while self.level > 1 and self.head.forward[self.level - 1] is None:\n            self.level -= 1                            # drop rows that became empty\n        return True",
+    "related": [
+      "design_hashmap",
+      "lru_cache",
+      "find_median_from_data_stream"
+    ]
+  }
+]

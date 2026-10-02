@@ -1,0 +1,22 @@
+{"topic": "heap", "title": "Heaps and Priority Queues", "order": [
+ {"slug": "kth_largest_element_in_a_stream", "why_here": "The simplest heap use: a size-k min-heap whose root is the k-th largest."},
+ {"slug": "kth_largest_element_in_an_array", "why_here": "Same question on static data; quickselect shows when a heap is not the best tool."},
+ {"slug": "k_closest_points_to_origin", "why_here": "Size-k club again, but the bouncer is the farthest point, so the heap becomes a max-heap by negation."},
+ {"slug": "top_k_frequent_words", "why_here": "Size-k club with a two-key ordering that includes a string, forcing a custom comparison."},
+ {"slug": "task_scheduler", "why_here": "The heap turns from a filter into a greedy chooser, paired with a cooldown queue."},
+ {"slug": "reorganize_string", "why_here": "Same most-frequent-first greedy with a cooldown of one and a counting feasibility test."},
+ {"slug": "rearrange_string_k_distance_apart", "why_here": "Generalises the one-slot parking spot to a fixed-length cooldown queue of k."},
+ {"slug": "merge_k_sorted_lists", "why_here": "Introduces the k-way merge: one front item per sorted source in a min-heap."},
+ {"slug": "kth_smallest_prime_fraction", "why_here": "k-way merge over implicit sorted rows that are generated, never stored."},
+ {"slug": "smallest_range_covering_elements_from_k_lists", "why_here": "k-way merge plus a running maximum tracked beside the heap."},
+ {"slug": "design_twitter", "why_here": "k-way merge embedded in a design problem, keyed by time stamps."},
+ {"slug": "find_median_from_data_stream", "why_here": "Two balanced heaps facing each other expose the middle of a stream."},
+ {"slug": "ipo", "why_here": "Sort by threshold, unlock into a max-heap, and pop the best each time you commit."},
+ {"slug": "minimum_number_of_refueling_stops", "why_here": "Unlock-then-choose, but commit retroactively only when stuck."},
+ {"slug": "course_schedule_iii", "why_here": "Sort by deadline and keep a max-heap of chosen items so the worst can be swapped out."},
+ {"slug": "maximum_performance_of_a_team", "why_here": "Sort by the bottleneck and keep the best k other values in a size-k min-heap."},
+ {"slug": "minimize_deviation_in_array", "why_here": "Normalise to a single direction of moves, then repeatedly shrink the heap maximum."},
+ {"slug": "meeting_rooms_iii", "why_here": "Two heaps (free rooms by id, busy rooms by end time) driven by a time-sorted sweep."},
+ {"slug": "the_skyline_problem", "why_here": "Sweep-line events with a max-heap of heights and lazy deletion."},
+ {"slug": "trapping_rain_water_ii", "why_here": "A min-heap frontier growing inward from the border: Dijkstra's shape on a grid."}
+]}

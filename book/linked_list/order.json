@@ -1,0 +1,14 @@
+{"topic": "linked_list", "title": "Linked Lists", "order": [
+ {"slug": "reverse_linked_list", "why_here": "The first primitive: flip arrows one at a time with prev/cur/nxt, saving next before each rewire."},
+ {"slug": "merge_two_sorted_lists", "why_here": "The second primitive: a dummy head and a tail pointer that splices existing nodes into an output chain."},
+ {"slug": "add_two_numbers", "why_here": "Same dummy-and-tail splice, but the output nodes are new and a carry rides along the lockstep walk."},
+ {"slug": "remove_nth_from_end", "why_here": "Two runners with a fixed gap measure distance from the end in one pass; the dummy makes deleting the head ordinary."},
+ {"slug": "linked_list_cycle", "why_here": "Two runners at different speeds: on a loop the gap shrinks by one per tick, so fast must meet slow."},
+ {"slug": "linked_list_cycle_ii", "why_here": "Turns the meeting point into a ruler: walking from head and from the meeting point at equal speed lands on the loop entrance."},
+ {"slug": "find_the_duplicate_number", "why_here": "An array whose values are indices is a hidden linked list, so the same two-phase Floyd finds the repeated value."},
+ {"slug": "intersection_of_two_linked_lists", "why_here": "Equalise the remaining lengths, then walk in lockstep; the gap idea used to align two lists instead of one."},
+ {"slug": "palindrome_linked_list", "why_here": "First combination of primitives: find the middle, reverse the back half, compare the halves."},
+ {"slug": "reorder_list", "why_here": "All three primitives together: find the middle, reverse the back half, splice the halves alternately."},
+ {"slug": "copy_list_with_random_pointer", "why_here": "Adds an old-to-new node mapping, then removes the hash map by weaving each clone right after its original."},
+ {"slug": "reverse_nodes_in_k_group", "why_here": "The capstone: reversal bounded to blocks of k, with look-ahead and careful reconnection of every block."}
+]}

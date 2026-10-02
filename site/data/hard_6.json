@@ -1,0 +1,574 @@
+[
+  {
+    "slug": "number_of_islands_ii",
+    "title": "Number of Islands II",
+    "leetcode": 305,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Union-Find (disjoint set union)",
+    "file": "graphs/number_of_islands_ii.py",
+    "problem": "An m x n grid starts as all water. Each positions[i] = (r, c) turns that cell into land, one operation at a time; after each operation report the number of islands (4-directionally connected land groups). The same cell may be added twice, and the second add changes nothing. Example: m=3, n=3, positions=[[0,0],[0,1],[1,2],[2,1]] -> [1,1,2,3].",
+    "brute_force": {
+      "approach": "Keep the grid and after each addition flood-fill the entire grid from scratch to count islands. Each recount costs O(m*n) and is done once per position. The waste: every recount rediscovers islands that already existed one step earlier, when only the neighbourhood of the newly added cell could have changed.",
+      "time": "O(k * m * n)",
+      "space": "O(m * n)",
+      "code": "def brute_force(m: int, n: int, positions: List[List[int]]) -> List[int]:\n    # After every add, flood-fill the entire grid from scratch and count islands.\n    land = set()\n    out = []\n    for r, c in positions:\n        land.add((r, c))\n        seen, islands = set(), 0\n        for cell in land:\n            if cell in seen:\n                continue\n            islands += 1\n            stack = [cell]\n            seen.add(cell)\n            while stack:\n                cr, cc = stack.pop()\n                for nb in ((cr + 1, cc), (cr - 1, cc), (cr, cc + 1), (cr, cc - 1)):\n                    if nb in land and nb not in seen:\n                        seen.add(nb)\n                        stack.append(nb)\n        out.append(islands)\n    return out"
+    },
+    "optimization": "The redundancy is recomputing global connectivity when one cell changed. Adding a land cell creates one new island and then merges it with each distinct neighbouring island, so count becomes count + 1 - (number of distinct neighbouring islands); islands only merge, never split. 'Distinct island?' is the same-root question a disjoint-set union answers in near-constant amortised time, and each merge is a union. Each operation inspects at most 4 neighbours, so the whole sequence costs O(k * alpha(mn)).",
+    "intuition": "Treat every land cell as a node in a union-find keyed by r*n + c. A new cell starts as its own island, so count goes up by one. Then look at its four neighbours: for each one that is land and has a different root, union them and decrement count. Two neighbours that already share a root must not be counted twice, which is why the comparison is on roots, not cells. A repeated position is a no-op that just reports the current count.",
+    "geometric": "Picture land tiles dropped onto a blue board one at a time. Each dropped tile raises a new flag; if it touches tiles flying other flags, those flags are lowered one by one as the groups merge. The island count is the number of flags still standing, and it changes by +1 minus the number of flags lowered on this drop.",
+    "visual": "m=3 n=3  positions [[0,0],[0,1],[1,2],[2,1]]   key = r*3+c\n(0,0): # . .   parent {0:0}                     count 1\n       . . .\n(0,1): # # .   nb key0: root 0 != root 1 -> union\n       . . .   parent {0:0, 1:0}    +1 new -1 merge = 1\n(1,2): # # .   no land neighbour                count 2\n       . . #   parent {0:0, 1:0, 5:5}\n(2,1): # # .   nbs (1,1),(2,0),(2,2) all water  count 3\n       . . #   parent {0:0, 1:0, 5:5, 7:7}\n       . # .\nout = [1, 1, 2, 3]",
+    "steps": [
+      "parent = {}, rank = {}, count = 0, out = [].",
+      "For (r, c): key = r*n + c. If key is already in parent, append count and continue.",
+      "parent[key] = key, count += 1.",
+      "For each in-bounds neighbour that is land: if its root differs from key's root, union by rank and count -= 1.",
+      "Append count; return out at the end."
+    ],
+    "complexity": {
+      "time": "O(k * alpha(m*n))",
+      "space": "O(k)",
+      "why": "Each add does at most 4 finds/unions, each near-constant amortised, and only land cells are stored."
+    },
+    "pitfalls": [
+      "Duplicate positions must not raise the count.",
+      "Compare roots, not cells: two neighbours in the same island would otherwise be merged twice and the count would drop too far.",
+      "Allocating a full m*n parent array when m*n is huge but k is small wastes memory; use a dict keyed by cell."
+    ],
+    "hints": [
+      "After each addition only the four neighbours of the new cell can change the answer; what exactly happens to the island count?",
+      "The count goes up by one for the new cell and down by one for each distinct island it touches; you need a structure that tells distinct islands apart and merges them.",
+      "Union-find keyed by r*n + c: add the cell, then for each land neighbour with a different root, union and decrement the count."
+    ],
+    "code": "class Solution:\n    def numIslands2(self, m: int, n: int, positions: List[List[int]]) -> List[int]:\n        parent, rank = {}, {}\n        count, out = 0, []\n\n        def find(x: int) -> int:\n            while parent[x] != x:\n                parent[x] = parent[parent[x]]  # path halving\n                x = parent[x]\n            return x\n\n        for r, c in positions:\n            key = r * n + c\n            if key in parent:\n                out.append(count)  # duplicate add: nothing changes\n                continue\n            parent[key], rank[key] = key, 0\n            count += 1\n            for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                nb = nr * n + nc\n                if 0 <= nr < m and 0 <= nc < n and nb in parent:\n                    ra, rb = find(key), find(nb)\n                    if ra == rb:\n                        continue  # same island already (two neighbours share a root)\n                    if rank[ra] < rank[rb]:\n                        ra, rb = rb, ra\n                    parent[rb] = ra\n                    if rank[ra] == rank[rb]:\n                        rank[ra] += 1\n                    count -= 1\n            out.append(count)\n        return out",
+    "related": [
+      "number_of_islands",
+      "number_of_connected_components",
+      "redundant_connection",
+      "max_area_of_island"
+    ]
+  },
+  {
+    "slug": "critical_connections_in_a_network",
+    "title": "Critical Connections in a Network",
+    "leetcode": 1192,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Tarjan bridges (DFS low-link)",
+    "file": "graphs/critical_connections_in_a_network.py",
+    "problem": "n servers 0..n-1 are joined by undirected connections forming a connected graph. A connection is critical if removing it disconnects some pair of servers. Return all critical connections in any order. Example: n=4, connections=[[0,1],[1,2],[2,0],[1,3]] -> [[1,3]].",
+    "brute_force": {
+      "approach": "For every edge, delete it and BFS from node 0; if fewer than n nodes are reached the edge was a bridge. That is E traversals of O(V + E) each. The waste: each BFS re-walks essentially the same graph, recomputing from scratch whether there is another route around one edge instead of reading that off a single traversal.",
+      "time": "O(E * (V + E))",
+      "space": "O(V + E)",
+      "code": "def brute_force(n: int, connections: List[List[int]]) -> List[List[int]]:\n    # Remove each edge in turn and BFS from 0; the edge is a bridge if not all n are reached.\n    bridges = []\n    for skip in range(len(connections)):\n        adj = [[] for _ in range(n)]\n        for i, (u, v) in enumerate(connections):\n            if i != skip:\n                adj[u].append(v)\n                adj[v].append(u)\n        seen, stack = {0}, [0]\n        while stack:\n            cur = stack.pop()\n            for nb in adj[cur]:\n                if nb not in seen:\n                    seen.add(nb)\n                    stack.append(nb)\n        if len(seen) < n:\n            bridges.append(connections[skip])\n    return bridges"
+    },
+    "optimization": "The redundancy is testing each edge in isolation. In a DFS tree, a tree edge (u, v) with v the child is a bridge exactly when nothing in v's subtree has a back edge to u or above, i.e. there is no way around the edge. Record disc[x] = DFS discovery time and low[x] = the smallest disc value reachable from x's subtree using at most one back edge. Then low[v] > disc[u] means v's subtree cannot climb past u, so (u, v) is a bridge. One DFS computes disc and low for every node in O(V + E).",
+    "intuition": "Number nodes in the order DFS first visits them. While unwinding, every node reports upward the earliest-visited node its subtree can reach through a back edge. If a child's subtree can reach something at or above the parent, there is a cycle through the parent edge and it is safe; if it cannot even reach the parent, that edge is the only link and is critical. Non-tree edges to already-visited nodes only lower low[] and are never bridges themselves because they close a cycle.",
+    "geometric": "Picture the DFS tree drawn top-down with discovery time increasing downwards, and back edges as ropes tied from a deep node to an ancestor. low[v] is the highest point any rope from v's subtree reaches. Cut the tree edge above v: the subtree stays attached iff some rope reaches above the cut, i.e. low[v] <= disc[u]. Edges with no rope spanning them are the bridges.",
+    "visual": "n=4  edges 0-1 1-2 2-0 1-3          DFS from 0\n      0 (disc 0) <------+\n      |                 | back edge from 2\n      1 (disc 1) ---- 3 (disc 3)\n      |                 |\n      2 (disc 2) -------+\nnode : 0  1  2  3\ndisc : 0  1  2  3\nlow  : 0  0  0  3     (2 sees back edge to 0 -> low 0,\n                       unwinding passes 0 up to 1)\nedge (1,2): low[2]=0 <= disc[1]=1  -> rope spans it, safe\nedge (0,1): low[1]=0 <= disc[0]=0  -> safe\nedge (1,3): low[3]=3 >  disc[1]=1  -> BRIDGE",
+    "steps": [
+      "Build the adjacency list; disc = [-1]*n, low = [0]*n, timer = 0.",
+      "dfs(u, parent): disc[u] = low[u] = timer; timer += 1.",
+      "For each neighbour v != parent: if unvisited, dfs(v, u), low[u] = min(low[u], low[v]), and record (u, v) if low[v] > disc[u].",
+      "If v is already visited, low[u] = min(low[u], disc[v]) (a back edge).",
+      "dfs(0, -1); return the recorded bridges."
+    ],
+    "complexity": {
+      "time": "O(V + E)",
+      "space": "O(V + E)",
+      "why": "One DFS visits each node and edge once; adjacency list plus disc/low arrays."
+    },
+    "pitfalls": [
+      "For a back edge use disc[v], not low[v], when lowering low[u].",
+      "Skipping the parent by node id is only safe because connections are distinct; with parallel edges skip by edge id.",
+      "Deep recursion on chain-shaped graphs: raise the recursion limit or go iterative."
+    ],
+    "hints": [
+      "An edge is safe if there is a cycle through it; can one DFS discover cycles for every edge at once?",
+      "Assign each node a DFS discovery time and let each subtree report the earliest time it can reach via a back edge.",
+      "Tarjan: low[v] > disc[u] for tree edge (u, v) means no back edge escapes v's subtree, so (u, v) is a bridge."
+    ],
+    "code": "class Solution:\n    def criticalConnections(self, n: int, connections: List[List[int]]) -> List[List[int]]:\n        sys.setrecursionlimit(max(n + 1000, 10**5))\n        adj = [[] for _ in range(n)]\n        for u, v in connections:\n            adj[u].append(v)\n            adj[v].append(u)\n        disc = [-1] * n  # discovery time, -1 = unvisited\n        low = [0] * n  # earliest discovery time reachable via subtree + one back edge\n        bridges = []\n        timer = 0\n\n        def dfs(u: int, parent: int) -> None:\n            nonlocal timer\n            disc[u] = low[u] = timer\n            timer += 1\n            for v in adj[u]:\n                if v == parent:\n                    continue\n                if disc[v] == -1:\n                    dfs(v, u)\n                    low[u] = min(low[u], low[v])\n                    if low[v] > disc[u]:\n                        bridges.append([u, v])  # subtree of v cannot climb above u\n                else:\n                    low[u] = min(low[u], disc[v])  # back edge to an ancestor\n\n        dfs(0, -1)\n        return bridges",
+    "related": [
+      "redundant_connection",
+      "graph_valid_tree",
+      "number_of_connected_components"
+    ]
+  },
+  {
+    "slug": "sort_items_by_groups_respecting_dependencies",
+    "title": "Sort Items by Groups Respecting Dependencies",
+    "leetcode": 1203,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Topological sort (Kahn's BFS) / cycle detection",
+    "file": "graphs/sort_items_by_groups_respecting_dependencies.py",
+    "problem": "There are n items; item i belongs to group[i], or to no group when group[i] = -1, with m groups in total. beforeItems[i] lists the items that must come before i. Return an ordering of all items in which items of the same group are adjacent and every before-constraint holds, or [] if none exists. Example: n=8, m=2, group=[-1,-1,1,0,0,1,0,-1], beforeItems=[[],[6],[5],[6],[3,6],[],[],[]] -> [6,3,4,1,5,2,0,7] (one valid answer).",
+    "brute_force": {
+      "approach": "Enumerate every permutation of the n items and keep the first one in which each group's items are contiguous and every (before, after) pair is in the right order. This is exponential: n! orderings, each checked in O(n + E). The waste: a permutation that violates a constraint early is still generated in full, and the same violation is re-checked across all permutations sharing that prefix.",
+      "time": "O(n! * (n + E))",
+      "space": "O(n)",
+      "code": "def brute_force(n: int, m: int, group: List[int], beforeItems: List[List[int]]) -> List[int]:\n    # Try every permutation; return the first that keeps groups contiguous and respects\n    # all before-constraints. Exponential: n! orderings.\n    for perm in permutations(range(n)):\n        pos = {item: idx for idx, item in enumerate(perm)}\n        if any(pos[u] > pos[v] for v in range(n) for u in beforeItems[v]):\n            continue\n        contiguous = True\n        for g in set(group) - {-1}:\n            idxs = [pos[i] for i in range(n) if group[i] == g]\n            if max(idxs) - min(idxs) + 1 != len(idxs):\n                contiguous = False  # a foreign item sits inside this group's run\n                break\n        if contiguous:\n            return list(perm)\n    return []"
+    },
+    "optimization": "The redundancy is searching over orderings when the constraints dictate a valid one greedily. Ignoring groups, the before-edges form a DAG and any topological order is valid, found in O(n + E) by Kahn's algorithm. The group-contiguity rule is itself a dependency between groups: if x in group A must precede y in group B != A, then all of A precedes all of B, so topologically sort the groups too. Items with group -1 each get a fresh singleton group so they behave like any other block. Output groups in group order, each group's items in item order; a cycle in either sort means [].",
+    "intuition": "Two Kahn passes. The item graph has an edge u -> v for each u in beforeItems[v]; the group graph has an edge group[u] -> group[v] whenever those groups differ. If both graphs are acyclic, bucket the item order by group and concatenate the buckets in group order. Within a bucket the item order already respects intra-group constraints, and across buckets the group order respects every inter-group constraint, so the concatenation satisfies everything.",
+    "geometric": "Picture each group as a box and items as beads inside the boxes. An arrow between beads of different boxes forces the whole first box to the left of the whole second box; arrows inside a box only order beads within it. Sorting the boxes first (coarse) and then pouring beads in the already-sorted item order (fine) lays everything on one line with no arrow pointing backwards.",
+    "visual": "group=[-1,-1,1,0,0,1,0,-1] -> ungrouped 0,1,7 get 2,3,4\nbefore: 6->1  5->2  6->3  3->4  6->4\nitem graph        in-deg   | group graph         in-deg\n  6 -> 1, 3, 4    1:1 2:1  |  g0 -> g3 (6->1)    g3:1\n  3 -> 4          3:1 4:2  |  (same-group edges skipped)\n  5 -> 2                   |\nitem topo : 0 5 6 7 | 2 1 3 | 4     (queue layers)\ngroup topo: g0 g1 g2 g4 | g3\nbuckets   : g0=[6,3,4] g1=[5,2] g2=[0] g3=[1] g4=[7]\nanswer    : [6,3,4, 5,2, 0, 7, 1]",
+    "steps": [
+      "Give every item with group -1 a new unique group id; m grows accordingly.",
+      "Build item adjacency and in-degrees; build group adjacency and in-degrees from cross-group before-edges.",
+      "topo(adj, deg): start with all zero in-degree nodes, pop, decrement children, enqueue new zeros; fail if not every node was emitted.",
+      "If either the item sort or the group sort fails, return [].",
+      "Bucket the item order by group and concatenate the buckets in group order."
+    ],
+    "complexity": {
+      "time": "O(n + m + E)",
+      "space": "O(n + m + E)",
+      "why": "Two linear Kahn passes over the item graph and the group graph."
+    },
+    "pitfalls": [
+      "Forgetting to give each -1 item its own group collapses them all into one fake group.",
+      "Adding a group edge when u and v share a group creates a bogus self-loop cycle.",
+      "Duplicate group edges are fine only if the in-degree is incremented once per edge and decremented once per edge."
+    ],
+    "hints": [
+      "Without groups this is a plain topological sort; what extra constraint does 'same group adjacent' impose?",
+      "A before-edge across two groups orders the whole groups, so the groups form their own DAG; ungrouped items are singleton groups.",
+      "Kahn's algorithm twice (items and groups), then bucket the item order by group and emit buckets in group order."
+    ],
+    "code": "class Solution:\n    def sortItems(self, n: int, m: int, group: List[int], beforeItems: List[List[int]]) -> List[int]:\n        group = group[:]\n        for i in range(n):\n            if group[i] == -1:\n                group[i], m = m, m + 1  # fresh singleton group\n        item_adj = [[] for _ in range(n)]\n        item_deg = [0] * n\n        group_adj = [[] for _ in range(m)]\n        group_deg = [0] * m\n        for v in range(n):\n            for u in beforeItems[v]:\n                item_adj[u].append(v)\n                item_deg[v] += 1\n                if group[u] != group[v]:\n                    group_adj[group[u]].append(group[v])\n                    group_deg[group[v]] += 1\n\n        def topo(adj: List[List[int]], deg: List[int]) -> List[int]:\n            order = [x for x in range(len(deg)) if deg[x] == 0]\n            for u in order:  # list grows while iterating: it doubles as the queue\n                for v in adj[u]:\n                    deg[v] -= 1\n                    if deg[v] == 0:\n                        order.append(v)\n            return order if len(order) == len(deg) else []\n\n        item_order = topo(item_adj, item_deg)\n        group_order = topo(group_adj, group_deg)\n        if not item_order or not group_order:\n            return []\n        buckets = [[] for _ in range(m)]\n        for i in item_order:\n            buckets[group[i]].append(i)\n        return [i for g in group_order for i in buckets[g]]",
+    "related": [
+      "course_schedule_ii",
+      "alien_dictionary",
+      "course_schedule"
+    ]
+  },
+  {
+    "slug": "redundant_connection_ii",
+    "title": "Redundant Connection II",
+    "leetcode": 685,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Union-Find (disjoint set union)",
+    "file": "graphs/redundant_connection_ii.py",
+    "problem": "A rooted tree on nodes 1..n, where every node except the root has exactly one parent, had one extra directed edge u -> v added, giving n edges. Return the edge whose removal restores a rooted tree; if several work, return the one that appears last in the input. Example: [[1,2],[1,3],[2,3]] -> [2,3]; [[1,2],[2,3],[3,4],[4,1],[1,5]] -> [4,1].",
+    "brute_force": {
+      "approach": "For each edge from last to first, delete it and test whether the remaining n-1 edges form a rooted tree: exactly one node has in-degree 0, all others have in-degree 1, and every node is reachable from the root. Each test is O(n) and up to n are run. The waste: n near-identical reachability walks, when the shape of the fault is fixed by one quick in-degree scan.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(edges: List[List[int]]) -> List[int]:\n    # Try removing each edge (last to first); accept the first leftover that is a rooted tree.\n    n = len(edges)\n    for skip in range(n - 1, -1, -1):\n        kept = [e for i, e in enumerate(edges) if i != skip]\n        indeg = [0] * (n + 1)\n        children = [[] for _ in range(n + 1)]\n        for u, v in kept:\n            indeg[v] += 1\n            children[u].append(v)\n        roots = [x for x in range(1, n + 1) if indeg[x] == 0]\n        if len(roots) != 1 or any(indeg[x] != 1 for x in range(1, n + 1) if x != roots[0]):\n            continue\n        seen, stack = {roots[0]}, [roots[0]]\n        while stack:\n            for c in children[stack.pop()]:\n                if c not in seen:\n                    seen.add(c)\n                    stack.append(c)\n        if len(seen) == n:\n            return edges[skip]\n    return []"
+    },
+    "optimization": "The redundancy is testing every edge when only one or two can be at fault. Adding one edge to a rooted tree produces exactly one of two defects: (A) some node v now has two parents, or (B) no node has in-degree 2 but a directed cycle through the root was formed. In case (A) only the two edges into v are candidates, cand1 (earlier) and cand2 (later): drop cand2 provisionally and union-find the rest; if no cycle appears cand2 was the culprit, otherwise cand1 is. In case (B) the answer is the edge that closes the cycle under union-find, exactly as in Redundant Connection I. One in-degree scan plus one union-find pass gives O(n * alpha(n)).",
+    "intuition": "First ask whether any node has two parents. If yes, one of those two edges must go; prefer the later one unless removing it still leaves a cycle, in which case the earlier one is the real problem. If no node has two parents, the extra edge made a cycle, and the first edge union-find sees joining two already-connected nodes is the one to remove.",
+    "geometric": "Picture the tree hanging from its root. The extra arrow either lands on a node that already has an arrow coming in (two incoming arrows: cut one of them) or lands on the root, making a loop that runs up the trunk and back down (cut the arrow that closes the loop). Union-find ignoring direction detects the loop; the in-degree scan detects the double arrow.",
+    "visual": "edges [[2,1],[3,1],[4,2],[1,4]]      in-degree scan\n  2 -> 1   parent_of[1] = 2\n  3 -> 1   1 already has a parent!  cand1=[2,1] cand2=[3,1]\n  4 -> 2, 1 -> 4\nunion-find pass, skipping cand2=[3,1]:\n  (2,1): roots 2,1 differ -> uf[1]=2\n  (4,2): roots 4,2 differ -> uf[2]=4\n  (1,4): find(1)=4 == find(4)=4 -> CYCLE 2->1->4->2\n         cycle survives without cand2 -> blame cand1 [2,1]\n     3 --> 1 <-- 2\n           |     ^\n           v     |\n           4 ----+",
+    "steps": [
+      "Scan edges recording parent_of[v]; on a second parent for v set cand1 = earlier edge into v, cand2 = this edge.",
+      "Run union-find over all edges except cand2.",
+      "If a union finds u and v already connected: return cand1 if cand2 exists, else [u, v].",
+      "If no cycle appeared, return cand2."
+    ],
+    "complexity": {
+      "time": "O(n * alpha(n))",
+      "space": "O(n)",
+      "why": "One in-degree scan and one union-find pass with path halving."
+    },
+    "pitfalls": [
+      "Returning cand2 blindly without the cycle check fails when cand1 lies on the cycle.",
+      "Skipping both candidates in the union-find pass hides the cycle.",
+      "Treating the problem as undirected misses case B, where a directed cycle through the root exists with no in-degree-2 node."
+    ],
+    "hints": [
+      "One extra directed edge creates either a node with two parents or a cycle through the root; detect which with an in-degree scan.",
+      "If a node has two parents, only those two edges are candidates; try dropping the later one and see if a cycle remains.",
+      "Union-find over all edges except the later candidate: a surviving cycle means the earlier candidate is the answer, no cycle means the later one."
+    ],
+    "code": "class Solution:\n    def findRedundantDirectedConnection(self, edges: List[List[int]]) -> List[int]:\n        n = len(edges)\n        parent_of = [0] * (n + 1)\n        cand1 = cand2 = None\n        for u, v in edges:\n            if parent_of[v]:\n                cand1, cand2 = [parent_of[v], v], [u, v]  # v has two parents\n            else:\n                parent_of[v] = u\n\n        uf = list(range(n + 1))\n\n        def find(x: int) -> int:\n            while uf[x] != x:\n                uf[x] = uf[uf[x]]  # path halving\n                x = uf[x]\n            return x\n\n        for u, v in edges:\n            if [u, v] == cand2:\n                continue  # provisionally drop the later of the two parent edges\n            ru, rv = find(u), find(v)\n            if ru == rv:\n                return cand1 if cand2 else [u, v]  # cycle survives: blame the earlier edge\n            uf[rv] = ru\n        return cand2",
+    "related": [
+      "redundant_connection",
+      "graph_valid_tree",
+      "course_schedule"
+    ]
+  },
+  {
+    "slug": "minimize_malware_spread",
+    "title": "Minimize Malware Spread",
+    "leetcode": 924,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Union-Find (disjoint set union)",
+    "file": "graphs/minimize_malware_spread.py",
+    "problem": "graph is an n x n adjacency matrix and initial lists the infected nodes. Malware spreads to every node connected to an infected node. Remove exactly one node from initial (the node stays in the graph) so that the final number of infected nodes is minimised; on ties return the smallest index. Example: graph=[[1,1,0],[1,1,0],[0,0,1]], initial=[0,1] -> 0.",
+    "brute_force": {
+      "approach": "For each candidate c in initial, BFS from every other initial node over the matrix and count the nodes reached; keep the c with the smallest count, smallest index on ties. Each BFS pass is O(n^2) on the matrix and it is repeated once per candidate. The waste: the connected components never change between trials, yet every trial rediscovers them from scratch.",
+      "time": "O(|initial| * n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(graph: List[List[int]], initial: List[int]) -> int:\n    # Remove each candidate in turn and BFS the spread from the remaining initial nodes.\n    n = len(graph)\n    best, best_count = -1, n + 1\n    for cand in sorted(initial):\n        seen = set(x for x in initial if x != cand)\n        stack = list(seen)\n        while stack:\n            u = stack.pop()\n            for v in range(n):\n                if graph[u][v] and v not in seen:\n                    seen.add(v)\n                    stack.append(v)\n        if len(seen) < best_count:\n            best, best_count = cand, len(seen)\n    return best"
+    },
+    "optimization": "The redundancy is recomputing components once per candidate. Removing c from initial only helps if c is the only infected node in its component; then the whole component is saved, otherwise another infected node infects it anyway and nothing is saved. So compute the components once with union-find over the matrix, count infected nodes per component, and pick the initial node whose component has exactly one infected node and the largest size, falling back to min(initial) when no such node exists. One O(n^2) matrix scan dominates.",
+    "intuition": "Each component is either infected or clean, and the final infection count is the total size of components containing at least one initial node. Removing one node from initial can flip at most one component from infected to clean, and only if it was that component's sole infected member. So among components with exactly one infected node, find the largest; return its infected node, smallest index on ties. If no component qualifies, nothing can be saved and the smallest index wins.",
+    "geometric": "Picture the graph as islands, some carrying red (infected) dots. An island with two or more red dots burns no matter which single dot you pluck. An island with exactly one red dot is saved entirely if you pluck that dot. You want to pluck the single red dot on the biggest such island.",
+    "visual": "graph: 0 -- 1       2 -- 3 -- 4      initial = [1,2,3]\nunion-find after the matrix scan:\n   parent: 0:0 1:0 | 2:2 3:2 4:2   r0={0,1}  r2={2,3,4}\ncomponent  size  infected members  infected count\n   r0       2     {1}                  1   <- sole infected\n   r2       3     {2,3}                2\nremove 1 : r0 stays clean       -> M = 3   (saves 2)\nremove 2 : 3 still infects r2   -> M = 5   (saves 0)\nremove 3 : 2 still infects r2   -> M = 5   (saves 0)\nanswer 1  (only candidate whose component count == 1)",
+    "steps": [
+      "Union-find over every pair (i, j) with graph[i][j] == 1.",
+      "size[root] = nodes per component; infected[root] = initial nodes per component.",
+      "best = min(initial), saved = 0.",
+      "For node in sorted(initial): if infected[root] == 1 and size[root] > saved, take it.",
+      "Return best."
+    ],
+    "complexity": {
+      "time": "O(n^2 * alpha(n))",
+      "space": "O(n)",
+      "why": "The n x n matrix scan dominates; parent, size and infected tables are O(n)."
+    },
+    "pitfalls": [
+      "Picking the largest component without checking it has exactly one infected node.",
+      "Ties must go to the smallest index: iterate initial in sorted order and use a strict > comparison.",
+      "Forgetting the fallback min(initial) when every component has two or more infected nodes."
+    ],
+    "hints": [
+      "Which components actually change their fate when you remove one infected node?",
+      "Only a component whose sole infected node you remove becomes clean; the rest are unchanged. Count infected nodes per component.",
+      "Union-find the components, count sizes and infected members per root, then pick the sole-infected node with the biggest component (smallest index on ties)."
+    ],
+    "code": "class Solution:\n    def minMalwareSpread(self, graph: List[List[int]], initial: List[int]) -> int:\n        n = len(graph)\n        parent = list(range(n))\n\n        def find(x: int) -> int:\n            while parent[x] != x:\n                parent[x] = parent[parent[x]]  # path halving\n                x = parent[x]\n            return x\n\n        for i in range(n):\n            for j in range(i + 1, n):\n                if graph[i][j]:\n                    parent[find(i)] = find(j)\n\n        size = Counter(find(i) for i in range(n))\n        infected = Counter(find(i) for i in initial)\n        best, saved = min(initial), 0\n        for node in sorted(initial):  # ascending: ties keep the smaller index\n            root = find(node)\n            if infected[root] == 1 and size[root] > saved:\n                best, saved = node, size[root]\n        return best",
+    "related": [
+      "number_of_connected_components",
+      "redundant_connection",
+      "accounts_merge"
+    ]
+  },
+  {
+    "slug": "remove_max_number_of_edges_to_keep_graph_fully_traversable",
+    "title": "Remove Max Number of Edges to Keep Graph Fully Traversable",
+    "leetcode": 1579,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Union-Find (disjoint set union)",
+    "file": "graphs/remove_max_number_of_edges_to_keep_graph_fully_traversable.py",
+    "problem": "n nodes 1..n and edges [type, u, v]: type 1 only Alice can use, type 2 only Bob, type 3 both. Return the maximum number of edges that can be removed so that Alice and Bob can each still reach every node, or -1 if that is impossible even with all edges. Example: n=4, edges=[[3,1,2],[3,2,3],[1,1,3],[1,2,4],[1,1,2],[2,3,4]] -> 2.",
+    "brute_force": {
+      "approach": "Try every subset of edges to keep; for each, BFS to check that Alice's graph (types 1 and 3) and Bob's graph (types 2 and 3) are both connected, and take the smallest connecting subset. This is exponential in E. The waste: almost every subset is either obviously disconnected or dominated by another, and the greedy spanning-forest structure of the problem is ignored.",
+      "time": "O(2^E * (n + E))",
+      "space": "O(n + E)",
+      "code": "def brute_force(n: int, edges: List[List[int]]) -> int:\n    # Try every subset of edges to KEEP (smallest first); the first subset that connects\n    # both players gives the answer E - |subset|. Exponential in E.\n    def connected(kept_edges, ok_types):\n        adj = {x: [] for x in range(1, n + 1)}\n        for t, u, v in kept_edges:\n            if t in ok_types:\n                adj[u].append(v)\n                adj[v].append(u)\n        seen, stack = {1}, [1]\n        while stack:\n            for nb in adj[stack.pop()]:\n                if nb not in seen:\n                    seen.add(nb)\n                    stack.append(nb)\n        return len(seen) == n\n\n    for size in range(len(edges) + 1):\n        for subset in combinations(edges, size):\n            if connected(subset, {1, 3}) and connected(subset, {2, 3}):\n                return len(edges) - size\n    return -1"
+    },
+    "optimization": "The redundancy is enumerating subsets when the answer is E minus a minimal edge set that keeps both players connected. Each player needs only a spanning tree of their usable edges, which union-find can grow greedily: keep an edge iff it joins two different components, as in Kruskal. A type-3 edge serves both players at once and is never worse than a type-1 or type-2 edge covering the same join, so process all type-3 edges first into both forests, then fill Alice's gaps with type-1 edges and Bob's with type-2. Count kept edges; if either forest still has more than one component return -1, else E - kept. Total O(E * alpha(n)).",
+    "intuition": "Run two union-finds, one per player. Each type-3 edge that merges two components in Alice's forest also merges them in Bob's, because both forests have seen exactly the same type-3 edges so far, so keep it once and count it once. Then a type-1 edge is kept only if it still merges something for Alice, a type-2 edge only if it merges something for Bob. The kept edges are the minimum needed; everything else is removable.",
+    "geometric": "Picture two transparent sheets, Alice's and Bob's, laid over the same dots. A type-3 edge draws a line on both sheets at once; type 1 draws on Alice's sheet only, type 2 on Bob's. You want each sheet to show one connected drawing using as few lines as possible, so draw the shared lines first because each earns credit on both sheets, then patch the gaps on each sheet individually.",
+    "visual": "n=4  edges (type,u,v)          alice      bob      kept\npass 1: type 3 into both forests\n  (3,1,2) merge              {1,2}      {1,2}      1\n  (3,2,3) merge              {1,2,3}    {1,2,3}    2\npass 2: type 1 -> alice only, type 2 -> bob only\n  (1,1,3) find1==find3       redundant             2\n  (1,2,4) merge              {1,2,3,4}             3\n  (1,1,2) redundant                                3\n  (2,3,4) merge                         {1,2,3,4}  4\nboth forests one component -> answer = 6 - 4 = 2",
+    "steps": [
+      "alice and bob are identity parent arrays of size n + 1; kept = 0.",
+      "For each type-3 edge: if union(alice, u, v) merges, also union(bob, u, v) and kept += 1.",
+      "For each type-1 edge: kept += 1 if union(alice, u, v) merges; same for type-2 edges with bob.",
+      "If alice or bob has more than one root among 1..n, return -1.",
+      "Return len(edges) - kept."
+    ],
+    "complexity": {
+      "time": "O(E * alpha(n))",
+      "space": "O(n)",
+      "why": "Each edge does a constant number of amortised near-constant finds and unions in two parent arrays."
+    },
+    "pitfalls": [
+      "Processing type-1/2 edges before type-3 breaks the greedy argument.",
+      "Counting a type-3 edge twice, once per forest.",
+      "Checking only Alice's connectivity for the -1 case; both forests must be connected."
+    ],
+    "hints": [
+      "Each player only needs a spanning tree of the edges they can use; how many edges must be kept at minimum?",
+      "An edge usable by both players is at least as valuable as a single-player edge for the same join, so process those first.",
+      "Two union-finds: type-3 edges into both, then type-1 into Alice's and type-2 into Bob's; count kept merges and return E - kept, or -1 if a forest is disconnected."
+    ],
+    "code": "class Solution:\n    def maxNumEdgesToRemove(self, n: int, edges: List[List[int]]) -> int:\n        def find(parent: List[int], x: int) -> int:\n            while parent[x] != x:\n                parent[x] = parent[parent[x]]  # path halving\n                x = parent[x]\n            return x\n\n        def union(parent: List[int], a: int, b: int) -> bool:\n            ra, rb = find(parent, a), find(parent, b)\n            if ra == rb:\n                return False  # edge is redundant in this forest\n            parent[rb] = ra\n            return True\n\n        alice, bob = list(range(n + 1)), list(range(n + 1))\n        kept = 0\n        for t, u, v in edges:\n            if t == 3 and union(alice, u, v):\n                union(bob, u, v)  # both forests have seen the same type-3 edges: this merges too\n                kept += 1\n        for t, u, v in edges:\n            if (t == 1 and union(alice, u, v)) or (t == 2 and union(bob, u, v)):\n                kept += 1\n        for forest in (alice, bob):\n            if len({find(forest, x) for x in range(1, n + 1)}) > 1:\n                return -1\n        return len(edges) - kept",
+    "related": [
+      "min_cost_to_connect_all_points",
+      "redundant_connection",
+      "graph_valid_tree"
+    ]
+  },
+  {
+    "slug": "find_critical_and_pseudo_critical_edges_in_minimum_spanning_tree",
+    "title": "Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree",
+    "leetcode": 1489,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Kruskal MST (sorted edges + union-find)",
+    "file": "graphs/find_critical_and_pseudo_critical_edges_in_minimum_spanning_tree.py",
+    "problem": "A weighted undirected connected graph on n nodes has edges[i] = [u, v, w]. An edge is critical if deleting it raises the MST weight, and pseudo-critical if it appears in some MST but not all. Return [critical indices, pseudo-critical indices]. Example: n=5, edges=[[0,1,1],[1,2,1],[2,3,2],[0,3,2],[0,4,3],[3,4,3],[1,4,6]] -> [[0,1],[2,3,4,5]].",
+    "brute_force": {
+      "approach": "Enumerate every subset of n-1 edges, keep those that form a spanning tree, and find the minimum total weight W. Critical edges appear in every tree of weight W; pseudo-critical edges appear in some but not all. Exponential in E. The waste: almost all subsets are not trees or are far from minimal; Kruskal builds a minimal tree directly, and each 'every MST / some MST' question can be answered by one modified Kruskal run.",
+      "time": "O(C(E, n-1) * n)",
+      "space": "O(n)",
+      "code": "def brute_force(n: int, edges: List[List[int]]) -> List[List[int]]:\n    # Enumerate every (n-1)-edge subset, keep the spanning trees of minimum weight, then\n    # classify edges by whether they appear in all / some of them. Exponential.\n    def is_tree(idxs) -> bool:\n        parent = list(range(n))\n\n        def find(x):\n            while parent[x] != x:\n                x = parent[x]\n            return x\n\n        for i in idxs:\n            ru, rv = find(edges[i][0]), find(edges[i][1])\n            if ru == rv:\n                return False\n            parent[ru] = rv\n        return True\n\n    best, trees = float(\"inf\"), []\n    for idxs in combinations(range(len(edges)), n - 1):\n        if not is_tree(idxs):\n            continue\n        w = sum(edges[i][2] for i in idxs)\n        if w < best:\n            best, trees = w, [set(idxs)]\n        elif w == best:\n            trees.append(set(idxs))\n    in_all = set.intersection(*trees)\n    in_some = set.union(*trees)\n    return [sorted(in_all), sorted(in_some - in_all)]"
+    },
+    "optimization": "The redundancy is enumerating trees. Kruskal sorts edges by weight and union-finds them in order, taking each edge that joins two components, yielding an MST of weight W in O(E log E). Edge i is critical iff Kruskal without edge i yields a weight greater than W or fails to connect. Edge i is pseudo-critical iff it is not critical but forcing it in first (union its endpoints, add its weight) and running Kruskal on the rest still yields exactly W, meaning some MST contains it. One base run plus two runs per edge is O(E^2 log E), exponentially better than enumeration.",
+    "intuition": "Kruskal is greedy and any MST can be produced by Kruskal with a suitable tie-break among equal weights. If excluding an edge forces a heavier tree, every MST needed it. If including it up front costs nothing extra, at least one MST uses it. An edge that is neither is simply never in an MST because it is too heavy for the cut it crosses.",
+    "geometric": "Picture Kruskal as water rising through a landscape of edge weights; the tree is the set of edges that first connect two puddles. A critical edge is the only bridge at its water level between two puddles, so removing it means the puddles can only join later at a higher level. A pseudo-critical edge is one of several equal-weight bridges that could have been chosen first.",
+    "visual": "n=5 edges i:(u,v,w)  0:(0,1,1) 1:(1,2,1) 2:(2,3,2) 3:(0,3,2)\n                     4:(0,4,3) 5:(3,4,3) 6:(1,4,6)\nKruskal order by w:  0 1 | 2 3 | 4 5 | 6      base MST = 7\nskip 0 : take 1,2,3,4 -> 1+2+2+3 = 8 > 7      -> critical\nskip 2 : take 0,1,3,4 -> 1+1+2+3 = 7 = base   not critical\n force 2: pre-join (2,3) w=2, then 0,1,4 -> 7  -> pseudo\nskip 6 : 7 = base\n force 6: 6 + 0,1,2 -> 6+1+1+2 = 10 > 7       -> neither\nanswer [[0,1],[2,3,4,5]]",
+    "steps": [
+      "order = edge indices sorted by weight (never sort the edge list itself, indices are the answer).",
+      "mst(skip, force): fresh union-find; if force >= 0 union its endpoints and add its weight first.",
+      "Walk order, skipping index skip, taking each edge that merges two components; return the total if n-1 edges were used, else infinity.",
+      "base = mst(); for each i: critical if mst(skip=i) > base, else pseudo-critical if mst(force=i) == base."
+    ],
+    "complexity": {
+      "time": "O(E^2 * log E)",
+      "space": "O(n)",
+      "why": "One sort, then two Kruskal runs of O(E * alpha(n)) per edge."
+    },
+    "pitfalls": [
+      "Sorting the edge list in place loses the original indices; sort an index array instead.",
+      "Test critical before pseudo-critical; a critical edge also passes the force-include test.",
+      "A run that uses fewer than n-1 edges must count as infinite weight, not as a small total."
+    ],
+    "hints": [
+      "Kruskal gives one MST; how would you test whether a particular edge is in every MST, or in at least one?",
+      "Run Kruskal with that edge excluded: a heavier result means every MST needs it.",
+      "Run Kruskal with that edge forced in first: an unchanged total means some MST contains it, so it is pseudo-critical if not critical."
+    ],
+    "code": "class Solution:\n    def findCriticalAndPseudoCriticalEdges(self, n: int, edges: List[List[int]]) -> List[List[int]]:\n        order = sorted(range(len(edges)), key=lambda i: edges[i][2])\n\n        def mst(skip: int = -1, force: int = -1) -> float:\n            parent = list(range(n))\n\n            def find(x: int) -> int:\n                while parent[x] != x:\n                    parent[x] = parent[parent[x]]  # path halving\n                    x = parent[x]\n                return x\n\n            total, used = 0, 0\n            if force >= 0:\n                u, v, w = edges[force]\n                parent[u] = v  # pre-join the forced edge before any lighter edge\n                total, used = w, 1\n            for i in order:\n                if i == skip:\n                    continue\n                u, v, w = edges[i]\n                ru, rv = find(u), find(v)\n                if ru != rv:\n                    parent[ru] = rv\n                    total += w\n                    used += 1\n            return total if used == n - 1 else float(\"inf\")\n\n        base = mst()\n        critical, pseudo = [], []\n        for i in range(len(edges)):\n            if mst(skip=i) > base:\n                critical.append(i)\n            elif mst(force=i) == base:\n                pseudo.append(i)\n        return [critical, pseudo]",
+    "related": [
+      "min_cost_to_connect_all_points",
+      "redundant_connection",
+      "remove_max_number_of_edges_to_keep_graph_fully_traversable"
+    ]
+  },
+  {
+    "slug": "checking_existence_of_edge_length_limited_paths",
+    "title": "Checking Existence of Edge Length Limited Paths",
+    "leetcode": 1697,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Union-Find (disjoint set union)",
+    "file": "graphs/checking_existence_of_edge_length_limited_paths.py",
+    "problem": "An undirected graph on n nodes has weighted edgeList (parallel edges allowed) and queries [p, q, limit]. For each query answer whether a path from p to q exists using only edges of weight strictly less than limit; return the booleans in query order. Example: n=3, edgeList=[[0,1,2],[1,2,4],[2,0,8],[1,0,16]], queries=[[0,1,2],[0,2,5]] -> [false, true].",
+    "brute_force": {
+      "approach": "For every query, BFS from p over only the edges whose weight is below limit and check whether q is reached. The waste: two queries with similar limits rebuild nearly identical connectivity, and the BFS redoes the same component discovery from scratch for every query.",
+      "time": "O(Q * (n + E))",
+      "space": "O(n + E)",
+      "code": "def brute_force(n: int, edgeList: List[List[int]], queries: List[List[int]]) -> List[bool]:\n    # Per query: BFS over only the edges with weight < limit.\n    ans = []\n    for p, q, limit in queries:\n        adj = [[] for _ in range(n)]\n        for u, v, w in edgeList:\n            if w < limit:\n                adj[u].append(v)\n                adj[v].append(u)\n        seen, stack = {p}, [p]\n        while stack:\n            for nb in adj[stack.pop()]:\n                if nb not in seen:\n                    seen.add(nb)\n                    stack.append(nb)\n        ans.append(q in seen)\n    return ans"
+    },
+    "optimization": "The redundancy is recomputing connectivity under a threshold for each query. The graph 'edges with weight < limit' only grows as limit increases: components merge and never split. So answer the queries offline in increasing order of limit while maintaining one union-find into which edges are added in increasing weight; before answering a query with limit L, add every unseen edge with weight < L. Each edge is added once and each query is one find/find comparison, so the two sorts dominate at O((E + Q) log(E + Q)).",
+    "intuition": "Sort edges by weight and queries by limit, then sweep a weight threshold upward. A pointer j walks the edges; whenever the next query's limit exceeds edges[j].weight, union that edge and advance j. The query is then answered by find(p) == find(q). Because results must come back in the original order, sort query indices and write each answer into its own slot.",
+    "geometric": "Picture the edges laid along a number line by weight and the queries as flags planted at their limits. Sweep left to right: every edge you pass is glued into the union-find, and every flag you reach asks whether p and q are in the same glued blob right now. Nothing ever has to be unglued because the threshold only moves right.",
+    "visual": "edges by w : (1,2,5) (2,3,9) (0,1,10) (3,4,13)\nqueries by limit : q1=(1,4,13)   q0=(0,4,14)\nsweep ----5-------9------10------13------14------>\n          ^       ^       ^       ^ q1    ^ q0\nq1 limit 13: glue w<13 -> (1,2) (2,3) (0,1)\n   components {0,1,2,3} {4}   find(1)==find(4)? no -> False\nq0 limit 14: glue w<14 -> (3,4)\n   components {0,1,2,3,4}     find(0)==find(4)? yes -> True\nanswers written back by index: [True, False]",
+    "steps": [
+      "edges = edgeList sorted by weight; order = query indices sorted by limit.",
+      "parent = identity array; j = 0; ans = [False] * Q.",
+      "For qi in order: while edges[j].weight < limit, union its endpoints and j += 1.",
+      "ans[qi] = find(p) == find(q).",
+      "Return ans."
+    ],
+    "complexity": {
+      "time": "O(E log E + Q log Q)",
+      "space": "O(n + Q)",
+      "why": "Two sorts dominate; the sweep adds each edge once with near-constant union-find operations."
+    },
+    "pitfalls": [
+      "The comparison is strictly less than limit, not <=.",
+      "Returning answers in sorted-query order instead of the original order.",
+      "Resetting the union-find per query, which is the brute force again."
+    ],
+    "hints": [
+      "The set of usable edges for limit L is a subset of the set for any larger limit; can queries share work?",
+      "Answer the queries offline in increasing limit order, adding edges in increasing weight order.",
+      "Sort both, sweep with a pointer into the edges, union each edge as the threshold passes it, and answer with find(p) == find(q)."
+    ],
+    "code": "class Solution:\n    def distanceLimitedPathsExist(self, n: int, edgeList: List[List[int]], queries: List[List[int]]) -> List[bool]:\n        parent = list(range(n))\n\n        def find(x: int) -> int:\n            while parent[x] != x:\n                parent[x] = parent[parent[x]]  # path halving\n                x = parent[x]\n            return x\n\n        edges = sorted(edgeList, key=lambda e: e[2])\n        order = sorted(range(len(queries)), key=lambda i: queries[i][2])\n        ans = [False] * len(queries)\n        j = 0\n        for qi in order:\n            p, q, limit = queries[qi]\n            while j < len(edges) and edges[j][2] < limit:\n                u, v, _ = edges[j]\n                parent[find(u)] = find(v)  # every edge lighter than this limit is glued in\n                j += 1\n            ans[qi] = find(p) == find(q)\n        return ans",
+    "related": [
+      "redundant_connection",
+      "number_of_connected_components",
+      "swim_in_rising_water"
+    ]
+  },
+  {
+    "slug": "minimum_weighted_subgraph_with_the_required_paths",
+    "title": "Minimum Weighted Subgraph With the Required Paths",
+    "leetcode": 2203,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Dijkstra (min-heap shortest paths)",
+    "file": "graphs/minimum_weighted_subgraph_with_the_required_paths.py",
+    "problem": "A weighted directed graph on n nodes is given as edges [u, v, w]. Return the minimum total weight of a subgraph in which both src1 and src2 can reach dest, or -1 if no such subgraph exists. Example: n=6, edges=[[0,2,2],[0,5,6],[1,0,3],[1,4,5],[2,1,1],[2,3,3],[2,3,4],[3,4,2],[4,5,1]], src1=0, src2=1, dest=5 -> 9.",
+    "brute_force": {
+      "approach": "The two required paths must merge at some node x (possibly a source or dest itself) and share the x -> dest tail. For every candidate x run three shortest-path computations (src1 -> x, src2 -> x, x -> dest) with a simple O(V*E) Bellman-Ford each and take the minimum sum. The waste: the src1 and src2 searches are identical for every x and are recomputed n times, and each x -> dest search is a separate traversal although all of them end at the same node.",
+      "time": "O(V^2 * E)",
+      "space": "O(V)",
+      "code": "def brute_force(n: int, edges: List[List[int]], src1: int, src2: int, dest: int) -> int:\n    # For each meeting node x, run three Bellman-Ford searches and sum the three distances.\n    def bellman_ford(src: int) -> List[float]:\n        dist = [float(\"inf\")] * n\n        dist[src] = 0\n        for _ in range(n - 1):\n            for u, v, w in edges:\n                if dist[u] + w < dist[v]:\n                    dist[v] = dist[u] + w\n        return dist\n\n    best = float(\"inf\")\n    for x in range(n):\n        best = min(best, bellman_ford(src1)[x] + bellman_ford(src2)[x] + bellman_ford(x)[dest])\n    return -1 if best == float(\"inf\") else best"
+    },
+    "optimization": "First redundancy: shortest paths from src1 and src2 do not depend on x, so compute them once each with Dijkstra and read d1[x], d2[x] from the arrays; that leaves O(V * E log V) for the per-x dest searches. Second redundancy: 'distance from x to dest for every x' is a single-source problem in the reversed graph, so one Dijkstra from dest over reversed edges yields dd[x] for all x. Three Dijkstra runs and a linear scan minimising d1[x] + d2[x] + dd[x] give O(E log V).",
+    "intuition": "Any valid subgraph contains a path src1 -> dest and a path src2 -> dest; follow them backwards from dest and they share a common tail starting at some meeting node x. The optimal subgraph is therefore three shortest paths glued at x, and the best x is found by trying all of them with precomputed distances. Reversing the edges turns 'many sources, one target' into 'one source, many targets', which is exactly what Dijkstra answers.",
+    "geometric": "Picture a Y shape: two arms starting at src1 and src2 that join at x, then one stem from x down to dest. d1 and d2 are the arm lengths measured outward from the two sources; dd is the stem length measured backwards from dest, hence the reversed graph. Slide x over every node and pick the Y with the smallest total length.",
+    "visual": "edges: 0-2->2  0-6->5  1-3->0  1-5->4  2-1->1\n       2-3->3  2-4->3  3-2->4  4-1->5   src1=0 src2=1 dest=5\nx         :  0   1   2   3   4   5\nd1 (0->x) :  0   3   2   5   7   6   Dijkstra forward\nd2 (1->x) :  3   0   5   8   5   6   Dijkstra forward\ndd (x->5) :  6   6   6   3   1   0   from 5, REVERSED graph\nsum       :  9   9  13  16  13  12\nbest = 9 at x=0:  arm 1 -3-> 0 (3) + arm from 0 (0)\n                  + stem 0 -6-> 5 (6)",
+    "steps": [
+      "Build forward adjacency and reversed adjacency.",
+      "d1 = dijkstra(forward, src1); d2 = dijkstra(forward, src2); dd = dijkstra(reversed, dest).",
+      "best = min over x of d1[x] + d2[x] + dd[x].",
+      "Return -1 if best is infinite, else best."
+    ],
+    "complexity": {
+      "time": "O((V + E) log V)",
+      "space": "O(V + E)",
+      "why": "Three Dijkstra runs over adjacency lists of E edges plus three distance arrays."
+    },
+    "pitfalls": [
+      "Running Dijkstra from every x instead of once from dest on the reversed graph.",
+      "Summing float('inf') values is fine, but remember to convert an infinite best to -1.",
+      "Assuming the meeting node is dest or one of the sources; it can be any intermediate node."
+    ],
+    "hints": [
+      "Two paths ending at the same node must merge somewhere; what does the optimal subgraph look like?",
+      "It is src1 -> x, src2 -> x, and x -> dest for some x; shortest-path distances from src1 and src2 can be computed once.",
+      "The x -> dest distances for all x come from one Dijkstra from dest on the reversed graph; minimise d1[x] + d2[x] + dd[x]."
+    ],
+    "code": "class Solution:\n    def minimumWeight(self, n: int, edges: List[List[int]], src1: int, src2: int, dest: int) -> int:\n        fwd = [[] for _ in range(n)]\n        rev = [[] for _ in range(n)]\n        for u, v, w in edges:\n            fwd[u].append((v, w))\n            rev[v].append((u, w))\n\n        def dijkstra(adj: List[List[tuple]], src: int) -> List[float]:\n            dist = [float(\"inf\")] * n\n            dist[src] = 0\n            heap = [(0, src)]\n            while heap:\n                d, u = heapq.heappop(heap)\n                if d > dist[u]:\n                    continue  # stale entry\n                for v, w in adj[u]:\n                    if d + w < dist[v]:\n                        dist[v] = d + w\n                        heapq.heappush(heap, (dist[v], v))\n            return dist\n\n        d1 = dijkstra(fwd, src1)\n        d2 = dijkstra(fwd, src2)\n        dd = dijkstra(rev, dest)  # dd[x] = shortest x -> dest in the original graph\n        best = min(d1[x] + d2[x] + dd[x] for x in range(n))\n        return -1 if best == float(\"inf\") else best",
+    "related": [
+      "network_delay_time",
+      "min_cost_to_connect_all_points",
+      "minimum_cost_to_make_at_least_one_valid_path_in_a_grid"
+    ]
+  },
+  {
+    "slug": "minimum_cost_to_make_at_least_one_valid_path_in_a_grid",
+    "title": "Minimum Cost to Make at Least One Valid Path in a Grid",
+    "leetcode": 1368,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "0-1 BFS (deque shortest path)",
+    "file": "graphs/minimum_cost_to_make_at_least_one_valid_path_in_a_grid.py",
+    "problem": "Each cell of an m x n grid holds an arrow: 1 right, 2 left, 3 down, 4 up. Following the arrow out of a cell is free; changing a cell's arrow costs 1, at most once per cell. Return the minimum cost so that a path from (0,0) following the arrows reaches (m-1,n-1). Example: [[1,1,1,1],[2,2,2,2],[1,1,1,1],[2,2,2,2]] -> 3.",
+    "brute_force": {
+      "approach": "Treat the grid as a graph where every cell has four out-edges: cost 0 along its arrow and cost 1 in the other three directions. Run Bellman-Ford style relaxation: sweep all cells relaxing all four moves until no cost changes. Each sweep is O(m*n) and up to m*n sweeps may be needed. The waste: every sweep re-relaxes every cell, including cells whose cost is already final.",
+      "time": "O((m*n)^2)",
+      "space": "O(m*n)",
+      "code": "def brute_force(grid: List[List[int]]) -> int:\n    # Bellman-Ford over cells: sweep every cell and relax all 4 moves until nothing changes.\n    m, n = len(grid), len(grid[0])\n    dirs = ((0, 1), (0, -1), (1, 0), (-1, 0))\n    cost = [[float(\"inf\")] * n for _ in range(m)]\n    cost[0][0] = 0\n    changed = True\n    while changed:\n        changed = False\n        for r in range(m):\n            for c in range(n):\n                for k, (dr, dc) in enumerate(dirs):\n                    nr, nc = r + dr, c + dc\n                    if 0 <= nr < m and 0 <= nc < n:\n                        step = 0 if grid[r][c] == k + 1 else 1\n                        if cost[r][c] + step < cost[nr][nc]:\n                            cost[nr][nc] = cost[r][c] + step\n                            changed = True\n    return cost[m - 1][n - 1]"
+    },
+    "optimization": "The redundancy is relaxing cells in arbitrary order instead of in order of cost. Dijkstra fixes that by settling cells in increasing cost with a heap, O(mn log mn). But every edge weighs 0 or 1, so a full heap is unnecessary: a deque kept sorted by cost suffices, because a 0-cost move keeps the same cost (push front) and a 1-cost move is exactly one level deeper (push back). Popping from the front always yields a minimum-cost cell, exactly like Dijkstra, with O(1) per operation, giving O(m*n).",
+    "intuition": "Start at (0,0) with cost 0 and ride the free arrows as far as they go; those cells join the current cost layer at the front of the deque. Only when free moves are exhausted do we spend 1 to turn, which puts a cell in the next layer at the back. Because the deque is processed front to back, costs come out in non-decreasing order and the first value assigned to the target that survives relaxation is minimal.",
+    "geometric": "Picture water poured at (0,0) that flows freely along arrows, filling every cell reachable at cost 0 first. Then it pays one unit to spill sideways into neighbouring cells, which start their own free flows, and so on. The deque is the waterfront: free spreads at the front, paid spills queued at the back, so the front always holds the cheapest cells.",
+    "visual": "grid  1 1 1 1     1 right  2 left  3 down  4 up\n      2 2 2 2\n      1 1 1 1\n      2 2 2 2\n0-1 BFS: pop front; free move -> appendleft, turn -> append\npop (0,0): dq [(0,1) | (1,0)]             cost row0: 0 . . .\npop (0,1): dq [(0,2) | (1,0),(1,1)]                  0 0 . .\npop (0,2): dq [(0,3) | (1,0),(1,1),(1,2)]            0 0 0 .\npop (0,3): dq [(1,0),(1,1),(1,2),(1,3)]              0 0 0 0\nrow 1 settles at cost 1 (one turn, then free left rides)\nfinal cost: row0=0  row1=1  row2=2  row3=3  -> answer 3",
+    "steps": [
+      "cost[r][c] = inf except cost[0][0] = 0; dq = deque([(0,0)]).",
+      "Pop (r, c) from the front; for each direction k, step = 0 if grid[r][c] points that way, else 1.",
+      "If cost[r][c] + step < cost[nr][nc]: update, appendleft when step == 0, append otherwise.",
+      "Return cost[m-1][n-1]."
+    ],
+    "complexity": {
+      "time": "O(m*n)",
+      "space": "O(m*n)",
+      "why": "Each cell is relaxed through four edges with O(1) deque operations; a cost grid of m*n entries."
+    },
+    "pitfalls": [
+      "Mapping arrow values 1..4 to the wrong directions.",
+      "Using a plain FIFO queue: 0-cost moves must go to the front or optimality breaks.",
+      "Marking cells visited on push instead of relaxing by cost; a cell can be improved after an expensive first discovery."
+    ],
+    "hints": [
+      "Model each cell with four outgoing edges: one free (its arrow) and three that cost 1; now it is a shortest-path problem.",
+      "Dijkstra works, but all edge weights are 0 or 1; is a heap really needed?",
+      "0-1 BFS: a deque where free moves are pushed to the front and paid moves to the back keeps cells ordered by cost."
+    ],
+    "code": "class Solution:\n    def minCost(self, grid: List[List[int]]) -> int:\n        m, n = len(grid), len(grid[0])\n        dirs = ((0, 1), (0, -1), (1, 0), (-1, 0))  # value 1,2,3,4 -> index 0,1,2,3\n        cost = [[float(\"inf\")] * n for _ in range(m)]\n        cost[0][0] = 0\n        dq = deque([(0, 0)])\n        while dq:\n            r, c = dq.popleft()\n            for k, (dr, dc) in enumerate(dirs):\n                nr, nc = r + dr, c + dc\n                if not (0 <= nr < m and 0 <= nc < n):\n                    continue\n                step = 0 if grid[r][c] == k + 1 else 1  # free along the arrow, 1 to turn\n                if cost[r][c] + step < cost[nr][nc]:\n                    cost[nr][nc] = cost[r][c] + step\n                    if step == 0:\n                        dq.appendleft((nr, nc))  # same cost layer: process before paid moves\n                    else:\n                        dq.append((nr, nc))\n        return cost[m - 1][n - 1]",
+    "related": [
+      "network_delay_time",
+      "rotting_oranges",
+      "walls_and_gates",
+      "swim_in_rising_water"
+    ]
+  },
+  {
+    "slug": "swim_in_rising_water",
+    "title": "Swim in Rising Water",
+    "leetcode": 778,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Minimax path via min-heap (bottleneck Dijkstra)",
+    "file": "graphs/swim_in_rising_water.py",
+    "problem": "An n x n grid holds distinct elevations 0..n*n-1. At time t the water level is t and you can move between 4-adjacent cells whose elevations are both <= t. Starting at (0,0), return the least t at which you can reach (n-1,n-1). Example: [[0,2],[1,3]] -> 3; the 5x5 LeetCode example -> 16.",
+    "brute_force": {
+      "approach": "For t = 0, 1, 2, ... run a BFS from (0,0) through cells with elevation <= t and stop at the first t that reaches the goal. Up to n^2 values of t, each BFS O(n^2). The waste: the BFS at level t+1 re-walks the entire region explored at level t, and many consecutive t values do not change the reachable region at all.",
+      "time": "O(n^4)",
+      "space": "O(n^2)",
+      "code": "def brute_force(grid: List[List[int]]) -> int:\n    # Scan t upward; at each t run a BFS restricted to cells with elevation <= t.\n    n = len(grid)\n    for t in range(n * n):\n        if grid[0][0] > t:\n            continue\n        seen, stack = {(0, 0)}, [(0, 0)]\n        while stack:\n            r, c = stack.pop()\n            for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                if 0 <= nr < n and 0 <= nc < n and (nr, nc) not in seen and grid[nr][nc] <= t:\n                    seen.add((nr, nc))\n                    stack.append((nr, nc))\n        if (n - 1, n - 1) in seen:\n            return t\n    return -1"
+    },
+    "optimization": "First redundancy: scanning t linearly. The predicate 'goal reachable at level t' is monotone, so binary search t over [0, n^2) with one BFS per probe gives O(n^2 log n). Second redundancy: each probe still rediscovers the same region. Reformulate: the answer is the minimum over paths of the maximum elevation on the path, a bottleneck shortest path. Dijkstra works for this because max(a, b) is monotone like addition: pop the cell with the smallest worst-elevation-so-far, and the first time the goal is popped that value is optimal. One pass, O(n^2 log n), with no repeated traversals.",
+    "intuition": "Grow the reachable region one cell at a time, always admitting the lowest-elevation cell on its border. The water level needed so far is the highest cell admitted. When the goal is admitted, that running maximum is the answer, because any other route would also have had to admit some cell at least that high. A min-heap keyed on max(level so far, cell elevation) picks the next border cell in O(log n). Marking a cell seen when pushed is safe here: later pops carry a larger or equal level, so they cannot offer the cell a smaller key.",
+    "geometric": "Picture the grid as terrain with water rising from the top-left corner. The flooded region expands by always submerging the lowest dry cell touching it; the heap is the shoreline sorted by height. The answer is the water height when the far corner gets wet, which is the lowest pass over the ridge separating the two corners.",
+    "visual": "grid  0 4 8    heap key = highest elevation on the path\n      7 5 1\n      2 6 3\npop (0,0,0) t=0  push (4,0,1) (7,1,0)     heap [4,7]\npop (4,0,1) t=4  push (8,0,2) (5,1,1)     heap [5,7,8]\npop (5,1,1) t=5  push (5,1,2) (6,2,1)     heap [5,6,7,8]\npop (5,1,2) t=5  push (5,2,2) <- goal     heap [5,6,7,8]\npop (5,2,2) GOAL -> return 5\nflooded at t=5:  0 4 .    ridge 7 / 8 / 6 is never\n                 . 5 1    crossed; 5 is the lowest pass\n                 . . 3",
+    "steps": [
+      "heap = [(grid[0][0], 0, 0)], seen = {(0,0)}.",
+      "Pop (t, r, c); if (r, c) is the goal return t.",
+      "For each unseen in-bounds neighbour: mark seen and push (max(t, grid[nr][nc]), nr, nc)."
+    ],
+    "complexity": {
+      "time": "O(n^2 log n)",
+      "space": "O(n^2)",
+      "why": "Each cell is pushed and popped once from a heap holding up to n^2 entries."
+    },
+    "pitfalls": [
+      "Pushing grid[nr][nc] instead of max(t, grid[nr][nc]) loses the bottleneck.",
+      "The start cell's own elevation counts toward the answer.",
+      "With the binary-search variant, use elevation <= t, not < t."
+    ],
+    "hints": [
+      "For a fixed t, can you decide reachability with a BFS? What property of t lets you avoid trying every value?",
+      "Reachability is monotone in t, so binary search works; better still, think of the answer as the path minimising its maximum cell.",
+      "Dijkstra with key = max elevation on the path so far: pop the smallest, push max(key, neighbour); the goal's first pop is the answer."
+    ],
+    "code": "class Solution:\n    def swimInWater(self, grid: List[List[int]]) -> int:\n        n = len(grid)\n        heap = [(grid[0][0], 0, 0)]  # (highest elevation on the path so far, r, c)\n        seen = {(0, 0)}\n        while heap:\n            t, r, c = heapq.heappop(heap)\n            if r == n - 1 and c == n - 1:\n                return t\n            for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                if 0 <= nr < n and 0 <= nc < n and (nr, nc) not in seen:\n                    seen.add((nr, nc))  # later pops have t' >= t, so max(t', cell) cannot beat this\n                    heapq.heappush(heap, (max(t, grid[nr][nc]), nr, nc))\n        return -1",
+    "related": [
+      "koko_eating_bananas",
+      "network_delay_time",
+      "number_of_islands",
+      "min_cost_to_connect_all_points"
+    ]
+  },
+  {
+    "slug": "largest_component_size_by_common_factor",
+    "title": "Largest Component Size by Common Factor",
+    "leetcode": 952,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Union-Find (disjoint set union)",
+    "file": "graphs/largest_component_size_by_common_factor.py",
+    "problem": "Given unique positive integers nums, build a graph with an edge between nums[i] and nums[j] whenever gcd(nums[i], nums[j]) > 1. Return the size of the largest connected component. Example: [4,6,15,35] -> 4 (4-6 via 2, 6-15 via 3, 15-35 via 5); [20,50,9,63] -> 2.",
+    "brute_force": {
+      "approach": "Check every pair (i, j): if gcd > 1, union them, then take the largest component. The waste: the pairwise test asks 'do these two share a prime?' n^2 times, re-deriving the same prime structure of each number over and over; with n = 2*10^4 that is 2*10^8 gcd calls.",
+      "time": "O(n^2 * log(max))",
+      "space": "O(n)",
+      "code": "def brute_force(nums: List[int]) -> int:\n    # Pairwise gcd test, union every pair with gcd > 1, then take the largest component.\n    n = len(nums)\n    parent = list(range(n))\n\n    def find(i: int) -> int:\n        while parent[i] != i:\n            i = parent[i]\n        return i\n\n    for i in range(n):\n        for j in range(i + 1, n):\n            if gcd(nums[i], nums[j]) > 1:\n                parent[find(i)] = find(j)\n    return max(Counter(find(i) for i in range(n)).values())"
+    },
+    "optimization": "The redundancy is comparing numbers pairwise when the connection is really through a shared prime. nums[i] and nums[j] are adjacent iff they share a prime factor, so connectivity is unchanged if we add one hub node per prime and connect each number to the primes dividing it: two numbers sharing prime p both touch hub p. Each number is factored once by trial division up to its square root and has at most about six distinct primes below 10^5, so the union-find does O(n * sqrt(max)) work instead of O(n^2). Finally count how many original numbers share each root.",
+    "intuition": "Primes are the glue. Instead of asking every pair whether they are glued, factor each number and union it with each of its primes; the hubs transitively connect every number that shares any prime with any other. The component size is the number of input numbers, not hubs, under each root, so count roots over nums only. The number 1 has no primes and is always a singleton.",
+    "geometric": "Picture a bipartite drawing with numbers on the left and primes on the right, a line from each number to each of its prime factors. Two numbers are in the same component iff you can walk between them alternating number, prime, number, and so on. Union-find collapses the whole drawing into blobs; the answer is the blob containing the most left-side nodes.",
+    "visual": "nums [4, 6, 15, 35]   factor each, union number <-> prime\n 4 = 2^2      union(4,2)\n 6 = 2*3      union(6,2)  union(6,3)\n15 = 3*5      union(15,3) union(15,5)\n35 = 5*7      union(35,5) union(35,7)\nnumbers:   4     6     15     35\n           |    / \\    / \\    / \\\nprimes:    2 --'   3 -'   5 -'   7      one blob\nroots over nums only: {root: 4}  -> answer 4\n[20,50,9,63]: 20,50 share 2 and 5 | 9,63 share 3 -> 2",
+    "steps": [
+      "parent = {} with nodes created lazily for numbers and primes.",
+      "For each x: trial-divide by p = 2, 3, ... while p*p <= remainder; on each prime factor union(x, p) and strip it.",
+      "If the remainder is > 1 it is a prime: union(x, remainder).",
+      "Count find(x) over x in nums and return the largest count."
+    ],
+    "complexity": {
+      "time": "O(n * sqrt(max(nums)) * alpha)",
+      "space": "O(n + P)",
+      "why": "Trial division per number dominates; the union-find holds one node per number and per distinct prime P."
+    },
+    "pitfalls": [
+      "Counting prime hub nodes toward the component size; count only over nums.",
+      "Treating 1 as having a factor; it is always alone.",
+      "Forgetting the leftover factor after the square-root loop when the remainder is a large prime."
+    ],
+    "hints": [
+      "Two numbers are connected iff they share a prime factor; can you avoid testing every pair?",
+      "Introduce a node per prime and connect each number to its prime factors; shared primes connect numbers transitively.",
+      "Union-find over numbers and prime hubs after trial-division factoring; the answer is the largest count of nums under one root."
+    ],
+    "code": "class Solution:\n    def largestComponentSize(self, nums: List[int]) -> int:\n        parent = {}\n\n        def find(x: int) -> int:\n            parent.setdefault(x, x)\n            while parent[x] != x:\n                parent[x] = parent[parent[x]]  # path halving\n                x = parent[x]\n            return x\n\n        def union(a: int, b: int) -> None:\n            parent[find(a)] = find(b)\n\n        for x in nums:\n            rem, p = x, 2\n            while p * p <= rem:\n                if rem % p == 0:\n                    union(x, p)  # number <-> prime hub\n                    while rem % p == 0:\n                        rem //= p\n                p += 1\n            if rem > 1:\n                union(x, rem)  # leftover is a prime factor\n        return max(Counter(find(x) for x in nums).values())  # count numbers only, not hubs",
+    "related": [
+      "number_of_connected_components",
+      "accounts_merge",
+      "redundant_connection"
+    ]
+  }
+]

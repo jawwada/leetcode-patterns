@@ -1,0 +1,10 @@
+{"topic": "tries", "title": "Tries", "order": [
+  {"slug": "implement_trie_prefix_tree", "why_here": "Builds the structure itself: nested dicts, end markers, and the walk that every later problem reuses."},
+  {"slug": "replace_words", "why_here": "First use of the walk as a tool: one path tests a word against every root at once, and stopping early gives the shortest."},
+  {"slug": "design_add_and_search_words_data_structure", "why_here": "The walk becomes a DFS: a wildcard forces branching, and the trie prunes every branch that cannot match."},
+  {"slug": "word_search_ii", "why_here": "The DFS moves onto a grid, with the trie as a guide that prunes paths and shrinks as words are found."},
+  {"slug": "word_squares", "why_here": "Nodes now carry payloads (word lists) so a prefix query returns candidates directly inside a backtracking search."},
+  {"slug": "prefix_and_suffix_search", "why_here": "Rewrites a two-sided query into one prefix by inserting suffix#word keys, with the best index stored at every node."},
+  {"slug": "stream_of_characters", "why_here": "Suffix matching becomes prefix matching on a reversed trie walked backwards over a bounded buffer."},
+  {"slug": "design_search_autocomplete_system", "why_here": "Closes the chapter: a live cursor in the trie plus per-node frequency maps that turn every keystroke into a ranked answer."}
+]}

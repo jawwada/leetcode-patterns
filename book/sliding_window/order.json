@@ -1,0 +1,19 @@
+{
+  "topic": "sliding_window",
+  "title": "Sliding Window",
+  "order": [
+    {"slug": "best_time_to_buy_and_sell_stock", "why_here": "The gentlest window: the left edge collapses to one running minimum carried in a sweep."},
+    {"slug": "minimum_size_subarray_sum", "why_here": "First real two-pointer window: grow until the sum qualifies, shrink while it still does."},
+    {"slug": "longest_substring_without_repeating_characters", "why_here": "Flips to 'longest legal window' and lets the left edge jump via a last-seen map."},
+    {"slug": "max_consecutive_ones_iii", "why_here": "Reframes flips as 'at most k bad items in the window', tracked by one counter."},
+    {"slug": "fruit_into_baskets", "why_here": "Same shape with 'at most 2 distinct', so the summary becomes a count map whose size is the rule."},
+    {"slug": "longest_repeating_character_replacement", "why_here": "Validity depends on the most frequent letter, and a never-decreasing max_freq is enough."},
+    {"slug": "permutation_in_string", "why_here": "Fixed-width window compared against a target frequency table."},
+    {"slug": "substring_with_concatenation_of_all_words", "why_here": "Fixed window that steps a whole word at a time, run once per starting offset."},
+    {"slug": "minimum_window_substring", "why_here": "Shortest window covering a multiset, with a 'formed' counter for O(1) validity."},
+    {"slug": "subarrays_with_k_different_integers", "why_here": "Counting windows: exactly K equals atMost(K) minus atMost(K-1)."},
+    {"slug": "sliding_window_maximum", "why_here": "The summary outgrows a counter: a monotonic deque keeps only live candidates for the max."},
+    {"slug": "shortest_subarray_with_sum_at_least_k", "why_here": "Negatives break monotonicity, so slide over prefix sums with a monotonic deque."},
+    {"slug": "sliding_window_median", "why_here": "Hardest summary: two balanced heaps with lazy deletion to read the median."}
+  ]
+}

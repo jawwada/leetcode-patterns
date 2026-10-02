@@ -1,0 +1,1050 @@
+[
+  {
+    "slug": "kth_largest_element_in_a_stream",
+    "title": "Kth Largest Element in a Stream",
+    "leetcode": 703,
+    "difficulty": "Easy",
+    "topic": "heap",
+    "pattern": "Size-k heap (keep the k best)",
+    "file": "heap/kth_largest_element_in_a_stream.py",
+    "problem": "Design a class initialised with k and a list of scores that then receives new scores one at a time via add(val); after every add return the k-th largest element seen so far, duplicates counted. Example: k=3, nums=[4,5,8,2]; add(3)->4, add(5)->5, add(10)->5, add(9)->8, add(4)->8.",
+    "brute_force": {
+      "approach": "Keep every number in a list; on each add, append, sort descending and return index k-1. The whole history is re-sorted every time even though only one element changed, and only a single position of the sorted result is ever read.",
+      "time": "O(n log n) per add",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    def __init__(self, k: int, nums: List[int]):\n        self.k = k\n        self.nums = list(nums)\n\n    def add(self, val: int) -> int:\n        self.nums.append(val)\n        self.nums.sort(reverse=True)       # re-sort everything for one rank\n        return self.nums[self.k - 1]"
+    },
+    "optimization": "The redundancy is re-sorting n items to learn one rank. The answer depends only on the k largest values seen so far; anything smaller can never become the k-th largest again, so it can be discarded the moment it arrives. We need a container of exactly k items that cheaply exposes its smallest member and evicts it when a bigger one appears. A min-heap of size k does both in O(log k), and its root IS the k-th largest.",
+    "intuition": "Keep only the 'top k' club. A newcomer is admitted only by kicking out the weakest member, which is the heap root. The weakest surviving member is by definition the k-th largest overall. Everything that ever fell out of the heap was smaller than the root at that time, and the root only rises, so nothing discarded can ever be the answer.",
+    "geometric": "Picture the k kept values as a triangle with the smallest at the apex. A new value falls onto the heap: if it is smaller than the apex it bounces off; otherwise it joins and the apex is popped. The apex only ever rises over time.",
+    "visual": "k = 3   min-heap of the 3 largest; root = k-th largest\ninit [4,5,8,2]: heapify, pop until size 3 -> drop 2\n       4            add(3): push 3, pop root 3\n      / \\                  heap stays [4,5,8] -> 4\n     5   8\nadd(10): push -> [4,5,8,10], pop root 4\n       5            array [5,10,8]        -> 5\n      / \\\n    10   8\nadd(9):  push -> [5,9,8,10], pop root 5\n       8            array [8,9,10]        -> 8\n      / \\\n     9   10     invariant: every evicted value <= root",
+    "steps": [
+      "Heapify the initial nums, then pop until the heap has at most k elements.",
+      "add(val): push val onto the min-heap.",
+      "If the heap now has k+1 elements, pop the minimum (the weakest member).",
+      "Return heap[0], the smallest kept value, which is the k-th largest."
+    ],
+    "complexity": {
+      "time": "O(log k) per add",
+      "space": "O(k)",
+      "why": "The heap never holds more than k items, so every push/pop costs log k."
+    },
+    "pitfalls": [
+      "Forgetting to trim the initial list down to k elements.",
+      "Using a max-heap: you would have to pop k times to find the answer.",
+      "Returning the popped value instead of heap[0] after the pop."
+    ],
+    "hints": [
+      "You only ever need one number after each add. Which numbers can you prove will never be that answer?",
+      "Keep exactly k numbers. Which structure lets you find and replace the smallest of them in O(log k)?",
+      "A min-heap of size k: push the new value, pop if size > k, return heap[0]."
+    ],
+    "code": "class KthLargest:\n    def __init__(self, k: int, nums: List[int]):\n        self.k = k\n        self.heap = nums\n        heapq.heapify(self.heap)\n        while len(self.heap) > k:          # keep only the k largest\n            heapq.heappop(self.heap)\n\n    def add(self, val: int) -> int:\n        heapq.heappush(self.heap, val)\n        if len(self.heap) > self.k:        # evict the weakest member\n            heapq.heappop(self.heap)\n        return self.heap[0]                # root of a size-k min-heap = k-th largest",
+    "related": [
+      "kth_largest_element_in_an_array",
+      "top_k_frequent_elements",
+      "k_closest_points_to_origin"
+    ]
+  },
+  {
+    "slug": "k_closest_points_to_origin",
+    "title": "K Closest Points to Origin",
+    "leetcode": 973,
+    "difficulty": "Medium",
+    "topic": "heap",
+    "pattern": "Size-k heap (keep the k best)",
+    "file": "heap/k_closest_points_to_origin.py",
+    "problem": "Given points [[x, y], ...] on a plane and an integer k, return the k points closest to the origin by Euclidean distance, in any order. Example: points=[[1,3],[-2,2]], k=1 -> [[-2,2]] because 8 < 10. Example: [[3,3],[5,-1],[-2,4]], k=2 -> [[3,3],[-2,4]].",
+    "brute_force": {
+      "approach": "Compute every point's squared distance, sort all n points by it, and return the first k. Sorting fully orders all n points, but we only need to separate the k smallest from the rest; the relative order of the n-k far points is computed and thrown away.",
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "code": "def brute_force(points: List[List[int]], k: int) -> List[List[int]]:\n    ordered = sorted(points, key=lambda p: p[0] * p[0] + p[1] * p[1])  # orders ALL n points\n    return ordered[:k]"
+    },
+    "optimization": "The redundancy is ordering points we will discard. A point farther than k points we have already seen can never be in the answer, so it can be rejected immediately. To test that in O(log k) we need fast access to the worst point currently kept: a max-heap of size k keyed on distance, with Python's min-heap turned into a max-heap by negating the distance. Each new point is compared to the root; if closer, it replaces it. Only k items are ever stored, so n points cost O(n log k). For one-off queries quickselect on distance gives O(n) average, but the heap is the streaming-friendly answer.",
+    "intuition": "Hold a 'k closest so far' club whose doorman is the farthest member. Every arriving point only has to beat the doorman; it never needs to be compared with the other members. Squared distance is monotone in true distance, so sqrt is never needed and all arithmetic stays in integers.",
+    "geometric": "Draw the kept points as a disc around the origin whose radius is the heap root's distance. Each new point either lands outside the disc (ignored) or inside it (admitted), and then the disc shrinks to the new farthest member. The disc radius is monotonically non-increasing.",
+    "visual": "k=2  max-heap on d = x^2+y^2 (store -d); root = farthest\npoint    d    heap after step            action\n(3,3)    18   [18]                       keep\n(5,-1)   26   [26, 18]                   keep (size 2)\n(-2,4)   20   [26, 18, 20] -> pop 26     evict farthest\n                   -> [20, 18]\n       26 (root)             20 (root)\n      /            ==>      /\n    18                    18\ndisc radius 26 -> 20; any d > root bounces off\nanswer: [[3,3],[-2,4]]  (any order accepted)",
+    "steps": [
+      "For each point compute d = x*x + y*y (no sqrt; squared distance is monotone).",
+      "Push (-d, x, y) onto the heap so the farthest kept point sits at the root.",
+      "If the heap grows past k, pop the root (the farthest kept point).",
+      "Return the points remaining in the heap."
+    ],
+    "complexity": {
+      "time": "O(n log k)",
+      "space": "O(k)",
+      "why": "Each of n points costs one push and at most one pop on a heap of at most k entries."
+    },
+    "pitfalls": [
+      "Using math.sqrt: slower, floating point, and unnecessary since squared distance preserves order.",
+      "Forgetting to negate the distance (a min-heap would keep the k farthest).",
+      "Popping k times from a full heap of n points: correct, but O(n + k log n) and O(n) space."
+    ],
+    "hints": [
+      "Do you really need all n points in sorted order, or only to know which k are closest?",
+      "Keep a club of k points; which structure gives you the farthest club member in O(1)?",
+      "Max-heap of size k on squared distance (negate for heapq); pop the root whenever size exceeds k."
+    ],
+    "code": "class Solution:\n    def kClosest(self, points: List[List[int]], k: int) -> List[List[int]]:\n        heap: List[tuple] = []                       # max-heap on distance via negation\n        for x, y in points:\n            heapq.heappush(heap, (-(x * x + y * y), x, y))\n            if len(heap) > k:                        # root = farthest kept point, evict it\n                heapq.heappop(heap)\n        return [[x, y] for _, x, y in heap]",
+    "related": [
+      "kth_largest_element_in_an_array",
+      "top_k_frequent_elements",
+      "kth_largest_element_in_a_stream"
+    ]
+  },
+  {
+    "slug": "kth_largest_element_in_an_array",
+    "title": "Kth Largest Element in an Array",
+    "leetcode": 215,
+    "difficulty": "Medium",
+    "topic": "heap",
+    "pattern": "Quickselect (partition, recurse one side)",
+    "file": "heap/kth_largest_element_in_an_array.py",
+    "problem": "Given an integer array nums and k, return the k-th largest element in sorted order (duplicates count), without fully sorting. Example: nums=[3,2,1,5,6,4], k=2 -> 5. Example: nums=[3,2,3,1,2,4,5,5,6], k=4 -> 4.",
+    "brute_force": {
+      "approach": "Sort the array descending and return nums[k-1]. A full sort establishes the order of every pair of elements, but we only need to know which single element lands at position k-1; the order inside the left part and inside the right part is thrown away.",
+      "time": "O(n log n)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int], k: int) -> int:\n    return sorted(nums, reverse=True)[k - 1]   # full O(n log n) sort for one position"
+    },
+    "optimization": "The redundancy is sorting both halves of every partition when only one half can contain the answer. One partition pass around a pivot puts the pivot at its final sorted index p in O(n) and tells us whether the target index n-k is left of p, right of p, or equal to p. So discard the other side and recurse on one side only; the work shrinks geometrically (n + n/2 + n/4 + ...) to O(n) on average. A random pivot keeps the expected depth logarithmic and defeats adversarial inputs. Heap alternative: a size-k min-heap gives O(n log k) deterministically and is the right call for a stream; quickselect needs the whole array in memory but is faster for a one-off query.",
+    "intuition": "Quicksort, but only follow the side that contains the index you care about. The k-th largest in ascending order sits at index n-k. After each partition the pivot is in its final place, so comparing p with the target tells you exactly which side to keep. Randomising the pivot is what makes the average O(n) hold on sorted or repeated input.",
+    "geometric": "The array is a shelf; each partition pass drops a pivot at its true slot and splits the shelf into [smaller | pivot | larger]. The target slot n-k is marked; we keep only the segment containing the mark, so the live segment halves on average each round until it is a single slot.",
+    "visual": "nums [3,2,1,5,6,4]  k=2   target idx = n-k = 4 (ascending)\nidx    0 1 2 3 4 5\npivot 4:  [3,2,1] 4 [6,5]    pivot lands at p=3\n           lo..2  ^  4..5    p=3 < 4 -> keep right side\nlive:              [6,5]     (left side never sorted)\npivot 5:           [5] [6]   p=4 == target\n                    ^ answer = 5\ndiscarded unsorted: [3,2,1] and [6]\nheap alternative: size-k min-heap -> [5,6], root 5",
+    "steps": [
+      "target = n - k, the index of the answer in ascending order.",
+      "While lo < hi: pick a random pivot index, swap it to the end, partition so [lo..p-1] < pivot <= [p+1..hi].",
+      "If p == target return nums[p].",
+      "If p < target the answer is on the right: lo = p + 1; otherwise hi = p - 1.",
+      "When lo == hi, nums[lo] is the answer."
+    ],
+    "complexity": {
+      "time": "O(n) average, O(n^2) worst",
+      "space": "O(1)",
+      "why": "Each round partitions a segment that is on average half the previous one, in place and iteratively."
+    },
+    "pitfalls": [
+      "Using k instead of n-k as the target index.",
+      "Not randomising the pivot: sorted input degrades to O(n^2).",
+      "A partition that does not swap the pivot into index p: the loop then never converges."
+    ],
+    "hints": [
+      "You only need the element at one sorted position. Does a full sort do more work than that?",
+      "Quicksort's partition puts the pivot at its final index in O(n). What does that index tell you about where the answer is?",
+      "Quickselect: partition around a random pivot and recurse only into the side containing index n-k."
+    ],
+    "code": "class Solution:\n    def findKthLargest(self, nums: List[int], k: int) -> int:\n        target = len(nums) - k                    # index in ascending order\n        lo, hi = 0, len(nums) - 1\n        while lo < hi:\n            p = self._partition(nums, lo, hi)\n            if p == target:\n                return nums[p]\n            if p < target:\n                lo = p + 1                        # answer lies in the larger half\n            else:\n                hi = p - 1                        # answer lies in the smaller half\n        return nums[lo]\n\n    @staticmethod\n    def _partition(nums: List[int], lo: int, hi: int) -> int:\n        pivot_idx = random.randint(lo, hi)\n        nums[pivot_idx], nums[hi] = nums[hi], nums[pivot_idx]\n        pivot = nums[hi]\n        store = lo                                # everything before store is < pivot\n        for i in range(lo, hi):\n            if nums[i] < pivot:\n                nums[store], nums[i] = nums[i], nums[store]\n                store += 1\n        nums[store], nums[hi] = nums[hi], nums[store]   # pivot lands at its final index\n        return store",
+    "related": [
+      "kth_largest_element_in_a_stream",
+      "k_closest_points_to_origin",
+      "sort_colors",
+      "top_k_frequent_elements"
+    ]
+  },
+  {
+    "slug": "task_scheduler",
+    "title": "Task Scheduler",
+    "leetcode": 621,
+    "difficulty": "Medium",
+    "topic": "heap",
+    "pattern": "Max-heap + cooldown queue simulation",
+    "file": "heap/task_scheduler.py",
+    "problem": "Given tasks as uppercase letters and a cooldown n, each unit of time the CPU runs one task or idles, and two identical tasks must be at least n units apart. Return the minimum total time to finish all tasks. Example: tasks=[A,A,A,B,B,B], n=2 -> 8 (A B idle A B idle A B).",
+    "brute_force": {
+      "approach": "Simulate tick by tick: at each tick scan all 26 letters, pick the one with the most remaining copies whose last run was more than n ticks ago, run it or idle. Every tick re-scans all 26 counters and re-checks each cooldown, although only one counter changed since the last tick and every expiry time (last_run + n + 1) was known the moment the task ran.",
+      "time": "O(T * 26)  (T = answer)",
+      "space": "O(26)",
+      "code": "def brute_force(tasks: List[str], n: int) -> int:\n    remaining = Counter(tasks)\n    last_run = {t: -n - 1 for t in remaining}\n    time = 0\n    while remaining:\n        ready = [t for t in remaining if last_run[t] + n < time]   # rescan all tasks each tick\n        if ready:\n            t = max(ready, key=lambda x: remaining[x])\n            remaining[t] -= 1\n            last_run[t] = time\n            if remaining[t] == 0:\n                del remaining[t]\n        time += 1\n    return time"
+    },
+    "optimization": "The redundancy is two linear scans per tick: 'which ready task is most frequent' and 'which tasks are ready'. The greedy choice is always the ready task with the largest remaining count (it is the one most likely to force idles later), so a max-heap of counts answers the first question in O(log 26). A task run at time t becomes ready at exactly t + n + 1, and tasks re-enter in the order they left, so a FIFO queue of (ready_time, count) answers the second question by peeking at its head. When the heap is empty we jump the clock straight to the queue head's ready time instead of idling tick by tick.",
+    "intuition": "Always run the most frequent available task, then park it in a cooldown queue stamped with when it may return. The queue is naturally sorted by ready time because tasks are parked in time order. When nothing is runnable, do not simulate idle ticks one by one: skip time ahead to the next ready moment.",
+    "geometric": "Two containers side by side: a triangle (max-heap of remaining counts, biggest on top) and a conveyor belt (queue) that carries a task away for n+1 ticks before dropping it back into the triangle. The clock advances one tick per pop; when the triangle is empty the clock skips ahead to the belt's first drop-off time.",
+    "visual": "AAABBB, n=2   heap: max remaining   queue: (ready_at,task)\nt | run | heap  | queue              | timeline\n1 | A   | [B3]  | (3,A2)             | A\n2 | B   | []    | (3,A2) (4,B2)      | A B\n3 | -   | [A2]  | (4,B2)      idle   | A B _\n4 | A   | [B2]  | (6,A1)             | A B _ A\n5 | B   | []    | (6,A1) (7,B1)      | A B _ A B\n6 | -   | [A1]  | (7,B1)      idle   | A B _ A B _\n7 | A   | [B1]  |                    | A B _ A B _ A\n8 | B   | []    |                    | A B _ A B _ A B\nrule: run at t -> back in heap at t+n+1; empty heap => jump",
+    "steps": [
+      "Count tasks; push -count for each letter onto a max-heap.",
+      "time = 0. While the heap or the queue is non-empty: time += 1.",
+      "If the heap is non-empty pop the biggest count, decrement it, and if copies remain enqueue (time + n, count).",
+      "If the queue head's ready time equals time, move it back into the heap.",
+      "If the heap is empty but the queue is not, set time to the queue head's ready time minus one (the next tick will release it).",
+      "Return time."
+    ],
+    "complexity": {
+      "time": "O(T log 26) = O(T)",
+      "space": "O(26)",
+      "why": "Heap and queue hold at most 26 entries; each tick does O(1) heap operations, and idle gaps are skipped."
+    },
+    "pitfalls": [
+      "Off-by-one on the ready time: a task run at t may run again at t + n + 1.",
+      "Idling tick by tick when the heap is empty (TLE when n is huge).",
+      "Choosing the next task before moving ready tasks back into the heap."
+    ],
+    "hints": [
+      "Which task should you run first when several are available, and why does that choice minimise idles?",
+      "You need the most frequent ready task fast, and you need to know when a used task becomes ready again. One structure for each.",
+      "Max-heap of remaining counts plus a FIFO queue of (ready_time, count); skip time ahead when the heap is empty."
+    ],
+    "code": "class Solution:\n    def leastInterval(self, tasks: List[str], n: int) -> int:\n        heap = [-c for c in Counter(tasks).values()]     # max-heap of remaining counts\n        heapq.heapify(heap)\n        cooling: deque = deque()                          # (ready_time, -count), FIFO by time\n        time = 0\n        while heap or cooling:\n            time += 1\n            if heap:\n                cnt = heapq.heappop(heap) + 1            # run one copy (counts are negative)\n                if cnt:\n                    cooling.append((time + n, cnt))\n            if cooling and cooling[0][0] == time:        # cooldown over, back into the heap\n                heapq.heappush(heap, cooling.popleft()[1])\n            if not heap and cooling:                      # nothing runnable: skip the idle gap\n                time = cooling[0][0] - 1\n        return time",
+    "related": [
+      "reorganize_string",
+      "top_k_frequent_words",
+      "kth_largest_element_in_an_array"
+    ]
+  },
+  {
+    "slug": "design_twitter",
+    "title": "Design Twitter",
+    "leetcode": 355,
+    "difficulty": "Medium",
+    "topic": "heap",
+    "pattern": "k-way merge with a heap (merge k sorted feeds)",
+    "file": "heap/design_twitter.py",
+    "problem": "Implement postTweet(userId, tweetId), follow(a, b), unfollow(a, b) and getNewsFeed(userId), which returns the 10 most recent tweet ids posted by the user or anyone they follow, newest first. Example: post(1,5); feed(1)=[5]; follow(1,2); post(2,6); feed(1)=[6,5]; unfollow(1,2); feed(1)=[5].",
+    "brute_force": {
+      "approach": "Store every tweet in one global list in posting order. getNewsFeed walks the whole list from the newest end, keeping tweets whose author is the user or a followee, until 10 are found. The scan touches tweets from every user on the platform, almost all irrelevant to this reader, and in the worst case reads all T tweets ever posted.",
+      "time": "O(T) per feed",
+      "space": "O(T)",
+      "code": "class BruteForce:\n    def __init__(self):\n        self.tweets = []                                # global (userId, tweetId) in post order\n        self.follows = defaultdict(set)\n\n    def postTweet(self, userId: int, tweetId: int) -> None:\n        self.tweets.append((userId, tweetId))\n\n    def getNewsFeed(self, userId: int) -> List[int]:\n        allowed = self.follows[userId] | {userId}\n        feed = []\n        for u, tid in reversed(self.tweets):            # scans every tweet on the platform\n            if u in allowed:\n                feed.append(tid)\n                if len(feed) == 10:\n                    break\n        return feed\n\n    def follow(self, followerId: int, followeeId: int) -> None:\n        self.follows[followerId].add(followeeId)\n\n    def unfollow(self, followerId: int, followeeId: int) -> None:\n        self.follows[followerId].discard(followeeId)"
+    },
+    "optimization": "The redundancy is scanning other people's tweets. If each user keeps their own tweet list stamped with a global timestamp, each followee's list is already sorted by time, so a feed is 'merge k sorted lists, take the first 10'. A heap seeded with the newest tweet of each followee lets us repeatedly pull the globally newest tweet in O(log k) and replace it with that author's next-older tweet. We stop after 10 pops, so the cost is O(k + 10 log k) instead of O(T).",
+    "intuition": "Each followee's timeline is a sorted deck. Put the top card of each deck in a heap, draw the newest, and refill from the same deck. Ten draws build the feed. Using a decreasing counter as the timestamp turns heapq's min-heap into a 'newest first' heap without negation gymnastics.",
+    "geometric": "k horizontal rows (one per followee), each sorted newest to oldest left to right, with a pointer at the leftmost card. The heap triangle above holds just the k pointed-at cards; pop the apex, advance that row's pointer one step right, push the newly exposed card. The pointer frontier moves exactly 10 steps in total.",
+    "visual": "user 1 follows {2,3}; timestamps decrease (-5 is newest)\nper-user lists, newest LAST; ^ = current pointer\n u1: (-1,5) (-4,8)      u2: (-2,6) (-5,9)      u3: (-3,7)\n               ^                      ^              ^\nheap of the 3 pointed-at tweets (smallest t = newest):\n          (-5, 9, u2)\n         /           \\        pop -> feed [9]\n   (-4, 8, u1)   (-3, 7, u3)  refill u2: push (-2,6)\nnext pops: 8, 7, 6, 5  -> feed = [9, 8, 7, 6, 5]\nstop after 10 pops or when the heap is empty",
+    "steps": [
+      "Keep a global decreasing counter as the timestamp; store per-user lists of (time, tweetId).",
+      "follow/unfollow update a set of followees; a user always implicitly follows themselves.",
+      "getNewsFeed: for each followee with tweets, push (time, tweetId, userId, index_of_next_older) for their newest tweet.",
+      "Pop up to 10 times, appending tweetId; after each pop push that author's next-older tweet if one exists.",
+      "Return the collected ids."
+    ],
+    "complexity": {
+      "time": "O(k + 10 log k) per feed",
+      "space": "O(T + F)",
+      "why": "The heap holds one entry per followee, and only 10 pops are performed; all tweets and follow edges are stored once."
+    },
+    "pitfalls": [
+      "Forgetting that a user sees their own tweets.",
+      "unfollow of self or of a user never followed must not raise (use set.discard).",
+      "Using an increasing timestamp with heapq gives oldest-first; negate or count downward."
+    ],
+    "hints": [
+      "Why is scanning every tweet on the platform wasteful when a user follows only a few people?",
+      "Each followee's tweets are already in time order. What classic problem is 'take the newest from several sorted lists'?",
+      "k-way merge: heap of each followee's newest tweet, pop 10 times, refilling from the popped author's list."
+    ],
+    "code": "class Twitter:\n    def __init__(self):\n        self.time = 0                                   # decreasing: smaller == newer\n        self.tweets = defaultdict(list)                 # user -> [(time, tweetId)] newest last\n        self.follows = defaultdict(set)                 # user -> set of followees\n\n    def postTweet(self, userId: int, tweetId: int) -> None:\n        self.time -= 1\n        self.tweets[userId].append((self.time, tweetId))\n\n    def getNewsFeed(self, userId: int) -> List[int]:\n        heap = []\n        for u in self.follows[userId] | {userId}:       # self is implicitly followed\n            if self.tweets[u]:\n                i = len(self.tweets[u]) - 1\n                t, tid = self.tweets[u][i]\n                heap.append((t, tid, u, i - 1))         # i-1 = index of next-older tweet\n        heapq.heapify(heap)\n        feed = []\n        while heap and len(feed) < 10:\n            t, tid, u, i = heapq.heappop(heap)\n            feed.append(tid)\n            if i >= 0:                                  # refill from the same author\n                nt, ntid = self.tweets[u][i]\n                heapq.heappush(heap, (nt, ntid, u, i - 1))\n        return feed\n\n    def follow(self, followerId: int, followeeId: int) -> None:\n        self.follows[followerId].add(followeeId)\n\n    def unfollow(self, followerId: int, followeeId: int) -> None:\n        self.follows[followerId].discard(followeeId)",
+    "related": [
+      "merge_k_sorted_lists",
+      "kth_largest_element_in_a_stream",
+      "lru_cache"
+    ]
+  },
+  {
+    "slug": "find_median_from_data_stream",
+    "title": "Find Median from Data Stream",
+    "leetcode": 295,
+    "difficulty": "Hard",
+    "topic": "heap",
+    "pattern": "Two heaps (balanced max-heap / min-heap)",
+    "file": "heap/find_median_from_data_stream.py",
+    "problem": "Design a class with addNum(num) and findMedian(). findMedian returns the median of all numbers added so far: the middle value for an odd count, the mean of the two middle values for an even count. Example: add(1), add(2) -> findMedian()=1.5; add(3) -> findMedian()=2.0.",
+    "brute_force": {
+      "approach": "Append each number to a list; on findMedian sort the list and read the middle element(s). The full sorted order is rebuilt on every query (or maintained with O(n) bisect inserts) even though only the boundary between the lower half and the upper half ever matters.",
+      "time": "O(1) add, O(n log n) findMedian",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    def __init__(self):\n        self.nums = []\n\n    def addNum(self, num: int) -> None:\n        self.nums.append(num)\n\n    def findMedian(self) -> float:\n        a = sorted(self.nums)                           # re-sorts everything each query\n        n = len(a)\n        if n % 2:\n            return float(a[n // 2])\n        return (a[n // 2 - 1] + a[n // 2]) / 2"
+    },
+    "optimization": "The redundancy is maintaining order inside each half. The median is determined by the maximum of the lower half and the minimum of the upper half; the internal order of each half is irrelevant. So keep the lower half in a max-heap and the upper half in a min-heap, each exposing exactly the element we need at its root. Insertion pushes into one heap and, if the sizes drift apart by more than one, moves a root across. Both operations are O(log n), and findMedian reads the roots in O(1).",
+    "intuition": "Split the numbers into a 'small half' and a 'large half' so that every small <= every large and the halves differ in size by at most one. The median lives at the seam: the biggest small and the smallest large. Heaps are the cheapest structure that always exposes a max or a min. Always pushing through the small heap first and moving its max across guarantees the ordering invariant without any explicit comparison.",
+    "geometric": "Two triangles joined apex to apex along a horizontal seam. The left triangle (max-heap) has the largest small number at its apex; the right triangle (min-heap) has the smallest large number at its apex. A new number drops into the lower triangle and, if too big for that side, its apex is flicked across the seam. The seam IS the median.",
+    "visual": "stream: 5 2 8 1 9     small = max-heap (lower half)\n                      large = min-heap (upper half)\n   small (max on top)   |   large (min on top)\n          5             |        8\n         / \\            |       /\n        2   1           |      9\n  ----------------- seam -----------------\n  len(small)=3 = len(large)+1 -> median = -small[0] = 5\n  invariant: max(small) <= min(large), |sizes| <= 1\n  addNum(x): push small; move small max -> large;\n             if large bigger, move large min -> small",
+    "steps": [
+      "Keep small (max-heap via negated values) and large (min-heap).",
+      "addNum: push num onto small, then move small's max to large (this guarantees max(small) <= min(large)).",
+      "If large is now bigger than small, move large's min back to small (keeps small equal or one larger).",
+      "findMedian: if the sizes differ return -small[0], else return (-small[0] + large[0]) / 2."
+    ],
+    "complexity": {
+      "time": "O(log n) addNum, O(1) findMedian",
+      "space": "O(n)",
+      "why": "Each add does at most three heap operations on heaps holding n numbers in total; the median is read from two roots."
+    },
+    "pitfalls": [
+      "Forgetting to negate when moving a value between the two heaps.",
+      "Letting the size invariant drift so the median reads the wrong root.",
+      "Integer division when the count is even."
+    ],
+    "hints": [
+      "The median only cares about the boundary between the lower and upper halves. Do you need the order inside each half?",
+      "Which structures give you the max of one set and the min of another in O(1), with O(log n) inserts?",
+      "Two heaps: max-heap for the lower half, min-heap for the upper half, sizes kept within one of each other."
+    ],
+    "code": "class MedianFinder:\n    def __init__(self):\n        self.small = []          # max-heap (negated) of the lower half\n        self.large = []          # min-heap of the upper half\n\n    def addNum(self, num: int) -> None:\n        heapq.heappush(self.small, -num)\n        # move the lower half's max across; guarantees max(small) <= min(large)\n        heapq.heappush(self.large, -heapq.heappop(self.small))\n        if len(self.large) > len(self.small):           # keep small the (possibly) bigger side\n            heapq.heappush(self.small, -heapq.heappop(self.large))\n\n    def findMedian(self) -> float:\n        if len(self.small) > len(self.large):\n            return float(-self.small[0])\n        return (-self.small[0] + self.large[0]) / 2",
+    "related": [
+      "kth_largest_element_in_a_stream",
+      "sliding_window_median",
+      "merge_k_sorted_lists"
+    ]
+  },
+  {
+    "slug": "merge_k_sorted_lists",
+    "title": "Merge k Sorted Lists",
+    "leetcode": 23,
+    "difficulty": "Hard",
+    "topic": "heap",
+    "pattern": "k-way merge with a heap (merge k sorted feeds)",
+    "file": "heap/merge_k_sorted_lists.py",
+    "problem": "Given an array of k linked lists, each sorted ascending, merge them into one sorted linked list and return its head. Example: [[1,4,5],[1,3,4],[2,6]] -> [1,1,2,3,4,4,5,6]. Example: [] -> [] and [[]] -> [].",
+    "brute_force": {
+      "approach": "Walk every list, dump all N node values into one array, sort it, and rebuild a linked list. The input is already k sorted runs and a general sort ignores that completely, re-comparing values whose relative order is already known. (A second naive idea, scanning the k current heads for the minimum at each step, costs O(N k).)",
+      "time": "O(N log N)",
+      "space": "O(N)",
+      "code": "def brute_force(lists: List[Optional[ListNode]]) -> Optional[ListNode]:\n    vals = []\n    for node in lists:\n        while node:\n            vals.append(node.val)\n            node = node.next\n    vals.sort()                                         # ignores that each list is already sorted\n    return build(vals)"
+    },
+    "optimization": "The redundancy is comparing elements within the same list, which are already ordered. The only real decision at each step is which of the k current heads is smallest. A linear scan does that in O(k); a min-heap holding exactly the k heads does it in O(log k), and after taking the smallest we push that list's next node to restore the k-head invariant. N outputs times log k each gives O(N log k), beating both O(N log N) and O(N k).",
+    "intuition": "Treat the k lists as k decks face up; the heap holds the top card of each deck. Draw the smallest top card, then flip the next card of that same deck onto the heap. Repeat until all decks are empty. Storing the list index in the tuple breaks ties so the heap never tries to compare ListNode objects.",
+    "geometric": "k horizontal rows of nodes with a frontier of k pointers starting at the leftmost node of each row. The heap triangle above the rows contains exactly the k pointed-at values with the smallest at its apex. Pop the apex, advance that row's pointer one step right, push the newly exposed node. The frontier sweeps right across all rows exactly once.",
+    "visual": "rows are sorted; ^ = frontier pointer per list\n L0: 1 -> 4 -> 5          heap of the k=3 heads\n     ^                           (1, L0)\n L1: 1 -> 3 -> 4                /       \\\n     ^                     (1, L1)     (2, L2)\n L2: 2 -> 6\n     ^\npop (1,L0) -> out 1       advance L0, push (4,L0)\npop (1,L1) -> out 1 1     advance L1, push (3,L1)\npop (2,L2) -> out 1 1 2   advance L2, push (6,L2)\nheap size never exceeds k; N pops total",
+    "steps": [
+      "Push (val, list_index, node) for the head of every non-empty list; the index breaks ties so nodes are never compared.",
+      "Pop the smallest tuple and append its node to the output tail.",
+      "If that node has a next, push (next.val, i, next).",
+      "Repeat until the heap is empty; return dummy.next."
+    ],
+    "complexity": {
+      "time": "O(N log k)",
+      "space": "O(k)",
+      "why": "Every one of the N nodes is pushed and popped once on a heap that never exceeds k entries."
+    },
+    "pitfalls": [
+      "Pushing (val, node) without an index tiebreaker: equal values make heapq compare ListNodes and raise TypeError.",
+      "Not skipping empty lists when seeding the heap.",
+      "Forgetting the lists array may itself be empty."
+    ],
+    "hints": [
+      "Each list is already sorted. At any moment, where must the next output node come from?",
+      "You repeatedly need the minimum of k candidates, then replace one candidate. Which structure does that in O(log k)?",
+      "Min-heap of (val, i, node) for the k heads; pop, append, push the popped node's successor."
+    ],
+    "code": "class Solution:\n    def mergeKLists(self, lists: List[Optional[ListNode]]) -> Optional[ListNode]:\n        heap = [(node.val, i, node) for i, node in enumerate(lists) if node]\n        heapq.heapify(heap)                             # heap of the k current heads\n        dummy = tail = ListNode()\n        while heap:\n            val, i, node = heapq.heappop(heap)          # globally smallest remaining node\n            tail.next = node\n            tail = node\n            if node.next:                               # refill from the same list\n                heapq.heappush(heap, (node.next.val, i, node.next))\n        return dummy.next",
+    "related": [
+      "design_twitter",
+      "merge_two_sorted_lists",
+      "kth_smallest_element_in_a_sorted_matrix",
+      "find_median_from_data_stream"
+    ]
+  },
+  {
+    "slug": "reorganize_string",
+    "title": "Reorganize String",
+    "leetcode": 767,
+    "difficulty": "Medium",
+    "topic": "heap",
+    "pattern": "Greedy most-frequent-first with a max-heap",
+    "file": "heap/reorganize_string.py",
+    "problem": "Rearrange the characters of s so that no two adjacent characters are equal; return any valid arrangement, or an empty string if impossible. Example: \"aab\" -> \"aba\". Example: \"aaab\" -> \"\".",
+    "brute_force": {
+      "approach": "Try every permutation of s and return the first with no equal neighbours. Permutations that differ only in the order of identical letters are tried separately, and a permutation is rejected only after being fully built even when its first two characters already clash.",
+      "time": "O(n! * n)",
+      "space": "O(n)",
+      "code": "def brute_force(s: str) -> str:\n    for perm in permutations(s):                        # n! candidates, checked only when complete\n        if all(perm[i] != perm[i + 1] for i in range(len(perm) - 1)):\n            return \"\".join(perm)\n    return \"\""
+    },
+    "optimization": "The redundancy is exploring arrangements blindly when the constraint is purely about counts. An arrangement exists iff the most frequent letter occurs at most (n+1)//2 times, otherwise two copies must touch. Given that, the greedy rule 'always place the most frequent letter that is not the one just placed' never gets stuck, because spending the majority letter as early as possible spreads it out maximally. We need the letter with the highest remaining count, excluding one letter, repeatedly: a max-heap of counts gives that in O(log 26), and we hold the just-used letter out of the heap for exactly one round.",
+    "intuition": "Spend your most dangerous (most frequent) letter first at every step so it never piles up, and hold the letter you just placed out for one turn so it cannot repeat. The feasibility check up front guarantees the heap never runs dry while the parked letter still has copies.",
+    "geometric": "A triangle (max-heap) of letter counts with the biggest at the apex, and a single parking spot beside it for the letter placed last. Each tick: pop the apex, write it to the output, move the parked letter back into the triangle, park the one just written.",
+    "visual": "s=\"aaabbc\"  counts a3 b2 c1   max 3 <= (6+1)//2 -> feasible\nstep  heap (max count on top)      parked   output\n 1    a3 b2 c1 -> pop a            a2       a\n 2    b2 c1    -> pop b, unpark a2 b1       ab\n 3    a2 c1    -> pop a, unpark b1 a1       aba\n 4    b1 c1    -> pop b, unpark a1 b0       abab\n 5    a1 c1    -> pop a            a0       ababa\n 6    c1       -> pop c            c0       ababac\nthe just-placed letter sits outside the heap for 1 turn\n\"aaab\": a3 > (4+1)//2 = 2 -> return \"\" immediately",
+    "steps": [
+      "Count letters; if the max count exceeds (n + 1) // 2 return \"\".",
+      "Build a max-heap of (-count, char).",
+      "Loop while the heap is non-empty: pop the top, append its char, decrement its count.",
+      "Push the previously parked letter back if it still has copies, then park the current one.",
+      "Return the joined output."
+    ],
+    "complexity": {
+      "time": "O(n log 26) = O(n)",
+      "space": "O(26)",
+      "why": "Each of n placements does O(log 26) heap work on a heap of at most 26 distinct letters."
+    },
+    "pitfalls": [
+      "Pushing the just-used letter back before popping the next one (it would be chosen again).",
+      "Forgetting the feasibility check and producing a string shorter than s.",
+      "Computing the bound as n // 2 instead of (n + 1) // 2 for odd n."
+    ],
+    "hints": [
+      "When is it impossible? Think about how many slots the most frequent letter needs.",
+      "If it is possible, which letter should you place next to avoid getting stuck later?",
+      "Max-heap by count; pop the top, place it, re-add the letter placed one step earlier."
+    ],
+    "code": "class Solution:\n    def reorganizeString(self, s: str) -> str:\n        counts = Counter(s)\n        if max(counts.values()) > (len(s) + 1) // 2:\n            return \"\"                                   # majority letter cannot be spread out\n        heap = [(-c, ch) for ch, c in counts.items()]   # max-heap on remaining count\n        heapq.heapify(heap)\n        out = []\n        held = None                                     # (negcount, char) just placed, kept out\n        while heap:\n            neg, ch = heapq.heappop(heap)\n            out.append(ch)\n            if held and held[0] < 0:                    # previous letter is allowed back now\n                heapq.heappush(heap, held)\n            held = (neg + 1, ch)                        # one copy spent; park it for a turn\n        return \"\".join(out)",
+    "related": [
+      "task_scheduler",
+      "top_k_frequent_words",
+      "sort_characters_by_frequency"
+    ]
+  },
+  {
+    "slug": "top_k_frequent_words",
+    "title": "Top K Frequent Words",
+    "leetcode": 692,
+    "difficulty": "Medium",
+    "topic": "heap",
+    "pattern": "Size-k heap (keep the k best)",
+    "file": "heap/top_k_frequent_words.py",
+    "problem": "Given a list of words and an integer k, return the k most frequent words sorted by frequency descending; words with equal frequency are sorted lexicographically ascending. Example: [\"i\",\"love\",\"leetcode\",\"i\",\"love\",\"coding\"], k=2 -> [\"i\",\"love\"].",
+    "brute_force": {
+      "approach": "Count every word, sort all m distinct words by (-count, word) and take the first k. The sort fully orders all m words even though only k are reported; the relative order of the m-k losers is computed and discarded.",
+      "time": "O(m log m)",
+      "space": "O(m)",
+      "code": "def brute_force(words: List[str], k: int) -> List[str]:\n    counts = Counter(words)\n    return sorted(counts, key=lambda w: (-counts[w], w))[:k]   # orders ALL distinct words"
+    },
+    "optimization": "The redundancy is ordering the losers. A word is irrelevant as soon as k 'better' words have been seen, where better means higher count, or equal count and lexicographically smaller. Keep a heap of size k whose root is the current worst kept word, so every new word only has to beat the root. heapq is a min-heap, so the root must be the minimum under an ordering where 'worse' is 'smaller': lower count is smaller, and for equal counts a lexicographically larger word is smaller. A tiny wrapper class with __lt__ encodes that; you cannot negate a string, which is exactly why the wrapper is needed.",
+    "intuition": "Hold a k-seat podium whose doorman is the weakest occupant: the least frequent word, and among ties the alphabetically latest. Each candidate competes only with the doorman. Popping the heap at the end yields the words worst-first, so reverse the result.",
+    "geometric": "A triangle of k (count, word) pairs with the weakest at the apex. Candidates fall in one at a time; when the triangle has k+1 members the apex is popped. Finally the triangle is drained apex first, producing the answer in reverse, like unstacking plates.",
+    "visual": "counts: i:2 love:2 leetcode:1 coding:1        k = 2\nheap root = WORST kept: lowest count, then LATEST word\npush i(2)         -> [i2]\npush love(2)      -> root love2  (tie: \"love\" > \"i\")\npush leetcode(1)  -> size 3 > k: pop root leetcode1\npush coding(1)    -> size 3 > k: pop root coding1\nfinal heap:      love2   <- root (worst of the kept)\n                /\n              i2\ndrain: love, i  -> reverse -> [\"i\", \"love\"]",
+    "steps": [
+      "Count words with Counter.",
+      "Define Entry(count, word) with __lt__: smaller count is less; for equal counts the lexicographically larger word is less.",
+      "Push each Entry; pop the root whenever the heap exceeds k.",
+      "Pop everything, collect the words, and reverse."
+    ],
+    "complexity": {
+      "time": "O(n + m log k)",
+      "space": "O(m + k)",
+      "why": "Counting is linear; each of m distinct words does O(log k) heap work on a heap bounded by k."
+    },
+    "pitfalls": [
+      "Using (-count, word) tuples in a size-k min-heap: the tie order evicts the wrong word.",
+      "Forgetting to reverse the drained heap.",
+      "Sorting ties by word descending instead of ascending."
+    ],
+    "hints": [
+      "You only need k winners. Why does fully sorting every distinct word do too much?",
+      "Keep a heap of size k whose root is the word you would evict first. What makes a word 'worse' here, counting ties?",
+      "Wrapper with __lt__: lower count is less, equal count compares words reversed; pop when size > k, then drain and reverse."
+    ],
+    "code": "class Solution:\n    def topKFrequent(self, words: List[str], k: int) -> List[str]:\n        class Entry:\n            __slots__ = (\"count\", \"word\")\n\n            def __init__(self, count: int, word: str):\n                self.count, self.word = count, word\n\n            def __lt__(self, other: \"Entry\") -> bool:\n                if self.count != other.count:\n                    return self.count < other.count     # fewer occurrences = worse\n                return self.word > other.word           # same count: later word = worse\n\n        heap: List[Entry] = []\n        for word, count in Counter(words).items():\n            heapq.heappush(heap, Entry(count, word))\n            if len(heap) > k:                           # evict the current worst\n                heapq.heappop(heap)\n        out = [heapq.heappop(heap).word for _ in range(len(heap))]\n        return out[::-1]                                # popped worst-first, so reverse",
+    "related": [
+      "top_k_frequent_elements",
+      "kth_largest_element_in_a_stream",
+      "k_closest_points_to_origin",
+      "sort_characters_by_frequency"
+    ]
+  },
+  {
+    "slug": "subsets",
+    "title": "Subsets",
+    "leetcode": 78,
+    "difficulty": "Medium",
+    "topic": "backtracking",
+    "pattern": "Backtracking include/exclude decision tree",
+    "file": "backtracking/subsets.py",
+    "problem": "Given an array of distinct integers, return all possible subsets (the power set) in any order, with no duplicate subsets. Example: [1,2,3] -> [[],[1],[2],[1,2],[3],[1,3],[2,3],[1,2,3]].",
+    "brute_force": {
+      "approach": "Enumerate every bitmask from 0 to 2^n - 1; for each mask loop over the n bits and collect the elements whose bit is set. Two masks that share a prefix (0b110xx and 0b110yy) rebuild the same first elements from scratch; every subset is decoded independently with no shared work.",
+      "time": "O(n * 2^n)",
+      "space": "O(n * 2^n)",
+      "code": "def brute_force(nums: List[int]) -> List[List[int]]:\n    n = len(nums)\n    out = []\n    for mask in range(1 << n):                              # 2^n masks\n        out.append([nums[i] for i in range(n) if mask >> i & 1])   # decode each from scratch\n    return out"
+    },
+    "optimization": "The output itself has size O(n * 2^n), so nothing beats the brute force asymptotically; the goal is to stop rebuilding shared prefixes and to arrive at a template that generalises to pruning. Subsets form a binary decision tree: at depth i decide 'include nums[i]' or 'skip it'. A depth-first walk with one shared path list adds an element on the way down and removes it on the way up, so each subset costs O(1) incremental work plus the O(n) copy when emitted. The same walk plus a skip-duplicates rule or a sum bound solves Subsets II and Combination Sum.",
+    "intuition": "Every subset is a sequence of n yes/no answers. Walk the yes/no tree depth first with one path list that you mutate and restore: push before recursing, pop after. In the for-loop form, at each level choose the next index to include from start onward; every node of the tree is emitted as a subset, and indices only increase so no subset appears twice.",
+    "geometric": "A binary tree of depth n: each level is an element, the left branch means take, the right branch means skip. The 2^n leaves are the subsets. The path list is the single pencil line from the root to the current node; backtracking erases the last segment and draws a new one.",
+    "visual": "nums=[1,2,3]   dfs(start): record path, then try i >= start\n                       []\n          /            |            \\\n        [1]           [2]           [3]\n       /    \\          |\n    [1,2]  [1,3]     [2,3]\n      |\n   [1,2,3]\nevery node is emitted (8 nodes = 2^3 subsets)\ni only increases -> [2,1] is never generated\npath is ONE shared list: append, recurse, pop",
+    "steps": [
+      "result = [], path = []; define dfs(start).",
+      "Record a copy of path: every node of the tree is a valid subset.",
+      "For i in range(start, n): append nums[i], recurse dfs(i + 1), pop.",
+      "Call dfs(0) and return result."
+    ],
+    "complexity": {
+      "time": "O(n * 2^n)",
+      "space": "O(n)",
+      "why": "2^n subsets are each copied in O(n); the recursion and path use O(n) beyond the output."
+    },
+    "pitfalls": [
+      "Appending the path object itself instead of a copy: all entries alias one list.",
+      "Forgetting to pop, so the path keeps growing.",
+      "Looping from 0 instead of start, which produces duplicates."
+    ],
+    "hints": [
+      "Each element is either in a subset or not. How many subsets does that give, and how could you walk them systematically?",
+      "Think of a tree where each level decides one element. What do you need to carry while walking it depth first?",
+      "dfs(start) that records the current path and then, for i >= start, appends nums[i], recurses with i+1, and pops."
+    ],
+    "code": "class Solution:\n    def subsets(self, nums: List[int]) -> List[List[int]]:\n        result: List[List[int]] = []\n        path: List[int] = []\n\n        def dfs(start: int) -> None:\n            result.append(path[:])             # every node of the tree is a subset\n            for i in range(start, len(nums)):\n                path.append(nums[i])           # choose\n                dfs(i + 1)                     # explore (indices only increase: no dups)\n                path.pop()                     # un-choose\n\n        dfs(0)\n        return result",
+    "related": [
+      "subsets_ii",
+      "combination_sum",
+      "permutations",
+      "letter_combinations_of_a_phone_number"
+    ]
+  },
+  {
+    "slug": "combination_sum",
+    "title": "Combination Sum",
+    "leetcode": 39,
+    "difficulty": "Medium",
+    "topic": "backtracking",
+    "pattern": "Backtracking with start index and sum pruning",
+    "file": "backtracking/combination_sum.py",
+    "problem": "Given distinct positive candidates and a target, return all unique combinations (each candidate may be reused any number of times) that sum to target; order inside a combination does not matter. Example: candidates=[2,3,6,7], target=7 -> [[2,2,3],[7]].",
+    "brute_force": {
+      "approach": "For every length r from 1 to target // min(candidates), generate every multiset of size r with combinations_with_replacement and keep those summing to target. A multiset is fully built before its sum is checked, so [2,2,2,2,...] is generated for every length even though [2,2,2,2] already exceeds 7, and nothing learned from one failing multiset prunes its extensions.",
+      "time": "O(sum_r C(n+r-1, r) * r)",
+      "space": "O(target / min)",
+      "code": "def brute_force(candidates: List[int], target: int) -> List[List[int]]:\n    out = []\n    for r in range(1, target // min(candidates) + 1):\n        for combo in combinations_with_replacement(candidates, r):   # built fully, checked late\n            if sum(combo) == target:\n                out.append(list(combo))\n    return out"
+    },
+    "optimization": "The redundancy is extending partial combinations whose sum already exceeds the target. Candidates are positive, so a partial sum only grows; once it passes target every extension is dead and the whole subtree can be cut. To avoid emitting [2,3,2] and [2,2,3] separately, only allow picking candidates at index >= the last picked index (the start parameter); reuse is allowed by recursing with i rather than i + 1. Sorting the candidates lets us break instead of continue on overflow, since every later candidate is even bigger. The live branches are exactly the partial sums that could still hit the target.",
+    "intuition": "Build combinations as non-decreasing sequences of candidate indices. At each node either commit another copy of the current candidate or move on to a bigger one; stop the moment the remaining budget goes negative. Tracking 'remaining' instead of 'sum so far' makes the base case remaining == 0 and the prune candidate > remaining.",
+    "geometric": "A tree where each node holds the remaining target; children subtract a candidate >= the parent's last choice. Leaves with remaining 0 are answers. Any node whose remaining would go below 0 is pruned, and because candidates are sorted its right-hand siblings are pruned with it (break).",
+    "visual": "candidates=[2,3,6,7]  target=7     node = remaining\n                        7\n          -2 /     -3 |     -6 |     -7 \\\n            5         4        1          0 => [7]\n       -2 / -3 \\    -3 |  -6 x      (2 > 1: break)\n         3      2      1\n    -2 / -3 \\   -3 x   -3 x\n      1      0 => [2,2,3]\n     -2 x\nx = pruned: candidate > remaining (sorted => break)\nstart index only moves forward => no [3,2,2] duplicate",
+    "steps": [
+      "Sort candidates; result = [], path = [].",
+      "dfs(start, remaining): if remaining == 0 record a copy of path and return.",
+      "For i from start: if candidates[i] > remaining break (every later candidate is bigger).",
+      "Append candidates[i], recurse dfs(i, remaining - candidates[i]) (i, not i+1: reuse allowed), then pop.",
+      "Call dfs(0, target) and return result."
+    ],
+    "complexity": {
+      "time": "O(n^(target/min))",
+      "space": "O(target/min)",
+      "why": "Branching factor n and depth up to target divided by the smallest candidate; the path is at most that deep."
+    },
+    "pitfalls": [
+      "Recursing with i + 1, which forbids reusing a candidate.",
+      "Looping from 0 instead of start, which emits permutations of the same combination.",
+      "Using continue where break is valid after sorting (correct but slower)."
+    ],
+    "hints": [
+      "Candidates are positive. What does that tell you about a partial combination whose sum already exceeds the target?",
+      "How do you avoid generating [2,3,2] and [2,2,3] as two different answers?",
+      "DFS with a start index and remaining target; recurse with the same index to allow reuse; break when candidate > remaining."
+    ],
+    "code": "class Solution:\n    def combinationSum(self, candidates: List[int], target: int) -> List[List[int]]:\n        candidates.sort()\n        result: List[List[int]] = []\n        path: List[int] = []\n\n        def dfs(start: int, remaining: int) -> None:\n            if remaining == 0:\n                result.append(path[:])\n                return\n            for i in range(start, len(candidates)):\n                if candidates[i] > remaining:       # sorted: every later candidate also too big\n                    break\n                path.append(candidates[i])\n                dfs(i, remaining - candidates[i])   # i (not i+1): the same value may be reused\n                path.pop()\n\n        dfs(0, target)\n        return result",
+    "related": [
+      "combination_sum_ii",
+      "subsets",
+      "permutations",
+      "coin_change"
+    ]
+  },
+  {
+    "slug": "permutations",
+    "title": "Permutations",
+    "leetcode": 46,
+    "difficulty": "Medium",
+    "topic": "backtracking",
+    "pattern": "Backtracking with a used-set",
+    "file": "backtracking/permutations.py",
+    "problem": "Given an array of distinct integers, return all possible orderings (permutations) of its elements, in any order. Example: [1,2,3] -> [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]. Example: [1] -> [[1]].",
+    "brute_force": {
+      "approach": "Generate every sequence of length n over the n values (the Cartesian product, n^n sequences) and keep those with no repeated element. Sequences like [1,1,...] and [1,2,1,...] are generated to completion and rejected even though the repeat was already visible at position 2; the vast majority of the n^n sequences are discarded.",
+      "time": "O(n^n * n)",
+      "space": "O(n)",
+      "code": "def brute_force(nums: List[int]) -> List[List[int]]:\n    n = len(nums)\n    out = []\n    for seq in product(nums, repeat=n):                # n^n sequences, filtered after building\n        if len(set(seq)) == n:\n            out.append(list(seq))\n    return out"
+    },
+    "optimization": "The redundancy is building sequences that already contain a duplicate. If we track which values are already in the partial sequence (a used flag per index), we refuse to place a repeated value at the moment of choosing it, so every explored branch is a prefix of a valid permutation. Each level has one fewer choice than the level above and the n^n tree collapses to exactly n! leaves with no dead branches. The shared path list with append/pop keeps the per-node cost O(1).",
+    "intuition": "Fill n slots left to right; at each slot pick any value not yet used, recurse, then put it back. Marking as used while descending and unmarking while ascending is the whole trick. Because the input is distinct, a flag per index is the same as a set of values but costs O(1) with no hashing.",
+    "geometric": "A tree with n children at the root, n-1 under each of those, down to 1: the leaves are the n! permutations. The path list is the current root-to-node trail and the used array is the shadow of that trail. Branches that would reuse a value are never drawn.",
+    "visual": "nums=[1,2,3]  pick any UNUSED value at each level\n                     []\n         /            |            \\\n       [1]           [2]           [3]\n      /   \\         /   \\         /   \\\n   [1,2] [1,3]   [2,1] [2,3]   [3,1] [3,2]\n     |     |       |     |       |     |\n  [1,2,3][1,3,2][2,1,3][2,3,1][3,1,2][3,2,1]\nat [1,2]: used={1,2} -> 1 x, 2 x, only 3 is tried\nbrute force also builds [1,1,*], [1,2,1] ... (n^n)",
+    "steps": [
+      "result = [], path = [], used = [False] * n.",
+      "dfs(): if len(path) == n record a copy and return.",
+      "For each index i with used[i] False: set used[i], append nums[i], recurse, pop, clear used[i].",
+      "Call dfs() and return result."
+    ],
+    "complexity": {
+      "time": "O(n * n!)",
+      "space": "O(n)",
+      "why": "n! leaves each copied in O(n); recursion depth, path and used array are all O(n)."
+    },
+    "pitfalls": [
+      "Forgetting to clear used[i] on the way back.",
+      "Checking nums[i] in path (O(n) per check) instead of an O(1) flag.",
+      "Appending path instead of a copy."
+    ],
+    "hints": [
+      "A permutation uses each element exactly once. What state tells you which elements are still available?",
+      "Fill positions left to right; at each position try every still-available element, then undo the choice.",
+      "DFS with a used[] array: mark, append, recurse, pop, unmark; record when the path has n elements."
+    ],
+    "code": "class Solution:\n    def permute(self, nums: List[int]) -> List[List[int]]:\n        result: List[List[int]] = []\n        path: List[int] = []\n        used = [False] * len(nums)\n\n        def dfs() -> None:\n            if len(path) == len(nums):\n                result.append(path[:])\n                return\n            for i, v in enumerate(nums):\n                if used[i]:                    # already in the path: skip (prunes the branch)\n                    continue\n                used[i] = True\n                path.append(v)\n                dfs()\n                path.pop()\n                used[i] = False                # restore for sibling branches\n\n        dfs()\n        return result",
+    "related": [
+      "permutations_ii",
+      "subsets",
+      "combination_sum",
+      "n_queens"
+    ]
+  },
+  {
+    "slug": "subsets_ii",
+    "title": "Subsets II",
+    "leetcode": 90,
+    "difficulty": "Medium",
+    "topic": "backtracking",
+    "pattern": "Backtracking with sort + skip-duplicates-at-same-depth",
+    "file": "backtracking/subsets_ii.py",
+    "problem": "Given an array that may contain duplicates, return all possible subsets with no duplicate subsets, in any order. Example: [1,2,2] -> [[],[1],[2],[1,2],[2,2],[1,2,2]].",
+    "brute_force": {
+      "approach": "Enumerate all 2^n bitmasks, decode each into a sorted tuple, and insert into a set to drop duplicates. With d copies of a value, every subset containing j of them is generated C(d, j) times and then discarded by the set; for [2,2,2] the subset [2] is produced three times and [2,2] three times.",
+      "time": "O(n * 2^n)",
+      "space": "O(n * 2^n)",
+      "code": "def brute_force(nums: List[int]) -> List[List[int]]:\n    n = len(nums)\n    seen = set()\n    for mask in range(1 << n):\n        sub = tuple(sorted(nums[i] for i in range(n) if mask >> i & 1))\n        seen.add(sub)                                   # duplicates generated, then discarded\n    return [list(t) for t in seen]"
+    },
+    "optimization": "The redundancy is generating the same multiset via different index choices. If the array is sorted, duplicate values are adjacent, and choosing the second copy of a value at the same tree level when the first copy was skipped produces exactly the same subtree as choosing the first copy did. So at each level skip nums[i] when i > start and nums[i] == nums[i-1]. This cuts duplicate subtrees before they are explored, so every emitted subset is unique with no set needed. Choosing the second copy directly after the first (deeper level, i == start) is still allowed, which is how [2,2] is produced exactly once.",
+    "intuition": "Sort, then at any level treat equal values as one choice: 'how many copies of this value do I take' is decided by going deeper, never by trying siblings with the same value. The condition i > start (not i > 0) is what distinguishes a sibling duplicate from a legitimate deeper copy.",
+    "geometric": "The same include/exclude tree as Subsets, but siblings carrying an equal value are drawn and then crossed out (pruned) except the first one. Sorting lines equal values up next to each other so the crossing out is a single comparison with the previous index.",
+    "visual": "nums sorted = [1,2,2]    skip nums[i] when i > start\n                         and nums[i] == nums[i-1]\n                  []\n        /          |           \\\n      [1]         [2]          [2] x  (same as sibling)\n     /   \\         |\n  [1,2] [1,2] x  [2,2]       x = pruned duplicate branch\n    |\n [1,2,2]       (i == start here: second copy allowed)\nresult: [] [1] [1,2] [1,2,2] [2] [2,2]   (6, no set)",
+    "steps": [
+      "Sort nums; result = [], path = [].",
+      "dfs(start): record a copy of path.",
+      "For i in range(start, n): if i > start and nums[i] == nums[i-1], continue (duplicate sibling).",
+      "Append nums[i], recurse dfs(i + 1), pop.",
+      "Call dfs(0) and return result."
+    ],
+    "complexity": {
+      "time": "O(n * 2^n)",
+      "space": "O(n)",
+      "why": "At most 2^n subsets each copied in O(n); the path and recursion are O(n) deep."
+    },
+    "pitfalls": [
+      "Forgetting to sort: the skip rule only works on adjacent duplicates.",
+      "Writing the skip condition as i > 0 instead of i > start, which wrongly forbids [2,2].",
+      "Deduplicating with a set instead of pruning: works, but costs memory and defeats the purpose."
+    ],
+    "hints": [
+      "Run the plain Subsets DFS on [1,2,2]. Which subsets come out twice, and from which branches?",
+      "If the array is sorted, when are two sibling branches guaranteed to produce the same subtree?",
+      "Sort, then skip nums[i] when i > start and nums[i] == nums[i-1]."
+    ],
+    "code": "class Solution:\n    def subsetsWithDup(self, nums: List[int]) -> List[List[int]]:\n        nums.sort()                                     # line duplicates up side by side\n        result: List[List[int]] = []\n        path: List[int] = []\n\n        def dfs(start: int) -> None:\n            result.append(path[:])\n            for i in range(start, len(nums)):\n                if i > start and nums[i] == nums[i - 1]:\n                    continue                            # same value as a sibling: prune\n                path.append(nums[i])\n                dfs(i + 1)\n                path.pop()\n\n        dfs(0)\n        return result",
+    "related": [
+      "subsets",
+      "combination_sum_ii",
+      "permutations_ii"
+    ]
+  },
+  {
+    "slug": "combination_sum_ii",
+    "title": "Combination Sum II",
+    "leetcode": 40,
+    "difficulty": "Medium",
+    "topic": "backtracking",
+    "pattern": "Backtracking with sort + skip-duplicates-at-same-depth",
+    "file": "backtracking/combination_sum_ii.py",
+    "problem": "Given candidates (which may repeat) and a target, return all unique combinations summing to target where each candidate index is used at most once. Example: candidates=[10,1,2,7,6,1,5], target=8 -> [[1,1,6],[1,2,5],[1,7],[2,6]].",
+    "brute_force": {
+      "approach": "Enumerate all 2^n index subsets via bitmasks, keep those whose sum equals target, and dedupe by inserting the sorted tuple into a set. Subsets whose running sum already exceeds target are still fully decoded and summed, and combinations that differ only in which copy of a repeated value they use (the two 1s) are generated separately and then collapsed by the set.",
+      "time": "O(n * 2^n)",
+      "space": "O(2^n)",
+      "code": "def brute_force(candidates: List[int], target: int) -> List[List[int]]:\n    n = len(candidates)\n    seen = set()\n    for mask in range(1 << n):\n        chosen = [candidates[i] for i in range(n) if mask >> i & 1]\n        if sum(chosen) == target:                       # summed only after full decoding\n            seen.add(tuple(sorted(chosen)))             # duplicates collapsed late\n    return [list(t) for t in seen]"
+    },
+    "optimization": "Two redundancies, two fixes. Overflowing partial sums: candidates are positive, so sort and break out of the loop the moment candidates[i] > remaining, since everything to the right is bigger. Equal values at the same level: after sorting, duplicates are adjacent; if we skipped the first copy at this level (i > start) and the current value equals the previous, its subtree is identical to one already explored, so continue. Recursing with i + 1 enforces each index at most once. The DFS then visits only prefixes of distinct, feasible combinations.",
+    "intuition": "Subsets II's dedupe rule plus Combination Sum's sum pruning, with i + 1 instead of i because reuse is forbidden. Sorting enables both rules at once: it makes duplicates adjacent and makes the overflow check a break instead of a continue.",
+    "geometric": "A tree whose nodes hold the remaining target. At each node the children are the candidates from start onward in ascending order. Two kinds of cuts: a child bigger than the remaining target truncates the rest of the row (break), and a child equal to its left sibling is crossed out (continue).",
+    "visual": "sorted [1,1,2,5,6,7,10]   target 8     node = remaining\n                        8\n     1 /   1 x   2 |   5 |   6 |   7 |   10 x (break)\n      7          6     3     2     1\n  1/ 2| 5| 6| 7\\  ...\n  6  5  2  1   0 => [1,7]\n -6 -5 -6x -7x        x = value > remaining -> break\n  0  0\n [1,1,6] [1,2,5]      [2,6] comes from the 2-branch\nx at depth 1: second 1 == sibling just tried -> continue",
+    "steps": [
+      "Sort candidates; result = [], path = [].",
+      "dfs(start, remaining): if remaining == 0 record a copy of path and return.",
+      "For i from start: if candidates[i] > remaining, break.",
+      "If i > start and candidates[i] == candidates[i-1], continue.",
+      "Append, recurse dfs(i + 1, remaining - candidates[i]), pop.",
+      "Call dfs(0, target) and return result."
+    ],
+    "complexity": {
+      "time": "O(2^n)",
+      "space": "O(n)",
+      "why": "Each index is in or out, bounding the tree at 2^n nodes; the path and recursion are at most n deep."
+    },
+    "pitfalls": [
+      "Recursing with i instead of i + 1, which allows reuse.",
+      "Using i > 0 instead of i > start in the skip rule, which loses [1,1,6].",
+      "Forgetting to sort before applying either rule."
+    ],
+    "hints": [
+      "Which two things go wrong if you run plain Combination Sum here: what about reuse, and what about the two 1s?",
+      "Sorting makes duplicates adjacent and makes 'too big' a stopping condition. How does each help?",
+      "Sort; break when candidate > remaining; continue when i > start and candidate equals the previous; recurse with i + 1."
+    ],
+    "code": "class Solution:\n    def combinationSum2(self, candidates: List[int], target: int) -> List[List[int]]:\n        candidates.sort()\n        result: List[List[int]] = []\n        path: List[int] = []\n\n        def dfs(start: int, remaining: int) -> None:\n            if remaining == 0:\n                result.append(path[:])\n                return\n            for i in range(start, len(candidates)):\n                if candidates[i] > remaining:\n                    break                               # sorted: later values are even bigger\n                if i > start and candidates[i] == candidates[i - 1]:\n                    continue                            # duplicate sibling: same subtree\n                path.append(candidates[i])\n                dfs(i + 1, remaining - candidates[i])   # i+1: each index used at most once\n                path.pop()\n\n        dfs(0, target)\n        return result",
+    "related": [
+      "combination_sum",
+      "subsets_ii",
+      "subsets"
+    ]
+  },
+  {
+    "slug": "word_search",
+    "title": "Word Search",
+    "leetcode": 79,
+    "difficulty": "Medium",
+    "topic": "backtracking",
+    "pattern": "Grid DFS backtracking with in-place visited marking",
+    "file": "backtracking/word_search.py",
+    "problem": "Given an m x n grid of letters and a word, return True if the word can be traced through horizontally or vertically adjacent cells, using each cell at most once. Example: board=[[A,B,C,E],[S,F,C,S],[A,D,E,E]], word=\"ABCCED\" -> True; word=\"ABCB\" -> False because the B would be reused.",
+    "brute_force": {
+      "approach": "From every cell enumerate every self-avoiding path of exactly len(word) cells (up to 4^L of them), spell out the letters along each path, and compare the whole string to the word at the end. A path whose first letter is already wrong is still extended for L-1 more steps and its string is still built; almost all paths are dead after one or two letters but the comparison happens only at the leaf.",
+      "time": "O(m * n * 4^L * L)",
+      "space": "O(L)",
+      "code": "def brute_force(board: List[List[str]], word: str) -> bool:\n    rows, cols, L = len(board), len(board[0]), len(word)\n\n    def paths(r, c, visited, letters):                      # every self-avoiding path of length L\n        if len(letters) == L:\n            return \"\".join(letters) == word                  # compared only at the leaf\n        for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):\n            nr, nc = r + dr, c + dc\n            if 0 <= nr < rows and 0 <= nc < cols and (nr, nc) not in visited:\n                if paths(nr, nc, visited | {(nr, nc)}, letters + [board[nr][nc]]):\n                    return True\n        return False\n\n    return any(paths(r, c, {(r, c)}, [board[r][c]]) for r in range(rows) for c in range(cols))"
+    },
+    "optimization": "The redundancy is extending paths that have already failed. The path spells the word prefix by prefix, so compare the current cell against word[k] at step k and cut the branch immediately on a mismatch. Nothing else changes: same DFS, same each-cell-once rule, but the live tree is only the paths that match a prefix of the word, which on real boards is tiny. Visited bookkeeping is done in place by overwriting the cell with a sentinel before recursing and restoring it after, saving a separate visited matrix.",
+    "intuition": "Walk the grid letter by letter, matching the word as you go; the moment a cell does not match the next letter, turn back. Temporarily blank a cell while standing on it so you cannot step on it twice, and un-blank it on the way back so other paths can use it.",
+    "geometric": "From each matching start cell grows a 4-ary decision tree (up, right, down, left). Branches are drawn only as far as the letters agree with the word; a mismatch, an off-grid step, or a blanked cell ends the branch. The path on the grid is a snake of blanked cells that retracts as the recursion returns.",
+    "visual": "board         word = ABCCED      k = index into word\nA B C E       (0,0)=A k0 ok\nS F C S        -> (0,1)=B k1 ok\nA D E E         -> (0,2)=C k2 ok\n                 -> (1,2)=C k3 ok    (0,3)=E x mismatch\n                  -> (2,2)=E k4 ok   (1,1)=F x (1,3)=S x\n                   -> (2,1)=D k5 ok  k==6 => True\ncells on the live path are overwritten with '#':\n# # # E       (and restored on the way back,\nS F # S        so the board is intact afterwards)\nA # # E",
+    "steps": [
+      "For each cell (r, c) call dfs(r, c, 0); return True if any succeeds.",
+      "dfs: if k == len(word) return True.",
+      "If (r, c) is off-grid or board[r][c] != word[k] return False (this also rejects '#' cells).",
+      "Save the letter, overwrite the cell with '#', try the four neighbours with k + 1.",
+      "Restore the letter and return whether any neighbour succeeded."
+    ],
+    "complexity": {
+      "time": "O(m * n * 3^L)",
+      "space": "O(L)",
+      "why": "Each start has 4 first moves and at most 3 afterwards (no going back); recursion depth is the word length."
+    },
+    "pitfalls": [
+      "Forgetting to restore the cell after recursion, corrupting later searches.",
+      "Checking bounds after indexing: negative indices wrap around silently in Python.",
+      "Using a separate visited set but forgetting to remove from it on backtrack."
+    ],
+    "hints": [
+      "If the first letter of a path is wrong, is there any point extending it?",
+      "Match the word one letter per recursive step. How do you stop a path from reusing a cell without an extra matrix?",
+      "DFS(r, c, k): mismatch or off-grid returns False; mark the cell '#', try 4 neighbours with k+1, restore."
+    ],
+    "code": "class Solution:\n    def exist(self, board: List[List[str]], word: str) -> bool:\n        rows, cols = len(board), len(board[0])\n\n        def dfs(r: int, c: int, k: int) -> bool:\n            if k == len(word):\n                return True\n            if r < 0 or r >= rows or c < 0 or c >= cols or board[r][c] != word[k]:\n                return False                                # prune: off-grid, used, or mismatch\n            saved, board[r][c] = board[r][c], \"#\"           # mark visited in place\n            found = (dfs(r + 1, c, k + 1) or dfs(r - 1, c, k + 1)\n                     or dfs(r, c + 1, k + 1) or dfs(r, c - 1, k + 1))\n            board[r][c] = saved                             # un-mark on the way back\n            return found\n\n        return any(dfs(r, c, 0) for r in range(rows) for c in range(cols))",
+    "related": [
+      "word_search_ii",
+      "number_of_islands",
+      "n_queens"
+    ]
+  },
+  {
+    "slug": "letter_combinations_of_a_phone_number",
+    "title": "Letter Combinations of a Phone Number",
+    "leetcode": 17,
+    "difficulty": "Medium",
+    "topic": "backtracking",
+    "pattern": "Backtracking over a fixed-depth choice tree (Cartesian product)",
+    "file": "backtracking/letter_combinations_of_a_phone_number.py",
+    "problem": "Given a string of digits 2-9, return all letter strings the digits could represent on a phone keypad (2=abc, 3=def, ..., 7=pqrs, 9=wxyz), in any order; empty input gives []. Example: \"23\" -> [\"ad\",\"ae\",\"af\",\"bd\",\"be\",\"bf\",\"cd\",\"ce\",\"cf\"].",
+    "brute_force": {
+      "approach": "Build the answer level by level: start with [\"\"] and for each digit replace the list with every existing string extended by every letter of that digit. Every intermediate level materialises all partial strings as separate objects (3, then 9, then 27, ...) and each extension copies the whole prefix; the memory high-water mark is the entire previous level plus the output.",
+      "time": "O(n * 4^n)",
+      "space": "O(4^n)",
+      "code": "def brute_force(digits: str) -> List[str]:\n    if not digits:\n        return []\n    keypad = {\"2\": \"abc\", \"3\": \"def\", \"4\": \"ghi\", \"5\": \"jkl\",\n              \"6\": \"mno\", \"7\": \"pqrs\", \"8\": \"tuv\", \"9\": \"wxyz\"}\n    level = [\"\"]\n    for d in digits:\n        level = [prefix + ch for prefix in level for ch in keypad[d]]   # whole level materialised\n    return level"
+    },
+    "optimization": "The redundancy is storing every prefix of every answer separately. The choices form a tree of depth n with 3 or 4 children per node; a depth-first walk only ever needs the one prefix on the current root-to-node path. A shared path list with append / recurse / pop produces every leaf with O(1) incremental work and O(n) auxiliary memory instead of O(4^n). Output size is still 4^n strings so time is unchanged; the win is the auxiliary space and a template that extends naturally when some combinations must be skipped.",
+    "intuition": "Think of n nested for-loops, one per digit, where n is not known until runtime: recursion is how you write a variable-depth nested loop. Each recursion level owns one digit and tries each of its letters, then hands the extended prefix to the next level.",
+    "geometric": "A tree of depth n; level i fans out into the letters of digits[i]. Leaves are the answers. The path list is the pencil line from the root to the current node, extended by one letter going down and shortened by one coming up. There is no pruning in this problem; every branch is a valid answer, so the tree is walked in full.",
+    "visual": "digits=\"23\"   2 -> abc   3 -> def    level = digit index\n                      \"\"\n            /          |          \\\n           a           b           c      level 0 (2)\n         / | \\       / | \\       / | \\\n        ad ae af    bd be bf    cd ce cf  level 1 (3)\npath: [a] -> [a,d] emit \"ad\" -> pop -> [a,e] emit ...\nno pruning: every leaf is an answer (3 x 3 = 9)\nbrute force holds the whole level [a,b,c] then 9 strings",
+    "steps": [
+      "If digits is empty return []; map each digit to its letters.",
+      "dfs(i): if i == len(digits) record \"\".join(path) and return.",
+      "For each letter of digits[i]: append, dfs(i + 1), pop.",
+      "Call dfs(0) and return result."
+    ],
+    "complexity": {
+      "time": "O(n * 4^n)",
+      "space": "O(n)",
+      "why": "Up to 4^n leaves each joined in O(n); the path and recursion depth are n beyond the output."
+    },
+    "pitfalls": [
+      "Returning [\"\"] for empty input instead of [].",
+      "Forgetting that 7 and 9 have four letters.",
+      "Building strings with + at every level (works, but allocates O(n) per node)."
+    ],
+    "hints": [
+      "For \"23\" you want every letter of 2 paired with every letter of 3. How does that scale to n digits?",
+      "A variable number of nested loops is a recursion, one level per digit.",
+      "dfs(i) appends each letter of digits[i], recurses to i+1, pops; emit when i == len(digits)."
+    ],
+    "code": "class Solution:\n    def letterCombinations(self, digits: str) -> List[str]:\n        if not digits:\n            return []\n        keypad = {\"2\": \"abc\", \"3\": \"def\", \"4\": \"ghi\", \"5\": \"jkl\",\n                  \"6\": \"mno\", \"7\": \"pqrs\", \"8\": \"tuv\", \"9\": \"wxyz\"}\n        result: List[str] = []\n        path: List[str] = []\n\n        def dfs(i: int) -> None:\n            if i == len(digits):                 # one letter chosen per digit: a leaf\n                result.append(\"\".join(path))\n                return\n            for ch in keypad[digits[i]]:\n                path.append(ch)\n                dfs(i + 1)\n                path.pop()\n\n        dfs(0)\n        return result",
+    "related": [
+      "subsets",
+      "permutations",
+      "generate_parentheses"
+    ]
+  },
+  {
+    "slug": "n_queens",
+    "title": "N-Queens",
+    "leetcode": 51,
+    "difficulty": "Hard",
+    "topic": "backtracking",
+    "pattern": "Row-by-row backtracking with column/diagonal sets",
+    "file": "backtracking/n_queens.py",
+    "problem": "Place n queens on an n x n board so that no two attack each other (same row, column or diagonal) and return every distinct board as a list of strings with Q for a queen and . for empty. Example: n=4 -> [[\".Q..\",\"...Q\",\"Q...\",\"..Q.\"],[\"..Q.\",\"Q...\",\"...Q\",\".Q..\"]]. Example: n=1 -> [[\"Q\"]].",
+    "brute_force": {
+      "approach": "One queen per row is forced, so try every permutation of column indices (n! boards), then check every pair of queens for a shared diagonal and keep the valid boards. A permutation whose first two queens already attack diagonally is still completed and checked pairwise; the (n-2)! completions of that doomed prefix are all generated and all rejected.",
+      "time": "O(n! * n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(n: int) -> List[List[str]]:\n    out = []\n    for cols in permutations(range(n)):                              # n! column assignments\n        ok = all(abs(cols[i] - cols[j]) != j - i                     # checked only when complete\n                 for i in range(n) for j in range(i + 1, n))\n        if ok:\n            out.append([\".\" * c + \"Q\" + \".\" * (n - c - 1) for c in cols])\n    return out"
+    },
+    "optimization": "The redundancy is completing placements that are already in conflict. Placing queens row by row, a new queen at (r, c) conflicts with earlier queens iff column c, diagonal r - c, or anti-diagonal r + c is already taken. Three hash sets answer that in O(1), so a conflict is detected the moment it is created and the whole subtree below it is skipped. The search tree has n children per level but most are cut immediately; the surviving leaves are exactly the solutions. Permutations already avoided column clashes; the sets add the diagonals and move the check from the leaf to the node.",
+    "intuition": "Fill the board one row at a time; for each row try every column that is not under attack. A queen at (r, c) owns one column, one diagonal with constant r - c and one anti-diagonal with constant r + c, so three sets fully describe 'under attack'. Rows never need a set because we place exactly one queen per row.",
+    "geometric": "A tree with n levels (rows) and up to n children per node (columns). Each placed queen shades its column and two diagonals on the rows below; the children of a node are only the unshaded squares of the next row. When a row has no unshaded square the branch dies and the last queen is lifted. Leaves at depth n are solutions.",
+    "visual": "n=4  queen at (r,c) shades col c, diag r-c, anti r+c below\n row0: . Q . .   queens=[1]  cols{1} diag{-1} anti{1}\n row1: x x x Q   c0 anti=1 x | c1 col x | c2 diag=-1 x\n row2: Q x x x   c1 col x | c2 anti=4 x | c3 col x\n row3: x x Q x   c0,c1,c3 col x | c2 free => solution\n => [\".Q..\", \"...Q\", \"Q...\", \"..Q.\"]\n (the row0 c=0 branch dies by row 3: every square\n  shaded -> lift the last queen and try the next column)\nx = pruned square (already attacked), checked in O(1)",
+    "steps": [
+      "cols, diag (r - c), anti (r + c) = empty sets; queens = [] holds the column chosen for each row.",
+      "dfs(r): if r == n render the board from queens and record it.",
+      "For c in range(n): skip if c in cols or r - c in diag or r + c in anti.",
+      "Add to the three sets, append c, dfs(r + 1), then remove from the sets and pop.",
+      "Call dfs(0) and return result."
+    ],
+    "complexity": {
+      "time": "O(n!)",
+      "space": "O(n)",
+      "why": "At most n! leaves survive the pruning; the three sets and recursion depth are O(n) beyond the output."
+    },
+    "pitfalls": [
+      "Using r + c for both diagonals: they need different keys (r - c and r + c).",
+      "Forgetting to remove from the sets on backtrack.",
+      "Rendering rows and columns swapped (queens[r] is the column of row r)."
+    ],
+    "hints": [
+      "Exactly one queen per row. What is the cheapest way to know if a column or diagonal is already taken?",
+      "Every square on a \\ diagonal shares r - c; every square on a / diagonal shares r + c.",
+      "Row-by-row DFS with three sets (cols, r-c, r+c); add before recursing, remove after."
+    ],
+    "code": "class Solution:\n    def solveNQueens(self, n: int) -> List[List[str]]:\n        result: List[List[str]] = []\n        queens: List[int] = []                      # queens[r] = column of the queen in row r\n        cols, diag, anti = set(), set(), set()      # attacked columns, r-c diagonals, r+c diagonals\n\n        def dfs(r: int) -> None:\n            if r == n:\n                result.append([\".\" * c + \"Q\" + \".\" * (n - c - 1) for c in queens])\n                return\n            for c in range(n):\n                if c in cols or r - c in diag or r + c in anti:\n                    continue                        # under attack: prune this branch\n                cols.add(c); diag.add(r - c); anti.add(r + c)\n                queens.append(c)\n                dfs(r + 1)\n                queens.pop()\n                cols.discard(c); diag.discard(r - c); anti.discard(r + c)\n\n        dfs(0)\n        return result",
+    "related": [
+      "n_queens_ii",
+      "sudoku_solver",
+      "permutations",
+      "word_search"
+    ]
+  },
+  {
+    "slug": "generate_parentheses",
+    "title": "Generate Parentheses",
+    "leetcode": 22,
+    "difficulty": "Medium",
+    "topic": "backtracking",
+    "pattern": "Backtracking with validity-preserving constraints (open/close counts)",
+    "file": "backtracking/generate_parentheses.py",
+    "problem": "Given n pairs of parentheses, return all strings of n \"(\" and n \")\" that are well-formed. Example: n=3 -> [\"((()))\",\"(()())\",\"(())()\",\"()(())\",\"()()()\"]. Example: n=1 -> [\"()\"].",
+    "brute_force": {
+      "approach": "Generate every string of length 2n over {\"(\", \")\"} (2^(2n) of them) and keep those passing a balance check: running count never negative, ends at zero. Strings starting with \")\" or with more \")\" than \"(\" in some prefix are still generated to full length and rejected; the valid strings are a vanishing fraction (Catalan(n) out of 4^n).",
+      "time": "O(2n * 4^n)",
+      "space": "O(n)",
+      "code": "def brute_force(n: int) -> List[str]:\n    out = []\n    for bits in product(\"()\", repeat=2 * n):          # all 4^n strings, checked when complete\n        balance = 0\n        for ch in bits:\n            balance += 1 if ch == \"(\" else -1\n            if balance < 0:\n                break\n        if balance == 0:\n            out.append(\"\".join(bits))\n    return out"
+    },
+    "optimization": "The redundancy is extending prefixes that can no longer become valid. A prefix can be completed to a well-formed string iff open <= n and close <= open, where open and close are the counts placed so far. So at each step allow \"(\" only if open < n and \")\" only if close < open. Every branch the DFS takes is then a prefix of some valid answer, so the tree has exactly Catalan(n) leaves and zero dead ends. The shared path list with append/pop keeps the per-node cost O(1).",
+    "intuition": "You may open a bracket while you still have unopened ones, and you may close a bracket only if one is currently open. Two counters make the whole validity check local to the current step, so there is never anything to verify at the leaf.",
+    "geometric": "A binary tree where the left branch adds \"(\" and the right adds \")\". Draw the balance (open - close) as height above a floor: branches that would dip below the floor (close > open) or exceed the ceiling (open > n) are cut, so every drawn path is a mountain range that starts and ends on the floor without going underground. Those are exactly the Dyck paths.",
+    "visual": "n=2   add \"(\" if open < n ;  add \")\" if close < open\n                     \"\" (0,0)\n                /              \\\n          \"(\" (1,0)            \")\" x  close > open\n         /          \\\n   \"((\" (2,0)      \"()\" (1,1)\n    |   \"(\" x open=n  |          \\\n \"(()\" (2,1)       \"()(\" (2,1)   \")\" x close > open\n    |                  |\n \"(())\"             \"()()\"       2 leaves = Catalan(2)\nbrute force tries all 16 strings; only these 2 survive",
+    "steps": [
+      "result = [], path = []; dfs(open, close).",
+      "If len(path) == 2n record \"\".join(path) and return.",
+      "If open < n: append \"(\", dfs(open + 1, close), pop.",
+      "If close < open: append \")\", dfs(open, close + 1), pop.",
+      "Call dfs(0, 0) and return result."
+    ],
+    "complexity": {
+      "time": "O(4^n / sqrt(n))",
+      "space": "O(n)",
+      "why": "The number of outputs is Catalan(n), each built in O(n); the path and recursion are 2n deep."
+    },
+    "pitfalls": [
+      "Allowing \")\" when close < n instead of close < open, producing invalid strings.",
+      "Forgetting the open < n cap, causing infinite recursion.",
+      "Checking validity only at the leaf, which re-introduces the brute force."
+    ],
+    "hints": [
+      "Of all 2^(2n) strings, which ones can you rule out as soon as you see a prefix?",
+      "Track how many \"(\" and \")\" you have placed. When is adding each one safe?",
+      "Add \"(\" only if open < n, add \")\" only if close < open; emit at length 2n."
+    ],
+    "code": "class Solution:\n    def generateParenthesis(self, n: int) -> List[str]:\n        result: List[str] = []\n        path: List[str] = []\n\n        def dfs(opened: int, closed: int) -> None:\n            if len(path) == 2 * n:\n                result.append(\"\".join(path))\n                return\n            if opened < n:                      # still have \"(\" left to place\n                path.append(\"(\")\n                dfs(opened + 1, closed)\n                path.pop()\n            if closed < opened:                 # may only close something that is open\n                path.append(\")\")\n                dfs(opened, closed + 1)\n                path.pop()\n\n        dfs(0, 0)\n        return result",
+    "related": [
+      "valid_parentheses",
+      "letter_combinations_of_a_phone_number",
+      "subsets"
+    ]
+  },
+  {
+    "slug": "single_number",
+    "title": "Single Number",
+    "leetcode": 136,
+    "difficulty": "Easy",
+    "topic": "bit_manipulation",
+    "pattern": "XOR cancellation",
+    "file": "bit_manipulation/single_number.py",
+    "problem": "Every element of a non-empty array appears exactly twice except one, which appears once; find that element in linear time using constant extra space. Example: [4,1,2,1,2] -> 4. Example: [2,2,1] -> 1.",
+    "brute_force": {
+      "approach": "For each element scan the whole array and count its occurrences; return the one with count 1. Every element is compared against every other element, re-discovering the same pairs over and over; the pairing information is computed n times and never stored. A hash map of counts is O(n) time but O(n) space, which the problem forbids.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> int:\n    for x in nums:\n        if sum(1 for y in nums if y == x) == 1:   # rescans the array for every element\n            return x\n    return -1"
+    },
+    "optimization": "The redundancy is re-scanning to find each element's partner. We never need to know which element pairs with which, only that pairs cancel. XOR has exactly that algebra: a ^ a = 0, a ^ 0 = a, and it is commutative and associative, so the order of the elements does not matter. XOR-ing the entire array therefore cancels every pair regardless of position and leaves the single number, with one pass and one integer of state.",
+    "intuition": "Look at any single bit position across all numbers: a value that appears twice contributes an even number of 1s there, so the parity of that column is determined by the lone value alone. XOR computes exactly that parity for all bit columns at once, which is why it works with no bookkeeping.",
+    "geometric": "Write the numbers in binary as rows, one column per bit. Pairs of equal rows cancel column by column: two 1s in a column flip the running parity twice, back to 0. After all rows are folded in, the parity row that remains IS the unpaired number.",
+    "visual": "nums = [4,1,2,1,2]      XOR = parity of each bit column\n  4 = 1 0 0\n  1 = 0 0 1\n  2 = 0 1 0\n  1 = 0 0 1\n  2 = 0 1 0\nones  1 2 2    <- count of 1s per column\npar   1 0 0  = 4   even counts come from pairs -> 0\nrunning acc: 0 ^4=4 ^1=5 ^2=7 ^1=6 ^2=4",
+    "steps": [
+      "acc = 0.",
+      "For each x in nums: acc ^= x.",
+      "Return acc."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "One pass over the array with a single integer accumulator."
+    },
+    "pitfalls": [
+      "Reaching for a hash set or sorting, which violates the O(1) space requirement.",
+      "Assuming XOR works when duplicates appear three times (that variant needs per-bit counting mod 3)."
+    ],
+    "hints": [
+      "You are not allowed extra memory. Is there an arithmetic operation under which two equal numbers cancel?",
+      "a ^ a = 0 and a ^ 0 = a, and XOR is commutative. What happens if you XOR the whole array?",
+      "Fold the array with XOR; every pair cancels and the lone value remains."
+    ],
+    "code": "class Solution:\n    def singleNumber(self, nums: List[int]) -> int:\n        return reduce(xor, nums, 0)     # pairs cancel (a ^ a = 0); the loner survives",
+    "related": [
+      "missing_number",
+      "single_number_ii",
+      "number_of_1_bits"
+    ]
+  },
+  {
+    "slug": "number_of_1_bits",
+    "title": "Number of 1 Bits",
+    "leetcode": 191,
+    "difficulty": "Easy",
+    "topic": "bit_manipulation",
+    "pattern": "Clear lowest set bit (n & (n - 1))",
+    "file": "bit_manipulation/number_of_1_bits.py",
+    "problem": "Given a 32-bit unsigned integer n, return the number of 1 bits in its binary representation (the Hamming weight). Example: 11 (0b1011) -> 3. Example: 128 (0b10000000) -> 1. Example: 2^32 - 1 -> 32.",
+    "brute_force": {
+      "approach": "Loop over all 32 bit positions; for each, shift the number right by i and test the lowest bit. Every one of the 32 positions is inspected even when the number has a single set bit; the loop count does not depend on the answer at all.",
+      "time": "O(32)",
+      "space": "O(1)",
+      "code": "def brute_force(n: int) -> int:\n    count = 0\n    for i in range(32):         # inspects all 32 columns regardless of how many are set\n        if (n >> i) & 1:\n            count += 1\n    return count"
+    },
+    "optimization": "The redundancy is visiting zero bits. n - 1 flips the lowest set bit of n to 0 and every bit below it to 1, so n & (n - 1) clears exactly the lowest set bit and leaves everything else untouched. Each such operation removes one 1-bit, so repeating it until n is 0 takes exactly k iterations where k is the answer. The loop now does work proportional to the number of set bits and skips all zero bits for free.",
+    "intuition": "n & (n - 1) means 'delete the rightmost 1'. Count how many deletions it takes to reach zero. Subtracting 1 borrows from the rightmost 1 and turns the trailing zeros into ones; AND-ing with the original wipes exactly that run.",
+    "geometric": "Binary columns: 1011. Subtracting 1 borrows from the rightmost 1, turning it and all trailing zeros into 0 followed by 1s (1010). AND-ing keeps only columns where both have a 1, which is the original minus its rightmost 1. Each step knocks out one more column from the right.",
+    "visual": "n = 11          1 0 1 1      count = 0\nn - 1 = 10      1 0 1 0      rightmost 1 + trailing 0s flip\nn & (n-1) = 10  1 0 1 0      count = 1  (lowest 1 erased)\nn - 1 = 9       1 0 0 1\nn & (n-1) = 8   1 0 0 0      count = 2\nn - 1 = 7       0 1 1 1\nn & (n-1) = 0   0 0 0 0      count = 3  -> stop\n3 iterations for 3 set bits; brute force checks all 32",
+    "steps": [
+      "count = 0.",
+      "While n is non-zero: n &= n - 1; count += 1.",
+      "Return count."
+    ],
+    "complexity": {
+      "time": "O(k), k = set bits (<= 32)",
+      "space": "O(1)",
+      "why": "Each iteration removes one set bit, so the loop runs exactly as many times as there are 1s."
+    },
+    "pitfalls": [
+      "Using bin(n).count('1') without being able to explain the bit trick.",
+      "In signed languages, an arithmetic right shift of a negative number sign-extends and never terminates.",
+      "Confusing n & (n - 1) with n & -n, which isolates the lowest bit instead of clearing it."
+    ],
+    "hints": [
+      "Do you need to look at the zero bits at all?",
+      "What does n - 1 do to the binary representation of n, specifically around its lowest set bit?",
+      "n & (n - 1) clears the lowest set bit; count how many times you can do it before n is 0."
+    ],
+    "code": "class Solution:\n    def hammingWeight(self, n: int) -> int:\n        count = 0\n        while n:\n            n &= n - 1          # erase the lowest set bit; one iteration per 1-bit\n            count += 1\n        return count",
+    "related": [
+      "counting_bits",
+      "reverse_bits",
+      "single_number"
+    ]
+  },
+  {
+    "slug": "reverse_bits",
+    "title": "Reverse Bits",
+    "leetcode": 190,
+    "difficulty": "Easy",
+    "topic": "bit_manipulation",
+    "pattern": "Bit-by-bit shift and accumulate",
+    "file": "bit_manipulation/reverse_bits.py",
+    "problem": "Reverse the bits of a 32-bit unsigned integer: bit 0 becomes bit 31, bit 1 becomes bit 30, and so on. Example: 43261596 (00000010100101000001111010011100) -> 964176192 (00111001011110000010100101000000). Example: 1 -> 2147483648.",
+    "brute_force": {
+      "approach": "Convert to a binary string, zero-pad on the left to 32 characters, reverse the string, and parse it back with int(s, 2). Three separate passes over a 32-character text buffer (format, reverse, parse) plus heap allocation for the strings, to do what is really a fixed sequence of shifts and ORs on a single machine word.",
+      "time": "O(32)",
+      "space": "O(32)",
+      "code": "def brute_force(n: int) -> int:\n    bits = format(n, \"032b\")                     # text detour: format, reverse, parse\n    return int(bits[::-1], 2)"
+    },
+    "optimization": "The redundancy is the detour through text. Reversing 32 bits is 'read the input from the right, write the output from the left'. Reading from the right is n & 1 followed by n >>= 1; writing from the left is result = (result << 1) | bit. Running that 32 times moves each bit from position i to position 31 - i directly in the register with no allocation or parsing. (A constant-time refinement swaps halves, then quarters, bytes, nibbles, pairs and single bits with masks: 5 steps instead of 32, the hardware-oriented version.)",
+    "intuition": "Peel the lowest bit off the input and push it onto the bottom of the output; after 32 peels the first bit peeled has been pushed up 31 times and sits at the top. The two numbers behave like a conveyor belt feeding a stack. Always run all 32 steps so the input's leading zeros become the output's trailing zeros.",
+    "geometric": "Two 32-column rows. Each step the input row shifts right (its rightmost column falls off) and the output row shifts left (making room at the right), and the fallen column is dropped into that gap. After 32 steps the order of the columns is mirrored.",
+    "visual": "toy with 8 bits (real code runs 32 steps)   n = 0000 1101\nstep   n after >> 1    bit   result = (result << 1) | bit\n 1     0000 0110        1    1\n 2     0000 0011        0    10\n 3     0000 0001        1    101\n 4     0000 0000        1    1011\n 5..8  0000 0000        0    1011 0000   <- keep shifting!\ninput   0 0 0 0 1 1 0 1   (13)\noutput  1 0 1 1 0 0 0 0   (176)   column i -> column 7-i",
+    "steps": [
+      "result = 0.",
+      "Repeat 32 times: result = (result << 1) | (n & 1); n >>= 1.",
+      "Return result."
+    ],
+    "complexity": {
+      "time": "O(32) = O(1)",
+      "space": "O(1)",
+      "why": "A fixed 32 iterations, each a couple of integer operations on two registers."
+    },
+    "pitfalls": [
+      "Looping only until n becomes 0: leading zeros of the input must become trailing zeros of the output.",
+      "In C/Java forgetting to use the unsigned shift for the input.",
+      "In Python, ints are unbounded: loop exactly 32 times (or mask) rather than relying on overflow."
+    ],
+    "hints": [
+      "The last bit of the input becomes the first bit of the output. How do you read the last bit and how do you write a first bit?",
+      "n & 1 reads the lowest bit; (result << 1) | bit appends it at the bottom of the output.",
+      "Do exactly 32 rounds of: result = (result << 1) | (n & 1); n >>= 1."
+    ],
+    "code": "class Solution:\n    def reverseBits(self, n: int) -> int:\n        result = 0\n        for _ in range(32):                      # all 32 columns, even the leading zeros\n            result = (result << 1) | (n & 1)     # push the input's lowest bit onto the output\n            n >>= 1\n        return result",
+    "related": [
+      "number_of_1_bits",
+      "counting_bits",
+      "single_number"
+    ]
+  },
+  {
+    "slug": "missing_number",
+    "title": "Missing Number",
+    "leetcode": 268,
+    "difficulty": "Easy",
+    "topic": "bit_manipulation",
+    "pattern": "XOR cancellation",
+    "file": "bit_manipulation/missing_number.py",
+    "problem": "Given an array of n distinct numbers taken from the range [0, n], exactly one number of the range is missing; return it in O(n) time and O(1) extra space. Example: [3,0,1] -> 2. Example: [9,6,4,2,3,5,7,0,1] -> 8.",
+    "brute_force": {
+      "approach": "For each candidate value v in 0..n, scan the array to see whether v is present; the first absent one is the answer. Each of the n+1 membership tests re-reads the whole array, and nothing learned from testing v=0 helps when testing v=1. (Sorting first gives O(n log n); a hash set gives O(n) time but O(n) space.)",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> int:\n    for v in range(len(nums) + 1):\n        if v not in nums:               # linear membership scan per candidate: O(n^2)\n            return v\n    return -1"
+    },
+    "optimization": "The redundancy is n+1 independent linear scans. The multiset {0..n} together with the array contains every value twice except the missing one, which appears once; that is precisely the Single Number setup. XOR-ing all indices 0..n together with all array values cancels every pair and leaves the missing number. The arithmetic equivalent is n(n+1)/2 minus the actual sum; XOR is preferred because it can never overflow in fixed-width languages.",
+    "intuition": "Pair each index with each value. Every value that is present appears once as an array element and once as an index (or as n), so they cancel under XOR; the missing value appears only as an index. Seeding the accumulator with n accounts for the one index that has no array slot.",
+    "geometric": "Two rows of binary columns: the indices 0..n and the array values. Fold both rows into one parity row with XOR; every value that appears in both rows flips each of its bit columns twice (no net change), and the row left standing is the number that appeared in the index row alone.",
+    "visual": "nums=[3,0,1]  n=3     XOR all indices 0..n and all values\nindices : 0 1 2 3\nvalues  : 3 0 1\npresent values appear in BOTH rows -> cancel:\n   0^0 = 0    1^1 = 0    3^3 = 0      left over: index 2\nbinary columns of everything XOR-ed:\n   idx  00 01 10 11      val  11 00 01\n   bit1 parity: 0+0+1+1 + 1+0+0 = 3 odd  -> 1\n   bit0 parity: 0+1+0+1 + 1+0+1 = 4 even -> 0    => 10 = 2",
+    "steps": [
+      "acc = n (the one index that has no array slot).",
+      "For i, v in enumerate(nums): acc ^= i ^ v.",
+      "Return acc."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "One pass over the array with a single integer accumulator."
+    },
+    "pitfalls": [
+      "Forgetting to include n itself in the XOR (indices only reach n-1).",
+      "Off-by-one in the sum formula variant.",
+      "Using `v in nums` inside a loop, which is quadratic."
+    ],
+    "hints": [
+      "If every number from 0 to n were present together with the array, each value would appear exactly twice. Does that remind you of another problem?",
+      "XOR cancels pairs. What two sequences should you XOR together?",
+      "acc = n; for each index i and value v: acc ^= i ^ v."
+    ],
+    "code": "class Solution:\n    def missingNumber(self, nums: List[int]) -> int:\n        acc = len(nums)                 # index n has no array slot: seed with it\n        for i, v in enumerate(nums):\n            acc ^= i ^ v                # present values appear as both index and value: cancel\n        return acc",
+    "related": [
+      "single_number",
+      "find_the_duplicate_number",
+      "first_missing_positive"
+    ]
+  }
+]

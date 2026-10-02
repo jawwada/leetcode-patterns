@@ -1,0 +1,991 @@
+[
+  {
+    "slug": "binary_search",
+    "title": "Binary Search",
+    "leetcode": 704,
+    "difficulty": "Easy",
+    "topic": "binary_search",
+    "pattern": "Binary search on a sorted array",
+    "file": "binary_search/binary_search.py",
+    "problem": "Given a sorted ascending array of distinct integers nums and a target, return the index of target or -1 if it is absent, in O(log n). Example: nums = [-1,0,3,5,9,12], target = 9 returns 4.",
+    "brute_force": {
+      "approach": "Scan left to right and return the first index whose value equals target. Every comparison that says 'too small' or 'too big' eliminates only one element, even though sortedness means it could eliminate an entire side of the array.",
+      "time": "O(n)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int], target: int) -> int:\n    for i, x in enumerate(nums):\n        if x == target:\n            return i\n    return -1"
+    },
+    "optimization": "The redundancy is discarding one element per comparison. Because the array is sorted, nums[mid] < target implies every index <= mid is also too small, so one comparison can kill half the array. Maintain two indices lo and hi with the invariant 'if target exists it lies in [lo, hi]'; each probe halves that range, so only log2(n) probes are needed.",
+    "intuition": "Keep a closed interval [lo, hi] that is guaranteed to contain the target if it exists. Probe the midpoint and compare: equal means done; smaller means the target is strictly to the right, so lo = mid + 1; larger means hi = mid - 1. When the interval becomes empty (lo > hi) the target is absent. The +1/-1 moves are what guarantee termination.",
+    "geometric": "Picture the array as a number line with two brackets [lo ... hi] enclosing the candidates. Each probe at the midpoint snaps one bracket to just past the midpoint, so the enclosed length halves every step: n, n/2, n/4, ..., 1, 0.",
+    "visual": "nums: [-1, 0, 3, 5, 9, 12]   target = 9\n        lo       mid    hi      nums[2]=3 < 9 -> lo = mid+1\n                  lo mid  hi    nums[4]=9 == 9 -> return 4\n\ninvariant: target (if present) is inside [lo, hi]\nrange size: 6 -> 3 -> found",
+    "steps": [
+      "Set lo = 0, hi = len(nums) - 1 (closed interval).",
+      "While lo <= hi: mid = (lo + hi) // 2.",
+      "If nums[mid] == target, return mid.",
+      "If nums[mid] < target, set lo = mid + 1; otherwise set hi = mid - 1.",
+      "If the loop exits, return -1."
+    ],
+    "complexity": {
+      "time": "O(log n)",
+      "space": "O(1)",
+      "why": "the candidate range halves on every iteration"
+    },
+    "pitfalls": [
+      "Using lo < hi with a closed interval skips the final element.",
+      "Forgetting the +1 / -1 causes an infinite loop when lo == hi.",
+      "In fixed-width languages (lo + hi) can overflow; use lo + (hi - lo) // 2."
+    ],
+    "hints": [
+      "The array is sorted. What does one comparison against the middle element tell you about the whole left or right half?",
+      "Keep two indices lo and hi such that the target, if present, must lie between them. After each comparison, move one of them past mid.",
+      "Loop while lo <= hi, compute mid, return on match, else lo = mid + 1 or hi = mid - 1. Return -1 when lo > hi."
+    ],
+    "code": "class Solution:\n    def search(self, nums: List[int], target: int) -> int:\n        lo, hi = 0, len(nums) - 1\n        while lo <= hi:                      # closed interval [lo, hi]\n            mid = (lo + hi) // 2\n            if nums[mid] == target:\n                return mid\n            if nums[mid] < target:\n                lo = mid + 1                 # target strictly right of mid\n            else:\n                hi = mid - 1                 # target strictly left of mid\n        return -1",
+    "related": [
+      "search_2d_matrix",
+      "find_first_and_last_position",
+      "koko_eating_bananas"
+    ]
+  },
+  {
+    "slug": "search_2d_matrix",
+    "title": "Search a 2D Matrix",
+    "leetcode": 74,
+    "difficulty": "Medium",
+    "topic": "binary_search",
+    "pattern": "Binary search on a sorted array",
+    "file": "binary_search/search_2d_matrix.py",
+    "problem": "An m x n matrix has every row sorted ascending and the first element of each row greater than the last element of the previous row. Return True if target is present. Example: matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 3 returns True; target = 13 returns False.",
+    "brute_force": {
+      "approach": "Visit every cell and compare it with target. The matrix is globally sorted in row-major order, yet each comparison eliminates a single cell rather than a whole prefix or suffix of that order.",
+      "time": "O(m*n)",
+      "space": "O(1)",
+      "code": "def brute_force(matrix: List[List[int]], target: int) -> bool:\n    for row in matrix:\n        for v in row:\n            if v == target:\n                return True\n    return False"
+    },
+    "optimization": "The redundancy is ignoring the global ordering. Since row i's first element exceeds row i-1's last, reading the matrix row by row produces one sorted list of m*n values, so the 2D shape is only a disguise. Map a flat index k to cell (k // n, k % n) with divmod and run ordinary binary search over 0..m*n-1. That gives O(log(mn)) with no copying and no extra memory.",
+    "intuition": "Unroll the matrix into a single sorted line without actually copying it: the divmod conversion is a 'virtual flatten'. After that, the problem is literally LeetCode 704. The two-step alternative (binary search for the row, then within the row) is also O(log m + log n) but needs twice the code and more edge cases.",
+    "geometric": "Picture the rows laid end to end into one strip of m*n cells. lo and hi are positions on that strip and the live portion halves with every probe. To read a value at strip position k, fold it back into the grid: row = k // n, col = k % n.",
+    "visual": "matrix (n = 4):          flat index k -> (k // 4, k % 4)\n  [ 1  3  5  7 ]           k: 0  1  2  3\n  [10 11 16 20 ]              4  5  6  7\n  [23 30 34 60 ]              8  9 10 11\n\ntarget = 3: lo=0 hi=11 mid=5 -> (1,1)=11 > 3 -> hi=4\n            lo=0 hi=4  mid=2 -> (0,2)=5  > 3 -> hi=1\n            lo=0 hi=1  mid=0 -> (0,0)=1  < 3 -> lo=1\n            lo=1 hi=1  mid=1 -> (0,1)=3 == 3 -> True",
+    "steps": [
+      "Handle an empty matrix or empty first row by returning False.",
+      "Let m, n be the dimensions; set lo = 0, hi = m*n - 1.",
+      "While lo <= hi: mid = (lo + hi) // 2; r, c = divmod(mid, n); v = matrix[r][c].",
+      "If v == target return True; if v < target set lo = mid + 1, else hi = mid - 1.",
+      "Return False when the range is exhausted."
+    ],
+    "complexity": {
+      "time": "O(log(m*n))",
+      "space": "O(1)",
+      "why": "a single binary search over m*n virtual positions with O(1) index mapping"
+    },
+    "pitfalls": [
+      "Using divmod(mid, m) instead of divmod(mid, n) scrambles the mapping.",
+      "Not guarding against an empty matrix or empty rows.",
+      "Treating it as a staircase search (O(m + n)) when O(log(mn)) is expected."
+    ],
+    "hints": [
+      "Read the matrix row by row. What kind of sequence do you get?",
+      "You can address that sequence with a single index k and recover the cell as (k // n, k % n) without copying anything.",
+      "Binary search k over [0, m*n - 1], mapping each mid through divmod to read the value."
+    ],
+    "code": "class Solution:\n    def searchMatrix(self, matrix: List[List[int]], target: int) -> bool:\n        if not matrix or not matrix[0]:\n            return False\n        m, n = len(matrix), len(matrix[0])\n        lo, hi = 0, m * n - 1                # virtual flat index range\n        while lo <= hi:\n            mid = (lo + hi) // 2\n            r, c = divmod(mid, n)            # fold flat index back into grid\n            v = matrix[r][c]\n            if v == target:\n                return True\n            if v < target:\n                lo = mid + 1\n            else:\n                hi = mid - 1\n        return False",
+    "related": [
+      "binary_search",
+      "search_rotated_sorted_array"
+    ]
+  },
+  {
+    "slug": "koko_eating_bananas",
+    "title": "Koko Eating Bananas",
+    "leetcode": 875,
+    "difficulty": "Medium",
+    "topic": "binary_search",
+    "pattern": "Binary search on the answer",
+    "file": "binary_search/koko_eating_bananas.py",
+    "problem": "piles[i] bananas sit in pile i. Each hour Koko chooses a pile and eats up to k bananas from it; if the pile has fewer than k she finishes it and waits. Return the minimum integer speed k that lets her finish every pile within h hours. Example: piles = [3,6,7,11], h = 8 returns 4 (hours at k = 4: 1 + 2 + 2 + 3 = 8).",
+    "brute_force": {
+      "approach": "Try k = 1, 2, 3, ... and for each compute the total hours sum(ceil(p / k)); return the first k whose hours <= h. We evaluate feasibility for every speed in order, even though once a speed works every larger speed also works, so most checks confirm something already implied.",
+      "time": "O(n * max(piles))",
+      "space": "O(1)",
+      "code": "def brute_force(piles: List[int], h: int) -> int:\n    k = 1\n    while True:\n        if sum((p + k - 1) // k for p in piles) <= h:\n            return k\n        k += 1"
+    },
+    "optimization": "The redundancy is linearly scanning a monotone predicate: feasible(k) is False for small k and flips to True exactly once, staying True forever because eating faster never takes more hours. A sequence FFF...FTTT...T is 'sorted', so binary search finds the first T. The search space is the answer itself, k in [1, max(piles)], and the comparison becomes an O(n) feasibility check. Total cost O(n log max(piles)).",
+    "intuition": "Do not search the data, search the answer. Whenever you can write a cheap can(k) that is monotone in k, binary search locates the boundary between cannot and can in logarithmic steps. The upper bound max(piles) is trivially feasible (one hour per pile). Use the 'first True' template: lo < hi, hi = mid on success, lo = mid + 1 on failure, return lo.",
+    "geometric": "Draw speeds 1..max(piles) on a line and paint each F or T for 'finishes within h hours'. The picture is a solid block of F followed by a solid block of T. lo and hi squeeze onto the F|T boundary; the answer is the first T.",
+    "visual": "piles = [3,6,7,11], h = 8\n\nk:      1  2  3  4  5  6  7  8  9  10 11\nhours: 27 15 10  8  7  6  6  5  5   5  4\nok?     F  F  F  T  T  T  T  T  T   T  T\n                 ^ first T = 4\nlo=1 hi=11 mid=6  T -> hi=6\nlo=1 hi=6  mid=3  F -> lo=4\nlo=4 hi=6  mid=5  T -> hi=5\nlo=4 hi=5  mid=4  T -> hi=4  -> lo == hi == 4",
+    "steps": [
+      "Define hours(k) = sum((p + k - 1) // k for p in piles), i.e. ceiling division.",
+      "Set lo = 1, hi = max(piles); hi is always feasible.",
+      "While lo < hi: mid = (lo + hi) // 2.",
+      "If hours(mid) <= h, set hi = mid (feasible, try slower); otherwise lo = mid + 1.",
+      "Return lo, the smallest feasible speed."
+    ],
+    "complexity": {
+      "time": "O(n log M)",
+      "space": "O(1)",
+      "why": "log M feasibility checks (M = max(piles)) that each cost O(n)"
+    },
+    "pitfalls": [
+      "Using floor division instead of ceiling for the hours.",
+      "Starting lo at 0 causes division by zero.",
+      "Mixing the closed-interval template (hi = mid - 1) with returning lo."
+    ],
+    "hints": [
+      "Is there a speed that is guaranteed to work? If speed k works, does k + 1 also work?",
+      "That monotone yes/no answer over k = 1..max(piles) is a sorted boolean array. Which index are you looking for?",
+      "Binary search k with lo = 1, hi = max(piles): if hours(mid) <= h then hi = mid else lo = mid + 1."
+    ],
+    "code": "class Solution:\n    def minEatingSpeed(self, piles: List[int], h: int) -> int:\n        def hours(k: int) -> int:\n            return sum((p + k - 1) // k for p in piles)   # ceil(p / k)\n\n        lo, hi = 1, max(piles)               # k = max(piles) always suffices\n        while lo < hi:                       # find first k with hours(k) <= h\n            mid = (lo + hi) // 2\n            if hours(mid) <= h:\n                hi = mid                     # feasible: answer is mid or slower\n            else:\n                lo = mid + 1                 # too slow: must eat faster\n        return lo",
+    "related": [
+      "binary_search",
+      "find_peak_element"
+    ]
+  },
+  {
+    "slug": "find_min_rotated_sorted_array",
+    "title": "Find Minimum in Rotated Sorted Array",
+    "leetcode": 153,
+    "difficulty": "Medium",
+    "topic": "binary_search",
+    "pattern": "Binary search on a rotated sorted array",
+    "file": "binary_search/find_min_rotated_sorted_array.py",
+    "problem": "A sorted array of distinct integers was rotated between 1 and n times, e.g. [0,1,2,4,5,6,7] became [4,5,6,7,0,1,2]. Return the minimum element in O(log n). Example: nums = [3,4,5,1,2] returns 1.",
+    "brute_force": {
+      "approach": "Scan the whole array keeping the smallest value seen. The array is two sorted runs glued together and the minimum is exactly the seam, but comparing every element ignores that a single comparison against the right end reveals which run you are standing in.",
+      "time": "O(n)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> int:\n    best = nums[0]\n    for x in nums:\n        if x < best:\n            best = x\n    return best"
+    },
+    "optimization": "The redundancy is testing every element when one comparison can discard half. For any mid, if nums[mid] > nums[hi] then mid is in the left (high) run and the seam is strictly to the right; otherwise mid is in the right (low) run and the minimum is at mid or to its left. That rule is a monotone predicate, so binary search with lo < hi, moving lo = mid + 1 or hi = mid, converges on the seam.",
+    "intuition": "Always compare the middle against the right end, never the left. The right end is always in the low run, so 'mid > right' means you are still on the high plateau and must jump past the cliff, while 'mid <= right' means you are already past it and the minimum is at or before mid. Never exclude mid when it might be the answer, hence hi = mid rather than mid - 1.",
+    "geometric": "Plot value against index: a rising line, a vertical drop (the cliff), then another rising line entirely below the first. The minimum is the point just after the drop. Each probe asks 'am I above or below the height of the last element?' and moves lo or hi to pinch the cliff.",
+    "visual": "nums: [4, 5, 6, 7, 0, 1, 2]\n       4 5 6 7\n               |   <- cliff\n                0 1 2\n       lo    mid    hi    nums[3]=7 > nums[6]=2 -> lo = 4\n                lo m hi   nums[5]=1 <= 2        -> hi = 5\n                lo hi     nums[4]=0 <= nums[5]  -> hi = 4\n                ^ lo == hi -> nums[4] = 0",
+    "steps": [
+      "Set lo = 0, hi = n - 1.",
+      "While lo < hi: mid = (lo + hi) // 2.",
+      "If nums[mid] > nums[hi], set lo = mid + 1 (the minimum is right of mid).",
+      "Otherwise set hi = mid (the minimum is at mid or left of it).",
+      "Return nums[lo]."
+    ],
+    "complexity": {
+      "time": "O(log n)",
+      "space": "O(1)",
+      "why": "half of the remaining range is discarded on every probe"
+    },
+    "pitfalls": [
+      "Comparing against nums[lo] is ambiguous when the current window is not rotated.",
+      "Using hi = mid - 1 can skip over the minimum.",
+      "Using lo <= hi with this update rule never terminates."
+    ],
+    "hints": [
+      "The array is two ascending runs. Which element is guaranteed to be in the second (lower) run?",
+      "Compare nums[mid] to nums[hi]. If mid is larger, which side must the minimum be on?",
+      "Loop while lo < hi: if nums[mid] > nums[hi] then lo = mid + 1 else hi = mid; return nums[lo]."
+    ],
+    "code": "class Solution:\n    def findMin(self, nums: List[int]) -> int:\n        lo, hi = 0, len(nums) - 1\n        while lo < hi:\n            mid = (lo + hi) // 2\n            if nums[mid] > nums[hi]:\n                lo = mid + 1                 # mid is on the high run; cliff is to the right\n            else:\n                hi = mid                     # mid is on the low run; min is at mid or left\n        return nums[lo]",
+    "related": [
+      "search_rotated_sorted_array",
+      "find_peak_element",
+      "binary_search"
+    ]
+  },
+  {
+    "slug": "search_rotated_sorted_array",
+    "title": "Search in Rotated Sorted Array",
+    "leetcode": 33,
+    "difficulty": "Medium",
+    "topic": "binary_search",
+    "pattern": "Binary search on a rotated sorted array",
+    "file": "binary_search/search_rotated_sorted_array.py",
+    "problem": "A sorted array of distinct integers was rotated at an unknown pivot. Return the index of target, or -1, in O(log n). Example: nums = [4,5,6,7,0,1,2], target = 0 returns 4; target = 3 returns -1.",
+    "brute_force": {
+      "approach": "Linear scan for target. At every element we could tell which of the two sorted runs we are in and discard the entire other side, but a scan discards only one element per comparison.",
+      "time": "O(n)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int], target: int) -> int:\n    for i, x in enumerate(nums):\n        if x == target:\n            return i\n    return -1"
+    },
+    "optimization": "The redundancy is not using the fact that for any mid, at least one of [lo, mid] and [mid, hi] is a properly sorted range. If nums[lo] <= nums[mid] the left half is sorted: go left when nums[lo] <= target < nums[mid], otherwise right. Symmetrically when the right half is sorted. Membership in a sorted half is decided in O(1) from its two endpoints, so every probe still halves the range and we never need to locate the pivot first.",
+    "intuition": "At any mid, one of the two halves is a plain sorted array. Test whether target's value falls inside that sorted half's endpoint range; if yes recurse there, if no the target must be in the other, messier half. Always test the sorted half because only there can membership be decided from the endpoints alone.",
+    "geometric": "Two rising segments with a cliff that falls inside exactly one of [lo..mid] or [mid..hi]. The half without the cliff is a clean ramp whose min and max are its endpoints. Ask whether target's height lands on that ramp and move lo or hi accordingly.",
+    "visual": "nums: [4, 5, 6, 7, 0, 1, 2]   target = 0\n       lo       mid      hi\n       4 <= 7 : left half [4..7] sorted\n       is 4 <= 0 < 7 ? no -> target in right half -> lo=4\n\n                   lo mid hi      nums = [0, 1, 2]\n                   0 <= 1 : left half [0..1] sorted\n                   is 0 <= 0 < 1 ? yes -> hi = mid-1 = 4\n                   lo=hi=4: nums[4] == 0 -> return 4",
+    "steps": [
+      "Set lo = 0, hi = n - 1; loop while lo <= hi with mid = (lo + hi) // 2.",
+      "If nums[mid] == target, return mid.",
+      "If nums[lo] <= nums[mid] (left half sorted): if nums[lo] <= target < nums[mid] then hi = mid - 1 else lo = mid + 1.",
+      "Else (right half sorted): if nums[mid] < target <= nums[hi] then lo = mid + 1 else hi = mid - 1.",
+      "Return -1 if the loop ends."
+    ],
+    "complexity": {
+      "time": "O(log n)",
+      "space": "O(1)",
+      "why": "a standard binary search where each probe adds only an O(1) 'which half is sorted' test"
+    },
+    "pitfalls": [
+      "Writing nums[lo] < nums[mid] instead of <= breaks the two-element window.",
+      "Mixing strict and non-strict comparisons so that target == endpoint goes the wrong way.",
+      "Finding the pivot first and then searching is correct but doubles the code."
+    ],
+    "hints": [
+      "For any mid, is at least one of the two halves guaranteed to be sorted? How can you tell which one in O(1)?",
+      "If a half is sorted you can tell whether target is inside it just from its two endpoints. If it is not inside, where must it be?",
+      "Compare nums[lo] <= nums[mid] to pick the sorted half; test target against that half's endpoints; shrink lo or hi; loop while lo <= hi."
+    ],
+    "code": "class Solution:\n    def search(self, nums: List[int], target: int) -> int:\n        lo, hi = 0, len(nums) - 1\n        while lo <= hi:\n            mid = (lo + hi) // 2\n            if nums[mid] == target:\n                return mid\n            if nums[lo] <= nums[mid]:                    # left half [lo, mid] is sorted\n                if nums[lo] <= target < nums[mid]:\n                    hi = mid - 1\n                else:\n                    lo = mid + 1\n            else:                                        # right half [mid, hi] is sorted\n                if nums[mid] < target <= nums[hi]:\n                    lo = mid + 1\n                else:\n                    hi = mid - 1\n        return -1",
+    "related": [
+      "find_min_rotated_sorted_array",
+      "binary_search",
+      "search_2d_matrix"
+    ]
+  },
+  {
+    "slug": "find_first_and_last_position",
+    "title": "Find First and Last Position of Element in Sorted Array",
+    "leetcode": 34,
+    "difficulty": "Medium",
+    "topic": "binary_search",
+    "pattern": "Binary search for a boundary (lower / upper bound)",
+    "file": "binary_search/find_first_and_last_position.py",
+    "problem": "Given a non-decreasing array nums and a target, return [first, last] indices of target, or [-1, -1] if absent, in O(log n). Example: nums = [5,7,7,8,8,10], target = 8 returns [3, 4]; target = 6 returns [-1, -1].",
+    "brute_force": {
+      "approach": "Scan once, recording the first and last index where nums[i] == target. Every non-matching element still costs a comparison, and even the variant 'binary search any occurrence then expand outward' degrades to O(n) when the whole array equals target.",
+      "time": "O(n)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int], target: int) -> List[int]:\n    first = last = -1\n    for i, x in enumerate(nums):\n        if x == target:\n            if first == -1:\n                first = i\n            last = i\n    return [first, last]"
+    },
+    "optimization": "The redundancy is walking through the run of equal values. The predicate nums[i] >= target is monotone (F...F T...T) and its first True is the left boundary; nums[i] > target is another monotone predicate whose first True is one past the right boundary. Each boundary is a single lower-bound binary search independent of how long the run is: two searches, O(log n) total, no expansion step.",
+    "intuition": "Reduce 'find the range' to 'find two boundaries', and make each boundary the first index where a yes/no question flips. lower(target) gives the first index with value >= target; lower(target + 1) gives the first index with value > target, which is last + 1. If the first index is out of range or does not hold target, the target is absent. Using a half-open [lo, hi) template makes 'not found' fall out naturally as index n.",
+    "geometric": "Draw the sorted array as stairs; the run of equal targets is one flat step. One search lands on the left edge of that step (first >= target), the other on the left edge of the next step (first > target). The answer is [left_edge, next_edge - 1].",
+    "visual": "nums: [5, 7, 7, 8, 8, 10]      target = 8\n\n>= 8 : F  F  F  T  T  T    first T -> lower(8)  = 3\n>  8 : F  F  F  F  F  T    first T -> lower(9)  = 5\n\n       5  7  7 [8  8] 10\n                ^   ^\n             first  last = 5 - 1 = 4   -> [3, 4]",
+    "steps": [
+      "Write lower(x): lo = 0, hi = n; while lo < hi: mid; if nums[mid] < x then lo = mid + 1 else hi = mid; return lo.",
+      "first = lower(target).",
+      "If first == n or nums[first] != target, return [-1, -1].",
+      "last = lower(target + 1) - 1.",
+      "Return [first, last]."
+    ],
+    "complexity": {
+      "time": "O(log n)",
+      "space": "O(1)",
+      "why": "two half-open binary searches, each O(log n)"
+    },
+    "pitfalls": [
+      "Using the closed-interval template (hi = n - 1) and then indexing nums[n].",
+      "Expanding linearly from a found index, which is O(n) in the worst case.",
+      "Off-by-one on last: forgetting the - 1 after lower(target + 1)."
+    ],
+    "hints": [
+      "Can you find the first index where nums[i] >= target with binary search? What property of that predicate makes it searchable?",
+      "The last occurrence is just before the first index where nums[i] > target, i.e. the first index >= target + 1.",
+      "Implement lower(x) once; return [-1,-1] if lower(target) is n or not a match, else [lower(target), lower(target + 1) - 1]."
+    ],
+    "code": "class Solution:\n    def searchRange(self, nums: List[int], target: int) -> List[int]:\n        def lower(x: int) -> int:            # first index i with nums[i] >= x, or n\n            lo, hi = 0, len(nums)\n            while lo < hi:\n                mid = (lo + hi) // 2\n                if nums[mid] < x:\n                    lo = mid + 1\n                else:\n                    hi = mid\n            return lo\n\n        first = lower(target)\n        if first == len(nums) or nums[first] != target:\n            return [-1, -1]\n        return [first, lower(target + 1) - 1]   # first index > target, minus one",
+    "related": [
+      "binary_search",
+      "koko_eating_bananas"
+    ]
+  },
+  {
+    "slug": "find_peak_element",
+    "title": "Find Peak Element",
+    "leetcode": 162,
+    "difficulty": "Medium",
+    "topic": "binary_search",
+    "pattern": "Binary search on a monotone predicate",
+    "file": "binary_search/find_peak_element.py",
+    "problem": "A peak element is strictly greater than both neighbours; imagine nums[-1] = nums[n] = -inf and adjacent elements are never equal. Return the index of any peak in O(log n). Example: nums = [1,2,1,3,5,6,4] returns 1 or 5 (both are peaks).",
+    "brute_force": {
+      "approach": "Scan left to right and return the first i with nums[i] > nums[i+1], or n-1 if the array is strictly increasing. Each comparison only confirms 'still climbing' for one step, even though being on a climb already guarantees a peak lies ahead, so we could leap instead of step.",
+      "time": "O(n)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> int:\n    for i in range(len(nums) - 1):\n        if nums[i] > nums[i + 1]:\n            return i\n    return len(nums) - 1"
+    },
+    "optimization": "The redundancy is walking uphill one step at a time. If nums[mid] < nums[mid+1] we are on an ascending slope and, because the array ends in -inf, the slope must come down somewhere, so a peak exists in (mid, hi]. Otherwise nums[mid] > nums[mid+1], and walking left from mid either keeps ascending to index lo (whose left neighbour is -inf) or hits a peak, so a peak exists in [lo, mid]. Binary search is safe even though the predicate is not globally monotone, because the invariant 'a peak exists in [lo, hi]' is preserved.",
+    "intuition": "You do not need the global maximum, just any local one. Whichever direction is uphill from mid, a peak is guaranteed in that direction because -inf fences both ends. So move toward the higher neighbour and halve the range. Because the loop uses lo < hi, mid is always < hi and nums[mid + 1] is always a valid index.",
+    "geometric": "Picture a mountain range with cliffs dropping to -inf at both ends. Stand at mid and look one step right: if the ground is higher, it must fall before the right cliff so a summit lies right; if lower, you are on a downhill or at a summit so keep mid. The window always contains a summit.",
+    "visual": "nums: [1, 2, 1, 3, 5, 6, 4]      (-inf at both ends)\n\n              6\n           5     4\n        3\n     2     ^\n  1     1  mid=3: nums[3]=3 < nums[4]=5 -> uphill, lo=4\n\nlo=4 hi=6 mid=5: nums[5]=6 > nums[6]=4 -> hi=5\nlo=4 hi=5 mid=4: nums[4]=5 < nums[5]=6 -> lo=5\nlo == hi == 5 -> peak at index 5 (value 6)",
+    "steps": [
+      "Set lo = 0, hi = n - 1.",
+      "While lo < hi: mid = (lo + hi) // 2.",
+      "If nums[mid] < nums[mid + 1], set lo = mid + 1 (uphill to the right).",
+      "Otherwise set hi = mid (mid may itself be the peak).",
+      "Return lo."
+    ],
+    "complexity": {
+      "time": "O(log n)",
+      "space": "O(1)",
+      "why": "the window containing a guaranteed peak halves each step"
+    },
+    "pitfalls": [
+      "Reading nums[mid + 1] when mid == n - 1; avoided by looping while lo < hi.",
+      "Using hi = mid - 1, which can throw away the peak.",
+      "Assuming you must find the maximum element."
+    ],
+    "hints": [
+      "Does the array need a global maximum, or would any local high point do? Why does the -inf fence guarantee one exists?",
+      "Compare nums[mid] with nums[mid + 1]. If the right neighbour is higher, can you argue a peak must exist somewhere to the right?",
+      "Binary search with lo < hi: uphill right means lo = mid + 1, otherwise hi = mid; return lo."
+    ],
+    "code": "class Solution:\n    def findPeakElement(self, nums: List[int]) -> int:\n        lo, hi = 0, len(nums) - 1\n        while lo < hi:                       # mid < hi, so nums[mid + 1] is always valid\n            mid = (lo + hi) // 2\n            if nums[mid] < nums[mid + 1]:\n                lo = mid + 1                 # uphill to the right: a peak lies there\n            else:\n                hi = mid                     # downhill (or peak) at mid: keep it\n        return lo",
+    "related": [
+      "find_min_rotated_sorted_array",
+      "koko_eating_bananas",
+      "binary_search"
+    ]
+  },
+  {
+    "slug": "median_of_two_sorted_arrays",
+    "title": "Median of Two Sorted Arrays",
+    "leetcode": 4,
+    "difficulty": "Hard",
+    "topic": "binary_search",
+    "pattern": "Binary search on a partition",
+    "file": "binary_search/median_of_two_sorted_arrays.py",
+    "problem": "Given two sorted arrays nums1 (size m) and nums2 (size n), return the median of their combined sorted order in O(log(m + n)). Example: nums1 = [1,3], nums2 = [2] returns 2.0; nums1 = [1,2], nums2 = [3,4] returns 2.5.",
+    "brute_force": {
+      "approach": "Merge the two arrays with two pointers (or simply sort nums1 + nums2) and read the middle element or the average of the two middle elements. We build the entire merged order when the only thing we need is which elements form the lower half; the order inside each half is irrelevant.",
+      "time": "O(m + n)",
+      "space": "O(m + n)",
+      "code": "def brute_force(nums1: List[int], nums2: List[int]) -> float:\n    merged = sorted(nums1 + nums2)\n    k = len(merged)\n    if k % 2:\n        return float(merged[k // 2])\n    return (merged[k // 2 - 1] + merged[k // 2]) / 2"
+    },
+    "optimization": "The redundancy is materialising the full merge. The median splits the combined data into a left half of exactly (m + n + 1) // 2 elements and a right half, and the left half is a prefix of A (i elements) plus a prefix of B (j = half - i elements). The cut is valid iff every left element <= every right element, which only needs the four boundary values: A[i-1] <= B[j] and B[j-1] <= A[i]. If A[i-1] > B[j] then i is too large; if B[j-1] > A[i] then i is too small. That is monotone in i, so binary search i over the shorter array and read the median from the boundary values.",
+    "intuition": "Choose how many items of the shorter array go into the left half; that forces how many of the longer array go left so the left half has the right size. A cut is correct when the largest value on the left side is <= the smallest value on the right side across both arrays. Binary search the cut position. The median is max(left values) for an odd total, or the average of max(left values) and min(right values) for an even total. Sentinels of +/-inf handle cuts at the ends.",
+    "geometric": "Two sorted rows, each with a vertical cut. Everything left of both cuts is the lower half. Sliding A's cut right forces B's cut left so the left count stays fixed. The cuts are correct when both left-edge values are <= both right-edge values.",
+    "visual": "A = [1, 2, 3, 4, 5]     B = [6, 7, 8, 9, 10, 11]\nhalf = (5 + 6 + 1) // 2 = 6     (i from A, j = 6 - i from B)\n\ni=2, j=4:   A: 1 2 | 3 4 5      B: 6 7 8 9 | 10 11\n            b_left=9 > a_right=3  -> i too small, lo=3\ni=4, j=2:   A: 1 2 3 4 | 5      B: 6 7 | 8 9 10 11\n            b_left=7 > a_right=5  -> i too small, lo=5\ni=5, j=1:   A: 1 2 3 4 5 |      B: 6 | 7 8 9 10 11\n            5 <= 7 and 6 <= inf   -> valid cut\n            odd total -> median = max(5, 6) = 6.0",
+    "steps": [
+      "Swap so that A is the shorter array; m = len(A), n = len(B), half = (m + n + 1) // 2.",
+      "Binary search i in [0, m] (how many of A go left); j = half - i.",
+      "Read a_left = A[i-1] or -inf, a_right = A[i] or +inf, and the same for B with j.",
+      "If a_left > b_right, set hi = i - 1 (took too many from A); elif b_left > a_right, set lo = i + 1.",
+      "Otherwise the cut is valid: return max(a_left, b_left) if m + n is odd, else the average of max(a_left, b_left) and min(a_right, b_right)."
+    ],
+    "complexity": {
+      "time": "O(log min(m, n))",
+      "space": "O(1)",
+      "why": "binary search over cut positions of the shorter array with O(1) work per probe"
+    },
+    "pitfalls": [
+      "Not searching the shorter array, so j can go negative or exceed n.",
+      "Forgetting the +/-inf sentinels for cuts at index 0 or m.",
+      "Wrong half size for odd totals; use (m + n + 1) // 2.",
+      "Returning an int instead of a float."
+    ],
+    "hints": [
+      "You need the median, not the merged order. What single piece of information determines the median?",
+      "Cut each array so that the left pieces together hold (m + n + 1) // 2 elements. What condition on the four boundary values makes that cut the true lower half?",
+      "Binary search the cut index i in the shorter array; move hi down when A[i-1] > B[j], move lo up when B[j-1] > A[i]; read the median off the boundaries."
+    ],
+    "code": "class Solution:\n    def findMedianSortedArrays(self, nums1: List[int], nums2: List[int]) -> float:\n        A, B = (nums1, nums2) if len(nums1) <= len(nums2) else (nums2, nums1)\n        m, n = len(A), len(B)\n        half = (m + n + 1) // 2               # size of the left half\n        lo, hi = 0, m                         # i = how many of A go left\n        INF = float(\"inf\")\n        while lo <= hi:\n            i = (lo + hi) // 2\n            j = half - i\n            a_left = A[i - 1] if i > 0 else -INF\n            a_right = A[i] if i < m else INF\n            b_left = B[j - 1] if j > 0 else -INF\n            b_right = B[j] if j < n else INF\n            if a_left > b_right:\n                hi = i - 1                    # took too many from A\n            elif b_left > a_right:\n                lo = i + 1                    # took too few from A\n            else:                             # valid cut\n                if (m + n) % 2:\n                    return float(max(a_left, b_left))\n                return (max(a_left, b_left) + min(a_right, b_right)) / 2\n        raise ValueError(\"inputs must be sorted\")",
+    "related": [
+      "binary_search",
+      "merge_two_sorted_lists",
+      "find_first_and_last_position"
+    ]
+  },
+  {
+    "slug": "reverse_linked_list",
+    "title": "Reverse Linked List",
+    "leetcode": 206,
+    "difficulty": "Easy",
+    "topic": "linked_list",
+    "pattern": "In-place pointer reversal",
+    "file": "linked_list/reverse_linked_list.py",
+    "problem": "Given the head of a singly linked list, reverse it and return the new head. Example: 1 -> 2 -> 3 -> 4 -> 5 becomes 5 -> 4 -> 3 -> 2 -> 1.",
+    "brute_force": {
+      "approach": "Walk the list copying the values into a Python list, reverse that list, and build a brand-new linked list from it. We allocate n new nodes (or an n-element array) just to express an order that can be encoded by re-aiming the existing next pointers.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "code": "def brute_force(head: Optional[ListNode]) -> Optional[ListNode]:\n    vals = []\n    while head:\n        vals.append(head.val)\n        head = head.next\n    dummy = ListNode()\n    tail = dummy\n    for v in reversed(vals):\n        tail.next = ListNode(v)\n        tail = tail.next\n    return dummy.next"
+    },
+    "optimization": "The redundancy is the extra copy. Reversing means every node's next should point to its predecessor instead of its successor, and that can be done in one pass if at each node we remember the predecessor (prev) and save the successor (nxt) before overwriting next. Three pointers maintain the invariant 'prev heads a fully reversed prefix, cur heads the untouched suffix'; when cur runs off the end, prev is the new head.",
+    "intuition": "Flip one arrow at a time. The only danger is losing the rest of the list when you overwrite cur.next, so stash cur.next first. Each iteration moves exactly one node from the untouched suffix onto the front of the reversed prefix. When the suffix is empty, the prefix is the whole list reversed and prev is its head.",
+    "geometric": "Two chains meet at the boundary between prev and cur: a reversed chain growing leftward and an untouched chain shrinking rightward. Each step detaches cur from the right chain and pushes it onto the front of the left chain.",
+    "visual": "start:  1 -> 2 -> 3 -> 4 -> 5 -> None\n        cur\n\nmid:    None <- 1 <- 2    3 -> 4 -> 5 -> None\n                     prev cur  nxt\n        step: cur.next = prev; prev = cur; cur = nxt\n\nend:    None <- 1 <- 2 <- 3 <- 4 <- 5    cur = None\n                                    prev  -> return prev",
+    "steps": [
+      "prev = None, cur = head.",
+      "While cur: nxt = cur.next; cur.next = prev; prev = cur; cur = nxt.",
+      "Return prev."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "a single pass with three pointers and no allocation"
+    },
+    "pitfalls": [
+      "Overwriting cur.next before saving it loses the rest of the list.",
+      "Returning head (now the tail) instead of prev.",
+      "The recursive version is elegant but uses O(n) stack."
+    ],
+    "hints": [
+      "What should each node's next pointer end up pointing to? Can you change it without losing the rest of the list?",
+      "Carry two pointers, prev and cur. Before redirecting cur.next, save cur.next somewhere.",
+      "Loop: nxt = cur.next; cur.next = prev; prev, cur = cur, nxt. When cur is None, prev is the new head."
+    ],
+    "code": "class Solution:\n    def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:\n        prev, cur = None, head\n        while cur:\n            nxt = cur.next                   # save the rest before flipping the arrow\n            cur.next = prev\n            prev, cur = cur, nxt\n        return prev",
+    "related": [
+      "reverse_nodes_in_k_group",
+      "palindrome_linked_list",
+      "reorder_list"
+    ]
+  },
+  {
+    "slug": "merge_two_sorted_lists",
+    "title": "Merge Two Sorted Lists",
+    "leetcode": 21,
+    "difficulty": "Easy",
+    "topic": "linked_list",
+    "pattern": "Dummy head + two-pointer merge",
+    "file": "linked_list/merge_two_sorted_lists.py",
+    "problem": "Merge two sorted linked lists into one sorted list by splicing their nodes together and return its head. Example: 1->2->4 and 1->3->4 merge into 1->1->2->3->4->4.",
+    "brute_force": {
+      "approach": "Collect all values from both lists into an array, sort it, and build a new linked list from the result. Sorting ignores that each input is already sorted (the only unknown is how they interleave), and allocating new nodes is unnecessary when the originals can be re-linked.",
+      "time": "O((m + n) log(m + n))",
+      "space": "O(m + n)",
+      "code": "def brute_force(list1: Optional[ListNode], list2: Optional[ListNode]) -> Optional[ListNode]:\n    vals = []\n    for node in (list1, list2):\n        while node:\n            vals.append(node.val)\n            node = node.next\n    dummy = ListNode()\n    tail = dummy\n    for v in sorted(vals):\n        tail.next = ListNode(v)\n        tail = tail.next\n    return dummy.next"
+    },
+    "optimization": "The redundancy is re-sorting sorted data. The smallest remaining element overall is always one of the two current heads, so a single comparison decides the next output node. Keep a tail pointer at the end of the merged list, append the smaller head and advance that list. A dummy node in front of the result removes the 'is this the first node?' special case, and when one list runs out the other can be attached whole because it is already sorted.",
+    "intuition": "Think of two sorted decks face up; repeatedly take the smaller top card. Because we splice the existing nodes rather than copying, the merge is in place with O(1) extra space. The dummy head is the standard trick for building a list when you do not yet know which node will be first.",
+    "geometric": "Three pointers: list1 and list2 sit on the fronts of the two input chains, tail sits on the end of the output chain. Each step unhooks one input front and hooks it onto tail.",
+    "visual": "list1:  1 -> 2 -> 4            list2:  1 -> 3 -> 4\n\nafter 3 steps:\n  out:  D -> 1 -> 1 -> 2         list1: 4 -> None\n                       tail      list2: 3 -> 4 -> None\n  compare 4 vs 3 -> take 3 from list2\n\nend:   D -> 1 -> 1 -> 2 -> 3 -> 4 -> 4    return D.next",
+    "steps": [
+      "Create dummy = ListNode() and tail = dummy.",
+      "While both lists are non-empty: attach the smaller head to tail.next, advance that list, advance tail.",
+      "Attach the remaining list (list1 or list2) to tail.next.",
+      "Return dummy.next."
+    ],
+    "complexity": {
+      "time": "O(m + n)",
+      "space": "O(1)",
+      "why": "every node is visited once and only pointers are rewritten"
+    },
+    "pitfalls": [
+      "Forgetting to attach the leftover list after one is exhausted.",
+      "Losing the head of the result by not using a dummy node.",
+      "Creating new nodes instead of splicing (works, but wastes memory)."
+    ],
+    "hints": [
+      "Both lists are already sorted. At any moment, where can the smallest remaining element be?",
+      "Use a dummy node and a tail pointer so you never special-case the first node. Compare the two heads and move the smaller one.",
+      "Loop while both lists exist, splice the smaller head onto tail, then attach whichever list remains."
+    ],
+    "code": "class Solution:\n    def mergeTwoLists(self, list1: Optional[ListNode], list2: Optional[ListNode]) -> Optional[ListNode]:\n        dummy = ListNode()\n        tail = dummy\n        while list1 and list2:\n            if list1.val <= list2.val:\n                tail.next, list1 = list1, list1.next\n            else:\n                tail.next, list2 = list2, list2.next\n            tail = tail.next\n        tail.next = list1 or list2           # whichever list still has nodes\n        return dummy.next",
+    "related": [
+      "median_of_two_sorted_arrays",
+      "reorder_list",
+      "reverse_linked_list"
+    ]
+  },
+  {
+    "slug": "reorder_list",
+    "title": "Reorder List",
+    "leetcode": 143,
+    "difficulty": "Medium",
+    "topic": "linked_list",
+    "pattern": "Find middle + reverse second half + interleave",
+    "file": "linked_list/reorder_list.py",
+    "problem": "Given L0 -> L1 -> ... -> Ln, reorder it in place to L0 -> Ln -> L1 -> Ln-1 -> L2 -> Ln-2 -> ..., changing only node links, not values. Example: 1->2->3->4->5 becomes 1->5->2->4->3.",
+    "brute_force": {
+      "approach": "Copy the nodes into an array, then use two indices (front and back) to re-link nodes alternately from each end. The array exists only to give random access to the tail, which a singly linked list lacks, but that backward access can be manufactured by reversing the second half in place.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "code": "def brute_force(head: Optional[ListNode]) -> None:\n    nodes = []\n    node = head\n    while node:\n        nodes.append(node)\n        node = node.next\n    i, j = 0, len(nodes) - 1\n    while i < j:\n        nodes[i].next = nodes[j]\n        i += 1\n        if i == j:\n            break\n        nodes[j].next = nodes[i]\n        j -= 1\n    if nodes:\n        nodes[i].next = None"
+    },
+    "optimization": "The redundancy is the O(n) index structure. The back half is consumed from the end toward the middle, i.e. in reverse order, so if we physically reverse the second half it becomes a normal forward list yielding exactly the nodes we need in order. The algorithm is three standard subroutines: find the middle with slow/fast pointers, reverse the second half in place, and zip the two halves by alternately splicing one node from each.",
+    "intuition": "The target order is 'first half forward' interleaved with 'second half backward'. Reversing the second half converts backward into forward, turning the task into a plain merge of two lists of equal (or off-by-one) length. The slow pointer is stopped on the last node of the first half so the first half is the longer one when n is odd, and the zip loop runs while the second half has nodes.",
+    "geometric": "Picture the list cut at the middle into two pieces; flip the right piece over so it runs backwards; then slide the two pieces into each other like interleaving fingers.",
+    "visual": "1 -> 2 -> 3 -> 4 -> 5        slow ends on 3 (middle)\n\n1 -> 2 -> 3     5 -> 4        cut after 3, reverse tail\nfirst           second\n\n1 -> 5 -> 2 -> 4 -> 3         zip: first, second, ...\n     ^    ^\n  from 2nd from 1st",
+    "steps": [
+      "Return early for lists of length 0 or 1.",
+      "slow = fast = head; while fast.next and fast.next.next: advance slow by 1 and fast by 2.",
+      "second = slow.next; slow.next = None; reverse the second half with the three-pointer loop.",
+      "first = head; while second: save first.next and second.next, point first.next at second and second.next at the saved first.next, then advance both."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "three linear passes using only pointer rewrites"
+    },
+    "pitfalls": [
+      "Not cutting the first half (slow.next = None) creates a cycle.",
+      "Stopping slow one node too far so the second half is longer than the first.",
+      "Losing first.next before splicing second in."
+    ],
+    "hints": [
+      "Which nodes are taken from the back, and in what order? Could you get that order as a normal forward traversal?",
+      "Find the middle with slow/fast pointers, then reverse the second half in place. Now you have two forward lists.",
+      "Merge the two halves alternately, always starting with the first half, until the second half is exhausted."
+    ],
+    "code": "class Solution:\n    def reorderList(self, head: Optional[ListNode]) -> None:\n        if not head or not head.next:\n            return\n        slow, fast = head, head              # 1) find middle (slow ends on last node of first half)\n        while fast.next and fast.next.next:\n            slow, fast = slow.next, fast.next.next\n\n        second, slow.next = slow.next, None  # 2) cut and reverse second half\n        prev = None\n        while second:\n            second.next, prev, second = prev, second, second.next\n\n        first, second = head, prev           # 3) zip the halves\n        while second:\n            n1, n2 = first.next, second.next\n            first.next, second.next = second, n1\n            first, second = n1, n2",
+    "related": [
+      "reverse_linked_list",
+      "palindrome_linked_list",
+      "merge_two_sorted_lists"
+    ]
+  },
+  {
+    "slug": "remove_nth_from_end",
+    "title": "Remove Nth Node From End of List",
+    "leetcode": 19,
+    "difficulty": "Medium",
+    "topic": "linked_list",
+    "pattern": "Two pointers with fixed gap",
+    "file": "linked_list/remove_nth_from_end.py",
+    "problem": "Remove the n-th node from the end of a singly linked list and return the head; n is always valid (1 <= n <= length). Example: 1->2->3->4->5 with n = 2 becomes 1->2->3->5.",
+    "brute_force": {
+      "approach": "First pass: count the length L. Second pass: walk to node L - n - 1 and unlink its successor. The counting pass exists only to translate 'n from the end' into 'L - n from the start', so every node is traversed twice to learn one number.",
+      "time": "O(n)",
+      "space": "O(1)",
+      "code": "def brute_force(head: Optional[ListNode], n: int) -> Optional[ListNode]:\n    length = 0\n    node = head\n    while node:\n        length += 1\n        node = node.next\n    dummy = ListNode(0, head)\n    prev = dummy\n    for _ in range(length - n):\n        prev = prev.next\n    prev.next = prev.next.next\n    return dummy.next"
+    },
+    "optimization": "The redundancy is the counting pass. We do not need L, only a pointer that stops exactly n nodes before the tail. If fast starts n + 1 steps ahead of slow and both move at the same speed, then when fast reaches None slow is n + 1 from the end, i.e. the predecessor of the node to delete. The gap acts as a ruler carried along the list, and a dummy head lets the same code remove the first node.",
+    "intuition": "Carry a measuring stick of length n + 1 along the list. When its front end falls off the end, its back end rests on the node just before the one to delete. The dummy node guarantees there is always a 'node before', even when the victim is the head.",
+    "geometric": "Two pointers slide in lockstep with a constant gap. The leading pointer walks off the end; the trailing pointer is then exactly where the deletion has to happen.",
+    "visual": "D -> 1 -> 2 -> 3 -> 4 -> 5 -> None     n = 2\ns              f                      gap = n+1 = 3\n\n          s              f            slide together\n\n               s                   f  fast is None\nD -> 1 -> 2 -> 3 -+   4   +-> 5       unlink slow.next\n                  +-------+",
+    "steps": [
+      "dummy = ListNode(0, head); slow = fast = dummy.",
+      "Advance fast n + 1 times.",
+      "While fast is not None: advance slow and fast together.",
+      "slow.next = slow.next.next.",
+      "Return dummy.next."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "one pass over the list with two pointers"
+    },
+    "pitfalls": [
+      "Removing the head without a dummy node.",
+      "Advancing fast only n times, which parks slow on the victim instead of before it.",
+      "Not testing a single-node list with n = 1."
+    ],
+    "hints": [
+      "If one pointer is k nodes ahead of another and both advance together, what is true when the leading pointer reaches the end?",
+      "You want the trailing pointer to stop on the node BEFORE the one to remove. How big should the gap be, and what helps when the head itself is removed?",
+      "Dummy head; advance fast n + 1 steps; move both until fast is None; slow.next = slow.next.next."
+    ],
+    "code": "class Solution:\n    def removeNthFromEnd(self, head: Optional[ListNode], n: int) -> Optional[ListNode]:\n        dummy = ListNode(0, head)\n        slow = fast = dummy\n        for _ in range(n + 1):               # open a gap of n+1 links\n            fast = fast.next\n        while fast:                          # slide both until fast falls off the end\n            slow, fast = slow.next, fast.next\n        slow.next = slow.next.next           # slow is just before the victim\n        return dummy.next",
+    "related": [
+      "linked_list_cycle_ii",
+      "reorder_list",
+      "reverse_linked_list"
+    ]
+  },
+  {
+    "slug": "copy_list_with_random_pointer",
+    "title": "Copy List with Random Pointer",
+    "leetcode": 138,
+    "difficulty": "Medium",
+    "topic": "linked_list",
+    "pattern": "Interleaved clone (hash map original -> copy, embedded in the list)",
+    "file": "linked_list/copy_list_with_random_pointer.py",
+    "problem": "Each node has val, next and random, where random points to any node in the list or None. Return a deep copy: new nodes whose next and random pointers point to new nodes with the same structure, leaving the original intact. Example: [[7,null],[13,0],[11,4],[10,2],[1,0]] as (val, random index) returns an identical but fully independent list.",
+    "brute_force": {
+      "approach": "Copy the list by next only. Then for every node, find the position of its random target by walking the original from the head and counting, and walk the copy the same number of steps to set the clone's random. The 'which clone corresponds to this original' lookup is recomputed by linear search for every node.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(head: \"Optional[Node]\") -> \"Optional[Node]\":\n    def index_of(target: \"Optional[Node]\") -> int:\n        i, n = 0, head\n        while n is not target:\n            n, i = n.next, i + 1\n        return i\n\n    def nth(start: \"Optional[Node]\", k: int) -> \"Optional[Node]\":\n        for _ in range(k):\n            start = start.next\n        return start\n\n    dummy = Node(0)\n    tail, node = dummy, head\n    while node:                              # copy by next only\n        tail.next = Node(node.val)\n        tail, node = tail.next, node.next\n    node, clone = head, dummy.next\n    while node:                              # locate each random by position, O(n) each\n        if node.random:\n            clone.random = nth(dummy.next, index_of(node.random))\n        node, clone = node.next, clone.next\n    return dummy.next"
+    },
+    "optimization": "The redundancy is repeatedly rediscovering the original -> clone correspondence. That correspondence is a function from node to node, so store it once: pass 1 creates a clone per node in a dict {orig: clone}, pass 2 sets clone.next = d[orig.next] and clone.random = d[orig.random], giving O(n) time and O(n) space. The map can then be eliminated by interleaving: insert each clone directly after its original (A -> A' -> B -> B'), so d[X] is literally X.next; set randoms with X.next.random = X.random.next; then unweave the two lists for O(1) extra space.",
+    "intuition": "A deep copy needs a translator from 'pointer into the old graph' to 'pointer into the new graph'. A dictionary is the obvious translator; the interleaving trick embeds that translator in the list itself because the clone of X is always X.next. Three passes: weave, fix randoms, unweave. Unweaving also restores the original list, which LeetCode checks.",
+    "geometric": "Imagine every original node growing a shadow immediately to its right. A random arrow from A to C in the originals is mirrored by an arrow from A's shadow to C's shadow, found by hopping A -> random -> next. Finally pull the shadows out into their own chain.",
+    "visual": "orig:   A -------> B -------> C         A.random = C\n\nweave:  A -> A' -> B -> B' -> C -> C'\n        A'.random = A.random.next = C.next = C'\n\nsplit:  A -> B -> C          (original restored)\n        A' -> B' -> C'       (deep copy, A'.random = C')",
+    "steps": [
+      "Return None for an empty list.",
+      "Weave: for each original X, create X' = Node(X.val) and insert it between X and X.next.",
+      "Randoms: for each original X, if X.random is set, X.next.random = X.random.next.",
+      "Unweave: walk in pairs restoring X.next = X'.next and setting X'.next = X'.next.next.",
+      "Return the first clone (the original head's next before unweaving)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "three linear passes and no auxiliary map; the output list itself is not counted"
+    },
+    "pitfalls": [
+      "Dereferencing node.random.next when random is None.",
+      "Not restoring the original list's next pointers (LeetCode verifies the input is unchanged).",
+      "With the hash-map version, forgetting that d[None] must map to None."
+    ],
+    "hints": [
+      "Why is this harder than copying a plain list? What information do you lack when you reach a random pointer?",
+      "Build a mapping from each original node to its clone first, then do a second pass filling in next and random through the mapping.",
+      "To drop the map, insert each clone right after its original so clone(X) == X.next, set X.next.random = X.random.next, then split the woven list."
+    ],
+    "code": "class Solution:\n    def copyRandomList(self, head: \"Optional[Node]\") -> \"Optional[Node]\":\n        if not head:\n            return None\n        node = head                          # 1) weave clones after originals\n        while node:\n            clone = Node(node.val, node.next)\n            node.next = clone\n            node = clone.next\n\n        node = head                          # 2) clone.random = original.random's clone\n        while node:\n            if node.random:\n                node.next.random = node.random.next\n            node = node.next.next\n\n        node, new_head = head, head.next     # 3) unweave both lists\n        while node:\n            clone = node.next\n            node.next = clone.next\n            if clone.next:\n                clone.next = clone.next.next\n            node = node.next\n        return new_head",
+    "related": [
+      "reverse_linked_list",
+      "linked_list_cycle_ii"
+    ]
+  },
+  {
+    "slug": "linked_list_cycle_ii",
+    "title": "Linked List Cycle II",
+    "leetcode": 142,
+    "difficulty": "Medium",
+    "topic": "linked_list",
+    "pattern": "Floyd's tortoise and hare (fast/slow pointers)",
+    "file": "linked_list/linked_list_cycle_ii.py",
+    "problem": "Given the head of a linked list, return the node where the cycle begins, or None if there is no cycle, without modifying the list and ideally in O(1) extra space. Example: 3 -> 2 -> 0 -> -4 -> (back to 2) returns the node holding 2.",
+    "brute_force": {
+      "approach": "Walk the list storing every visited node in a set; the first node already present is the cycle start, and reaching None means no cycle. The set remembers every node merely to answer 'have I been here?', which the rho shape of the structure lets us answer with two pointers and arithmetic instead.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "code": "def brute_force(head: Optional[ListNode]) -> Optional[ListNode]:\n    seen = set()\n    node = head\n    while node:\n        if id(node) in seen:\n            return node\n        seen.add(id(node))\n        node = node.next\n    return None"
+    },
+    "optimization": "The redundancy is O(n) memory. First, a slow (1 step) and fast (2 step) pointer must meet inside the loop if one exists, because once both are in the loop fast gains one position per move on a finite circle. Second, with tail length a and the meeting point b steps into a loop of length c: slow walked a + b, fast walked 2(a + b), so a + b = k*c and therefore a = k*c - b, meaning a steps from the meeting point lands exactly on the entrance. Reset one pointer to head, advance both one step at a time, and they collide on the cycle start.",
+    "intuition": "Phase 1 detects the loop with the classic race. Phase 2 uses the race result as a ruler: the distance from head to the entrance equals the distance from the meeting point to the entrance modulo the loop length, so two walkers at equal speed from those two points meet on the entrance. Identity comparison (is) is essential because values may repeat.",
+    "geometric": "A rho shape: a straight tail of length a that flows into a circle of length c. The hare and tortoise meet somewhere on the circle at a point M. A walker starting at head and a walker starting at M, both moving one step, arrive at the entrance E simultaneously.",
+    "visual": "head -> 3 -> 2 -> 0 -> -4 -+       entrance E = 2\n             ^             |       tail a = 1, loop c = 3\n             +-------------+\n\nphase 1 (slow +1, fast +2):\n  slow: 3  2  0  -4        fast: 3  0  2  -4\n  meet at M = -4  (b = 2 steps past E);  a + b = 3 = c\n\nphase 2 (both +1):   ptr: 3 -> 2      slow: -4 -> 2\n  they meet at 2 -> the entrance",
+    "steps": [
+      "slow = fast = head; while fast and fast.next: advance slow by 1 and fast by 2; stop when slow is fast.",
+      "If the loop ended because fast ran off the list, return None.",
+      "ptr = head; while ptr is not slow: advance ptr and slow by one.",
+      "Return ptr (the cycle entrance)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "two pointers and a constant number of passes"
+    },
+    "pitfalls": [
+      "Comparing nodes by value rather than identity.",
+      "Testing slow is fast before the first move (they start equal).",
+      "Forgetting fast.next may be None when there is no cycle."
+    ],
+    "hints": [
+      "Can a 1-step and a 2-step pointer run forever without meeting if the list loops back on itself?",
+      "Suppose they meet b steps into a loop of length c after a tail of length a. Write slow's and fast's distances and relate them; what does it say about a?",
+      "After the meeting, reset one pointer to head and advance both one step at a time; the node where they meet is the entrance."
+    ],
+    "code": "class Solution:\n    def detectCycle(self, head: Optional[ListNode]) -> Optional[ListNode]:\n        slow = fast = head\n        while fast and fast.next:            # phase 1: race until they meet or fall off\n            slow, fast = slow.next, fast.next.next\n            if slow is fast:\n                break\n        else:\n            return None                      # loop ended without a meeting: no cycle\n\n        ptr = head                           # phase 2: head and meeting point converge on entrance\n        while ptr is not slow:\n            ptr, slow = ptr.next, slow.next\n        return ptr",
+    "related": [
+      "remove_nth_from_end",
+      "find_peak_element",
+      "palindrome_linked_list"
+    ]
+  },
+  {
+    "slug": "reverse_nodes_in_k_group",
+    "title": "Reverse Nodes in k-Group",
+    "leetcode": 25,
+    "difficulty": "Hard",
+    "topic": "linked_list",
+    "pattern": "In-place pointer reversal",
+    "file": "linked_list/reverse_nodes_in_k_group.py",
+    "problem": "Reverse the nodes of a linked list k at a time and return the modified list; a final group with fewer than k nodes stays in original order. Only links may change. Example: 1->2->3->4->5 with k = 2 becomes 2->1->4->3->5; with k = 3 becomes 3->2->1->4->5.",
+    "brute_force": {
+      "approach": "Copy the nodes into an array, reverse each full chunk of k entries inside the array (leaving a partial last chunk alone), then relink next pointers in array order. The array exists only to know whether k nodes remain and to walk a chunk backwards, both of which are achievable on the list itself with a lookahead and a local reversal.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "code": "def brute_force(head: Optional[ListNode], k: int) -> Optional[ListNode]:\n    nodes = []\n    while head:\n        nodes.append(head)\n        head = head.next\n    for i in range(0, len(nodes) - k + 1, k):\n        nodes[i:i + k] = nodes[i:i + k][::-1]\n    for a, b in zip(nodes, nodes[1:]):\n        a.next = b\n    if nodes:\n        nodes[-1].next = None\n    return nodes[0] if nodes else None"
+    },
+    "optimization": "The redundancy is the O(n) buffer. Reversing one block in place is the standard three-pointer reversal stopped after k flips; the only new requirements are knowing in advance that k nodes exist and re-attaching the reversed block to the previous block's tail. Keep group_prev (the node before the block), look ahead k nodes to find kth and stop if it is missing, reverse the block with prev initialised to the node after the block so the new tail already points forward, then set group_prev.next = kth and move group_prev to the old block head, which is now the block's tail.",
+    "intuition": "Each block is a miniature Reverse Linked List. The glue is: before reversing, remember nxt (the node after the block), seed the reversal's prev with nxt so the block's new tail is already connected, and afterwards hook the previous block onto kth (the block's new head). The lookahead for kth is what protects the short tail.",
+    "geometric": "A sliding frame of k nodes. Inside the frame arrows flip; the frame's left neighbour is re-pointed at the frame's new first node, and the frame's new last node already points at the right neighbour. Then the frame jumps k nodes right.",
+    "visual": "k = 2\nD -> 1 -> 2 -> 3 -> 4 -> 5\ngp   ^    kth  nxt           lookahead finds kth = 2\n\nD -> 2 -> 1 -> 3 -> 4 -> 5   block reversed, 1.next = nxt\n          gp   ^    kth  nxt gp moves to old head (1)\n\nD -> 2 -> 1 -> 4 -> 3 -> 5   second block done\n                    gp       lookahead for k=2 fails -> stop",
+    "steps": [
+      "dummy = ListNode(0, head); group_prev = dummy.",
+      "Loop: walk kth = group_prev forward k steps; if it becomes None, return dummy.next.",
+      "nxt = kth.next; set prev = nxt, cur = group_prev.next and reverse until cur is nxt.",
+      "tmp = group_prev.next (old head, now the tail); group_prev.next = kth; group_prev = tmp."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "each node is touched twice (lookahead and reversal) with constant pointers"
+    },
+    "pitfalls": [
+      "Reversing the final short block.",
+      "Initialising prev to None instead of nxt, which disconnects the block from the rest.",
+      "Forgetting to advance group_prev to the old block head."
+    ],
+    "hints": [
+      "You already know how to reverse a whole list. What extra information do you need to reverse only the next k nodes and keep the rest attached?",
+      "Before reversing a block, look ahead k nodes to make sure the block is full and remember the node that follows it.",
+      "Use a dummy and group_prev; reverse the block with prev seeded to the node after it; then group_prev.next = kth and group_prev = old block head."
+    ],
+    "code": "class Solution:\n    def reverseKGroup(self, head: Optional[ListNode], k: int) -> Optional[ListNode]:\n        dummy = ListNode(0, head)\n        group_prev = dummy\n        while True:\n            kth = group_prev                 # look ahead: is there a full block of k?\n            for _ in range(k):\n                kth = kth.next\n                if not kth:\n                    return dummy.next\n            nxt = kth.next                   # first node after the block\n\n            prev, cur = nxt, group_prev.next  # reverse the block; its tail must point to nxt\n            while cur is not nxt:\n                cur.next, prev, cur = prev, cur, cur.next\n\n            tmp = group_prev.next            # old block head is the new block tail\n            group_prev.next = kth\n            group_prev = tmp",
+    "related": [
+      "reverse_linked_list",
+      "reorder_list",
+      "remove_nth_from_end"
+    ]
+  },
+  {
+    "slug": "palindrome_linked_list",
+    "title": "Palindrome Linked List",
+    "leetcode": 234,
+    "difficulty": "Easy",
+    "topic": "linked_list",
+    "pattern": "Find middle + reverse second half + interleave",
+    "file": "linked_list/palindrome_linked_list.py",
+    "problem": "Return True if a singly linked list reads the same forwards and backwards. Example: 1->2->2->1 returns True; 1->2 returns False.",
+    "brute_force": {
+      "approach": "Copy the values into an array and check whether it equals its reverse. We materialise the whole sequence only because a singly linked list cannot be walked backwards, but only the second half needs backward access and that can be arranged by reversing it in place.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "code": "def brute_force(head: Optional[ListNode]) -> bool:\n    vals = []\n    while head:\n        vals.append(head.val)\n        head = head.next\n    return vals == vals[::-1]"
+    },
+    "optimization": "The redundancy is O(n) memory for backward access. A palindrome check compares position i with position n - 1 - i, i.e. the first half forward against the second half backward. Reversing the second half in place turns 'second half backward' into an ordinary forward walk. Find the middle with slow/fast pointers, reverse from the middle, and walk both halves in lockstep comparing values; the loop is bounded by the shorter (reversed) half so an odd middle element is harmlessly ignored.",
+    "intuition": "Fold the list at its midpoint. After folding (reversing the back half), a palindrome has its two halves lying on top of each other with equal values at every position. The slow/fast walk puts slow on the middle (or right-middle) node; reversing from slow produces a half that is never longer than the front half, so iterating while second is not None compares exactly the pairs that matter.",
+    "geometric": "A strip of paper folded in half: the right half flips over onto the left. Two pens, one on each layer, move right together and must see the same symbol at every step.",
+    "visual": "1 -> 2 -> 3 -> 2 -> 1           slow stops on 3\n\n1 -> 2 -> 3   <- 2 <- 1         reverse from 3: 1 -> 2 -> 3\nfirst                second\n\ncompare: first 1 2 (3)\n         second 1 2  3     all equal while second -> True",
+    "steps": [
+      "slow = fast = head; while fast and fast.next: slow = slow.next, fast = fast.next.next.",
+      "Reverse the list starting at slow; call the reversed head second.",
+      "first = head; while second: if first.val != second.val return False; advance both.",
+      "Return True."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "one pass to find the middle, one to reverse, one to compare"
+    },
+    "pitfalls": [
+      "Bounding the comparison by first instead of second (first half may be longer for odd n).",
+      "Mutating the input without restoring it if the interviewer requires non-destructive behaviour.",
+      "Off-by-one in the middle finder."
+    ],
+    "hints": [
+      "Comparing from both ends is easy on an array. What stops you from doing it on a singly linked list?",
+      "You only need to walk the second half backwards. Find the middle, then reverse from there.",
+      "Walk the front half and the reversed back half together while the back half has nodes; any mismatch means False."
+    ],
+    "code": "class Solution:\n    def isPalindrome(self, head: Optional[ListNode]) -> bool:\n        slow = fast = head                   # 1) slow lands on the middle (or right-middle)\n        while fast and fast.next:\n            slow, fast = slow.next, fast.next.next\n\n        prev = None                          # 2) reverse from the middle onwards\n        while slow:\n            slow.next, prev, slow = prev, slow, slow.next\n\n        first, second = head, prev           # 3) compare first half with reversed second half\n        while second:                        # second half is the shorter (or equal) one\n            if first.val != second.val:\n                return False\n            first, second = first.next, second.next\n        return True",
+    "related": [
+      "reverse_linked_list",
+      "reorder_list",
+      "linked_list_cycle_ii"
+    ]
+  },
+  {
+    "slug": "maximum_subarray",
+    "title": "Maximum Subarray",
+    "leetcode": 53,
+    "difficulty": "Medium",
+    "topic": "greedy",
+    "pattern": "Greedy running sum (Kadane)",
+    "file": "greedy/maximum_subarray.py",
+    "problem": "Given an integer array nums, return the largest sum of any contiguous non-empty subarray. Example: nums = [-2,1,-3,4,-1,2,1,-5,4] returns 6, from the subarray [4,-1,2,1].",
+    "brute_force": {
+      "approach": "For every start index i, extend an end index j to the right while accumulating the running sum and track the best sum seen. For a fixed end j we recompute 'best sum ending at j' from every possible start, even though a negative prefix hurts every j that includes it.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int]) -> int:\n    best = nums[0]\n    for i in range(len(nums)):\n        total = 0\n        for j in range(i, len(nums)):\n            total += nums[j]\n            best = max(best, total)\n    return best"
+    },
+    "optimization": "The redundancy is reconsidering all starts for every end. The best subarray ending at j either extends the best subarray ending at j - 1 or starts fresh at j, and extending only pays off when the carried sum is positive. So a single running sum cur suffices: cur = max(x, cur + x). In greedy terms, whenever the running sum goes negative, drop it and restart, because a negative prefix can never help a later subarray. One pass, two scalars.",
+    "intuition": "Walk left to right adding each number to a running total. A negative running total is dead weight: any subarray that keeps it would be better off without it, so reset to the current element. Record the maximum total seen at any moment. Initialising both cur and best to nums[0] makes all-negative arrays work without special cases.",
+    "geometric": "Plot the running sum as a path. Each time the path dips below zero, cut it and start a new path from the x-axis at the next element. The answer is the highest point reached by any path segment.",
+    "visual": "nums:  -2   1  -3   4  -1   2   1  -5   4\ncur:   -2   1  -2   4   3   5   6   1   5\n            ^restart     ^restart   ^ best = 6\nbest:  -2   1   1   4   4   5   6   6   6\n\nchosen subarray:   [ 4  -1   2   1 ]  sum = 6",
+    "steps": [
+      "cur = best = nums[0].",
+      "For each x in nums[1:]: cur = max(x, cur + x).",
+      "best = max(best, cur).",
+      "Return best."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "a single pass maintaining two scalars"
+    },
+    "pitfalls": [
+      "Initialising best to 0, which fails on all-negative arrays.",
+      "Resetting cur to 0 instead of to the current element.",
+      "Returning an empty-subarray answer when the problem requires non-empty."
+    ],
+    "hints": [
+      "If the sum of everything you have taken so far is negative, is it ever worth carrying it into the next element?",
+      "Keep one running sum; when it would be smaller than the current element alone, start over at the current element.",
+      "cur = max(x, cur + x), best = max(best, cur), both initialised to nums[0]."
+    ],
+    "code": "class Solution:\n    def maxSubArray(self, nums: List[int]) -> int:\n        cur = best = nums[0]\n        for x in nums[1:]:\n            cur = max(x, cur + x)            # a negative running sum is dead weight: restart at x\n            best = max(best, cur)\n        return best",
+    "related": [
+      "gas_station",
+      "jump_game"
+    ]
+  },
+  {
+    "slug": "jump_game",
+    "title": "Jump Game",
+    "leetcode": 55,
+    "difficulty": "Medium",
+    "topic": "greedy",
+    "pattern": "Greedy reach (furthest reachable index)",
+    "file": "greedy/jump_game.py",
+    "problem": "You start at index 0 and nums[i] is the maximum jump length from i. Return True if you can reach the last index. Example: nums = [2,3,1,1,4] returns True; nums = [3,2,1,0,4] returns False because every path lands on index 3, which has jump 0.",
+    "brute_force": {
+      "approach": "DFS or BFS over indices: from i try every jump 1..nums[i] and recurse, succeeding if any path reaches the end. Many different paths land on the same index and re-explore it, although whether the end is reachable from index i does not depend on how we got there.",
+      "time": "O(2^n)",
+      "space": "O(n)",
+      "code": "def brute_force(nums: List[int]) -> bool:\n    n = len(nums)\n\n    def dfs(i: int) -> bool:\n        if i >= n - 1:\n            return True\n        return any(dfs(i + step) for step in range(1, nums[i] + 1))\n\n    return dfs(0)"
+    },
+    "optimization": "The redundancy is exploring individual paths. The set of indices reachable from 0 is always a prefix [0, reach], since reaching i implies reaching every earlier index with a shorter jump. The whole search state therefore collapses to one integer. Scan left to right: if i > reach we are stuck; otherwise reach = max(reach, i + nums[i]). The end is reachable iff the scan completes (reach always covers the next index).",
+    "intuition": "Track how far you could possibly get so far. Each index you can stand on pushes the frontier forward by its jump length. If you arrive at an index beyond the frontier you never actually got there. The check must happen before using nums[i], otherwise an unreachable index would contribute its jump.",
+    "geometric": "A number line with a shaded prefix [0..reach] that only grows. The scan pointer i moves right inside the shade; each stop extends the shade to max(reach, i + nums[i]). Failure is i stepping out of the shade; success is the shade covering n - 1.",
+    "visual": "nums:  [ 2, 3, 1, 1, 4 ]        nums:  [ 3, 2, 1, 0, 4 ]\ni=0  reach=2  ###..            i=0  reach=3  ####.\ni=1  reach=4  #####            i=1  reach=3  ####.\ni=2  reach=4  #####            i=2  reach=3  ####.\ni=3  reach=4  #####            i=3  reach=3  ####.   jump 0\ni=4  ok -> True                i=4 > reach  -> False",
+    "steps": [
+      "reach = 0.",
+      "For each index i with jump nums[i]: if i > reach return False.",
+      "reach = max(reach, i + nums[i]).",
+      "Return True once the loop finishes."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "one scan with a single integer of state"
+    },
+    "pitfalls": [
+      "Updating reach before checking i > reach lets you jump from an unreachable index.",
+      "Overthinking it as a graph search when the reachable set is always a prefix."
+    ],
+    "hints": [
+      "If you can reach index 5, can you reach index 4? What shape does the set of reachable indices have?",
+      "Keep only the furthest reachable index. What happens when your scan pointer passes it?",
+      "Scan i from 0: fail if i > reach, else reach = max(reach, i + nums[i]); succeed if the scan completes."
+    ],
+    "code": "class Solution:\n    def canJump(self, nums: List[int]) -> bool:\n        reach = 0                            # furthest index reachable so far\n        for i, jump in enumerate(nums):\n            if i > reach:                    # standing beyond the frontier: never got here\n                return False\n            reach = max(reach, i + jump)\n        return True",
+    "related": [
+      "jump_game_ii",
+      "gas_station",
+      "maximum_subarray"
+    ]
+  },
+  {
+    "slug": "jump_game_ii",
+    "title": "Jump Game II",
+    "leetcode": 45,
+    "difficulty": "Medium",
+    "topic": "greedy",
+    "pattern": "Greedy reach (furthest reachable index)",
+    "file": "greedy/jump_game_ii.py",
+    "problem": "Same setup as Jump Game, but the last index is guaranteed reachable; return the minimum number of jumps to get there. Example: nums = [2,3,1,1,4] returns 2 (jump 0 -> 1 -> 4).",
+    "brute_force": {
+      "approach": "Breadth-first search over indices, one jump per level, enqueuing every landing position individually. Positions reachable in exactly j jumps form a contiguous interval, so enqueuing them one by one wastes work; only the interval's right end matters.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(nums: List[int]) -> int:\n    n = len(nums)\n    dist = [-1] * n                          # BFS, enqueue every landing spot individually\n    dist[0] = 0\n    queue = [0]\n    for i in queue:\n        if i == n - 1:\n            return dist[i]\n        for j in range(i + 1, min(n, i + nums[i] + 1)):\n            if dist[j] == -1:\n                dist[j] = dist[i] + 1\n                queue.append(j)\n    return dist[n - 1]"
+    },
+    "optimization": "The redundancy is tracking individual positions per BFS level. The positions reachable with exactly j jumps form a window [lo, hi], and the next window is [hi + 1, max(i + nums[i] for i in [lo, hi])]. So BFS collapses to two integers: cur_end (end of the current level) and farthest (max reach seen while scanning the level). When the scan index reaches cur_end we must take another jump: jumps += 1 and cur_end = farthest. Scanning stops at n - 2 because arriving at the last index needs no further jump.",
+    "intuition": "This is BFS where every level is an interval. Walk through the current interval collecting the furthest reach; when you step off its right edge you have spent one more jump and the next interval extends to that furthest reach. The last index is excluded from the scan so landing exactly on it does not count a spurious jump.",
+    "geometric": "Nested brackets on a number line: level 0 is [0], level 1 is everything reachable in one hop, level 2 everything reachable in two. Each level's right edge is the max of i + nums[i] over the previous level. Count how many levels until the last index is inside one.",
+    "visual": "nums:     [ 2, 3, 1, 1, 4 ]\nindex:      0  1  2  3  4\n\nlevel 0:   [0]            farthest = 0+2 = 2\nlevel 1:      [1  2]      farthest = max(1+3, 2+1) = 4\nlevel 2:            [3  4] index 4 reached\n\ni=0: i==cur_end(0) -> jumps=1, cur_end=2\ni=2: i==cur_end(2) -> jumps=2, cur_end=4   -> answer 2",
+    "steps": [
+      "jumps = cur_end = farthest = 0.",
+      "For i in range(n - 1): farthest = max(farthest, i + nums[i]).",
+      "If i == cur_end: jumps += 1; cur_end = farthest.",
+      "Return jumps."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "a single scan maintaining three integers"
+    },
+    "pitfalls": [
+      "Iterating through the last index, which can count one extra jump.",
+      "Updating cur_end before farthest has been refreshed for the current index.",
+      "Forgetting n == 1 should return 0."
+    ],
+    "hints": [
+      "Think of BFS by number of jumps. What does the set of indices reachable in exactly j jumps look like?",
+      "Since each level is a contiguous interval, you only need its right end and the furthest reach seen inside it.",
+      "Scan i up to n - 2; track farthest; when i hits cur_end, increment jumps and set cur_end = farthest."
+    ],
+    "code": "class Solution:\n    def jump(self, nums: List[int]) -> int:\n        jumps = cur_end = farthest = 0\n        for i in range(len(nums) - 1):       # no need to jump from the last index\n            farthest = max(farthest, i + nums[i])\n            if i == cur_end:                 # end of this BFS level: must jump again\n                jumps += 1\n                cur_end = farthest\n        return jumps",
+    "related": [
+      "jump_game",
+      "gas_station"
+    ]
+  },
+  {
+    "slug": "gas_station",
+    "title": "Gas Station",
+    "leetcode": 134,
+    "difficulty": "Medium",
+    "topic": "greedy",
+    "pattern": "Greedy running sum with restart",
+    "file": "greedy/gas_station.py",
+    "problem": "There are n gas stations on a circle; gas[i] is the fuel at station i and cost[i] the fuel needed to drive to station i + 1. Starting with an empty tank, return the unique starting index from which you can complete a full loop, or -1 if none exists. Example: gas = [1,2,3,4,5], cost = [3,4,5,1,2] returns 3.",
+    "brute_force": {
+      "approach": "Try every start s: simulate the loop adding gas[i] - cost[i] at each station and fail if the tank goes negative. When the simulation from s fails at station f, we restart from s + 1 although every start in (s, f] is also doomed, since each reaches f with less fuel than s did.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(gas: List[int], cost: List[int]) -> int:\n    n = len(gas)\n    for s in range(n):\n        tank = 0\n        for k in range(n):\n            i = (s + k) % n\n            tank += gas[i] - cost[i]\n            if tank < 0:\n                break\n        else:\n            return s\n    return -1"
+    },
+    "optimization": "The redundancy is re-simulating starts that are provably hopeless. If starting at s the tank first goes negative after station f, then no start in s + 1..f works either: the tank at any intermediate station was >= 0 when arriving from s, so starting there with 0 fuel is no better. Jump the candidate start to f + 1 in one scan. A solution exists iff sum(gas) >= sum(cost), and because the problem guarantees uniqueness the single surviving candidate is the answer, so no second verification lap is needed.",
+    "intuition": "Drive with a running tank. Whenever you run dry, none of the stations since your last restart can be the start, so restart at the next station with an empty tank. Keep a global total of surplus; if it is negative no start works, otherwise the last restart point is the answer. The argument is identical in spirit to Kadane: a negative prefix is dead weight.",
+    "geometric": "Plot the cumulative gas - cost around the circle. The valid start is the station right after the global minimum of that curve: beginning there, the curve never dips below its starting level. The greedy restart finds exactly that point in one pass.",
+    "visual": "gas:   1   2   3   4   5\ncost:  3   4   5   1   2\ndiff: -2  -2  -2   3   3        total = 0 >= 0\n\ntank: -2 | -2 | -2 |  3   6     '|' tank<0 -> restart next\nstart: 0    1    2    3         last restart = 3\n\ncumulative from 3: 3, 6, 4, 2, 0  (never negative) -> 3",
+    "steps": [
+      "total = tank = start = 0.",
+      "For each i: diff = gas[i] - cost[i]; total += diff; tank += diff.",
+      "If tank < 0: start = i + 1; tank = 0.",
+      "Return start if total >= 0 else -1."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "a single pass with three integers"
+    },
+    "pitfalls": [
+      "Adding a second verification lap that is unnecessary given the uniqueness guarantee.",
+      "Returning start when total < 0.",
+      "Restarting at i instead of i + 1 after running dry."
+    ],
+    "hints": [
+      "If you start at s and run dry at station f, could any station between s and f have been a better start?",
+      "Carry a running tank; when it goes negative, restart at the next station. Separately track the total surplus around the whole circle.",
+      "One pass: restart whenever tank < 0; answer is the last restart point if total >= 0 else -1."
+    ],
+    "code": "class Solution:\n    def canCompleteCircuit(self, gas: List[int], cost: List[int]) -> int:\n        total = tank = start = 0\n        for i in range(len(gas)):\n            diff = gas[i] - cost[i]\n            total += diff\n            tank += diff\n            if tank < 0:                     # every start in [start, i] is doomed\n                start, tank = i + 1, 0\n        return start if total >= 0 else -1",
+    "related": [
+      "maximum_subarray",
+      "jump_game",
+      "partition_labels"
+    ]
+  },
+  {
+    "slug": "partition_labels",
+    "title": "Partition Labels",
+    "leetcode": 763,
+    "difficulty": "Medium",
+    "topic": "greedy",
+    "pattern": "Greedy interval merging by last occurrence",
+    "file": "greedy/partition_labels.py",
+    "problem": "Partition string s into as many parts as possible so that each letter appears in at most one part, and return the part sizes in order. Example: s = \"ababcbacadefegdehijhklij\" returns [9,7,8] for parts \"ababcbaca\", \"defegde\", \"hijhklij\".",
+    "brute_force": {
+      "approach": "Grow the current part one character at a time; after each extension, scan the rest of the string to check whether any letter of the current part appears later, and cut when none does. The suffix is rescanned at every position although 'where does this letter last appear?' is a fixed fact that could be computed once.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(s: str) -> List[int]:\n    sizes, start = [], 0\n    for i in range(len(s)):\n        part = set(s[start:i + 1])\n        if not any(ch in part for ch in s[i + 1:]):   # rescan the suffix every step\n            sizes.append(i - start + 1)\n            start = i + 1\n    return sizes"
+    },
+    "optimization": "The redundancy is repeated suffix scans. A part starting at i cannot end before last[c] for every letter c inside it, where last[c] is the final index of c in s. Each letter therefore defines an interval [first, last], and the parts are exactly the merged unions of overlapping intervals. Precompute last[] in one pass, then sweep with end = max(end, last[s[i]]) and cut whenever i == end. Two linear passes with a 26-entry map.",
+    "intuition": "Every letter owns a span from its first to its last occurrence, and a part must swallow the entire span of every letter it touches. Sweep left to right, pushing the required end rightwards whenever a letter with a later last occurrence appears. When the sweep index catches up with the required end, nothing inside points further, so cut there.",
+    "geometric": "Draw each letter's span as a horizontal bar above the string. Overlapping bars chain into one block; a cut goes wherever no bar crosses the boundary.",
+    "visual": "s:   a b a b c b a c a | d e f e g d e | h i j h k l i j\nidx: 0 1 2 3 4 5 6 7 8   9 ...      15   16 ...        23\na:   [---------------]\nb:     [-------]\nc:         [-----]\nd:                       [---------]\ne:                         [-------]\n\nsweep: end=8 at i=0 ... i==8 -> size 9\n       end=15 by i=9 ... i==15 -> size 7; then 8",
+    "steps": [
+      "last = {c: i for i, c in enumerate(s)}.",
+      "start = end = 0; for each i, c: end = max(end, last[c]).",
+      "If i == end: append end - start + 1 to sizes; start = i + 1.",
+      "Return sizes."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "two passes; the map holds at most 26 keys"
+    },
+    "pitfalls": [
+      "Testing i == end before updating end with the current letter.",
+      "Forgetting to move start after a cut.",
+      "Returning cut indices instead of part sizes."
+    ],
+    "hints": [
+      "If a part contains letter c, where is the earliest it could possibly end?",
+      "Precompute each letter's last index. As you scan, keep the furthest 'must reach' index among letters seen in the current part.",
+      "Sweep with end = max(end, last[c]); when i == end, record the size and start a new part at i + 1."
+    ],
+    "code": "class Solution:\n    def partitionLabels(self, s: str) -> List[int]:\n        last = {c: i for i, c in enumerate(s)}   # final index of every letter\n        sizes = []\n        start = end = 0\n        for i, c in enumerate(s):\n            end = max(end, last[c])          # the part must stretch to cover c's last occurrence\n            if i == end:                     # nothing inside points further right: cut here\n                sizes.append(end - start + 1)\n                start = i + 1\n        return sizes",
+    "related": [
+      "gas_station",
+      "jump_game_ii"
+    ]
+  }
+]

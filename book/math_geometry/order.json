@@ -1,0 +1,12 @@
+{"topic": "math_geometry", "title": "Math and Geometry", "order": [
+  {"slug": "rotate_image", "why_here": "Grid moves as coordinate formulas; a rotation is two in-place reflections."},
+  {"slug": "spiral_matrix", "why_here": "Same board walked layer by layer; four bounds replace a visited grid."},
+  {"slug": "set_matrix_zeroes", "why_here": "The grid's own border becomes flag storage; update order protects the flags."},
+  {"slug": "permutation_sequence", "why_here": "Blocks of (n-1)! and the factorial number system: skip blocks instead of listing."},
+  {"slug": "kth_smallest_in_lexicographical_order", "why_here": "Same block skipping on a 10-ary tree whose block sizes must be computed and clipped to n."},
+  {"slug": "number_of_digit_one", "why_here": "Count by digit position instead of by number using the high/cur/low split."},
+  {"slug": "poor_pigs", "why_here": "Counting outcomes gives a lower bound, and a base-(T+1) labelling meets it."},
+  {"slug": "max_points_on_a_line", "why_here": "Exact geometry starts: slopes as gcd-reduced integer pairs grouped by an anchor."},
+  {"slug": "perfect_rectangle", "why_here": "Integer invariants (area and corner parity) certify a whole tiling in one pass."},
+  {"slug": "erect_the_fence", "why_here": "Capstone: cross-product sign drives a stack sweep that builds the convex hull."}
+]}

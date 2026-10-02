@@ -1,0 +1,10 @@
+{"topic": "dynamic_programming", "title": "Dynamic Programming (outside the brief)", "order": [
+ {"slug": "min_cost_climbing_stairs", "why_here": "The cleanest Fibonacci-shaped table: learn state, recurrence, base, order and the two-variable roll."},
+ {"slug": "house_robber", "why_here": "Same shape, but each cell is a rob-or-skip decision and greedy visibly fails."},
+ {"slug": "decode_ways", "why_here": "Counting instead of optimising, with validity guards that switch the two transitions on and off."},
+ {"slug": "coin_change", "why_here": "The state becomes an amount and every coin is tried as the last step: unbounded knapsack."},
+ {"slug": "partition_equal_subset_sum", "why_here": "Each item used once (0/1 knapsack): a yes/no row over sums, squeezed into a bitset."},
+ {"slug": "target_sum", "why_here": "Same layered sums, but counting ways and allowing negatives with a sparse dictionary."},
+ {"slug": "longest_common_subsequence", "why_here": "The first true 2-D table over two prefixes, with a one-row space squeeze."},
+ {"slug": "longest_increasing_subsequence", "why_here": "An O(n^2) DP beaten by patience sorting: a smarter structure replaces the table."}
+]}

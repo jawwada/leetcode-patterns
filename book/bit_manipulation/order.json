@@ -1,0 +1,11 @@
+{"topic": "bit_manipulation", "title": "Bit Manipulation", "order": [
+ {"slug": "number_of_1_bits", "why_here": "The base case: read a number as columns, and delete the lowest 1 with n & (n - 1) so work scales with the answer."},
+ {"slug": "counting_bits", "why_here": "Counts for 0..n reuse each other: popcount(i) = popcount(i >> 1) + (i & 1), a DP over shifts."},
+ {"slug": "reverse_bits", "why_here": "Moves bits between columns with shifts and shows why a fixed 32-bit width must be imposed in Python."},
+ {"slug": "single_number", "why_here": "Introduces XOR as pair cancellation and column parity: equal values vanish."},
+ {"slug": "missing_number", "why_here": "Reuses Single Number's trick by manufacturing the pairs yourself: indices against values."},
+ {"slug": "integer_replacement", "why_here": "The low two bits decide a greedy move; a +1 carry clears a run of 1s in one step."},
+ {"slug": "number_of_valid_words_for_each_puzzle", "why_here": "Words become 26-bit sets; submask enumeration from the small (puzzle) side flips the loop."},
+ {"slug": "find_longest_awesome_substring", "why_here": "XOR as ten parity counters plus prefix masks and first-seen positions, with 11 partner masks per step."},
+ {"slug": "maximum_xor_with_an_element_from_array", "why_here": "Closes the chapter: binary trie with top-down greedy for max XOR, plus offline sorting so the trie only grows."}
+]}

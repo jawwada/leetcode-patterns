@@ -1,0 +1,887 @@
+[
+  {
+    "slug": "lru_cache",
+    "title": "LRU Cache",
+    "leetcode": 146,
+    "difficulty": "Medium",
+    "topic": "design",
+    "pattern": "Hash map + doubly linked list",
+    "file": "design/lru_cache.py",
+    "problem": "Design a fixed-capacity cache with get(key) -> value (or -1) and put(key, value), both in O(1) average time. When a put exceeds capacity, evict the least recently used key, i.e. the one whose last get or put is oldest. Example: capacity 2; put(1,1), put(2,2), get(1) -> 1, put(3,3) evicts key 2, get(2) -> -1, get(3) -> 3.",
+    "brute_force": {
+      "approach": "Keep a plain list of (key, value) ordered most-recent first. get scans the list for the key, then pops it and re-inserts it at index 0; put does the same scan and pops the last element on overflow. The wasted work is twofold: a full linear scan to find a key we could jump to directly, and shifting every other element just to move one item to the front.",
+      "time": "O(n) per operation",
+      "space": "O(capacity)",
+      "code": "class BruteForce:\n    \"\"\"List of (key, value) ordered most-recent first; every op scans and shifts, O(n).\"\"\"\n\n    def __init__(self, capacity: int):\n        self.cap = capacity\n        self.items = []\n\n    def get(self, key: int) -> int:\n        for i, (k, v) in enumerate(self.items):\n            if k == key:\n                self.items.insert(0, self.items.pop(i))   # O(n) scan + O(n) shift\n                return v\n        return -1\n\n    def put(self, key: int, value: int) -> None:\n        for i, (k, _) in enumerate(self.items):\n            if k == key:\n                self.items.pop(i)\n                break\n        self.items.insert(0, (key, value))\n        if len(self.items) > self.cap:\n            self.items.pop()"
+    },
+    "optimization": "There are two separate costs: locating the key and promoting it to most-recent. A hash map removes the first (key -> node in O(1)). The second is O(n) only because an array shifts on removal; a doubly linked list unlinks a node in O(1) given a pointer to it, and the hash map hands us exactly that pointer. Per-operation budget: one dict lookup plus a constant number of pointer rewrites, so O(1) time; space is one node per live key. The tracker must remember key, value and both neighbour pointers per entry; it can forget timestamps and access counters entirely because the list ORDER is the recency information.",
+    "intuition": "The list's head side means 'just used' and its tail side means 'about to be evicted'. Every get or put unlinks the node from wherever it sits and re-links it right after the head sentinel. Eviction is 'unlink tail.prev and delete its key from the map', which is why each node must carry its key. Two sentinel nodes mean no None checks: every real node always has a prev and a next. The dict and the list stay in lockstep: a key is in one iff it is in the other.",
+    "geometric": "Picture a conveyor belt. Items enter at the left (head), drift right as other items are used, and fall off the right end (tail) when the belt is full. A get lifts an item from the middle of the belt and drops it back on the left. The hash map is the index card that says where on the belt each key currently sits, so you never walk the belt.",
+    "visual": "cap=2: put(1,1) put(2,2) get(1) put(3,3)\n\nmap: {1: n1, 2: n2}        after put(1,1), put(2,2)\nhead <-> [2|2] <-> [1|1] <-> tail\n         MRU         LRU\n\nget(1): unlink n1, push front\nhead <-> [1|1] <-> [2|2] <-> tail       returns 1\n\nput(3,3): size 3 > cap 2 -> victim = tail.prev = n2\nhead <-> [3|3] <-> [1|1] <-> tail       del map[2]\nmap: {1: n1, 3: n3}",
+    "steps": [
+      "Node(key, val, prev, next); create sentinels head <-> tail so no None checks are needed.",
+      "get: if key not in map return -1; unlink the node, push it to the front, return node.val.",
+      "put existing key: update val, unlink the node (it will be pushed to the front).",
+      "put new key: create node, store in map; if len(map) > capacity, unlink tail.prev and delete its key from the map.",
+      "Push the new or updated node to the front (right after head)."
+    ],
+    "complexity": {
+      "time": "O(1) per operation",
+      "space": "O(capacity)",
+      "why": "One hash lookup plus a constant number of pointer rewrites; one node per live key."
+    },
+    "pitfalls": [
+      "Not storing the key inside the node, so eviction cannot delete the map entry.",
+      "Using a singly linked list: no O(1) unlink of an arbitrary node.",
+      "Updating the value on put without also refreshing recency.",
+      "Evicting before inserting when the key already exists (should not evict at all)."
+    ],
+    "hints": [
+      "You need O(1) lookup by key and O(1) 'move this entry to most-recent'. Which structure does each well?",
+      "A dict gives the lookup. For ordering, a doubly linked list removes a node in O(1) if you already hold the node; the dict can hold the node.",
+      "Keep sentinels head/tail; every access unlinks the node and re-links it after head; evict tail.prev and delete its key from the dict."
+    ],
+    "code": "class Node:\n    __slots__ = (\"key\", \"val\", \"prev\", \"next\")\n\n    def __init__(self, key: int = 0, val: int = 0):\n        self.key, self.val = key, val\n        self.prev = self.next = None\n\n\nclass LRUCache:\n    def __init__(self, capacity: int):\n        self.cap = capacity\n        self.map = {}                                 # key -> Node\n        self.head, self.tail = Node(), Node()         # sentinels: head <-> ... <-> tail\n        self.head.next, self.tail.prev = self.tail, self.head\n\n    def _unlink(self, node: Node) -> None:\n        node.prev.next, node.next.prev = node.next, node.prev\n\n    def _push_front(self, node: Node) -> None:\n        node.prev, node.next = self.head, self.head.next\n        self.head.next.prev = node\n        self.head.next = node\n\n    def get(self, key: int) -> int:\n        if key not in self.map:\n            return -1\n        node = self.map[key]\n        self._unlink(node)\n        self._push_front(node)\n        return node.val\n\n    def put(self, key: int, value: int) -> None:\n        if key in self.map:\n            node = self.map[key]\n            node.val = value\n            self._unlink(node)\n        else:\n            node = Node(key, value)\n            self.map[key] = node\n            if len(self.map) > self.cap:\n                victim = self.tail.prev           # least recently used\n                self._unlink(victim)\n                del self.map[victim.key]\n        self._push_front(node)",
+    "related": [
+      "lfu_cache",
+      "design_browser_history",
+      "insert_delete_getrandom_o1"
+    ]
+  },
+  {
+    "slug": "lfu_cache",
+    "title": "LFU Cache",
+    "leetcode": 460,
+    "difficulty": "Hard",
+    "topic": "design",
+    "pattern": "Frequency buckets of ordered dicts + min-frequency pointer",
+    "file": "design/lfu_cache.py",
+    "problem": "Design a fixed-capacity cache with get(key) and put(key, value) in O(1). Each get or put of a key increments its use count. On overflow evict the key with the smallest use count, breaking ties by evicting the least recently used among them. Example: capacity 2; put(1,1), put(2,2), get(1) -> 1, put(3,3) evicts 2 (count 1 < count 2), get(2) -> -1, put(4,4) evicts 1 (1 and 3 both have count 2; 1 is older).",
+    "brute_force": {
+      "approach": "Keep dict key -> [value, freq, last_tick]. get and put bump the frequency and stamp the current tick in O(1), but on overflow the eviction scans every key for the minimum (freq, tick) pair. The wasted work is recomputing 'who is least frequent and oldest' from scratch on every eviction although only one key's count changed since the last time.",
+      "time": "O(1) get, O(n) evicting put",
+      "space": "O(capacity)",
+      "code": "class BruteForce:\n    \"\"\"dict key -> [value, freq, last_tick]; eviction scans all keys for min (freq, tick).\"\"\"\n\n    def __init__(self, capacity: int):\n        self.cap = capacity\n        self.data = {}\n        self.tick = 0\n\n    def get(self, key: int) -> int:\n        if key not in self.data:\n            return -1\n        self.tick += 1\n        self.data[key][1] += 1\n        self.data[key][2] = self.tick\n        return self.data[key][0]\n\n    def put(self, key: int, value: int) -> None:\n        if self.cap == 0:\n            return\n        self.tick += 1\n        if key in self.data:\n            self.data[key][0] = value\n            self.data[key][1] += 1\n            self.data[key][2] = self.tick\n            return\n        if len(self.data) == self.cap:\n            victim = min(self.data, key=lambda k: (self.data[k][1], self.data[k][2]))   # O(n)\n            del self.data[victim]\n        self.data[key] = [value, 1, self.tick]"
+    },
+    "optimization": "The scan answers two nested questions: what is the minimum frequency, and who is oldest at that frequency. Bucket the keys by frequency, and inside each bucket keep LRU order with an OrderedDict (pop a key and popitem(last=False) are both O(1)), which answers the second question instantly. For the first, a frequency only ever increases by one, so the minimum can change in exactly two predictable ways: a new key resets it to 1, and when the min bucket empties the new minimum is exactly min+1 because the key we just moved landed there. One integer min_freq tracks it. Budget: every operation is a constant number of dict and OrderedDict operations. The tracker remembers key -> freq and freq -> ordered keys; it forgets timestamps because order within a bucket is the tie-break.",
+    "intuition": "Think of frequencies as floors of a building and each floor as a queue. Touching a key moves it up one floor to the back of that floor's queue. Eviction removes the front of the lowest non-empty floor. The lowest floor can only vanish when its last occupant moves up one floor, so min_freq += 1 is always correct at that moment, and a fresh key always lands on floor 1, so min_freq = 1 after any insertion.",
+    "geometric": "Draw buckets left to right by frequency, each a horizontal queue with the oldest key on the left. Eviction pops the leftmost item of the leftmost non-empty bucket. A touch lifts one item one bucket to the right and appends it at that bucket's right end. min_freq is a marker that points at the leftmost non-empty bucket and only ever slides right by one or snaps back to 1.",
+    "visual": "cap=2: put(1,1) put(2,2) get(1) put(3,3) get(3) put(4,4)\nfreq 1: [1, 2]                  min_freq=1\n\nget(1): lift 1 to freq 2\nfreq 1: [2]      freq 2: [1]    min_freq=1\n\nput(3,3): full -> pop front of bucket[min_freq] = 2\nfreq 1: [3]      freq 2: [1]    min_freq=1\n\nget(3): freq 1 empties -> min_freq = 2\nfreq 2: [1, 3]                  min_freq=2\n\nput(4,4): pop front of bucket[2] = 1 (older of tie)\nfreq 1: [4]      freq 2: [3]    min_freq=1",
+    "steps": [
+      "State: freq_of[key], bucket[freq] = OrderedDict(key -> value), min_freq.",
+      "_touch(key): pop from bucket[f]; if that bucket is now empty and f == min_freq, set min_freq = f + 1; insert at the end of bucket[f+1]; freq_of[key] = f + 1.",
+      "get: miss -> -1; hit -> _touch and return the value.",
+      "put existing key: _touch, then overwrite the value in its new bucket.",
+      "put new key at capacity: popitem(last=False) from bucket[min_freq], delete its freq_of entry.",
+      "Insert the new key in bucket[1] and set min_freq = 1."
+    ],
+    "complexity": {
+      "time": "O(1) per operation",
+      "space": "O(capacity)",
+      "why": "Dict and OrderedDict pop/append are O(1); min_freq is maintained, never searched."
+    },
+    "pitfalls": [
+      "Capacity 0: put must be a no-op.",
+      "Forgetting to reset min_freq = 1 on every insertion.",
+      "Inserting before evicting, so the brand-new key becomes the victim.",
+      "Leaving empty buckets around and later reading them as non-empty."
+    ],
+    "hints": [
+      "LRU is a single ordered list. LFU needs an ordered list PER frequency plus a way to find the smallest frequency quickly.",
+      "Use dict freq -> OrderedDict of keys. Frequencies only increase by 1, so think about when the minimum frequency can change.",
+      "Track min_freq: set to 1 on insert; when a touch empties bucket[min_freq], it becomes min_freq + 1. Evict popitem(last=False) from bucket[min_freq]."
+    ],
+    "code": "class LFUCache:\n    def __init__(self, capacity: int):\n        self.cap = capacity\n        self.freq_of = {}                          # key -> use count\n        self.bucket = defaultdict(OrderedDict)     # count -> keys in LRU order (key -> value)\n        self.min_freq = 0\n\n    def _touch(self, key: int) -> int:\n        f = self.freq_of[key]\n        val = self.bucket[f].pop(key)\n        if not self.bucket[f]:\n            del self.bucket[f]\n            if self.min_freq == f:\n                self.min_freq = f + 1              # only place the min can move up\n        self.bucket[f + 1][key] = val\n        self.freq_of[key] = f + 1\n        return val\n\n    def get(self, key: int) -> int:\n        if key not in self.freq_of:\n            return -1\n        return self._touch(key)\n\n    def put(self, key: int, value: int) -> None:\n        if self.cap == 0:\n            return\n        if key in self.freq_of:\n            self._touch(key)\n            self.bucket[self.freq_of[key]][key] = value\n            return\n        if len(self.freq_of) == self.cap:\n            victim, _ = self.bucket[self.min_freq].popitem(last=False)   # oldest of the rarest\n            del self.freq_of[victim]\n            if not self.bucket[self.min_freq]:\n                del self.bucket[self.min_freq]\n        self.bucket[1][key] = value\n        self.freq_of[key] = 1\n        self.min_freq = 1",
+    "related": [
+      "lru_cache",
+      "insert_delete_getrandom_o1"
+    ]
+  },
+  {
+    "slug": "insert_delete_getrandom_o1",
+    "title": "Insert Delete GetRandom O(1)",
+    "leetcode": 380,
+    "difficulty": "Medium",
+    "topic": "design",
+    "pattern": "Array + index map (swap-with-last delete)",
+    "file": "design/insert_delete_getrandom_o1.py",
+    "problem": "Implement RandomizedSet with insert(val) -> bool (False if already present), remove(val) -> bool (False if absent) and getRandom() -> a uniformly random element, each in average O(1). Example: insert(1) True, remove(2) False, insert(2) True, getRandom() in {1, 2}, remove(1) True, insert(2) False, getRandom() == 2.",
+    "brute_force": {
+      "approach": "Keep a plain list. insert scans for a duplicate, remove scans for the value and pops it from the middle, getRandom indexes a random position. The wasted work is the membership scans and the shifting of every element after the removed slot just to keep the list contiguous.",
+      "time": "O(n) insert/remove, O(1) getRandom",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    \"\"\"Plain list; insert/remove scan for membership and pop from the middle, O(n).\"\"\"\n\n    def __init__(self):\n        self.vals = []\n\n    def insert(self, val: int) -> bool:\n        if val in self.vals:                      # O(n) scan\n            return False\n        self.vals.append(val)\n        return True\n\n    def remove(self, val: int) -> bool:\n        if val not in self.vals:\n            return False\n        self.vals.remove(val)                     # O(n) scan + O(n) shift\n        return True\n\n    def getRandom(self) -> int:\n        return random.choice(self.vals)"
+    },
+    "optimization": "getRandom needs a dense array so random.choice is uniform in O(1); membership needs a hash. Use both: vals (list) plus idx (dict val -> position). insert appends and records the index. Removal is the trick: the array must stay contiguous but NOT ordered, so instead of shifting, copy the last element into the hole, update that element's index in the dict, and pop the tail. Budget: every operation is one dict access plus one list append or pop, so O(1); space is one list slot and one dict entry per value. The tracker remembers each value's slot so deletion never searches, and can forget insertion order completely.",
+    "intuition": "An array with no holes is all getRandom asks for. Deleting from the middle is expensive only if you insist on preserving order. Swapping the victim with the last element and popping the end keeps the array dense in O(1), and only one element moved, so only one dict entry changes. Removing the last element itself degenerates to a harmless self-swap.",
+    "geometric": "A row of boxes and a card index. Removing box i: take the card for the last box, re-label it with position i, drop the last box's contents into box i, then saw off the last box. The row shrinks from the right only, and the card index always mirrors the row exactly.",
+    "visual": "vals: [ 5, 8, 2, 9 ]    idx: {5:0, 8:1, 2:2, 9:3}\n           ^ remove(8): i = idx[8] = 1, last = 9\n\nvals: [ 5, 9, 2, 9 ]    idx[9] = 1   (copy last into hole)\n           ^        ^\nvals: [ 5, 9, 2 ]       pop tail; del idx[8]\n                        idx: {5:0, 9:1, 2:2}\n\ngetRandom(): random.choice over the dense array",
+    "steps": [
+      "insert: if val in idx return False; idx[val] = len(vals); vals.append(val); return True.",
+      "remove: if val not in idx return False; i = idx[val]; last = vals[-1].",
+      "vals[i] = last; idx[last] = i (fix the moved element's index BEFORE deleting idx[val]).",
+      "vals.pop(); del idx[val]; return True.",
+      "getRandom: random.choice(vals)."
+    ],
+    "complexity": {
+      "time": "O(1) average per operation",
+      "space": "O(n)",
+      "why": "One dict lookup plus one swap-and-pop on a dense list; random.choice indexes directly."
+    },
+    "pitfalls": [
+      "Removing the last element: update idx[last] before deleting idx[val], or the self-swap corrupts the dict.",
+      "Using a set alone: no O(1) uniform random access.",
+      "Using list.remove (O(n)) or preserving order."
+    ],
+    "hints": [
+      "A set gives O(1) insert/remove but not uniform random access; a list gives random access but O(n) removal. Combine them.",
+      "Store each value's position in a dict. Removing from a list is O(1) only at the end.",
+      "Swap the removed element with the last one, fix the moved element's index in the dict, then pop the tail."
+    ],
+    "code": "class RandomizedSet:\n    def __init__(self):\n        self.vals = []        # dense array for O(1) uniform random choice\n        self.idx = {}         # val -> position in vals\n\n    def insert(self, val: int) -> bool:\n        if val in self.idx:\n            return False\n        self.idx[val] = len(self.vals)\n        self.vals.append(val)\n        return True\n\n    def remove(self, val: int) -> bool:\n        if val not in self.idx:\n            return False\n        i, last = self.idx[val], self.vals[-1]\n        self.vals[i], self.idx[last] = last, i    # fill the hole with the last element\n        self.vals.pop()\n        del self.idx[val]\n        return True\n\n    def getRandom(self) -> int:\n        return random.choice(self.vals)",
+    "related": [
+      "design_hashmap",
+      "lru_cache"
+    ]
+  },
+  {
+    "slug": "design_hashmap",
+    "title": "Design HashMap",
+    "leetcode": 706,
+    "difficulty": "Easy",
+    "topic": "design",
+    "pattern": "Separate chaining with load-factor resizing",
+    "file": "design/design_hashmap.py",
+    "problem": "Implement MyHashMap without built-in hash tables: put(key, value), get(key) -> value or -1, remove(key). Keys and values are non-negative integers up to 10^6. Example: put(1,1), put(2,2), get(1) -> 1, get(3) -> -1, put(2,1), get(2) -> 1, remove(2), get(2) -> -1.",
+    "brute_force": {
+      "approach": "Keep one flat list of [key, value] pairs. put scans for the key (update or append), get scans, remove scans and drops the pair. The wasted work is comparing the target against every stored key, even though a key's own value could tell us where to look.",
+      "time": "O(n) per operation",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    \"\"\"One flat list of [key, value]; every operation scans all pairs, O(n).\"\"\"\n\n    def __init__(self):\n        self.pairs = []\n\n    def put(self, key: int, value: int) -> None:\n        for pair in self.pairs:\n            if pair[0] == key:\n                pair[1] = value\n                return\n        self.pairs.append([key, value])\n\n    def get(self, key: int) -> int:\n        for k, v in self.pairs:\n            if k == key:\n                return v\n        return -1\n\n    def remove(self, key: int) -> None:\n        self.pairs = [p for p in self.pairs if p[0] != key]"
+    },
+    "optimization": "The scan is slow because all keys share one list. Partition them by an address computed from the key, hash(key) % B, so a lookup only scans the few keys sharing that address. With B buckets and n keys the expected chain length is n / B; keep it constant by doubling B when n > 2B and rehashing every pair. Each doubling costs O(n) but happens only after Theta(n) inserts, so the amortised cost per operation is O(1). Budget: one hash, one modulo, one short chain walk per operation; space is the pairs plus B list headers. The tracker remembers only the pairs and the current bucket count; no ordering, no global index.",
+    "intuition": "A hash function turns 'search everything' into 'go straight to shelf k and look at the handful of items there'. Collisions are unavoidable, so each shelf is a short list. Resizing keeps the shelves short as the map grows, which is what makes the average O(1) honest rather than a fixed-size table that silently degrades to O(n).",
+    "geometric": "B shelves in a row. Each key is thrown onto shelf hash(key) % B and lands at the end of that shelf's chain. A get walks only one shelf. Doubling B spreads every chain across twice as many shelves, roughly halving each chain's length.",
+    "visual": "B = 8 buckets after put(1,10) put(2,20) put(9,90) put(17,70)\n\nbucket 0: []\nbucket 1: [1,10] -> [9,90] -> [17,70]  (1,9,17 = 1 mod 8)\nbucket 2: [2,20]\nbucket 3..7: []\n\nget(17): 17 % 8 = 1 -> walk bucket 1: 1? 9? 17! -> 70\nremove(9): walk bucket 1, pop the pair\n\nsize > 2*B  -> B = 16, every pair re-appended by key % 16:\nbucket 1: [1,10] -> [17,70]      bucket 9: [9,90]",
+    "steps": [
+      "buckets = [[] for _ in range(8)]; size = 0.",
+      "put: find the key's bucket; if a pair matches, update it; else append [key, value], size += 1, and resize if size > 2 * len(buckets).",
+      "get: scan the one bucket and return the value, or -1.",
+      "remove: scan the one bucket; pop the matching pair and decrement size.",
+      "resize: allocate 2B empty buckets and re-append every pair at its new address."
+    ],
+    "complexity": {
+      "time": "O(1) average per operation",
+      "space": "O(n + B)",
+      "why": "Chains stay O(1) long thanks to the load factor; resizes are amortised over the inserts that triggered them."
+    },
+    "pitfalls": [
+      "Forgetting to rehash on resize: addresses depend on B.",
+      "Storing tuples instead of lists, so updating a value requires replacing the pair.",
+      "Treating value 0 as missing.",
+      "A fixed-size table with no resizing degrades to O(n) chains under load."
+    ],
+    "hints": [
+      "A single list is O(n) per op. How can a key tell you WHERE in your storage to look?",
+      "Use hash(key) % B to pick one of B short lists; collisions chain inside a bucket.",
+      "Keep the load factor bounded: when size exceeds 2 * B, double B and re-insert every pair."
+    ],
+    "code": "class MyHashMap:\n    def __init__(self):\n        self.size = 0\n        self.buckets = [[] for _ in range(8)]\n\n    def _bucket(self, key: int) -> list:\n        return self.buckets[hash(key) % len(self.buckets)]\n\n    def put(self, key: int, value: int) -> None:\n        b = self._bucket(key)\n        for pair in b:\n            if pair[0] == key:\n                pair[1] = value\n                return\n        b.append([key, value])\n        self.size += 1\n        if self.size > 2 * len(self.buckets):       # load factor > 2: double and rehash\n            self._resize()\n\n    def get(self, key: int) -> int:\n        for k, v in self._bucket(key):\n            if k == key:\n                return v\n        return -1\n\n    def remove(self, key: int) -> None:\n        b = self._bucket(key)\n        for i, (k, _) in enumerate(b):\n            if k == key:\n                b.pop(i)\n                self.size -= 1\n                return\n\n    def _resize(self) -> None:\n        old = self.buckets\n        self.buckets = [[] for _ in range(2 * len(old))]\n        for b in old:\n            for k, v in b:\n                self.buckets[hash(k) % len(self.buckets)].append([k, v])",
+    "related": [
+      "insert_delete_getrandom_o1",
+      "lru_cache"
+    ]
+  },
+  {
+    "slug": "design_hit_counter",
+    "title": "Design Hit Counter",
+    "leetcode": 362,
+    "difficulty": "Medium",
+    "topic": "design",
+    "pattern": "Sliding window queue with running sum",
+    "file": "design/design_hit_counter.py",
+    "problem": "Implement HitCounter: hit(timestamp) records a hit and getHits(timestamp) returns the number of hits in the past 300 seconds, i.e. with time t in (timestamp - 300, timestamp]. Timestamps arrive in non-decreasing order and several hits may share one timestamp. Example: hit(1), hit(2), hit(3), getHits(4) -> 3, hit(300), getHits(300) -> 4, getHits(301) -> 3.",
+    "brute_force": {
+      "approach": "Append every timestamp to a list; getHits(t) scans the whole list counting entries greater than t - 300. The wasted work is re-counting hits already known to be inside the window on every query, and keeping hits older than 300 seconds that can never be counted again.",
+      "time": "O(1) hit, O(n) getHits",
+      "space": "O(n) unbounded",
+      "code": "class BruteForce:\n    \"\"\"Append every timestamp; getHits re-scans the whole history, O(n).\"\"\"\n\n    def __init__(self):\n        self.hits = []\n\n    def hit(self, timestamp: int) -> None:\n        self.hits.append(timestamp)\n\n    def getHits(self, timestamp: int) -> int:\n        return sum(1 for t in self.hits if timestamp - 300 < t <= timestamp)"
+    },
+    "optimization": "Timestamps are non-decreasing, so the list is sorted and the expired entries always form a prefix. That makes a queue sufficient: push new hits at the back, pop expired ones from the front, and keep a running total so getHits never counts. Each hit is enqueued once and dequeued once, so the cost is O(1) amortised per call. To bound memory under bursts, merge hits with the same timestamp into one (timestamp, count) pair, so the queue never exceeds 300 entries. Budget: O(1) amortised time, O(300) space. The tracker must remember only the hits inside the current window; everything older can be forgotten the moment it leaves.",
+    "intuition": "The window is 'the last 300 seconds' and time only moves forward, so a hit that has expired never becomes valid again: evicting it is final. A queue is exactly the structure where you add at one end and remove from the other in arrival order. The running total is the aggregate the query asks for, so maintain it incrementally instead of recomputing.",
+    "geometric": "A conveyor of (timestamp, count) pairs with the oldest at the front. getHits(t) pushes an eviction threshold t - 300 along the belt: every pair at or before it drops off the front. The front marker only advances and the back only grows, so each pair crosses the window exactly once.",
+    "visual": "hit(1) hit(2) hit(3) hit(300) hit(300)\n\nfront -> (1,1) (2,1) (3,1) (300,2) <- back     total = 5\n\ngetHits(300): threshold 300-300 = 0 -> nothing expires -> 5\n\ngetHits(301): threshold 1 -> pop (1,1)\nfront -> (2,1) (3,1) (300,2) <- back           total = 4\n\ngetHits(302): threshold 2 -> pop (2,1)\nfront -> (3,1) (300,2) <- back                 total = 3",
+    "steps": [
+      "window = deque of (timestamp, count); total = 0.",
+      "hit(t): if the back pair has timestamp t, increment its count; else append (t, 1). total += 1.",
+      "_evict(t): while the front timestamp <= t - 300, pop it and subtract its count from total.",
+      "getHits(t): evict, then return total."
+    ],
+    "complexity": {
+      "time": "O(1) amortised per call",
+      "space": "O(min(n, 300))",
+      "why": "Each (timestamp, count) pair is enqueued and dequeued once; merged timestamps bound the queue at 300 pairs."
+    },
+    "pitfalls": [
+      "Window boundary: t - 300 is excluded, t itself is included.",
+      "Forgetting to evict inside getHits when no new hit arrives.",
+      "Unbounded memory when many hits share one timestamp and are not merged."
+    ],
+    "hints": [
+      "Timestamps only increase. Which hits can ever be counted again once they are older than 300 seconds?",
+      "Use a queue: push at the back, pop expired entries from the front, and keep a running count.",
+      "Merge same-timestamp hits into (timestamp, count) pairs so the queue holds at most 300 entries."
+    ],
+    "code": "class HitCounter:\n    def __init__(self):\n        self.window = deque()      # (timestamp, count), oldest at the front\n        self.total = 0             # hits currently inside the 300 s window\n\n    def _evict(self, timestamp: int) -> None:\n        while self.window and self.window[0][0] <= timestamp - 300:\n            self.total -= self.window.popleft()[1]\n\n    def hit(self, timestamp: int) -> None:\n        if self.window and self.window[-1][0] == timestamp:\n            self.window[-1] = (timestamp, self.window[-1][1] + 1)\n        else:\n            self.window.append((timestamp, 1))\n        self.total += 1\n        self._evict(timestamp)\n\n    def getHits(self, timestamp: int) -> int:\n        self._evict(timestamp)\n        return self.total",
+    "related": [
+      "moving_average_from_data_stream",
+      "logger_rate_limiter"
+    ]
+  },
+  {
+    "slug": "logger_rate_limiter",
+    "title": "Logger Rate Limiter",
+    "leetcode": 359,
+    "difficulty": "Easy",
+    "topic": "design",
+    "pattern": "Hash map of next-allowed timestamps",
+    "file": "design/logger_rate_limiter.py",
+    "problem": "Implement Logger.shouldPrintMessage(timestamp, message) -> bool: a message may be printed only if the same message was not printed in the previous 10 seconds (printed at t means it is next allowed at t + 10). Timestamps arrive in non-decreasing order. Example: (1,'foo') True, (2,'bar') True, (3,'foo') False, (8,'bar') False, (10,'foo') False, (11,'foo') True.",
+    "brute_force": {
+      "approach": "Keep a list of every (timestamp, message) that was printed. On each call scan the list for the same message with a timestamp within the last 10 seconds. The wasted work is scanning entries for other messages, and entries so old they can never block anything again.",
+      "time": "O(n) per call",
+      "space": "O(n) unbounded",
+      "code": "class BruteForce:\n    \"\"\"Keep every printed (timestamp, message); scan the whole log on each call, O(n).\"\"\"\n\n    def __init__(self):\n        self.printed = []\n\n    def shouldPrintMessage(self, timestamp: int, message: str) -> bool:\n        for t, m in self.printed:\n            if m == message and timestamp - t < 10:\n                return False\n        self.printed.append((timestamp, message))\n        return True"
+    },
+    "optimization": "For a given message only its most recent print matters, and 'printed in the last 10 seconds' is a single comparison against that one value. So keep dict message -> next allowed timestamp: print iff timestamp >= next_ok[message], then store timestamp + 10. Budget: one dict lookup and one store per call, O(1) time; space is one integer per distinct message. The tracker remembers only the next-allowed time per message and forgets every earlier print. If distinct messages are unbounded, pair the dict with a queue of (time, message) and evict entries older than 10 seconds on each call, capping memory at the number of messages printed in any 10-second window.",
+    "intuition": "Rate limiting per key is 'remember when this key is allowed again'. A hash map keyed by the message gives that in O(1); overwriting the value on every successful print keeps it exact. Storing the next-allowed time instead of the last-printed time makes the check a single comparison with no arithmetic at query time.",
+    "geometric": "A timeline per message. A print at t lays a closed gate over [t, t + 10). Calls landing inside the gate bounce (False); the first call at or past t + 10 passes and lays a new gate. Different messages have independent timelines, so the map is a row of such timelines keyed by message.",
+    "visual": "time:  1  2  3  4  5  6  7  8  9 10 11 12\nfoo:   P  x  x  x  x  x  x  x  x  x  P      gate [1,11)\nbar:      P  x  x  x  x  x  x  x  x  x  P   gate [2,12)\n\nnext_ok after (1,foo),(2,bar): {foo: 11, bar: 12}\n(3,foo):  3 < 11  -> False\n(8,bar):  8 < 12  -> False\n(10,foo): 10 < 11 -> False\n(11,foo): 11 >= 11 -> True, next_ok[foo] = 21",
+    "steps": [
+      "next_ok = {} mapping message -> earliest timestamp it may print again.",
+      "On a call: if timestamp < next_ok.get(message, 0): return False.",
+      "Otherwise next_ok[message] = timestamp + 10 and return True."
+    ],
+    "complexity": {
+      "time": "O(1) per call",
+      "space": "O(m) for m distinct messages",
+      "why": "One dict lookup and one store; only the next-allowed time is remembered per message."
+    },
+    "pitfalls": [
+      "Off-by-one at the boundary: t + 10 IS allowed again.",
+      "Storing last-printed time and comparing against 9 instead of 10.",
+      "Letting the dict grow without bound when messages are mostly unique (pair it with a queue if that matters)."
+    ],
+    "hints": [
+      "What is the only fact about a message's history that decides whether it can print now?",
+      "Store one integer per message: the earliest timestamp at which it may print again.",
+      "Print iff timestamp >= next_ok.get(message, 0); then set next_ok[message] = timestamp + 10."
+    ],
+    "code": "class Logger:\n    def __init__(self):\n        self.next_ok = {}      # message -> earliest timestamp it may print again\n\n    def shouldPrintMessage(self, timestamp: int, message: str) -> bool:\n        if timestamp < self.next_ok.get(message, 0):\n            return False\n        self.next_ok[message] = timestamp + 10\n        return True",
+    "related": [
+      "design_hit_counter",
+      "time_based_key_value_store"
+    ]
+  },
+  {
+    "slug": "time_based_key_value_store",
+    "title": "Time Based Key-Value Store",
+    "leetcode": 981,
+    "difficulty": "Medium",
+    "topic": "design",
+    "pattern": "Sorted version list + binary search",
+    "file": "design/time_based_key_value_store.py",
+    "problem": "Implement TimeMap: set(key, value, timestamp) stores a value for key at that time, and get(key, timestamp) returns the value whose timestamp is the largest one <= timestamp, or '' if none. All timestamps passed to set are strictly increasing. Example: set('foo','bar',1); get('foo',1) -> 'bar'; get('foo',3) -> 'bar'; set('foo','bar2',4); get('foo',4) -> 'bar2'; get('foo',5) -> 'bar2'; get('foo',0) -> ''.",
+    "brute_force": {
+      "approach": "Keep dict key -> list of (timestamp, value). set appends; get scans the entire list for the largest timestamp <= the query. The wasted work is the scan: every version is examined, including those far in the future and far in the past, to find one boundary.",
+      "time": "O(1) set, O(n) get",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    \"\"\"key -> list of (timestamp, value); get scans every version, O(n).\"\"\"\n\n    def __init__(self):\n        self.store = defaultdict(list)\n\n    def set(self, key: str, value: str, timestamp: int) -> None:\n        self.store[key].append((timestamp, value))\n\n    def get(self, key: str, timestamp: int) -> str:\n        best_t, best_v = -1, \"\"\n        for t, v in self.store.get(key, []):\n            if best_t < t <= timestamp:\n                best_t, best_v = t, v\n        return best_v"
+    },
+    "optimization": "Timestamps for set arrive strictly increasing, so each key's list is already sorted for free: no sort step and no balanced tree. 'Largest timestamp <= t' on a sorted list is bisect_right(t) - 1, an O(log n) binary search. Keep two parallel lists per key (timestamps and values) so bisect runs on plain ints. Budget: O(1) append for set, O(log n) for get, space equal to the number of versions (the problem asks for full history). The tracker must remember every version but never needs to reorder anything; the invariant 'append keeps it sorted' is what the sortedness guarantee buys us.",
+    "intuition": "Versioned storage is a sorted timeline per key. A query is 'snap to the most recent version at or before time t', which is the classic right-bisect: find where t would be inserted, then step back one. bisect_right rather than bisect_left so a version with exactly timestamp t is found.",
+    "geometric": "For each key draw its timestamps on a number line with the values hanging below them. get(t) drops a marker at t: the answer is the nearest version at or to the left of the marker. If the marker is left of every version there is no answer.",
+    "visual": "key 'foo':  times [ 1,  4,  9 ]\n            vals  [ a,  b,  c ]\n\nget('foo', 5): bisect_right(times, 5) = 2\n                 1   4 | 9      marker falls between 4 and 9\n                     ^ step back one -> index 1 -> 'b'\n\nget('foo', 9): bisect_right = 3 -> index 2 -> 'c' (ts == 9)\nget('foo', 0): bisect_right = 0 -> nothing to the left -> ''",
+    "steps": [
+      "times[key] and vals[key] as parallel lists (defaultdict(list)).",
+      "set: append timestamp and value; the list stays sorted because timestamps increase.",
+      "get: if key is unknown return ''.",
+      "i = bisect_right(times[key], timestamp); return vals[key][i-1] if i > 0 else ''."
+    ],
+    "complexity": {
+      "time": "O(1) set, O(log n) get",
+      "space": "O(total versions)",
+      "why": "Lists are sorted by construction; one binary search per get."
+    },
+    "pitfalls": [
+      "bisect_left instead of bisect_right misses a version at exactly the queried timestamp.",
+      "Forgetting the i == 0 case (no version at or before t).",
+      "Bisecting on (ts, val) tuples: string comparison on val can bite when timestamps tie."
+    ],
+    "hints": [
+      "Timestamps for set are strictly increasing. What does that guarantee about each key's list?",
+      "The list is sorted for free, so 'largest timestamp <= t' is a binary search.",
+      "bisect_right on the timestamps, step back one index, and return '' when the index is 0."
+    ],
+    "code": "class TimeMap:\n    def __init__(self):\n        self.times = defaultdict(list)    # key -> ascending timestamps\n        self.vals = defaultdict(list)     # key -> values aligned with times\n\n    def set(self, key: str, value: str, timestamp: int) -> None:\n        self.times[key].append(timestamp)  # timestamps strictly increase -> list stays sorted\n        self.vals[key].append(value)\n\n    def get(self, key: str, timestamp: int) -> str:\n        if key not in self.times:\n            return \"\"\n        i = bisect_right(self.times[key], timestamp)   # first index with time > timestamp\n        return self.vals[key][i - 1] if i else \"\"",
+    "related": [
+      "snapshot_array",
+      "design_underground_system"
+    ]
+  },
+  {
+    "slug": "design_underground_system",
+    "title": "Design Underground System",
+    "leetcode": 1396,
+    "difficulty": "Medium",
+    "topic": "design",
+    "pattern": "Two hash maps (in-flight state + aggregated statistics)",
+    "file": "design/design_underground_system.py",
+    "problem": "Implement UndergroundSystem: checkIn(id, station, t), checkOut(id, station, t), and getAverageTime(start, end) -> the mean travel time over all completed trips from start to end so far. A customer is checked in at most once at a time and every queried route has at least one trip. Example: 45 checks in at Leyton@3 and out at Waterloo@15, 27 in at Leyton@10 and out at Waterloo@20 -> getAverageTime(Leyton, Waterloo) = (12 + 10) / 2 = 11.0.",
+    "brute_force": {
+      "approach": "Record every completed trip as (start, end, duration) in a list; getAverageTime scans the list, summing durations and counting trips for that route. The wasted work is re-summing the same completed trips on every query although none of them can ever change once recorded.",
+      "time": "O(1) check-in/out, O(trips) per query",
+      "space": "O(trips)",
+      "code": "class BruteForce:\n    \"\"\"Log every finished trip; getAverageTime re-scans the whole log, O(trips).\"\"\"\n\n    def __init__(self):\n        self.open = {}\n        self.trips = []\n\n    def checkIn(self, id: int, stationName: str, t: int) -> None:\n        self.open[id] = (stationName, t)\n\n    def checkOut(self, id: int, stationName: str, t: int) -> None:\n        start, t0 = self.open.pop(id)\n        self.trips.append((start, stationName, t - t0))\n\n    def getAverageTime(self, startStation: str, endStation: str) -> float:\n        durations = [d for s, e, d in self.trips if s == startStation and e == endStation]\n        return sum(durations) / len(durations)"
+    },
+    "optimization": "An average is fully determined by (sum, count), and both are updated by a single addition when a trip completes. So aggregate eagerly: stats[(start, end)] = [total_time, trip_count], updated in checkOut; getAverageTime becomes one dict lookup and one division. checkOut needs the customer's start station and time, so a second map in_transit[id] = (station, t) holds that until checkout and is popped immediately after. Budget: every call is a constant number of dict operations, O(1); space is one entry per customer currently travelling plus two numbers per distinct route. The tracker remembers per-route running totals and per-customer in-flight state, and forgets individual trips the moment they fold into the totals.",
+    "intuition": "Separate the two lifetimes of data. A customer's open journey lives briefly: one map keyed by id, popped on checkout. A route's statistics live forever but compress to two numbers: one map keyed by the ordered pair (start, end). Each operation touches exactly one entry of one map, which is where the O(1) comes from.",
+    "geometric": "Two tables side by side. The left table (open journeys) has rows appearing on check-in and disappearing on check-out. Each disappearing row fires one update into a cell of the right table (routes), adding its duration to that cell's sum and 1 to its count. A query reads a single cell.",
+    "visual": "checkIn: 45@Leyton t=3, 32@Paradise t=8, 27@Leyton t=10\n\nin_transit: {45:(Leyton,3) 32:(Paradise,8) 27:(Leyton,10)}\nstats:      { }\n\ncheckOut(45,Waterloo,15): pop 45, duration 12\nin_transit: { 32:(Paradise,8), 27:(Leyton,10) }\nstats:      { (Leyton,Waterloo): [12, 1] }\n\ncheckOut(27,Waterloo,20): pop 27, duration 10\nstats:      { (Leyton,Waterloo): [22, 2] }\n\ngetAverageTime(Leyton,Waterloo) = 22 / 2 = 11.0",
+    "steps": [
+      "in_transit = {} (id -> (station, t)); stats = {} ((start, end) -> [total, count]).",
+      "checkIn: in_transit[id] = (stationName, t).",
+      "checkOut: start, t0 = in_transit.pop(id); cell = stats.setdefault((start, stationName), [0, 0]); cell[0] += t - t0; cell[1] += 1.",
+      "getAverageTime: total, count = stats[(start, end)]; return total / count."
+    ],
+    "complexity": {
+      "time": "O(1) per operation",
+      "space": "O(travelling customers + distinct routes)",
+      "why": "Each call performs a constant number of dict operations; trips are folded into (sum, count) immediately."
+    },
+    "pitfalls": [
+      "Keying stats by start station only; a route is the ordered pair (start, end).",
+      "Not popping the customer on checkout, leaving stale state and leaking memory.",
+      "Integer division where a float is required."
+    ],
+    "hints": [
+      "What two numbers fully determine an average, and can you update both in O(1) when a trip completes?",
+      "Keep one map for open journeys keyed by customer id and another keyed by (start, end) holding [sum, count].",
+      "checkOut pops the open journey and adds its duration into the route's [sum, count]; the query is one lookup and a division."
+    ],
+    "code": "class UndergroundSystem:\n    def __init__(self):\n        self.in_transit = {}    # id -> (start station, check-in time)\n        self.stats = {}         # (start, end) -> [total travel time, trip count]\n\n    def checkIn(self, id: int, stationName: str, t: int) -> None:\n        self.in_transit[id] = (stationName, t)\n\n    def checkOut(self, id: int, stationName: str, t: int) -> None:\n        start, t0 = self.in_transit.pop(id)\n        cell = self.stats.setdefault((start, stationName), [0, 0])\n        cell[0] += t - t0\n        cell[1] += 1\n\n    def getAverageTime(self, startStation: str, endStation: str) -> float:\n        total, count = self.stats[(startStation, endStation)]\n        return total / count",
+    "related": [
+      "time_based_key_value_store",
+      "logger_rate_limiter"
+    ]
+  },
+  {
+    "slug": "design_browser_history",
+    "title": "Design Browser History",
+    "leetcode": 1472,
+    "difficulty": "Medium",
+    "topic": "design",
+    "pattern": "Array with current pointer and logical end",
+    "file": "design/design_browser_history.py",
+    "problem": "Implement BrowserHistory(homepage): visit(url) opens url and clears all forward history; back(steps) moves back at most steps pages and returns the current url; forward(steps) moves forward at most steps pages, never past the newest page, and returns the current url. Example: home leetcode; visit google, facebook, youtube; back(1) -> facebook; back(1) -> google; forward(1) -> facebook; visit linkedin; forward(2) -> linkedin; back(2) -> google; back(7) -> leetcode.",
+    "brute_force": {
+      "approach": "Two stacks: one holds pages behind the current one, the other pages ahead. back(steps) pops one page at a time onto the forward stack, forward does the reverse, and visit empties the forward stack element by element. The wasted work is moving pages one step at a time when the destination index is a subtraction, and physically deleting forward pages that could simply be ignored.",
+      "time": "O(steps) back/forward, O(forward history) visit",
+      "space": "O(pages)",
+      "code": "class BruteForce:\n    \"\"\"Two stacks; every step is one pop/push and visit discards forward pages one by one.\"\"\"\n\n    def __init__(self, homepage: str):\n        self.back_stack = []\n        self.forward_stack = []\n        self.current = homepage\n\n    def visit(self, url: str) -> None:\n        self.back_stack.append(self.current)\n        self.current = url\n        while self.forward_stack:            # O(forward history)\n            self.forward_stack.pop()\n\n    def back(self, steps: int) -> str:\n        while steps and self.back_stack:     # O(steps)\n            self.forward_stack.append(self.current)\n            self.current = self.back_stack.pop()\n            steps -= 1\n        return self.current\n\n    def forward(self, steps: int) -> str:\n        while steps and self.forward_stack:\n            self.back_stack.append(self.current)\n            self.current = self.forward_stack.pop()\n            steps -= 1\n        return self.current"
+    },
+    "optimization": "History is linear, so model it as an array with an integer cursor: back is cur = max(0, cur - steps) and forward is cur = min(last, cur + steps), both O(1). Clearing forward history is also O(1) if nothing is deleted: keep a logical end index last; visit writes at cur + 1 (overwriting a stale slot or appending) and sets last = cur. Slots beyond last are garbage but unreachable because forward clamps to last. Budget: O(1) per operation, space proportional to the longest history ever reached. The tracker remembers the page array, cur and last; it does not bother forgetting stale pages, trading a few dead strings for constant-time everything.",
+    "intuition": "A browser tab's history is a single line of pages, and where you are is an index on that line. Jumping several steps is arithmetic on the index, not a walk. 'Clearing forward history' means 'the line now ends here', which is a bound you store, not a deletion you perform.",
+    "geometric": "A tape of pages with two markers: cur (where you are) and last (where the tape ends). back and forward slide cur along the tape and clamp at 0 and last. visit writes the new page just right of cur and drags last to that spot, so anything that used to be to the right is cut off even though it is still physically on the tape.",
+    "visual": "pages: [ leetcode, google, facebook, youtube ]\n                                           ^ cur=3  last=3\nback(2):\npages: [ leetcode, google, facebook, youtube ]\n                     ^ cur=1             last=3  -> google\nvisit(linkedin): write slot cur+1=2, last=2\npages: [ leetcode, google, linkedin, youtube ]\n                             ^ cur=2 last=2  (youtube dead)\nforward(5): min(last=2, 7) = 2 -> linkedin\nback(7):    max(0, -5) = 0    -> leetcode",
+    "steps": [
+      "pages = [homepage]; cur = 0; last = 0.",
+      "visit: cur += 1; if cur == len(pages) append url else overwrite pages[cur]; last = cur.",
+      "back: cur = max(0, cur - steps); return pages[cur].",
+      "forward: cur = min(last, cur + steps); return pages[cur]."
+    ],
+    "complexity": {
+      "time": "O(1) per operation",
+      "space": "O(pages visited)",
+      "why": "Index arithmetic only; stale forward pages are left in place and masked by the logical end."
+    },
+    "pitfalls": [
+      "Clamping forward to len(pages) instead of last, which resurrects cleared pages.",
+      "Forgetting to update last on visit.",
+      "Letting back go below index 0."
+    ],
+    "hints": [
+      "History is a straight line. What is 'go back 3 pages' in terms of an index on that line?",
+      "Keep the pages in an array with a current index; back and forward are clamped additions.",
+      "On visit write at cur + 1 and record that index as the logical end; forward clamps to that end so stale pages are never seen."
+    ],
+    "code": "class BrowserHistory:\n    def __init__(self, homepage: str):\n        self.pages = [homepage]\n        self.cur = 0        # index of the current page\n        self.last = 0       # index of the newest reachable page (forward history ends here)\n\n    def visit(self, url: str) -> None:\n        self.cur += 1\n        if self.cur == len(self.pages):\n            self.pages.append(url)\n        else:\n            self.pages[self.cur] = url     # overwrite stale forward history in place\n        self.last = self.cur\n\n    def back(self, steps: int) -> str:\n        self.cur = max(0, self.cur - steps)\n        return self.pages[self.cur]\n\n    def forward(self, steps: int) -> str:\n        self.cur = min(self.last, self.cur + steps)\n        return self.pages[self.cur]",
+    "related": [
+      "lru_cache",
+      "min_stack"
+    ]
+  },
+  {
+    "slug": "snapshot_array",
+    "title": "Snapshot Array",
+    "leetcode": 1146,
+    "difficulty": "Medium",
+    "topic": "design",
+    "pattern": "Sorted version list + binary search",
+    "file": "design/snapshot_array.py",
+    "problem": "Implement SnapshotArray(length) of zeros with set(index, val), snap() -> snap_id (the number of snaps taken before this one), and get(index, snap_id) -> the value at index as of that snapshot. Example: SnapshotArray(3); set(0,5); snap() -> 0; set(0,6); get(0,0) -> 5.",
+    "brute_force": {
+      "approach": "snap() copies the whole current array into a list of snapshots, and get(index, snap_id) indexes the stored copy. The wasted work is copying every cell on every snapshot even though usually only a few cells changed since the previous one; identical values are duplicated across all copies.",
+      "time": "O(1) set/get, O(length) snap",
+      "space": "O(snaps * length)",
+      "code": "class BruteForce:\n    \"\"\"snap() copies the whole array; O(length) per snap, O(snaps * length) space.\"\"\"\n\n    def __init__(self, length: int):\n        self.cur = [0] * length\n        self.snaps = []\n\n    def set(self, index: int, val: int) -> None:\n        self.cur[index] = val\n\n    def snap(self) -> int:\n        self.snaps.append(self.cur[:])\n        return len(self.snaps) - 1\n\n    def get(self, index: int, snap_id: int) -> int:\n        return self.snaps[snap_id][index]"
+    },
+    "optimization": "Store changes, not copies. For each index keep a list of (snap_id, value) pairs recording only the snapshots in which that cell was written. snap_ids only increase, so each per-index list is sorted by construction, and get(index, snap_id) is 'the last pair with snap_id <= query', a bisect_right. Several sets inside the same snapshot overwrite the last pair instead of appending, so a list grows only when the cell changes in a new snapshot. Budget: O(1) set and snap, O(log m) get where m is that cell's number of versions; space is length + total distinct (cell, snapshot) writes. The tracker remembers only which cells changed and when; it never stores a value twice.",
+    "intuition": "A snapshot is just a counter; the data lives in per-cell histories. Asking 'what was cell i at snapshot k' means 'find the most recent write to cell i at or before k', the same right-bisect as a time-based key-value store, with the snapshot id playing the role of the timestamp. The seed pair (0, 0) in every cell makes the lookup always succeed.",
+    "geometric": "A grid of cells (rows) versus snapshots (columns), but only the cells that changed in a column are materialised. Each row is a sparse timeline of dots at the snapshots where that cell was written. get(i, k) walks row i to the rightmost dot at or left of column k.",
+    "visual": "set(0,5) snap()->0 set(0,6) set(2,9) snap()->1 set(0,7)\n\nsnap_id:     0     1     2 (current, open)\nindex 0:  (0,5) (1,6) (2,7)\nindex 1:  (0,0)\nindex 2:  (0,0) (1,9)\n\nget(0,1): bisect_right(hist[0], (1,inf)) = 2 -> (1,6) -> 6\nget(2,0): bisect_right(hist[2], (0,inf)) = 1 -> (0,0) -> 0\nget(1,1): only the seed pair             -> 0",
+    "steps": [
+      "hist = [[(0, 0)] for each index]; snap_id = 0.",
+      "set(i, v): if hist[i][-1][0] == snap_id overwrite that pair, else append (snap_id, v).",
+      "snap(): snap_id += 1; return snap_id - 1.",
+      "get(i, k): j = bisect_right(hist[i], (k, inf)); return hist[i][j-1][1]."
+    ],
+    "complexity": {
+      "time": "O(1) set and snap, O(log m) get",
+      "space": "O(length + total sets)",
+      "why": "Per-cell version lists are sorted by construction and searched with one bisect."
+    },
+    "pitfalls": [
+      "Appending a new pair on repeated sets within the same snapshot (unbounded growth).",
+      "Bisecting on (k, 0) instead of (k, inf), which misses a write at exactly snapshot k.",
+      "Returning snap_id instead of snap_id - 1 from snap()."
+    ],
+    "hints": [
+      "Copying the array on every snap is O(length). What actually changes between two snapshots?",
+      "Record per index only the (snap_id, value) pairs where that cell was written; snap just increments a counter.",
+      "Each per-index list is sorted by snap_id; get is bisect_right((snap_id, inf)) minus one."
+    ],
+    "code": "class SnapshotArray:\n    def __init__(self, length: int):\n        self.hist = [[(0, 0)] for _ in range(length)]   # per index: (snap_id, value), ascending\n        self.snap_id = 0\n\n    def set(self, index: int, val: int) -> None:\n        h = self.hist[index]\n        if h[-1][0] == self.snap_id:\n            h[-1] = (self.snap_id, val)       # overwrite: same snapshot, keep one pair\n        else:\n            h.append((self.snap_id, val))\n\n    def snap(self) -> int:\n        self.snap_id += 1\n        return self.snap_id - 1\n\n    def get(self, index: int, snap_id: int) -> int:\n        h = self.hist[index]\n        i = bisect_right(h, (snap_id, float(\"inf\")))   # first pair written after snap_id\n        return h[i - 1][1]",
+    "related": [
+      "time_based_key_value_store",
+      "design_bitset"
+    ]
+  },
+  {
+    "slug": "design_bitset",
+    "title": "Design Bitset",
+    "leetcode": 2166,
+    "difficulty": "Medium",
+    "topic": "design",
+    "pattern": "Lazy global flip flag + maintained count",
+    "file": "design/design_bitset.py",
+    "problem": "Implement Bitset(size) with all bits 0: fix(idx) sets a bit to 1, unfix(idx) sets it to 0, flip() inverts every bit, all() / one() report whether all / at least one bit is 1, count() returns the number of 1s and toString() returns the bits as a string. Everything except toString should be O(1). Example: Bitset(5); fix(3); fix(1); flip() -> '10101'; unfix(0) -> '00101'; flip() -> '11010'; unfix(0) -> '01010'; count() -> 2.",
+    "brute_force": {
+      "approach": "A plain list of bits. fix and unfix are O(1), but flip walks the whole list inverting each bit, and all, one and count each walk the list again. The wasted work is touching every bit to answer questions that could be maintained incrementally (count) or deferred (flip): two flips cancel, so eagerly rewriting n bits per flip is pure waste.",
+      "time": "O(size) flip/all/one/count",
+      "space": "O(size)",
+      "code": "class BruteForce:\n    \"\"\"Plain bit list; flip, all, one and count each walk every bit, O(size).\"\"\"\n\n    def __init__(self, size: int):\n        self.bits = [0] * size\n\n    def fix(self, idx: int) -> None:\n        self.bits[idx] = 1\n\n    def unfix(self, idx: int) -> None:\n        self.bits[idx] = 0\n\n    def flip(self) -> None:\n        self.bits = [1 - b for b in self.bits]       # O(size)\n\n    def all(self) -> bool:\n        return all(self.bits)\n\n    def one(self) -> bool:\n        return any(self.bits)\n\n    def count(self) -> int:\n        return sum(self.bits)\n\n    def toString(self) -> str:\n        return \"\".join(map(str, self.bits))"
+    },
+    "optimization": "Two independent observations. First, the number of ones is a single integer that changes by +1 or -1 on fix/unfix and becomes size - ones on flip, so all, one and count are O(1) reads of it. Second, a flip need not touch any bit: keep a boolean flipped and define the logical bit as physical XOR flipped; fix/unfix read the logical bit and, only if it must change, XOR the physical bit and adjust ones. Budget: every operation except toString is O(1); space is the bit array plus one flag and one counter. The tracker remembers physical bits, the flag and the count, and never materialises the flipped array until toString asks for it.",
+    "intuition": "A global flip is a change of viewpoint, not a change of data: read every bit through an inverter. Recording the viewpoint in one flag makes flip O(1) and keeps fix/unfix O(1) because they only need to consult that flag before deciding whether the physical bit must change. The count is the only aggregate the queries need, and it is cheap to keep exact.",
+    "geometric": "Draw the bits as columns and the flag as a lens laid over them. With the lens off you see the physical bits; with it on you see their inverse. fix(idx) makes the column look like 1 through the current lens, which may mean writing a 0 underneath. flip toggles the lens and mirrors the count around size / 2.",
+    "visual": "Bitset(5): fix(3) fix(1)\nidx:       0 1 2 3 4\nphysical:  0 1 0 1 0    flipped=0  ones=2   view 01010\n\nflip():    flipped=1, ones = 5-2 = 3     (no bit touched)\nphysical:  0 1 0 1 0\nlogical :  1 0 1 0 1               view 10101\n\nunfix(0):  logical[0]=1 -> physical[0]^=1, ones=2\nphysical:  1 1 0 1 0\nlogical :  0 0 1 0 1               view 00101\n\nflip():    flipped=0, ones = 5-2 = 3   view 11010",
+    "steps": [
+      "bits = [0] * size; flipped = 0; ones = 0.",
+      "logical(idx) = bits[idx] ^ flipped.",
+      "fix: if logical is 0 then bits[idx] ^= 1 and ones += 1; unfix is symmetric with ones -= 1.",
+      "flip: flipped ^= 1; ones = size - ones.",
+      "all: ones == size; one: ones > 0; count: ones.",
+      "toString: join '1' if bit ^ flipped else '0' over bits (the only O(size) call)."
+    ],
+    "complexity": {
+      "time": "O(1) per operation, O(size) toString",
+      "space": "O(size)",
+      "why": "A lazy flag replaces full passes for flip and a maintained counter answers all/one/count."
+    },
+    "pitfalls": [
+      "fix on an already-set logical bit must not change the count.",
+      "Forgetting to apply the flag in toString.",
+      "Updating count only on flip and not on fix/unfix, or vice versa."
+    ],
+    "hints": [
+      "Which operations are O(size) in the naive version, and which of them actually need to look at every bit?",
+      "Keep a running count of ones; flip turns it into size - ones.",
+      "Store a global flipped flag and read bits as physical XOR flipped; fix/unfix only touch the physical bit when the logical bit must change."
+    ],
+    "code": "class Bitset:\n    def __init__(self, size: int):\n        self.bits = [0] * size     # physical bits; logical bit = physical ^ flipped\n        self.flipped = 0\n        self.ones = 0              # count of logical ones\n\n    def _logical(self, idx: int) -> int:\n        return self.bits[idx] ^ self.flipped\n\n    def fix(self, idx: int) -> None:\n        if not self._logical(idx):\n            self.bits[idx] ^= 1\n            self.ones += 1\n\n    def unfix(self, idx: int) -> None:\n        if self._logical(idx):\n            self.bits[idx] ^= 1\n            self.ones -= 1\n\n    def flip(self) -> None:\n        self.flipped ^= 1                      # O(1): change the lens, not the bits\n        self.ones = len(self.bits) - self.ones\n\n    def all(self) -> bool:\n        return self.ones == len(self.bits)\n\n    def one(self) -> bool:\n        return self.ones > 0\n\n    def count(self) -> int:\n        return self.ones\n\n    def toString(self) -> str:\n        return \"\".join(\"1\" if b ^ self.flipped else \"0\" for b in self.bits)",
+    "related": [
+      "snapshot_array",
+      "single_number"
+    ]
+  },
+  {
+    "slug": "moving_average_from_data_stream",
+    "title": "Moving Average from Data Stream",
+    "leetcode": 346,
+    "difficulty": "Easy",
+    "topic": "design",
+    "pattern": "Sliding window queue with running sum",
+    "file": "design/moving_average_from_data_stream.py",
+    "problem": "Implement MovingAverage(size) with next(val) -> the average of the last size values seen so far, or of all values while fewer than size have arrived. Example: size 3; next(1) -> 1.0; next(10) -> 5.5; next(3) -> 4.667; next(5) -> 6.0 (= (10 + 3 + 5) / 3).",
+    "brute_force": {
+      "approach": "Append every value to a list and, on each call, sum the last size entries and divide. The wasted work is re-adding size - 1 numbers that were already summed on the previous call, and keeping values that have left the window and can never influence an answer again.",
+      "time": "O(size) per call",
+      "space": "O(n) for the whole stream",
+      "code": "class BruteForce:\n    \"\"\"Keep the whole stream; re-sum the last `size` values on each call, O(size).\"\"\"\n\n    def __init__(self, size: int):\n        self.size = size\n        self.seen = []\n\n    def next(self, val: int) -> float:\n        self.seen.append(val)\n        tail = self.seen[-self.size:]\n        return sum(tail) / len(tail)"
+    },
+    "optimization": "Consecutive windows overlap in all but two elements: the newest enters and the oldest leaves. Maintain the window's sum incrementally: total += new, and once the window exceeds size, total -= the element that falls out. A deque gives O(1) append at the back and pop at the front, and the division uses the current window length, which is smaller than size only during warm-up. Budget: O(1) per call, O(size) space. The tracker remembers at most size values plus one running total; everything that has slid out of the window is forgotten immediately.",
+    "intuition": "A moving average is a sum that slides. Sliding means one value in and one value out, so update the sum by exactly those two numbers instead of recomputing it. The queue exists only so you know which value is the oldest; the total is the real state.",
+    "geometric": "A bracket of width size slides right along the stream one slot per call. Both edges move together once the bracket is full; before that only the right edge moves. The sum inside the bracket changes by (entering value - leaving value).",
+    "visual": "stream:  1  10   3   5   8        size = 3\n\n        [1]                  total 1          -> 1.0\n        [1  10]              total 11         -> 5.5\n        [1  10   3]          total 14         -> 4.667\n           [10   3   5]      14 - 1 + 5 = 18  -> 6.0\n               [3   5   8]   18 - 10 + 8 = 16 -> 5.333\n\ndeque holds only the bracketed values; total = their sum",
+    "steps": [
+      "window = deque(); total = 0.",
+      "next(val): append val; total += val.",
+      "If len(window) > size: total -= window.popleft().",
+      "Return total / len(window)."
+    ],
+    "complexity": {
+      "time": "O(1) per call",
+      "space": "O(size)",
+      "why": "One append, at most one pop and one division; only the current window is stored."
+    },
+    "pitfalls": [
+      "Dividing by size during warm-up instead of the current window length.",
+      "Popping before appending, which breaks size 1.",
+      "Integer division."
+    ],
+    "hints": [
+      "How much do two consecutive windows differ?",
+      "Keep a running sum and a queue of the values currently in the window.",
+      "On each call append and add; if the queue is longer than size, pop the front and subtract it; divide by the queue length."
+    ],
+    "code": "class MovingAverage:\n    def __init__(self, size: int):\n        self.size = size\n        self.window = deque()\n        self.total = 0\n\n    def next(self, val: int) -> float:\n        self.window.append(val)\n        self.total += val\n        if len(self.window) > self.size:\n            self.total -= self.window.popleft()    # drop the value that slid out\n        return self.total / len(self.window)",
+    "related": [
+      "design_hit_counter",
+      "sliding_window_maximum"
+    ]
+  },
+  {
+    "slug": "valid_anagram",
+    "title": "Valid Anagram",
+    "leetcode": 242,
+    "difficulty": "Easy",
+    "topic": "strings",
+    "pattern": "Fixed-alphabet frequency count",
+    "file": "strings/valid_anagram.py",
+    "problem": "Given two lowercase strings s and t, return True if t is an anagram of s: the same letters with the same multiplicities, in any order. Example: s = 'anagram', t = 'nagaram' -> True; s = 'rat', t = 'car' -> False.",
+    "brute_force": {
+      "approach": "Sort both strings and compare them: sorted(s) == sorted(t). The wasted work is the sort itself: it imposes a total order on the letters when the question only asks how many of each letter there are, which is far less information than an ordering.",
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "code": "def brute_force(s: str, t: str) -> bool:\n    \"\"\"Sort both strings and compare, O(n log n).\"\"\"\n    return sorted(s) == sorted(t)"
+    },
+    "optimization": "Two strings are anagrams iff every letter appears the same number of times in both. The alphabet is fixed at 26 lowercase letters, so the frequency table is a 26-cell array rather than a hash map, and filling it is one linear pass. Walk both strings together, adding 1 for the letter from s and subtracting 1 for the letter from t; they are anagrams iff every cell ends at zero. A length check up front rejects the trivial mismatch before any counting.",
+    "intuition": "Anagram means same histogram. Build one histogram as a difference (s adds, t subtracts) so the final test is 'is everything zero', with no second table and no second pass. The fixed alphabet makes the space O(1) regardless of input length.",
+    "geometric": "26 buckets as columns. Each letter of s pushes its column up by one and each letter of t pulls it down by one. If the skyline is flat at zero at the end, the strings are anagrams; any column above or below zero is a letter one string has more of.",
+    "visual": "s = r a t      t = c a r\n\nletter:  a  c  r  t\ns adds: +1    +1 +1\nt subs: -1 -1 -1\n----------------------\nnet:     0 -1  0 +1     <- non-zero cells: not anagrams\n\n(anagram, nagaram): every column nets to 0 -> True",
+    "steps": [
+      "If len(s) != len(t) return False.",
+      "count = [0] * 26.",
+      "For a, b in zip(s, t): count[ord(a) - 97] += 1; count[ord(b) - 97] -= 1.",
+      "Return not any(count)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "One pass over both strings into a fixed 26-cell array."
+    },
+    "pitfalls": [
+      "Skipping the length check: zip truncates silently.",
+      "Unicode input needs a dict of counts instead of a 26-array."
+    ],
+    "hints": [
+      "Anagrams have the same letters with the same counts. Do you need their order at all?",
+      "Count letters. The alphabet is only 26 symbols, so an array indexed by ord(ch) - 97 suffices.",
+      "Add for s and subtract for t in one pass; the answer is whether every count is zero."
+    ],
+    "code": "class Solution:\n    def isAnagram(self, s: str, t: str) -> bool:\n        if len(s) != len(t):\n            return False\n        count = [0] * 26\n        for a, b in zip(s, t):\n            count[ord(a) - 97] += 1      # s adds to the histogram\n            count[ord(b) - 97] -= 1      # t subtracts from it\n        return not any(count)",
+    "related": [
+      "group_anagrams",
+      "group_shifted_strings"
+    ]
+  },
+  {
+    "slug": "longest_palindromic_substring",
+    "title": "Longest Palindromic Substring",
+    "leetcode": 5,
+    "difficulty": "Medium",
+    "topic": "strings",
+    "pattern": "Expand around center",
+    "file": "strings/longest_palindromic_substring.py",
+    "problem": "Given a string s, return the longest substring that reads the same forwards and backwards; if several tie, any one is accepted. Example: 'babad' -> 'bab' (or 'aba'); 'cbbd' -> 'bb'.",
+    "brute_force": {
+      "approach": "Enumerate every substring s[i:j+1] (there are O(n^2)) and test each for being a palindrome by comparing it with its reverse (O(n)). The wasted work is in the check: when s[i:j+1] is tested we have already tested s[i+1:j], whose answer decides the outer one except for a single extra comparison, yet we recompute it from scratch.",
+      "time": "O(n^3)",
+      "space": "O(1)",
+      "code": "def brute_force(s: str) -> str:\n    \"\"\"Test every substring against its reverse, O(n^3).\"\"\"\n    best = \"\"\n    for i in range(len(s)):\n        for j in range(i, len(s)):\n            sub = s[i:j + 1]\n            if len(sub) > len(best) and sub == sub[::-1]:\n                best = sub\n    return best"
+    },
+    "optimization": "Instead of fixing the endpoints and testing inward, fix the middle and grow outward: a palindrome is determined by its center, and extending it by one step on each side costs one comparison. There are only 2n - 1 centers: n single characters for odd lengths and n - 1 gaps for even lengths. From each center expand while s[lo] == s[hi]; at the first mismatch no wider palindrome with that center exists, so stop. Every comparison either grows a palindrome or ends a center, giving O(n^2) worst case with O(1) extra space and no table to fill.",
+    "intuition": "A palindrome is symmetric around its center, so it is mirror-grown: the longest palindrome centered at c is the largest radius r with s[c - r] == s[c + r]. Testing radii in increasing order and stopping at the first mismatch is correct because a mismatch at radius r kills every larger radius too. Handling the even case as a center between two characters covers all palindromes.",
+    "geometric": "Two pointers start together (odd) or adjacent (even) and walk apart symmetrically until they disagree or hit an edge. Each center produces one such widening V; the answer is the widest V. On an all-equal string every V reaches the edges, which is the O(n^2) worst case.",
+    "visual": "s:  b a b a d\n    0 1 2 3 4\n\ncenter i=1 (odd):   lo=1 hi=1  'a'=='a'\n                    lo=0 hi=2  'b'=='b'\n                    lo=-1      out of bounds -> stop\n                    palindrome s[0:3] = \"bab\" len 3 <- best\n\ncenter 1|2 (even):  lo=1 hi=2  'a'!='b'  -> nothing\ncenter i=2 (odd):   lo=1 hi=3 'a'=='a' -> lo=0 hi=4 'b'!='d'\n                    s[1:4] = \"aba\" len 3, not > 3",
+    "steps": [
+      "best_lo, best_len = 0, 0.",
+      "For each i: expand(i, i) for odd length and expand(i, i + 1) for even length.",
+      "expand: while in bounds and s[lo] == s[hi], lo -= 1 and hi += 1; the palindrome is s[lo+1:hi].",
+      "If hi - lo - 1 > best_len, record lo + 1 and the new length.",
+      "Return s[best_lo : best_lo + best_len]."
+    ],
+    "complexity": {
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "why": "2n - 1 centers, each expanding at most n / 2 steps; no auxiliary table."
+    },
+    "pitfalls": [
+      "Forgetting even-length centers.",
+      "Off-by-one on exit: the palindrome is s[lo+1:hi], not s[lo:hi+1].",
+      "Empty string input."
+    ],
+    "hints": [
+      "Checking every substring is O(n^3). What single property defines a palindrome that you could grow from?",
+      "Every palindrome has a center: a character (odd length) or a gap between two characters (even length). There are 2n - 1 of them.",
+      "From each center move two pointers apart while the characters match; keep the widest span found."
+    ],
+    "code": "class Solution:\n    def longestPalindrome(self, s: str) -> str:\n        best_lo, best_len = 0, 0\n\n        def expand(lo: int, hi: int) -> None:\n            nonlocal best_lo, best_len\n            while lo >= 0 and hi < len(s) and s[lo] == s[hi]:\n                lo -= 1\n                hi += 1\n            if hi - lo - 1 > best_len:             # palindrome is s[lo+1:hi]\n                best_lo, best_len = lo + 1, hi - lo - 1\n\n        for i in range(len(s)):\n            expand(i, i)          # odd length, centred on s[i]\n            expand(i, i + 1)      # even length, centred between s[i] and s[i+1]\n        return s[best_lo:best_lo + best_len]",
+    "related": [
+      "palindromic_substrings",
+      "valid_palindrome"
+    ]
+  },
+  {
+    "slug": "string_to_integer_atoi",
+    "title": "String to Integer (atoi)",
+    "leetcode": 8,
+    "difficulty": "Medium",
+    "topic": "strings",
+    "pattern": "Single-pass state machine with early clamp",
+    "file": "strings/string_to_integer_atoi.py",
+    "problem": "Convert a string to a 32-bit signed integer like C's atoi: skip leading spaces, read an optional '+' or '-', read digits until a non-digit, ignore the rest, and clamp to [-2^31, 2^31 - 1]. Example: '   -042' -> -42; '4193 with words' -> 4193; 'words and 987' -> 0; '-91283472332' -> -2147483648.",
+    "brute_force": {
+      "approach": "Strip leading spaces, slice off the sign, slice out the maximal run of digits, call int() on that substring (or 0 if empty), apply the sign and clamp. The wasted work is materialising substrings and converting a possibly huge digit run into a big integer only to discard almost all of it in the clamp; in a fixed-width language that conversion overflows before the clamp runs.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "code": "def brute_force(s: str) -> int:\n    \"\"\"Slice out sign and digit run, convert with int(), then clamp; O(n) extra space.\"\"\"\n    s = s.lstrip(\" \")\n    sign = 1\n    if s[:1] in (\"+\", \"-\"):\n        sign = -1 if s[0] == \"-\" else 1\n        s = s[1:]\n    digits = \"\"\n    for ch in s:\n        if not \"0\" <= ch <= \"9\":\n            break\n        digits += ch\n    value = sign * int(digits) if digits else 0\n    return max(-2**31, min(2**31 - 1, value))"
+    },
+    "optimization": "Every decision depends on one character at a time, so use a single index and a small state machine: SPACE -> SIGN -> DIGITS -> STOP. Accumulate num = num * 10 + digit as digits arrive and check the bound after every step; as soon as sign * num leaves the 32-bit range, return the clamp immediately. This uses O(1) extra space, never builds a substring, and never holds a number larger than about 10 * INT_MAX, which is how a real atoi avoids undefined overflow.",
+    "intuition": "Parsing is a left-to-right scan whose behaviour depends only on the current phase. Spaces are allowed only before the sign, the sign only before the first digit, and anything after the digits is noise. Clamping during accumulation is safe because once the magnitude exceeds the limit no later digit can bring it back down.",
+    "geometric": "A pointer moving strictly right over the string, passing through phases that can only hand off forward: a strip of spaces, then at most one sign character, then a run of digits, then everything else is ignored. The accumulator grows by a factor of ten per digit and is cut off by a ceiling and a floor.",
+    "visual": "s = \"   -042abc\"\n     ^^^           SPACE : skip\n        ^          SIGN  : '-'  sign = -1\n         ^         DIGIT : num = 0\n          ^        DIGIT : num = 4\n           ^       DIGIT : num = 42   bound ok\n            ^      'a' -> STOP, return -42\n\n\"-91283472332\": ... num=9128347233 -> -9128347233 <= INT_MIN\n                -> return -2147483648 before reading more",
+    "steps": [
+      "i = 0; advance while s[i] == ' '.",
+      "If s[i] in '+-': set sign, i += 1.",
+      "While '0' <= s[i] <= '9': num = num * 10 + digit; return INT_MAX if sign * num >= INT_MAX, INT_MIN if sign * num <= INT_MIN; i += 1.",
+      "Return sign * num."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "One pass with a single accumulator and an early clamp."
+    },
+    "pitfalls": [
+      "str.isdigit() accepts unicode digits; compare against '0'..'9' explicitly.",
+      "Allowing spaces after the sign ('+ 1' must be 0).",
+      "Clamping only at the end, which overflows in fixed-width languages."
+    ],
+    "hints": [
+      "Which characters are allowed in which order? Write the phases down before the code.",
+      "A single index and a state (spaces, sign, digits, stop) is enough; build the number digit by digit.",
+      "Check the 32-bit bound after every digit and return the clamp as soon as it is crossed."
+    ],
+    "code": "class Solution:\n    def myAtoi(self, s: str) -> int:\n        INT_MAX, INT_MIN = 2**31 - 1, -2**31\n        i, n = 0, len(s)\n        while i < n and s[i] == \" \":\n            i += 1\n        sign = 1\n        if i < n and s[i] in \"+-\":\n            sign = -1 if s[i] == \"-\" else 1\n            i += 1\n        num = 0\n        while i < n and \"0\" <= s[i] <= \"9\":\n            num = num * 10 + (ord(s[i]) - 48)\n            if sign * num >= INT_MAX:          # clamp as soon as the bound is crossed\n                return INT_MAX\n            if sign * num <= INT_MIN:\n                return INT_MIN\n            i += 1\n        return sign * num",
+    "related": [
+      "reverse_integer",
+      "compare_version_numbers"
+    ]
+  },
+  {
+    "slug": "zigzag_conversion",
+    "title": "Zigzag Conversion",
+    "leetcode": 6,
+    "difficulty": "Medium",
+    "topic": "strings",
+    "pattern": "Row buckets with a bouncing row pointer",
+    "file": "strings/zigzag_conversion.py",
+    "problem": "Write the string s in a zigzag over numRows rows (down the first column, then diagonally up to row 0, then down again) and read it row by row. Example: 'PAYPALISHIRING' with 3 rows is laid out as P.A.H.N / APLSIIG / Y.I.R and reads 'PAHNAPLSIIGYIR'; with 4 rows it reads 'PINALSIGYAHRPI'.",
+    "brute_force": {
+      "approach": "Simulate the drawing literally: allocate a numRows x n grid of blanks, walk the zigzag placing each character at its (row, col) coordinate with the column advancing on every diagonal step, then scan the whole grid row-major collecting non-blank cells. The wasted work is the grid: most cells stay blank because the diagonals leave gaps, yet every cell is allocated and later scanned.",
+      "time": "O(numRows * n)",
+      "space": "O(numRows * n)",
+      "code": "def brute_force(s: str, numRows: int) -> str:\n    \"\"\"Draw the zigzag into a real numRows x n grid, then read it row by row.\"\"\"\n    if numRows == 1:\n        return s\n    grid = [[\"\"] * len(s) for _ in range(numRows)]\n    r, c, going_down = 0, 0, True\n    for ch in s:\n        grid[r][c] = ch\n        if going_down:\n            if r == numRows - 1:\n                going_down, r, c = False, r - 1, c + 1\n            else:\n                r += 1\n        else:\n            if r == 0:\n                going_down, r = True, r + 1\n            else:\n                r, c = r - 1, c + 1\n    return \"\".join(cell for row in grid for cell in row if cell)"
+    },
+    "optimization": "The output only needs to know which row each character lands on, never its column, because within a row characters keep their original left-to-right order. So drop the grid and keep one list per row. The row index of successive characters simply bounces 0, 1, ..., numRows-1, numRows-2, ..., 1, 0, 1, ..., so a single pointer with a step of +1 or -1 that reverses at the top and bottom rows assigns each character in O(1). Concatenating the rows gives the answer; total storage is exactly n characters.",
+    "intuition": "A zigzag is a ball bouncing between the floor and the ceiling while the string streams past. The column is irrelevant to the answer; the bounce tells you the row, and the stream order tells you the position within that row. Guards for numRows == 1 or numRows >= len(s) avoid an infinite bounce and a degenerate layout.",
+    "geometric": "Picture numRows horizontal lanes and a cursor that moves down one lane per character until it hits the bottom lane, then up one lane per character until it hits the top, and repeats. Each character is dropped into the lane the cursor is in. Reading the lanes top to bottom is the output.",
+    "visual": "s:    P A Y P A L I S H I R I N G\nrow:  0 1 2 1 0 1 2 1 0 1 2 1 0 1     numRows = 3\nstep: + + - - + + - - + + - - + +    flips at row 0 / 2\n\nrows[0]: P A H N\nrows[1]: A P L S I I G\nrows[2]: Y I R\n\noutput: PAHN + APLSIIG + YIR = \"PAHNAPLSIIGYIR\"",
+    "steps": [
+      "If numRows == 1 or numRows >= len(s): return s.",
+      "rows = [[] for each row]; r = 0; step = 1.",
+      "For each ch: rows[r].append(ch); if r == 0 set step = 1, elif r == numRows - 1 set step = -1; r += step.",
+      "Return the concatenation of all rows."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "Each character is appended to exactly one row list."
+    },
+    "pitfalls": [
+      "numRows == 1 loops forever in the bounce logic without the guard.",
+      "Flipping the step before appending shifts every row by one.",
+      "numRows larger than the string length (just return s)."
+    ],
+    "hints": [
+      "Do you actually need the column of each character, or only its row?",
+      "Keep one buffer per row and assign characters to rows in stream order.",
+      "The row index bounces between 0 and numRows - 1 with a +1/-1 step that reverses at the ends."
+    ],
+    "code": "class Solution:\n    def convert(self, s: str, numRows: int) -> str:\n        if numRows == 1 or numRows >= len(s):\n            return s\n        rows = [[] for _ in range(numRows)]\n        r, step = 0, 1\n        for ch in s:\n            rows[r].append(ch)\n            if r == 0:\n                step = 1                   # bounce off the top\n            elif r == numRows - 1:\n                step = -1                  # bounce off the bottom\n            r += step\n        return \"\".join(\"\".join(row) for row in rows)",
+    "related": [
+      "reverse_words_in_a_string",
+      "spiral_matrix"
+    ]
+  },
+  {
+    "slug": "reverse_words_in_a_string",
+    "title": "Reverse Words in a String",
+    "leetcode": 151,
+    "difficulty": "Medium",
+    "topic": "strings",
+    "pattern": "In-place reverse, then reverse each word",
+    "file": "strings/reverse_words_in_a_string.py",
+    "problem": "Given a string with words separated by one or more spaces, possibly with leading or trailing spaces, return the words in reverse order joined by single spaces. Example: 'the sky is blue' -> 'blue is sky the'; '  hello world  ' -> 'world hello'; 'a good   example' -> 'example good a'.",
+    "brute_force": {
+      "approach": "Split on whitespace into a list of words, reverse the list, join with single spaces: ' '.join(reversed(s.split())). In Python this is already O(n) and is the answer to state first; the cost an interviewer wants you to notice is the separate word list and intermediate strings, which matters in languages with mutable strings where the follow-up is 'do it in place with O(1) extra memory'.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "code": "def brute_force(s: str) -> str:\n    \"\"\"Split into words, reverse the list, join; allocates a word list and new strings.\"\"\"\n    return \" \".join(reversed(s.split()))"
+    },
+    "optimization": "Reversing the order of words while keeping each word intact can be done with two reversals on the character array: reverse the entire array (the words are now in the right order but each is spelled backwards), then reverse each word individually to repair the spelling. Both passes are in-place two-pointer swaps. Spaces are handled first by a compaction pass: a write pointer copies characters forward, emitting a space only when the previously written character is not a space, then trims one trailing space. Three linear passes, O(1) extra memory beyond the array itself.",
+    "intuition": "Reversal composes: reversing the whole and then reversing each part undoes the inner reversal but keeps the outer one. Treat the character array like a tape you flip end over end, then flip each word back so its letters read correctly. Compacting spaces first means the word boundaries are unambiguous single spaces.",
+    "geometric": "Three sweeps over one array. Sweep 1: a slow write pointer trails a fast read pointer, closing gaps of spaces. Sweep 2: two pointers start at both ends and swap toward the middle. Sweep 3: a boundary scanner walks left to right and, at each space or the end, fires a local two-pointer reversal over the word it just passed.",
+    "visual": "\"  hello world  \"\n\n1 compact:   h e l l o _ w o r l d        (w trims trailing)\n2 reverse:   d l r o w _ o l l e h\n             L<------------------>R  swaps meet in middle\n3 per word:  [d l r o w] _ [o l l e h]\n             w o r l d  _  h e l l o\n\nresult: \"world hello\"",
+    "steps": [
+      "chars = list(s); compact spaces with read pointer r and write pointer w; trim a trailing space.",
+      "reverse(0, len - 1) over the whole array.",
+      "Walk i from 0 to len inclusive; at each space or the end, reverse(start, i - 1) and set start = i + 1.",
+      "Join and return."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n) in Python for the char list, O(1) extra with mutable strings",
+      "why": "Three linear passes; each character is swapped at most twice."
+    },
+    "pitfalls": [
+      "Leaving a trailing space after compaction.",
+      "Not reversing the last word (the boundary loop must run to len inclusive).",
+      "Collapsing interior spaces to zero instead of one."
+    ],
+    "hints": [
+      "split/reverse/join works. How would you do it without allocating a list of words?",
+      "Reverse the whole string first and look at what the words look like afterwards.",
+      "Reverse the entire char array, then reverse each word back in place; compact the spaces first so boundaries are single spaces."
+    ],
+    "code": "class Solution:\n    def reverseWords(self, s: str) -> str:\n        chars = list(s)\n\n        def reverse(lo: int, hi: int) -> None:\n            while lo < hi:\n                chars[lo], chars[hi] = chars[hi], chars[lo]\n                lo, hi = lo + 1, hi - 1\n\n        w = 0                                             # 1. compact spaces in place\n        for r in range(len(chars)):\n            if chars[r] != \" \" or (w > 0 and chars[w - 1] != \" \"):\n                chars[w] = chars[r]\n                w += 1\n        if w and chars[w - 1] == \" \":\n            w -= 1\n        del chars[w:]\n\n        reverse(0, len(chars) - 1)                        # 2. reverse the whole tape\n        start = 0\n        for i in range(len(chars) + 1):                   # 3. reverse each word back\n            if i == len(chars) or chars[i] == \" \":\n                reverse(start, i - 1)\n                start = i + 1\n        return \"\".join(chars)",
+    "related": [
+      "reverse_string",
+      "zigzag_conversion"
+    ]
+  },
+  {
+    "slug": "group_shifted_strings",
+    "title": "Group Shifted Strings",
+    "leetcode": 249,
+    "difficulty": "Medium",
+    "topic": "strings",
+    "pattern": "Canonical key hashing (shift-invariant signature)",
+    "file": "strings/group_shifted_strings.py",
+    "problem": "A string is shifted by moving every letter forward by the same amount with wrap-around z -> a, so 'abc' -> 'bcd' -> ... -> 'xyz' -> 'yza'. Given lowercase strings, group all strings that belong to the same shifting sequence; groups may be returned in any order. Example: ['abc','bcd','acef','xyz','az','ba','a','z'] -> [['acef'], ['a','z'], ['az','ba'], ['abc','bcd','xyz']].",
+    "brute_force": {
+      "approach": "For every string, compare it against each existing group's representative: same length and one shift k (derived from the first letters) maps every position of one onto the other. The wasted work is pairwise comparison: the 'same shape' relation is re-derived for each pair instead of computing a shape once per string and letting a hash map do the grouping.",
+      "time": "O(n^2 * L)",
+      "space": "O(n * L)",
+      "code": "def brute_force(strings: List[str]) -> List[List[str]]:\n    \"\"\"Compare each string with every group's representative by trying the implied shift.\"\"\"\n    def same_sequence(a: str, b: str) -> bool:\n        if len(a) != len(b):\n            return False\n        k = (ord(b[0]) - ord(a[0])) % 26 if a else 0\n        return all((ord(y) - ord(x)) % 26 == k for x, y in zip(a, b))\n\n    groups: List[List[str]] = []\n    for s in strings:\n        for g in groups:\n            if same_sequence(g[0], s):\n                g.append(s)\n                break\n        else:\n            groups.append([s])\n    return groups"
+    },
+    "optimization": "Two strings are in the same sequence iff the differences between consecutive letters agree modulo 26: shifting adds the same constant to every letter, so consecutive differences are untouched. That makes the tuple of (s[i+1] - s[i]) % 26 a shift-invariant canonical key. Strings with the same key go in the same bucket of a dict: one pass over the input, O(L) per string to build the key. The modulo is what handles wrap-around ('az' has gap 25; 'ba' has gap -1 which is 25 mod 26).",
+    "intuition": "'Same up to a uniform shift' is an equivalence relation, and grouping by an equivalence relation is always 'find a canonical representative, hash on it'. Here the canonical form is the sequence of gaps between neighbouring letters, which deletes the absolute offset and keeps only the shape. All single-letter strings share the empty key, which is correct: each is a shift of the others.",
+    "geometric": "Plot letters as heights 0..25. 'abc' is 0 1 2, 'xyz' is 23 24 25, 'bcd' is 1 2 3: the same staircase slid up or down. Taking consecutive step sizes flattens every copy onto the same curve. 'az' (0 25) and 'ba' (1 0) look different until the steps are read mod 26: 25 and -1 are the same step on the circle of letters.",
+    "visual": "string   letters as numbers   gaps mod 26   key\nabc      0  1  2            +1 +1        (1,1)\nbcd      1  2  3            +1 +1        (1,1)\nxyz     23 24 25            +1 +1        (1,1)\naz       0 25               +25          (25,)\nba       1  0               -1 -> 25     (25,)\nacef     0  2  4  5         +2 +2 +1     (2,2,1)\na, z     -                  -            ()\n\ngroups = {(1,1): [abc,bcd,xyz], (25,): [az,ba],\n          (2,2,1): [acef], (): [a,z]}",
+    "steps": [
+      "groups = defaultdict(list).",
+      "For each s: key = tuple((ord(b) - ord(a)) % 26 for consecutive a, b in s).",
+      "groups[key].append(s).",
+      "Return list(groups.values())."
+    ],
+    "complexity": {
+      "time": "O(n * L)",
+      "space": "O(n * L)",
+      "why": "One key of length L - 1 per string and one dict insertion."
+    },
+    "pitfalls": [
+      "Forgetting % 26, which splits wrap-around pairs like 'az' and 'ba'.",
+      "Normalising by subtracting the first letter without the modulo.",
+      "Worrying about single-letter strings: they all share the empty key, which is correct."
+    ],
+    "hints": [
+      "What stays the same about a string when every letter is shifted by the same amount?",
+      "The gaps between consecutive letters do not change. Use them as a key.",
+      "Key = tuple of (ord(next) - ord(prev)) % 26; bucket strings by that key in a dict."
+    ],
+    "code": "class Solution:\n    def groupStrings(self, strings: List[str]) -> List[List[str]]:\n        groups = defaultdict(list)\n        for s in strings:\n            key = tuple((ord(b) - ord(a)) % 26 for a, b in zip(s, s[1:]))   # shift-invariant\n            groups[key].append(s)\n        return list(groups.values())",
+    "related": [
+      "group_anagrams",
+      "valid_anagram"
+    ]
+  },
+  {
+    "slug": "compare_version_numbers",
+    "title": "Compare Version Numbers",
+    "leetcode": 165,
+    "difficulty": "Medium",
+    "topic": "strings",
+    "pattern": "Two-pointer chunk parsing",
+    "file": "strings/compare_version_numbers.py",
+    "problem": "Version strings are dot-separated revisions of digits such as '1.01', '1.001' or '1.0.0'. Compare two versions revision by revision as integers (leading zeros are ignored) and treat a missing revision as 0. Return -1 if version1 < version2, 1 if greater, 0 if equal. Example: '1.01' vs '1.001' -> 0; '1.0' vs '1.0.0' -> 0; '0.1' vs '1.1' -> -1.",
+    "brute_force": {
+      "approach": "Split both strings on '.', pad the shorter list with zeros, map every chunk through int() and compare the two integer lists element by element. The wasted work is materialising all chunks of both versions before comparing, when the comparison usually decides at the first differing revision and never needs the rest.",
+      "time": "O(n + m)",
+      "space": "O(n + m)",
+      "code": "def brute_force(version1: str, version2: str) -> int:\n    \"\"\"Split both, pad with zeros, convert every chunk, then compare the lists.\"\"\"\n    a = [int(c) for c in version1.split(\".\")]\n    b = [int(c) for c in version2.split(\".\")]\n    k = max(len(a), len(b))\n    a += [0] * (k - len(a))\n    b += [0] * (k - len(b))\n    return (a > b) - (a < b)"
+    },
+    "optimization": "Revisions are consumed left to right and compared immediately, so keep one index into each string and parse the next integer in place: accumulate x = x * 10 + digit until a dot or the end, do the same for y, compare, and only if equal advance both past the dot. When one string is exhausted its pointer stays at the end and its parser yields 0, which is exactly the 'missing revision counts as 0' rule for free. Early exit on the first difference, O(1) extra space, no substrings allocated.",
+    "intuition": "Compare like a dictionary but with numeric fields: walk the two strings in lockstep one field at a time. Leading zeros vanish because each field is parsed to an int, and trailing '.0.0' vanishes because an exhausted string reads as zeros. Only the first unequal field matters.",
+    "geometric": "Two pointers, one per string, hop from dot to dot in step. Between hops each pointer sweeps a digit run and leaves behind one integer. The two integers are compared; the pointers continue only on a tie. If one pointer falls off the end it keeps producing zeros while the other finishes.",
+    "visual": "version1: 1 . 0 1          version2: 1 . 0 0 1\n          i                          j\nfield 1:  x = 1                      y = 1      equal\n          skip '.'                   skip '.'\nfield 2:  \"01\" -> x = 1              \"001\" -> y = 1   equal\n          i = 4 = n                  j = 5 = m   -> return 0\n\n\"1.0\" vs \"1.0.0\": after 2 fields i past end -> x = 0,\n                  j reads \"0\" -> y = 0 -> equal -> 0",
+    "steps": [
+      "i = j = 0.",
+      "While i < n or j < m: parse x from version1 at i until '.' or the end; parse y from version2 at j likewise.",
+      "If x != y return -1 or 1.",
+      "i += 1 and j += 1 to skip the dots (harmless past the end).",
+      "Return 0."
+    ],
+    "complexity": {
+      "time": "O(n + m)",
+      "space": "O(1)",
+      "why": "Each character is read once into one of two integer accumulators."
+    },
+    "pitfalls": [
+      "Comparing chunks as strings ('01' vs '1').",
+      "Forgetting that a missing revision counts as zero.",
+      "Advancing past the dot before parsing, which skips the first digit of a field."
+    ],
+    "hints": [
+      "What does '1.0' vs '1.0.0' tell you about missing revisions?",
+      "Parse one revision at a time from each string and compare as integers; stop at the first difference.",
+      "Use two indices; an index past the end of its string simply yields 0 for every remaining revision."
+    ],
+    "code": "class Solution:\n    def compareVersion(self, version1: str, version2: str) -> int:\n        i = j = 0\n        n, m = len(version1), len(version2)\n        while i < n or j < m:\n            x = 0\n            while i < n and version1[i] != \".\":\n                x = x * 10 + int(version1[i])\n                i += 1\n            y = 0\n            while j < m and version2[j] != \".\":\n                y = y * 10 + int(version2[j])\n                j += 1\n            if x != y:\n                return -1 if x < y else 1\n            i += 1                                   # skip the dot (no-op past the end)\n            j += 1\n        return 0",
+    "related": [
+      "string_to_integer_atoi",
+      "add_strings"
+    ]
+  }
+]

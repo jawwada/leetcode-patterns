@@ -1,0 +1,79 @@
+[
+ {
+  "slug": "min_number_operations",
+  "title": "Minimum Number of Increments on Subarrays to Form a Target Array",
+  "leetcode": 1526,
+  "difficulty": "Hard",
+  "topic": "greedy",
+  "pattern": "Count only the rises (adjacent-difference greedy)",
+  "file": "greedy/min_number_operations.py",
+  "problem": "Start from an all-zero array. One operation picks any contiguous subarray and adds 1 to every element in it. Return the minimum number of operations needed to reach target. Example: target = [3,1,5,4,2,3,4,2] needs 9 operations.",
+  "brute_force": {
+   "approach": "Simulate the painting: while some element is still below its target, find the longest run of positions that are still short and increment that whole run by one. Each pass costs O(n) and there can be max(target) passes. The waste is re-scanning the array every pass to rediscover run boundaries that the target's shape already fixes.",
+   "time": "O(n · max(target))",
+   "space": "O(n)",
+   "code": "def brute_force(target: List[int]) -> int:\n    cur = [0] * len(target)\n    ops = 0\n    while True:\n        i, n = 0, len(target)\n        # find the first position still below target\n        while i < n and cur[i] >= target[i]:\n            i += 1\n        if i == n:\n            return ops\n        # extend the stroke across the longest run of still-short positions\n        while i < n and cur[i] < target[i]:\n            cur[i] += 1\n            i += 1\n        ops += 1"
+  },
+  "optimization": "Every operation is a 1-high horizontal brush stroke with exactly one left edge. A stroke can only begin where the skyline rises relative to its left neighbour (or at index 0). So position i needs exactly max(0, target[i] - target[i-1]) new strokes to start there, and where the skyline falls or stays flat the existing strokes just end or continue for free. Summing the rises counts every stroke exactly once, at its left edge, in a single pass with no simulation.",
+  "intuition": "Count left edges, not operations. The answer is target[0] (that many strokes must start at index 0) plus the sum of every positive adjacent difference. Falls cost nothing because a stroke is allowed to stop anywhere.",
+  "geometric": "Draw the target as a bar chart. Each operation is one brick laid horizontally across some columns. Bricks need support, so a column taller than its left neighbour needs that many bricks to start at it; flat and falling steps need none.",
+  "visual": "target: 3 1 5 4 2 3 4 2\n\n 5          #\n 4          # #     #\n 3  #       # #   # #\n 2  #       # # # # # #\n 1  # #     # # # # # #\n    -----------------------\n    ^ 3     ^ +4    ^ +1 ^ +1       falls are free\n start      1->5    2->3  3->4\n\n ops = 3 + 4 + 1 + 1 = 9",
+  "steps": [
+   "Set ops = target[0]: that many strokes must begin at index 0.",
+   "Scan i from 1 to n-1.",
+   "If target[i] > target[i-1], add the difference: new strokes must start here.",
+   "Otherwise add nothing: strokes may end at any column.",
+   "Return ops."
+  ],
+  "complexity": {"time": "O(n)", "space": "O(1)", "why": "One left-to-right pass with two integers of state."},
+  "pitfalls": [
+   "Counting falls as well as rises (a stroke can stop anywhere, so falls are free).",
+   "Forgetting that the first element alone requires target[0] strokes."
+  ],
+  "hints": [
+   "Think of each operation as a horizontal brush stroke of height 1. Where can a stroke start?",
+   "A stroke only has to start where the target goes up compared to its left neighbour.",
+   "Answer = target[0] + sum of max(0, target[i] - target[i-1])."
+  ],
+  "code": "class Solution:\n    def minNumberOperations(self, target: List[int]) -> int:\n        ops = target[0]\n        for i in range(1, len(target)):\n            if target[i] > target[i - 1]:\n                ops += target[i] - target[i - 1]\n        return ops",
+  "related": ["trapping_rain_water", "largest_rectangle_in_histogram", "jump_game_ii"]
+ },
+ {
+  "slug": "add_two_numbers",
+  "title": "Add Two Numbers",
+  "leetcode": 2,
+  "difficulty": "Medium",
+  "topic": "linked_list",
+  "pattern": "Dummy head + carry",
+  "file": "linked_list/add_two_numbers.py",
+  "problem": "Two non-empty linked lists store non-negative integers with digits in reverse order (342 is 2 -> 4 -> 3). Return their sum as a linked list in the same format. Example: (2->4->3) + (5->6->4) = (7->0->8), since 342 + 465 = 807.",
+  "brute_force": {
+   "approach": "Walk each list to rebuild it as an integer, add the two integers, then split the sum back into digits and build a new list. It is linear, but it materialises whole numbers only to tear them apart again, and in a language with fixed-width integers it overflows as soon as the lists are long.",
+   "time": "O(m + n)",
+   "space": "O(m + n)",
+   "code": "def brute_force(l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:\n    def to_int(node):\n        n, place = 0, 1\n        while node:\n            n += node.val * place\n            place *= 10\n            node = node.next\n        return n\n    total = to_int(l1) + to_int(l2)\n    return build([int(c) for c in str(total)[::-1]])"
+  },
+  "optimization": "Addition is positional: digit i of the sum depends only on digit i of each input plus the carry from digit i-1. Because the lists already store the least-significant digit first, we can add while walking, emitting one output node per step and carrying at most 1. The two conversions disappear and the extra state shrinks to a single carry bit.",
+  "intuition": "Walk both lists in lockstep. At each node compute total = a + b + carry, emit total % 10 and keep carry = total // 10. Continue while either list has nodes or a carry remains so that 999 + 1 grows a fourth digit. A dummy head removes the special case for the first output node.",
+  "geometric": "Picture the two lists as two rows of digits left-aligned at the ones column. One cursor sweeps right across both rows writing a third row beneath, with a 1-wide carry sliding along just ahead of it.",
+  "visual": "l1:   2 -> 4 -> 3        (342)\nl2:   5 -> 6 -> 4        (465)\n      ^\n      cursor, carry=0\n\nstep  a  b  carry  total  emit  new carry\n  1   2  5    0      7      7       0\n  2   4  6    0     10      0       1\n  3   3  4    1      8      8       0\n\nout:  7 -> 0 -> 8        (807)",
+  "steps": [
+   "Create dummy = ListNode(), tail = dummy, carry = 0.",
+   "While l1 or l2 or carry: total = carry plus the current digit of each non-empty list, advancing that list.",
+   "carry, digit = divmod(total, 10); append ListNode(digit) and move tail.",
+   "Return dummy.next."
+  ],
+  "complexity": {"time": "O(max(m, n))", "space": "O(1)", "why": "One pass over the longer list; output nodes excluded, only the carry and two cursors are extra."},
+  "pitfalls": [
+   "Stopping when both lists end but a carry is still pending.",
+   "Reading .val from a list that already ended."
+  ],
+  "hints": [
+   "The least-significant digit comes first. How do you add numbers by hand?",
+   "Keep a carry and walk both lists together, treating a missing node as 0.",
+   "Loop while either list has nodes or carry is non-zero; use a dummy head for the output."
+  ],
+  "code": "class Solution:\n    def addTwoNumbers(self, l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:\n        dummy = ListNode()\n        tail = dummy\n        carry = 0\n        while l1 or l2 or carry:\n            total = carry\n            if l1:\n                total += l1.val\n                l1 = l1.next\n            if l2:\n                total += l2.val\n                l2 = l2.next\n            carry, digit = divmod(total, 10)\n            tail.next = ListNode(digit)\n            tail = tail.next\n        return dummy.next",
+  "related": ["merge_two_sorted_lists", "multiply_strings", "plus_one"]
+ }
+]

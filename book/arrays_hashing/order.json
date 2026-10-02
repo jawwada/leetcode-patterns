@@ -1,0 +1,19 @@
+{"topic": "arrays_hashing", "title": "Arrays and Hashing", "order": [
+ {"slug": "two_sum", "why_here": "The template for the chapter: a dict of what you have seen, queried with a complement, check before insert."},
+ {"slug": "contains_duplicate_ii", "why_here": "Same one-pass dict, but the value stored is the last index, and overwriting keeps it the nearest."},
+ {"slug": "majority_element", "why_here": "Shows the memory can shrink to a candidate and a counter when the question only needs a summary."},
+ {"slug": "max_consecutive_ones", "why_here": "The smallest possible memory: one running count that a zero resets, the seed of every running accumulator."},
+ {"slug": "valid_sudoku", "why_here": "Back to sets, now 27 of them at once, with arithmetic that routes each cell to its sets."},
+ {"slug": "group_anagrams", "why_here": "The dict key stops being the item itself: design a canonical key so equal keys mean the same group."},
+ {"slug": "top_k_frequent_elements", "why_here": "Count with a dict, then use the counts themselves as array indices: bucket sort instead of comparison sort."},
+ {"slug": "product_of_array_except_self", "why_here": "Introduces prefix and suffix accumulation: 'all but one' becomes 'left part times right part'."},
+ {"slug": "longest_consecutive_sequence", "why_here": "A set plus a start-of-run test, and the chapter's first real amortised argument for a nested loop."},
+ {"slug": "subarray_sum_equals_k", "why_here": "Prefix sums meet the two sum dict: count earlier prefixes equal to the current prefix minus k."},
+ {"slug": "encode_and_decode_strings", "why_here": "Designing an unambiguous representation: length-prefixed serialisation that no content can confuse."},
+ {"slug": "first_missing_positive", "why_here": "The array becomes its own hash table, parking value v at index v - 1, for O(1) extra space."},
+ {"slug": "maximum_gap", "why_here": "Pigeonhole buckets on the number line replace sorting; the answer must cross a bucket boundary."},
+ {"slug": "contains_duplicate_iii", "why_here": "Value buckets of width t + 1 combined with a sliding window of indices from contains duplicate II."},
+ {"slug": "count_of_smaller_numbers_after_self", "why_here": "Counting pairs across positions: merge sort counts how many smaller elements jump from the right half."},
+ {"slug": "reverse_pairs", "why_here": "The same merge-sort count, but the counted condition differs from the merge order, so counting gets its own pass."},
+ {"slug": "create_sorted_array_through_instructions", "why_here": "Counting by value with a Fenwick tree, the general tool behind the previous two problems."}
+]}

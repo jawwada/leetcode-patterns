@@ -1,0 +1,16 @@
+{
+  "topic": "two_pointers",
+  "title": "Two Pointers",
+  "order": [
+    {"slug": "valid_palindrome", "why_here": "The simplest converging walk: compare mirror cells from both ends, skipping junk."},
+    {"slug": "move_zeroes", "why_here": "Introduces the reader/writer geometry: a writer trails the reader and swaps kept values forward."},
+    {"slug": "squares_of_a_sorted_array", "why_here": "Converging pointers that produce output: the largest |x| is always at an end, so fill from the back."},
+    {"slug": "remove_duplicates_from_sorted_array_ii", "why_here": "Slow/fast with a look-back: the writer checks its own output two cells back instead of counting."},
+    {"slug": "sort_colors", "why_here": "Three pointers: one reader and two writers growing from opposite ends keep four regions."},
+    {"slug": "two_sum_ii_input_array_is_sorted", "why_here": "Makes the pruning argument explicit: each comparison deletes a whole row or column of pairs."},
+    {"slug": "three_sum", "why_here": "Sort, fix an anchor, run Two Sum II on the suffix; sorted order also makes dedup local."},
+    {"slug": "container_with_most_water", "why_here": "No sorting: the monotone fact is geometric, the shorter wall can never be in a better pair."},
+    {"slug": "trapping_rain_water", "why_here": "The shorter-side argument plus running maxima settles one cell of water per step."},
+    {"slug": "wildcard_matching", "why_here": "Pointers on two strings plus one bookmark: the latest star dominates every earlier one."}
+  ]
+}

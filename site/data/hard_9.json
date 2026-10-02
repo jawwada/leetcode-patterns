@@ -1,0 +1,583 @@
+[
+  {
+    "slug": "parallel_courses_iii",
+    "title": "Parallel Courses III",
+    "leetcode": 2050,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Topological order + longest-path relaxation (Kahn)",
+    "file": "graphs/parallel_courses_iii.py",
+    "problem": "There are n courses labelled 1..n. relations[i] = [prev, next] means prev must finish before next can start, and time[c-1] is how many months course c takes. Any number of courses can run in parallel once their prerequisites are done. Return the minimum number of months needed to finish every course. Example: n=3, relations=[[1,3],[2,3]], time=[3,2,5] -> 8 (courses 1 and 2 run together, and course 3 starts at month 3 and ends at month 8).",
+    "brute_force": {
+      "approach": "finish(c) = time[c] + the max finish over c's prerequisites. Without a fixed visiting order, sweep EVERY edge over and over, Bellman-Ford style, raising finish[next] whenever finish[prev] + time[next] beats it, until a whole sweep changes nothing. That can take up to n sweeps of E edges. Most of the work re-relaxes edges whose source has not changed since the previous sweep.",
+      "time": "O(V*E)",
+      "space": "O(V)",
+      "code": "def brute_force(n: int, relations: List[List[int]], time: List[int]) -> int:\n    # Bellman-Ford style: sweep EVERY edge until a whole sweep changes nothing (<= n sweeps).\n    finish = time[:]\n    changed = True\n    while changed:\n        changed = False\n        for prev, nxt in relations:\n            cand = finish[prev - 1] + time[nxt - 1]\n            if cand > finish[nxt - 1]:\n                finish[nxt - 1] = cand\n                changed = True\n    return max(finish)"
+    },
+    "optimization": "The redundancy is relaxing an edge before its source's finish time is final. finish(c) depends only on courses that come before c in a topological order. So visit courses in Kahn's order: pop a course only once its in-degree reaches 0. At that point every prerequisite has already pushed its value in, so finish[c] is final. Each popped course pushes forward into its dependants with finish[nxt] = max(finish[nxt], finish[cur] + time[nxt]). Every edge is relaxed exactly once, so the longest node-weighted path in the DAG costs O(V + E) instead of O(V*E).",
+    "intuition": "Courses with no prerequisites start at month 0 and end at time[c]. Every other course starts the moment its slowest prerequisite ends, so its finish time is time[c] plus the max over its prerequisites. The answer is the longest path in a DAG whose weights sit on the nodes. Kahn's order guarantees that when a node leaves the queue, all its incoming edges have already delivered their max.",
+    "geometric": "Draw the DAG left to right like a Gantt chart: each course is a bar of length time[c]. A bar starts where the latest-ending prerequisite bar ends. The answer is the rightmost end of any bar, the critical path. Kahn's queue sweeps the chart left to right and settles each bar's position exactly once.",
+    "visual": "time: c1=1 c2=2 c3=3 c4=4 c5=5\n c1 --\\\n c2 ---+------------> c5\n c3 --/-> c4 -------/\nqueue    pop  relax into dependants        finish c1..c5\n[1,2,3]  1    f5=max(5,1+5)=6              1 2 3 4 6\n[2,3]    2    f5=max(6,2+5)=7              1 2 3 4 7\n[3]      3    f4=max(4,3+4)=7, f5=8        1 2 3 7 8\n[4]      4    f5=max(8,7+5)=12             1 2 3 7 12\n[5]      5    indeg(5) hit 0 -> final\nanswer = max(finish) = 12   critical path c3->c4->c5",
+    "steps": [
+      "Build adjacency prev -> [next] and the in-degree array, converting labels to 0-indexed.",
+      "Initialise finish[c] = time[c] and enqueue every course with in-degree 0.",
+      "Pop cur; its finish is now final.",
+      "For each dependant nxt: finish[nxt] = max(finish[nxt], finish[cur] + time[nxt]); decrement indeg[nxt] and enqueue it when it reaches 0.",
+      "Return max(finish)."
+    ],
+    "complexity": {
+      "time": "O(V + E)",
+      "space": "O(V + E)",
+      "why": "Each course is popped once and each edge relaxed once, using an adjacency list plus O(V) arrays."
+    },
+    "pitfalls": [
+      "The input is 1-indexed; forgetting to subtract 1 shifts every course.",
+      "Adding time[cur] again when relaxing (finish[cur] already includes it).",
+      "Reading finish[c] before c is popped, while its max is still provisional."
+    ],
+    "hints": [
+      "A course starts when its slowest prerequisite finishes. Write finish(c) in terms of its prerequisites.",
+      "finish(c) is only final once every prerequisite's value is final. Which graph traversal order guarantees that?",
+      "Use Kahn's algorithm. finish = time[:] to start; when popping cur, set finish[nxt] = max(finish[nxt], finish[cur] + time[nxt]) for each dependant. The answer is max(finish)."
+    ],
+    "code": "class Solution:\n    def minimumTime(self, n: int, relations: List[List[int]], time: List[int]) -> int:\n        adj = [[] for _ in range(n)]\n        indeg = [0] * n\n        for prev, nxt in relations:\n            adj[prev - 1].append(nxt - 1)\n            indeg[nxt - 1] += 1\n        finish = time[:]                        # no prerequisites -> ends at time[c]\n        queue = deque(c for c in range(n) if indeg[c] == 0)\n        while queue:\n            cur = queue.popleft()               # finish[cur] is final: every prerequisite popped\n            for nxt in adj[cur]:\n                finish[nxt] = max(finish[nxt], finish[cur] + time[nxt])\n                indeg[nxt] -= 1\n                if indeg[nxt] == 0:\n                    queue.append(nxt)\n        return max(finish)",
+    "related": [
+      "course_schedule_ii",
+      "course_schedule",
+      "sort_items_by_groups_respecting_dependencies",
+      "course_schedule_iii"
+    ]
+  },
+  {
+    "slug": "find_all_people_with_secret",
+    "title": "Find All People With Secret",
+    "leetcode": 2092,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "Time-grouped union-find with reset of non-informed components",
+    "file": "graphs/find_all_people_with_secret.py",
+    "problem": "There are n people, 0..n-1. Person 0 tells a secret to firstPerson at time 0. meetings[i] = [x, y, t] means x and y meet at time t. If either of them knows the secret then, both do, and within the same time t the secret passes instantly along chains of meetings. Return everyone who knows the secret after all meetings. Example: n=6, meetings=[[1,2,5],[2,3,8],[1,5,10]], firstPerson=1 -> [0,1,2,3,5].",
+    "brute_force": {
+      "approach": "Sort the meetings by time and handle each time group in turn. Inside a group, sweep its meetings again and again, marking both people as knowing whenever exactly one already knows, until a whole sweep changes nothing. A group of g meetings can need g sweeps. Each sweep moves the secret only one hop further and re-checks meetings that have already settled.",
+      "time": "O(m^2)",
+      "space": "O(n)",
+      "code": "def brute_force(n: int, meetings: List[List[int]], firstPerson: int) -> List[int]:\n    # Per time group, re-sweep that group's meetings until nobody new learns the secret.\n    known = [False] * n\n    known[0] = known[firstPerson] = True\n    by_time = sorted(meetings, key=lambda m: m[2])\n    for _, grp in groupby(by_time, key=lambda m: m[2]):\n        group = list(grp)\n        changed = True\n        while changed:\n            changed = False\n            for x, y, _ in group:\n                if known[x] != known[y]:              # one hop of spreading per sweep\n                    known[x] = known[y] = True\n                    changed = True\n    return [p for p in range(n) if known[p]]"
+    },
+    "optimization": "The redundancy is moving the secret one hop per sweep. Inside one time group the real question is 'who is connected, through this group's meetings, to someone who knows?', and union-find answers that in near-O(1) per edge. So union every pair in the group; afterwards, anyone whose root equals find(0) knows. The catch is that links made at time t must not carry over to later times: two people who met at t=5 without the secret do not share one learnt at t=8. The fix is to reset every participant who is not in 0's component back to a singleton after each group. Members of 0's component stay merged forever, which is correct because knowing is permanent.",
+    "intuition": "Treat person 0 as the permanent 'knows' root. Within one timestamp, everyone linked to that root by that timestamp's meetings learns the secret, however long the chain. Links that never reached the root carry no information and are forgotten before the next timestamp. The reset must come after the whole group is unioned, because a chain can pass through a person you have not checked yet.",
+    "geometric": "Picture the people as dots and each time group as a temporary set of ropes between them. Pull on dot 0: every dot that moves now knows and is glued to 0 permanently. Then cut every rope not attached to the glued blob, and the loose dots fall back apart before the next timestamp.",
+    "visual": "n=6  meetings [1,2,5] [3,4,5] [2,3,8] [4,5,10]  first=1\nseed   union(1,0)              blob {0,1}\nt=5    union(1,2) union(3,4)\n       2: find==find(0) keep   blob {0,1,2}\n       3,4: not in blob -> parent[3]=3, parent[4]=4\nt=8    union(2,3)              blob {0,1,2,3}\nt=10   union(4,5); 4,5 not in blob -> reset both\nanswer [p for p if find(p)==find(0)] = [0,1,2,3]\n\nWITHOUT the reset the t=5 rope 3-4 survives:\nt=8 pulls 4 in, t=10 pulls 5 in -> [0..5] (wrong)",
+    "steps": [
+      "parent = identity; union(firstPerson, 0).",
+      "Sort meetings by time and iterate over groups with equal time.",
+      "Union x and y for every meeting in the group.",
+      "Then, for every participant p of the group, if find(p) != find(0), set parent[p] = p.",
+      "Return every p with find(p) == find(0)."
+    ],
+    "complexity": {
+      "time": "O(m log m + (n + m) alpha(n))",
+      "space": "O(n + m)",
+      "why": "The sort dominates; each meeting costs a constant number of near-constant finds and unions."
+    },
+    "pitfalls": [
+      "Not resetting uninformed participants, so the secret leaks across timestamps.",
+      "Resetting during the union loop instead of after the whole group (breaks chains through later meetings of the same time).",
+      "Seeding only firstPerson and forgetting person 0."
+    ],
+    "hints": [
+      "Process meetings in time order. Within one timestamp, what decides whether a person learns the secret?",
+      "Within a timestamp it is pure connectivity to someone who knows, so use union-find with person 0 as the 'knows' root. What goes wrong at the next timestamp?",
+      "After unioning a time group, reset every participant whose find() is not find(0) back to parent[p] = p. Answer: everyone in 0's component."
+    ],
+    "code": "class Solution:\n    def findAllPeople(self, n: int, meetings: List[List[int]], firstPerson: int) -> List[int]:\n        parent = list(range(n))\n\n        def find(x: int) -> int:\n            while parent[x] != x:\n                parent[x] = parent[parent[x]]        # path halving\n                x = parent[x]\n            return x\n\n        def union(a: int, b: int) -> None:\n            ra, rb = find(a), find(b)\n            if ra != rb:\n                parent[ra] = rb\n\n        union(firstPerson, 0)\n        by_time = sorted(meetings, key=lambda m: m[2])\n        for _, grp in groupby(by_time, key=lambda m: m[2]):\n            group = list(grp)\n            for x, y, _ in group:\n                union(x, y)\n            for x, y, _ in group:                     # links that never reached 0 are forgotten\n                if find(x) != find(0):\n                    parent[x] = x\n                if find(y) != find(0):\n                    parent[y] = y\n        return [p for p in range(n) if find(p) == find(0)]",
+    "related": [
+      "number_of_islands_ii",
+      "accounts_merge",
+      "number_of_connected_components",
+      "redundant_connection"
+    ]
+  },
+  {
+    "slug": "jump_game_iv",
+    "title": "Jump Game IV",
+    "leetcode": 1345,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "BFS on implicit graph with value buckets consumed once",
+    "file": "graphs/jump_game_iv.py",
+    "problem": "From index i of arr you may jump to i+1, i-1, or any j with arr[j] == arr[i]. Return the minimum number of jumps from index 0 to the last index. Example: arr=[100,-23,-23,404,100,23,23,23,3,404] -> 3 (0 -> 4 -> 3 -> 9).",
+    "brute_force": {
+      "approach": "Run a plain BFS, finding the neighbours of i by scanning the whole array for every j with arr[j] == arr[i], plus i-1 and i+1. Each pop costs O(n) and there are up to n pops. The waste: once the first index holding value v is popped, every index with value v is already visited, yet each of them rescans the full array when it is popped in turn.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(arr: List[int]) -> int:\n    # BFS, but neighbours are found by scanning the whole array for equal values at every pop.\n    n = len(arr)\n    dist = [-1] * n\n    dist[0] = 0\n    queue = deque([0])\n    while queue:\n        i = queue.popleft()\n        if i == n - 1:\n            return dist[i]\n        nbrs = [j for j in range(n) if arr[j] == arr[i]] + [i - 1, i + 1]   # O(n) scan\n        for j in nbrs:\n            if 0 <= j < n and dist[j] == -1:\n                dist[j] = dist[i] + 1\n                queue.append(j)\n    return dist[n - 1]"
+    },
+    "optimization": "First redundancy: scanning for equal values. Pre-bucket indices by value (value -> list of indices) so the same-value neighbours become a lookup. That alone is not enough: with n equal values, every pop still iterates a bucket of size n, which is still O(n^2). Second observation: the first time any index with value v is popped, BFS marks all of v's indices visited, so the bucket can never contribute again. Remove it after its first use. Each bucket is then iterated at most once over the whole run, so the total work is O(n) for buckets plus O(n) for the +-1 edges.",
+    "intuition": "The jumps form an unweighted graph on indices, so layer-by-layer BFS gives the minimum number of jumps. Same-value edges form cliques. A clique needs expanding only once, because the first expansion already reaches every member; any later expansion is wasted work, and on arrays of equal values that waste is what turns O(n) into O(n^2).",
+    "geometric": "Picture the indices on a line, with +-1 steps as short hops and each value as a teleporter connecting all of its indices. BFS grows a frontier one layer at a time. When the frontier first touches a teleporter, all its endpoints light up in the next layer and the teleporter switches off for good.",
+    "visual": "idx:   0   1   2   3   4  5  6  7  8   9\narr: 100 -23 -23 404 100 23 23 23  3 404\nwhere: 100:[0,4] -23:[1,2] 404:[3,9] 23:[5,6,7]\nL0 {0}       pop 0: take bucket 100 -> 4; step -> 1\n             bucket 100 deleted\nL1 {4,1}     pop 4: bucket gone; steps -> 3,5\n             pop 1: bucket -23 -> 2\nL2 {3,5,2}   pop 3: bucket 404 -> 9\n             pop 5: bucket 23 -> 6,7\nL3 {9,6,7}   pop 9 == n-1 -> answer 3",
+    "steps": [
+      "Build where[v] = list of indices holding v.",
+      "BFS from 0 with a seen array (mark when pushing) and a jump counter per layer.",
+      "When popping i, return the jump count if i == n-1.",
+      "Neighbours are where.pop(arr[i], []) plus i-1 and i+1; push the in-bounds unseen ones.",
+      "Popping the bucket guarantees it is never iterated again; handle n == 1 -> 0 up front."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "Each index is enqueued once and each value bucket is iterated once over the whole BFS."
+    },
+    "pitfalls": [
+      "Not clearing buckets: O(n^2) (TLE) on arrays of equal values.",
+      "Forgetting n == 1, where the answer is 0.",
+      "Marking seen on pop instead of on push, which lets duplicates into the queue."
+    ],
+    "hints": [
+      "Minimum number of jumps in an unweighted graph: which traversal?",
+      "Group indices by value so same-value jumps are a lookup. What happens on an array of 50,000 equal values?",
+      "After a value's bucket has been expanded once, all its indices are visited, so delete the bucket (where.pop) and BFS becomes O(n)."
+    ],
+    "code": "class Solution:\n    def minJumps(self, arr: List[int]) -> int:\n        n = len(arr)\n        if n == 1:\n            return 0\n        where = defaultdict(list)\n        for i, v in enumerate(arr):\n            where[v].append(i)\n        seen = [False] * n\n        seen[0] = True\n        queue = deque([0])\n        jumps = 0\n        while queue:\n            for _ in range(len(queue)):\n                i = queue.popleft()\n                if i == n - 1:\n                    return jumps\n                nbrs = where.pop(arr[i], [])         # take the bucket once; never rescan it\n                nbrs.extend((i - 1, i + 1))\n                for j in nbrs:\n                    if 0 <= j < n and not seen[j]:\n                        seen[j] = True\n                        queue.append(j)\n            jumps += 1\n        return -1                                     # unreachable: +1 steps always arrive",
+    "related": [
+      "jump_game_ii",
+      "jump_game",
+      "word_ladder",
+      "rotting_oranges"
+    ]
+  },
+  {
+    "slug": "k_similar_strings",
+    "title": "K-Similar Strings",
+    "leetcode": 854,
+    "difficulty": "Hard",
+    "topic": "graphs",
+    "pattern": "BFS over states with pruned branching (fix the first mismatch)",
+    "file": "graphs/k_similar_strings.py",
+    "problem": "s1 and s2 are anagrams of each other (letters a-f, length <= 20). One move swaps two letters of s1. Return the minimum number of swaps that turns s1 into s2. Example: s1=\"abac\", s2=\"baca\" -> 2 (abac -> baac -> baca).",
+    "brute_force": {
+      "approach": "BFS over strings: from each string generate all n(n-1)/2 swaps, enqueue the unseen results, and stop when s2 comes out. It is correct but exponential, because the state space is every reachable permutation (up to n! / duplicates), each with O(n^2) neighbours. Most swaps touch positions that are already correct, or reach the same set of mismatches in a different order.",
+      "time": "exponential, O(n! * n^2)",
+      "space": "exponential",
+      "code": "def brute_force(s1: str, s2: str) -> int:\n    # BFS over ALL swaps: n(n-1)/2 neighbours per state, up to n! states -> exponential.\n    n = len(s1)\n    queue = deque([(s1, 0)])\n    seen = {s1}\n    while queue:\n        cur, d = queue.popleft()\n        if cur == s2:\n            return d\n        for i in range(n):\n            for j in range(i + 1, n):\n                lst = list(cur)\n                lst[i], lst[j] = lst[j], lst[i]\n                nxt = \"\".join(lst)\n                if nxt not in seen:\n                    seen.add(nxt)\n                    queue.append((nxt, d + 1))\n    return -1"
+    },
+    "optimization": "The redundancy is branching on swaps that do not matter. (1) A position that already matches never needs to move, so swaps involving it are wasted. (2) The first mismatched index i has to be fixed eventually, and that swap can always be done first, because swaps that do not touch slot i commute with it; so branch only on swaps that put s2[i] into position i. (3) Choose j only where cur[j] == s2[i] and cur[j] != s2[j], so the swap fixes i without breaking j. The branching factor drops from O(n^2) to at most the count of one letter, the depth is at most n-1, and BFS with a visited set still returns the minimum.",
+    "intuition": "Each state is a string, each swap is an edge and BFS layers are swap counts, so the first time s2 is dequeued we have the minimum. Always repairing the leftmost broken slot keeps optimality: in any optimal sequence, the swap that finally fills slot i can be moved to the front. Allowing only 'useful' j (holding the wanted letter and itself wrong) keeps the tree small enough for n = 20.",
+    "geometric": "Picture a tree of strings rooted at s1. Each level fixes at least one more position from the left, so the solved prefix grows as you go down. A node branches only to the few positions holding the letter slot i is waiting for. The brute force is the same tree with every pair of letters as a branch, which is why it explodes.",
+    "visual": "s2 =  b a c a\nL0    a b a c     i=0 wants 'b'\n      ^ ^         j=1: cur[1]='b', s2[1]='a' (wrong) ok\nL1    b a a c     prefix 'b' fixed for good\n          ^ ^     i=2 wants 'c'; j=3 holds 'c', is wrong\nL2    b a c a     == s2 -> answer 2\n\nbranch only on j with cur[j]==s2[i] and cur[j]!=s2[j]\n  -> <= count of one letter per state\nbrute force: all 6 pair swaps of 4 letters per state",
+    "steps": [
+      "queue = deque([s1]), seen = {s1}, swaps = 0.",
+      "Process the queue layer by layer; if a string equals s2, return swaps.",
+      "Find the first index i with cur[i] != s2[i].",
+      "For each j > i with cur[j] == s2[i] and cur[j] != s2[j], swap i and j and enqueue the result if unseen.",
+      "Increase swaps after each layer."
+    ],
+    "complexity": {
+      "time": "exponential worst case, fast in practice",
+      "space": "O(number of states)",
+      "why": "The pruned branching factor k and depth d <= n-1 bound the states at about k^d; each state costs O(n) to build and hash."
+    },
+    "pitfalls": [
+      "Branching on every pair swap (TLE at n = 20).",
+      "Allowing swaps that break an already-correct position.",
+      "Using DFS without a bound, which finds some solution but not the minimum."
+    ],
+    "hints": [
+      "Minimum number of moves between two states: think BFS over strings. Why is plain BFS too slow?",
+      "Positions that already match never need to move. Which mismatched position can you always fix first without losing optimality?",
+      "From each state find the first mismatch i and branch only on j > i with cur[j] == s2[i] and cur[j] != s2[j]. BFS layers count swaps."
+    ],
+    "code": "class Solution:\n    def kSimilarity(self, s1: str, s2: str) -> int:\n        queue = deque([s1])\n        seen = {s1}\n        swaps = 0\n        while queue:\n            for _ in range(len(queue)):\n                cur = queue.popleft()\n                if cur == s2:\n                    return swaps\n                i = 0\n                while cur[i] == s2[i]:           # first mismatch: it must be fixed eventually\n                    i += 1\n                for j in range(i + 1, len(cur)):\n                    if cur[j] == s2[i] and cur[j] != s2[j]:   # fixes i, does not break j\n                        nxt = cur[:i] + cur[j] + cur[i + 1:j] + cur[i] + cur[j + 1:]\n                        if nxt not in seen:\n                            seen.add(nxt)\n                            queue.append(nxt)\n            swaps += 1\n        return -1                                # unreachable for anagrams",
+    "related": [
+      "word_ladder",
+      "jump_game_iv",
+      "couples_holding_hands",
+      "permutations"
+    ]
+  },
+  {
+    "slug": "online_majority_element_in_subarray",
+    "title": "Online Majority Element In Subarray",
+    "leetcode": 1157,
+    "difficulty": "Hard",
+    "topic": "design",
+    "pattern": "Value -> sorted positions + randomized sampling with bisect verification",
+    "file": "design/online_majority_element_in_subarray.py",
+    "problem": "Design MajorityChecker(arr) with query(left, right, threshold), which returns the element occurring at least threshold times in arr[left..right], or -1. threshold is always more than half the range length, so at most one answer exists. Many queries follow a single construction. Example: arr=[1,1,2,2,1,1]; query(0,5,4) -> 1, query(0,3,3) -> -1, query(2,3,2) -> 2.",
+    "brute_force": {
+      "approach": "Count the slice with a Counter on every query and check the most common element. The waste: if a majority exists it fills more than half the range, so almost any position we look at already holds it, and every other count is irrelevant.",
+      "time": "O(n) per query",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    \"\"\"Count the whole slice on every query.\"\"\"\n\n    def __init__(self, arr: List[int]):\n        self.arr = arr\n\n    def query(self, left: int, right: int, threshold: int) -> int:\n        v, c = Counter(self.arr[left:right + 1]).most_common(1)[0]   # O(n) per query\n        return v if c >= threshold else -1"
+    },
+    "optimization": "The redundancy is counting everything to find the one dominant value. (1) If each value's positions are stored sorted, 'how many times does v occur in [l, r]' is two bisects, O(log n), so checking a candidate is cheap and the only hard part is finding one. (2) A majority fills more than half the range, so a uniformly random index in [l, r] lands on it with probability > 1/2, and t independent samples all miss with probability < 2^-t. Sample about 20 indices, verify each with the bisect count, and return on the first hit; if all miss, there is almost certainly no majority. The structure is a value -> sorted index list built once in O(n), and each query costs O(t log n). (A deterministic alternative is a segment tree of Boyer-Moore candidates, also verified by bisect.)",
+    "intuition": "Guess and check. Sampling is a good way to guess precisely because the target is large: being a majority is what makes it easy to stumble on. The check is exact, so the algorithm never returns a wrong element. The only risk is missing a real majority 20 times in a row, about one in a million per query.",
+    "geometric": "Draw the range as a strip of cells, more than half painted in the majority colour. Each dart thrown at the strip hits that colour with probability above 1/2. For a dart's colour, the sorted position list is a number line; two binary searches clip it to [l, r], and the distance between them is the exact count.",
+    "visual": "idx:  0 1 2 3 4 5\narr:  1 1 2 2 1 1\npos:  1 -> [0,1,4,5]     2 -> [2,3]\nquery(0,5,4):\n  dart idx 3 -> v=2: pos[2] in [0,5]\n       bisect_r(5)=2 - bisect_l(0)=0 = 2 < 4  miss\n  dart idx 4 -> v=1: pos[1] in [0,5]\n       bisect_r(5)=4 - bisect_l(0)=0 = 4 >= 4 -> 1\nquery(0,3,3): 1 and 2 both count 2 < 3\n  all 20 darts miss -> -1   (no majority exists)\nP(miss a real majority 20 times) < 2^-20",
+    "steps": [
+      "Build pos[v] = indices holding v, appended in increasing order (already sorted).",
+      "query: repeat 20 times: pick a uniform index in [left, right] (inclusive) and read v = arr[idx].",
+      "count = bisect_right(pos[v], right) - bisect_left(pos[v], left).",
+      "If count >= threshold, return v.",
+      "If every sample misses, return -1."
+    ],
+    "complexity": {
+      "time": "O(n) build, O(t log n) per query (t = 20)",
+      "space": "O(n)",
+      "why": "Sampling is O(1), and each verification is two bisects on one value's sorted position list."
+    },
+    "pitfalls": [
+      "Too few samples (failure probability is 2^-t per query).",
+      "Returning a sampled value without verifying its count.",
+      "Using randrange(left, right), which excludes right."
+    ],
+    "hints": [
+      "Checking a candidate is easy if you can count a value's occurrences in [l, r] quickly. How would you do that in O(log n)?",
+      "Store each value's sorted list of positions and use two bisects. Now how do you find a candidate without scanning the range?",
+      "A majority fills more than half the range, so a random index hits it with probability > 1/2. Sample about 20 indices, verify each by bisect, and return -1 if all miss."
+    ],
+    "code": "class MajorityChecker:\n    def __init__(self, arr: List[int]):\n        self.arr = arr\n        self.pos = defaultdict(list)                  # value -> indices in increasing order\n        for i, v in enumerate(arr):\n            self.pos[v].append(i)\n        self.rng = random.Random(0)                   # seeded: reproducible runs\n\n    def query(self, left: int, right: int, threshold: int) -> int:\n        for _ in range(20):                           # majority -> each sample misses with p < 1/2\n            v = self.arr[self.rng.randint(left, right)]\n            idx = self.pos[v]\n            count = bisect_right(idx, right) - bisect_left(idx, left)   # exact occurrences in range\n            if count >= threshold:\n                return v\n        return -1                                     # 20 misses: no majority (p_err < 1e-6)",
+    "related": [
+      "majority_element",
+      "time_based_key_value_store",
+      "insert_delete_getrandom_o1",
+      "find_first_and_last_position"
+    ]
+  },
+  {
+    "slug": "dinner_plate_stacks",
+    "title": "Dinner Plate Stacks",
+    "leetcode": 1172,
+    "difficulty": "Hard",
+    "topic": "design",
+    "pattern": "List of stacks + min-heap of \"has room\" indices with lazy invalidation",
+    "file": "design/dinner_plate_stacks.py",
+    "problem": "There are infinitely many stacks in a row, each holding at most capacity plates. push(val) places the plate on the leftmost stack with room, pop() removes from the rightmost non-empty stack, and popAtStack(i) removes the top of stack i; both pops return -1 when there is nothing to remove. Example: capacity=2, push 1,2,3,4,5 -> [1,2][3,4][5]; popAtStack(0) -> 2; push(20) lands on stack 0 -> [1,20][3,4][5]; pop() -> 5.",
+    "brute_force": {
+      "approach": "Keep a list of stacks. push scans from the left for the first stack that is not full; pop skips trailing empty stacks; popAtStack indexes directly. The waste is in push: it re-walks every full stack from index 0 every time, although a full stack can only regain room through popAtStack.",
+      "time": "O(k) push for k stacks, O(1) amortised pops",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    \"\"\"List of stacks; push scans left to right for the first stack with room.\"\"\"\n\n    def __init__(self, capacity: int):\n        self.cap = capacity\n        self.stacks = []\n\n    def push(self, val: int) -> None:\n        for st in self.stacks:               # O(k) scan over every stack\n            if len(st) < self.cap:\n                st.append(val)\n                return\n        self.stacks.append([val])\n\n    def pop(self) -> int:\n        while self.stacks and not self.stacks[-1]:\n            self.stacks.pop()\n        return self.stacks[-1].pop() if self.stacks else -1\n\n    def popAtStack(self, index: int) -> int:\n        if index < len(self.stacks) and self.stacks[index]:\n            return self.stacks[index].pop()\n        return -1"
+    },
+    "optimization": "The redundancy is rescanning stacks that are known to be full. Room appears in exactly one way, popAtStack(i), so record 'i may have room' at that moment in a min-heap, and push reads the smallest index instead of scanning. Entries go stale in two ways: the stack filled up again, or it was trimmed off the right end. Rather than deleting them eagerly, discard them lazily when they reach the heap top and fail the check (index >= len(stacks) or stack full). Trailing empty stacks are always trimmed after a pop, so pop() is simply popAtStack(len(stacks) - 1). Each heap entry is pushed once and popped once, so every operation is amortised O(log n).",
+    "intuition": "Only two positions matter: the leftmost stack with a hole (for push) and the rightmost non-empty stack (for pop). If empty stacks are trimmed, the right edge is just the end of the list. The left hole is the minimum of a set that changes only at popAtStack (a hole opens) and push (a hole may close), so a heap with lazy deletion tracks it without ever scanning.",
+    "geometric": "A row of columns growing to the right. The heap is a set of flags planted on columns that something was taken out of; push goes to the leftmost flag and removes it once that column is full again. pop chips at the rightmost column and knocks down empty columns at the right end; flags left on knocked-down columns are swept away when they come up for a push.",
+    "visual": "cap=2, push 1..5:\n [1,2] [3,4] [5]        open heap = [2]\n  s0    s1    s2\npopAtStack(0) -> 2      open = [0, 2]\n [1]   [3,4] [5]\npush(20): top 0 valid, s0 now full -> pop 0\n [1,20][3,4] [5]        open = [2]\npopAtStack(2) -> 5, s2 empty -> trimmed\n [1,20][3,4]            open = [2, 2]  (stale: 2 >= len)\npush(7): discard stale 2,2; heap empty -> new s2\n [1,20][3,4] [7]        open = [2]",
+    "steps": [
+      "State: stacks (list of lists, last one never empty), open (min-heap of indices that may have room), cap.",
+      "push: pop stale heap tops (index >= len(stacks) or stack full); if the heap is empty, append a new stack and push its index.",
+      "Append val to stacks[open[0]]; if that stack is now full, pop its index from the heap.",
+      "popAtStack(i): return -1 if i is out of range or the stack is empty; otherwise pop the top, push i into the heap, and trim empty stacks off the right end.",
+      "pop() = popAtStack(len(stacks) - 1)."
+    ],
+    "complexity": {
+      "time": "O(log n) amortised per operation",
+      "space": "O(n)",
+      "why": "Each heap entry is pushed and popped at most once, and the stacks hold n plates in total."
+    },
+    "pitfalls": [
+      "Not trimming trailing empty stacks, so pop returns -1 while plates remain further left.",
+      "Trusting a heap index without re-checking it (pushing into a full or vanished stack).",
+      "Duplicate indices in the heap are fine only if every top is validated before use."
+    ],
+    "hints": [
+      "push needs the leftmost stack with room, and pop needs the rightmost non-empty stack. Which one is easy?",
+      "A full stack only gains room through popAtStack(i). Record i somewhere that returns the smallest index quickly.",
+      "Use a min-heap of indices pushed at popAtStack, discard stale tops lazily (out of range or full), and trim trailing empty stacks so pop() is popAtStack(last)."
+    ],
+    "code": "class DinnerPlates:\n    def __init__(self, capacity: int):\n        self.cap = capacity\n        self.stacks = []                     # stacks[i] is a list; last one is never empty\n        self.open = []                       # min-heap of indices that MAY have room (lazy)\n\n    def push(self, val: int) -> None:\n        while self.open:\n            i = self.open[0]\n            if i < len(self.stacks) and len(self.stacks[i]) < self.cap:\n                break\n            heappop(self.open)               # stale: that stack was trimmed away or filled up\n        if not self.open:\n            self.stacks.append([])\n            heappush(self.open, len(self.stacks) - 1)\n        i = self.open[0]\n        self.stacks[i].append(val)\n        if len(self.stacks[i]) == self.cap:\n            heappop(self.open)               # no room left: retire the index\n\n    def pop(self) -> int:\n        return self.popAtStack(len(self.stacks) - 1)\n\n    def popAtStack(self, index: int) -> int:\n        if index < 0 or index >= len(self.stacks) or not self.stacks[index]:\n            return -1\n        val = self.stacks[index].pop()\n        heappush(self.open, index)           # a hole opened here\n        while self.stacks and not self.stacks[-1]:\n            self.stacks.pop()                # keep the right edge on a non-empty stack\n        return val",
+    "related": [
+      "min_stack",
+      "maximum_frequency_stack",
+      "meeting_rooms_iii",
+      "sliding_window_median"
+    ]
+  },
+  {
+    "slug": "design_movie_rental_system",
+    "title": "Design Movie Rental System",
+    "leetcode": 1912,
+    "difficulty": "Hard",
+    "topic": "design",
+    "pattern": "Heaps with lazy deletion by version stamp",
+    "file": "design/design_movie_rental_system.py",
+    "problem": "There are n shops, and entries[i] = [shop, movie, price] means shop has one copy of movie at that price. search(movie) returns up to 5 shops with an unrented copy, cheapest first, ties broken by shop id. rent(shop, movie) and drop(shop, movie) rent and return that copy. report() returns up to 5 rented copies as [shop, movie], cheapest first, ties broken by shop then movie. Example: entries [[0,1,5],[0,2,6],[0,3,7],[1,1,4],[1,2,7],[2,1,5]]: search(1) -> [1,0,2]; rent(0,1); rent(1,2); report() -> [[0,1],[1,2]]; drop(1,2); search(2) -> [0,1].",
+    "brute_force": {
+      "approach": "Store (shop, movie) -> [price, rented]. rent and drop flip a flag in O(1); search filters and sorts every entry, and report filters and sorts every rented entry. The waste is re-sorting the whole collection on every query to read just its first five items, when each rent or drop changes exactly one item.",
+      "time": "O(E log E) per query",
+      "space": "O(E)",
+      "code": "class BruteForce:\n    \"\"\"Flat dict (shop, movie) -> [price, rented]; every query filters and sorts everything.\"\"\"\n\n    def __init__(self, n: int, entries: List[List[int]]):\n        self.items = {(s, m): [p, False] for s, m, p in entries}\n\n    def search(self, movie: int) -> List[int]:\n        cands = sorted((p, s) for (s, m), (p, r) in self.items.items() if m == movie and not r)\n        return [s for _, s in cands[:5]]\n\n    def rent(self, shop: int, movie: int) -> None:\n        self.items[(shop, movie)][1] = True\n\n    def drop(self, shop: int, movie: int) -> None:\n        self.items[(shop, movie)][1] = False\n\n    def report(self) -> List[List[int]]:\n        cands = sorted((p, s, m) for (s, m), (p, r) in self.items.items() if r)\n        return [[s, m] for _, s, m in cands[:5]]"
+    },
+    "optimization": "The redundancy is re-sorting an almost unchanged collection. A sorted container with insert, delete and 'first 5' would fix it, but Python has none built in. Heaps give insert and top in O(log n); what they lack is deleting an arbitrary element, so make deletion lazy: leave the entry in the heap and recognise it as dead when it reaches the top. A plain 'is it in the rented set' check fails here, because a copy rented and then dropped would sit in the available heap twice and be reported twice. So stamp entries with a version: ver[(shop, movie)] is bumped on every rent and drop, each change pushes exactly one entry carrying the new stamp into the heap the copy now belongs to, and an entry is alive iff its stamp is current. Queries pop until they have 5 live entries, throw away dead ones for good, and push the live ones back.",
+    "intuition": "Think of a copy as a token that moves between two sorted shelves, 'available' and 'rented'. We never move it physically; we put a fresh token on the destination shelf and leave the old one behind with an outdated serial number. Whoever picks up a token checks its serial against the register and discards stale ones. Because every state change issues exactly one new token, the live tokens always mirror the true state.",
+    "geometric": "Draw two heaps as triangles: one per movie, ordered by (price, shop), and one global, ordered by (price, shop, movie). Each rent or drop adds a new node to one triangle and greys out a node in the other. A query skims the top of a triangle, brushing grey nodes aside, lifts out the first five live nodes, reads them and puts them back.",
+    "visual": "avail[1]: (4,s1,v0) (5,s0,v0) (5,s2,v0)\nsearch(1) -> [1,0,2]\nrent(0,1): ver[0,1]=1, out += (5,s0,m1,v1)\n           avail[1] (5,s0,v0) is now stale\nrent(1,2): ver[1,2]=1, out += (7,s1,m2,v1)\nreport(): out top = (5,0,1,v1) (7,1,2,v1)\n          -> [[0,1],[1,2]]\ndrop(1,2): ver[1,2]=2, avail[2] += (7,s1,v2)\n           out (7,s1,m2,v1) is now stale\nsearch(2): pop (6,s0,v0) live, (7,s1,v0) dead-drop,\n           (7,s1,v2) live -> [0,1]; push live back",
+    "steps": [
+      "price[(shop, movie)]; ver = defaultdict(int); avail[movie] = heap of (price, shop, stamp); out = heap of (price, shop, movie, stamp).",
+      "rent: ver += 1 and push (price, shop, movie, ver) into out; the avail entry is now stale.",
+      "drop: ver += 1 and push (price, shop, ver) into avail[movie]; the out entry is now stale.",
+      "top5(heap, alive): pop until 5 live entries are collected, discarding stale ones permanently, then push the live ones back.",
+      "search(movie) = shops of top5(avail[movie]); report() = [shop, movie] of top5(out)."
+    ],
+    "complexity": {
+      "time": "O(log E) amortised per operation",
+      "space": "O(E + ops)",
+      "why": "Each stale entry is popped once, paid for by the push that created it; a query does 5 pops and 5 pushes."
+    },
+    "pitfalls": [
+      "Lazy deletion by a rented flag alone (duplicates after rent -> drop).",
+      "Forgetting to push the live entries back after reading them.",
+      "Wrong tie order: report breaks ties by shop, then movie."
+    ],
+    "hints": [
+      "rent and drop change one copy, but search and report need the 5 cheapest. Which structure keeps a 'cheapest first' order under inserts?",
+      "Heaps can insert and read the top but cannot delete from the middle. Can you leave old entries in place and skip them later?",
+      "Give each (shop, movie) a version bumped on every rent and drop; push a stamped entry into the heap it moves to; an entry is alive iff its stamp is current. Pop 5 live entries, discard dead ones, push the live ones back."
+    ],
+    "code": "class MovieRentingSystem:\n    def __init__(self, n: int, entries: List[List[int]]):\n        self.price = {}                          # (shop, movie) -> price\n        self.ver = defaultdict(int)              # (shop, movie) -> stamp, bumped on rent/drop\n        self.avail = defaultdict(list)           # movie -> heap of (price, shop, stamp)\n        self.out = []                            # heap of (price, shop, movie, stamp)\n        for shop, movie, p in entries:\n            self.price[(shop, movie)] = p\n            heappush(self.avail[movie], (p, shop, 0))\n\n    def _top5(self, heap: list, alive: Callable[[tuple], bool]) -> list:\n        kept = []\n        while heap and len(kept) < 5:\n            item = heappop(heap)\n            if alive(item):                      # stale entries fall out here, for good\n                kept.append(item)\n        for item in kept:\n            heappush(heap, item)                 # put the live ones back\n        return kept\n\n    def search(self, movie: int) -> List[int]:\n        def alive(e: tuple) -> bool:\n            return self.ver[(e[1], movie)] == e[2]\n        return [shop for _, shop, _ in self._top5(self.avail[movie], alive)]\n\n    def rent(self, shop: int, movie: int) -> None:\n        self.ver[(shop, movie)] += 1             # the copy sitting in avail is now stale\n        heappush(self.out, (self.price[(shop, movie)], shop, movie, self.ver[(shop, movie)]))\n\n    def drop(self, shop: int, movie: int) -> None:\n        self.ver[(shop, movie)] += 1             # the copy sitting in out is now stale\n        heappush(self.avail[movie], (self.price[(shop, movie)], shop, self.ver[(shop, movie)]))\n\n    def report(self) -> List[List[int]]:\n        def alive(e: tuple) -> bool:\n            return self.ver[(e[1], e[2])] == e[3]\n        return [[shop, movie] for _, shop, movie, _ in self._top5(self.out, alive)]",
+    "related": [
+      "design_twitter",
+      "top_k_frequent_words",
+      "sliding_window_median",
+      "the_skyline_problem"
+    ]
+  },
+  {
+    "slug": "range_sum_query_2d_mutable",
+    "title": "Range Sum Query 2D - Mutable",
+    "leetcode": 308,
+    "difficulty": "Hard",
+    "topic": "design",
+    "pattern": "2D Fenwick tree (binary indexed tree) + inclusion-exclusion",
+    "file": "design/range_sum_query_2d_mutable.py",
+    "problem": "Design NumMatrix(matrix) with update(row, col, val), which sets one cell, and sumRegion(row1, col1, row2, col2), which returns the sum of that inclusive rectangle. Updates and queries are interleaved, many of each. Example: matrix [[3,0,1,4,2],[5,6,3,2,1],[1,2,0,1,5],[4,1,0,1,7],[1,0,3,0,5]]: sumRegion(2,1,4,3) -> 8; update(3,2,2); sumRegion(2,1,4,3) -> 10.",
+    "brute_force": {
+      "approach": "Store the matrix as is. update writes one cell in O(1); sumRegion loops over every cell of the rectangle, re-adding cells that earlier overlapping queries already summed. A 2D prefix-sum table makes queries O(1), but then each update rebuilds O(m*n) of the table, which just moves the same waste to the other operation.",
+      "time": "O(1) update, O(m*n) query",
+      "space": "O(m*n)",
+      "code": "class BruteForce:\n    \"\"\"Plain matrix: update is O(1), sumRegion loops over the whole rectangle.\"\"\"\n\n    def __init__(self, matrix: List[List[int]]):\n        self.a = [row[:] for row in matrix]\n\n    def update(self, row: int, col: int, val: int) -> None:\n        self.a[row][col] = val\n\n    def sumRegion(self, row1: int, col1: int, row2: int, col2: int) -> int:\n        return sum(self.a[r][c] for r in range(row1, row2 + 1) for c in range(col1, col2 + 1))"
+    },
+    "optimization": "The redundancy is that either updates or queries touch a linear number of cells. A 1D Fenwick tree stores partial sums over blocks sized by the lowest set bit of the index, so a point update and a prefix sum each touch O(log n) blocks, and the same trick works independently along each axis. Node tree[i][j] holds the sum of rows (i - lowbit(i), i] x columns (j - lowbit(j), j]. A point update walks i += i & -i, and for each i walks j += j & -j: O(log m log n) nodes. A prefix sum P(r, c) walks downward the same way, and a rectangle is the inclusion-exclusion of four prefixes. Keep a plain copy of the matrix so 'set to val' becomes 'add val - old', the delta a Fenwick tree needs.",
+    "intuition": "A Fenwick tree is a set of nested blocks arranged so that any prefix splits into O(log n) blocks (one per set bit of its length) and any point lies in O(log n) blocks. Doing this along rows and columns at once gives a grid of blocks in which a point lies in O(log m log n) blocks and a prefix rectangle is the union of O(log m log n) blocks. Updates and queries meet in the middle instead of one of them being linear.",
+    "geometric": "Pad the matrix to 1-indexed coordinates. Node (i, j) is a rectangle whose bottom-right corner is (i, j) and whose height and width are the lowest set bits of i and j. A point update lights up a staircase of ever larger rectangles going down and right; a prefix query collects a staircase going up and left. sumRegion is the usual picture: the big prefix rectangle, minus the strip above, minus the strip to the left, plus the corner that was subtracted twice.",
+    "visual": "node (i,j): rows (i-lowbit i, i] x cols (j-lowbit j, j]\nupdate cell (2,1) -> 1-indexed (3,2), m=n=5:\n   i: 3 -> 4 -> 8 stop     j: 2 -> 4 -> 8 stop\n   nodes += delta: (3,2) (3,4) (4,2) (4,4)\nprefix P(4,3): i: 4 -> 0   j: 3 -> 2 -> 0\n   = tree[4][3] + tree[4][2]\nsumRegion(r1,c1,r2,c2):\n   +---------+-------+\n   | P(r1,c1)|       |   P(r2+1,c2+1)\n   +---------+-------+   - P(r1,  c2+1)\n   |         | query |   - P(r2+1,c1)\n   +---------+-------+   + P(r1,  c1)",
+    "steps": [
+      "Keep vals (a copy of the matrix) and tree of size (m+1) x (n+1), 1-indexed; build by calling _add for every cell.",
+      "_add(r, c, delta): for i = r+1, stepping i += i & -i while i <= m, and for j = c+1, stepping j += j & -j while j <= n: tree[i][j] += delta.",
+      "_prefix(r, c): the same nested walks downward (i -= i & -i, j -= j & -j), summing tree[i][j]; this is the sum of the top-left r x c block.",
+      "update: _add(row, col, val - vals[row][col]), then store val.",
+      "sumRegion: P(r2+1, c2+1) - P(r1, c2+1) - P(r2+1, c1) + P(r1, c1)."
+    ],
+    "complexity": {
+      "time": "O(log m * log n) per update and query",
+      "space": "O(m*n)",
+      "why": "Each nested walk touches one node per set bit along each axis."
+    },
+    "pitfalls": [
+      "Off-by-one between 0-indexed cells and the 1-indexed tree.",
+      "Adding val instead of the delta val - old on update.",
+      "Inclusion-exclusion with the wrong corner (r1 in 0-indexed terms is r1 rows above, not r1 - 1)."
+    ],
+    "hints": [
+      "The brute force makes queries linear, and a prefix-sum table makes updates linear. Is there a structure where both are logarithmic in 1D?",
+      "A Fenwick tree does point update and prefix sum in O(log n). Can you nest it, one walk per axis?",
+      "tree[i][j] covers a lowbit(i) x lowbit(j) block. Update with nested i += i&-i / j += j&-j walks using the delta; query with downward walks and inclusion-exclusion of four prefixes."
+    ],
+    "code": "class NumMatrix:\n    def __init__(self, matrix: List[List[int]]):\n        self.m, self.n = len(matrix), len(matrix[0])\n        self.vals = [row[:] for row in matrix]                      # current cell values\n        self.tree = [[0] * (self.n + 1) for _ in range(self.m + 1)]  # 1-indexed 2D BIT\n        for r in range(self.m):\n            for c in range(self.n):\n                self._add(r, c, matrix[r][c])\n\n    def _add(self, r: int, c: int, delta: int) -> None:\n        i = r + 1\n        while i <= self.m:\n            j = c + 1\n            while j <= self.n:\n                self.tree[i][j] += delta\n                j += j & -j                       # next node whose column block covers j\n            i += i & -i\n\n    def _prefix(self, r: int, c: int) -> int:     # sum of the first r rows x first c cols\n        total, i = 0, r\n        while i > 0:\n            j = c\n            while j > 0:\n                total += self.tree[i][j]\n                j -= j & -j\n            i -= i & -i\n        return total\n\n    def update(self, row: int, col: int, val: int) -> None:\n        self._add(row, col, val - self.vals[row][col])             # Fenwick wants a delta\n        self.vals[row][col] = val\n\n    def sumRegion(self, row1: int, col1: int, row2: int, col2: int) -> int:\n        p = self._prefix\n        return (p(row2 + 1, col2 + 1) - p(row1, col2 + 1)\n                - p(row2 + 1, col1) + p(row1, col1))",
+    "related": [
+      "create_sorted_array_through_instructions",
+      "count_of_smaller_numbers_after_self",
+      "rectangle_area_ii",
+      "my_calendar_iii"
+    ]
+  },
+  {
+    "slug": "create_sorted_array_through_instructions",
+    "title": "Create Sorted Array through Instructions",
+    "leetcode": 1649,
+    "difficulty": "Hard",
+    "topic": "arrays_hashing",
+    "pattern": "Fenwick tree over values (order-statistics counting)",
+    "file": "arrays_hashing/create_sorted_array_through_instructions.py",
+    "problem": "Insert the numbers of instructions one by one into a sorted container. Inserting x costs min(number of elements already present that are < x, number that are > x). Return the total cost modulo 1e9+7. Example: [1,5,6,2] -> 0 + 0 + 0 + min(1, 2) = 1 (when 2 is inserted, one value {1} is smaller and two {5,6} are larger).",
+    "brute_force": {
+      "approach": "Keep a Python list sorted. For each x, bisect_left counts the smaller values and len - bisect_right counts the larger ones, then insort(x). The bisects are O(log n), but each list insert shifts everything after the slot. That work keeps an ORDER we never use: we only ask how many values are below or above x.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(instructions: List[int]) -> int:\n    # Sorted list with insort: bisects are O(log n) but each insert shifts O(n) elements.\n    arr, cost = [], 0\n    for x in instructions:\n        less = bisect_left(arr, x)\n        greater = len(arr) - bisect_right(arr, x)\n        cost += min(less, greater)\n        insort(arr, x)                          # O(n) shift\n    return cost % (10 ** 9 + 7)"
+    },
+    "optimization": "The redundancy is maintaining a sorted sequence when we only need counts by value. Values are bounded (1..1e5), so index a structure by VALUE instead of position: cnt[v] = how many times v has been inserted. 'Smaller than x' is the prefix sum cnt[1..x-1], and 'larger than x' is inserted_so_far - cnt[1..x]. A Fenwick tree gives point increment and prefix sum in O(log V) each, so every instruction costs two prefix queries and one update. tree[i] holds the count of inserted values in (i - lowbit(i), i], so any prefix is a sum of O(log V) blocks, and the total is O(n log V) instead of O(n^2).",
+    "intuition": "Sorting is overkill when the range of values is small and fixed: a histogram over values, read as a prefix sum, answers rank questions directly. A Fenwick tree is a histogram whose prefix sums stay cheap while counts are incremented. Equal values count as neither smaller nor larger, which is exactly why 'larger' is k - prefix(x) and not k - prefix(x-1).",
+    "geometric": "Picture a number line 1..V with a counter at each tick. Inserting x bumps the counter at x, and its cost is the smaller of the total mass left of x and the total mass right of x. The Fenwick tree layers blocks of size 1, 2, 4, ... over the line so the mass left of any point is a sum of O(log V) blocks.",
+    "visual": "instructions [1,5,6,2]; cnt by value (after add):\nv:         1 2 3 4 5 6   less=P(x-1)  greater=k-P(x)\nadd 1  k=0 1 . . . . .   P(0)=0       0-P(1)=0  +0\nadd 5  k=1 1 . . . 1 .   P(4)=1       1-P(5)=0  +0\nadd 6  k=2 1 . . . 1 1   P(5)=2       2-P(6)=0  +0\nadd 2  k=3 1 1 . . 1 1   P(1)=1       3-P(2)=2  +1\n(less/greater are queried BEFORE add)   total = 1\nFenwick blocks over values: tree[4]=cnt[1..4],\n  tree[5]=cnt[5], tree[6]=cnt[5..6]\n  P(5) = tree[5] + tree[4]     walk 5 -> 4 -> 0",
+    "steps": [
+      "size = max(instructions); tree = [0] * (size + 1), 1-indexed over values.",
+      "For the k-th instruction x (k values already inserted): less = prefix(x - 1), greater = k - prefix(x).",
+      "cost += min(less, greater).",
+      "add(x): walk i = x, i += i & -i while i <= size, incrementing tree[i].",
+      "Return cost % (10^9 + 7)."
+    ],
+    "complexity": {
+      "time": "O(n log V)",
+      "space": "O(V)",
+      "why": "Each instruction does two prefix walks and one update over O(log V) nodes of a tree spanning the value range."
+    },
+    "pitfalls": [
+      "Counting values equal to x as smaller or larger (use prefix(x-1) and k - prefix(x)).",
+      "Forgetting the modulo.",
+      "A 0-indexed Fenwick walk: lowbit(0) = 0 loops forever."
+    ],
+    "hints": [
+      "You only need how many inserted values are below or above x, not where they are. What is that in terms of counts per value?",
+      "less = sum of cnt[1..x-1], greater = inserted - sum of cnt[1..x]. Which structure gives prefix sums under point increments?",
+      "Fenwick tree over values 1..max: for each x query prefix(x-1) and prefix(x), add min(less, greater), then increment x."
+    ],
+    "code": "class Solution:\n    def createSortedArray(self, instructions: List[int]) -> int:\n        MOD = 10 ** 9 + 7\n        size = max(instructions)\n        tree = [0] * (size + 1)                 # 1-indexed Fenwick tree over values\n\n        def add(i: int) -> None:\n            while i <= size:\n                tree[i] += 1\n                i += i & -i\n\n        def prefix(i: int) -> int:              # how many inserted values are <= i\n            total = 0\n            while i > 0:\n                total += tree[i]\n                i -= i & -i\n            return total\n\n        cost = 0\n        for inserted, x in enumerate(instructions):\n            less = prefix(x - 1)\n            greater = inserted - prefix(x)      # all inserted so far minus those <= x\n            cost += min(less, greater)\n            add(x)\n        return cost % MOD",
+    "related": [
+      "count_of_smaller_numbers_after_self",
+      "reverse_pairs",
+      "range_sum_query_2d_mutable",
+      "sliding_window_median"
+    ]
+  },
+  {
+    "slug": "kth_smallest_prime_fraction",
+    "title": "K-th Smallest Prime Fraction",
+    "leetcode": 786,
+    "difficulty": "Hard",
+    "topic": "heap",
+    "pattern": "k-way merge with a heap (merge k sorted feeds)",
+    "file": "heap/kth_smallest_prime_fraction.py",
+    "problem": "arr is sorted and contains 1 and distinct primes. Consider every fraction arr[i] / arr[j] with i < j and return the k-th smallest as [arr[i], arr[j]]. Example: arr=[1,2,3,5], k=3 -> [2,5] (the fractions in order are 1/5, 1/3, 2/5, 1/2, 3/5, 2/3).",
+    "brute_force": {
+      "approach": "Build all n(n-1)/2 fractions, sort them and take index k-1. This sorts fractions that can never be among the first k, and ignores the order already present: for a fixed numerator arr[i], the fractions arr[i]/arr[j] are already sorted (decreasing in j).",
+      "time": "O(n^2 log n)",
+      "space": "O(n^2)",
+      "code": "def brute_force(arr: List[int], k: int) -> List[int]:\n    # Materialise every pair, sort all n(n-1)/2 fractions, take the k-th.\n    n = len(arr)\n    pairs = [(arr[i] / arr[j], arr[i], arr[j]) for i in range(n) for j in range(i + 1, n)]\n    pairs.sort()\n    return [pairs[k - 1][1], pairs[k - 1][2]]"
+    },
+    "optimization": "Step 1, O(n^2 log n) -> O(k log n): the fractions form a matrix whose row i (numerator arr[i]) is sorted from right to left, so the task is 'k-th smallest across n sorted lists', a k-way merge. Seed a min-heap with each row's smallest value, arr[i]/arr[n-1]; pop the global minimum k-1 times, each time pushing that row's next fraction arr[i]/arr[j-1]. The heap never holds more than n entries, and the top after k-1 pops is the answer. Step 2, for k close to n^2: binary search on the value instead. For a guess m, count fractions below m with an O(n) two-pointer sweep while tracking the largest fraction below m, and narrow until exactly k lie below. That costs O(n log(precision)), independent of k.",
+    "intuition": "Each numerator owns a sorted list of fractions. A heap holding the current head of every list always exposes the smallest fraction not yet taken. Pop k-1 heads and the heap top is the k-th smallest: the same mechanism as merging k sorted linked lists.",
+    "geometric": "Draw an upper-triangular grid with numerators as rows and denominators as columns. Values decrease to the right along a row and increase down a column, so the smallest entries sit in the last column. The heap holds one cursor per row, all starting at the right edge, and each pop slides one cursor one cell left, so the visited cells grow as a staircase from the right edge.",
+    "visual": "arr = [1,2,3,5], k = 3    cell = arr[i]/arr[j]\n            /5      /3      /2\n  1:       0.20    0.33    0.50    <- cursor moves left\n  2:       0.40    0.67\n  3:       0.60\nheap seeded with column /5:  1/5  2/5  3/5\npop 1: 1/5 (0.20), push 1/3   heap 1/3 2/5 3/5\npop 2: 1/3 (0.33), push 1/2   heap 2/5 1/2 3/5\nk-th:  top = 2/5 (0.40)       -> [2, 5]",
+    "steps": [
+      "heap = [(arr[i] / arr[n-1], i, n-1) for i in range(n-1)]; heapify.",
+      "Repeat k-1 times: pop (value, i, j); if j - 1 > i, push (arr[i] / arr[j-1], i, j-1).",
+      "The heap top (value, i, j) is the k-th smallest; return [arr[i], arr[j]]."
+    ],
+    "complexity": {
+      "time": "O(n + k log n)",
+      "space": "O(n)",
+      "why": "Heapify n row heads, then k-1 pop/push pairs on a heap of at most n entries."
+    },
+    "pitfalls": [
+      "Pushing j+1 instead of j-1 (rows get larger toward the LEFT).",
+      "Pushing a 'fraction' with j == i, which is not a valid pair.",
+      "Using the heap when k is close to n^2; binary search on the value is the fix."
+    ],
+    "hints": [
+      "Fix the numerator arr[i]. How are the fractions arr[i]/arr[j] ordered as j varies?",
+      "You have n sorted lists and want the k-th smallest overall. Which classic merge does that?",
+      "Seed a min-heap with arr[i]/arr[-1] for every row; pop k-1 times, pushing arr[i]/arr[j-1] when j-1 > i; the top is the answer."
+    ],
+    "code": "class Solution:\n    def kthSmallestPrimeFraction(self, arr: List[int], k: int) -> List[int]:\n        n = len(arr)\n        # row i holds arr[i]/arr[j] for j > i; smallest first when j runs n-1 down to i+1\n        heap = [(arr[i] / arr[-1], i, n - 1) for i in range(n - 1)]\n        heapify(heap)\n        for _ in range(k - 1):\n            _, i, j = heappop(heap)\n            if j - 1 > i:\n                heappush(heap, (arr[i] / arr[j - 1], i, j - 1))   # row i's next head\n        _, i, j = heap[0]\n        return [arr[i], arr[j]]",
+    "related": [
+      "merge_k_sorted_lists",
+      "find_kth_smallest_pair_distance",
+      "kth_smallest_number_in_multiplication_table",
+      "kth_largest_element_in_an_array"
+    ]
+  },
+  {
+    "slug": "permutation_sequence",
+    "title": "Permutation Sequence",
+    "leetcode": 60,
+    "difficulty": "Hard",
+    "topic": "math_geometry",
+    "pattern": "Factorial number system (direct ranking into blocks)",
+    "file": "math_geometry/permutation_sequence.py",
+    "problem": "The permutations of the digits 1..n, listed in lexicographic order, are numbered 1..n!. Return the k-th one as a string (1 <= n <= 9). Example: n=3, k=3 -> \"213\" (order: 123, 132, 213, 231, 312, 321); n=4, k=9 -> \"2314\".",
+    "brute_force": {
+      "approach": "Generate permutations in lexicographic order (itertools.permutations, or next-permutation k-1 times) and stop at the k-th. Every permutation before the k-th is built in full, although whole blocks of them share a prefix that could be skipped in a single step.",
+      "time": "O(n! * n)",
+      "space": "O(n)",
+      "code": "def brute_force(n: int, k: int) -> str:\n    # Walk all permutations in lexicographic order and stop at the k-th: O(n! * n).\n    for i, perm in enumerate(permutations(range(1, n + 1)), 1):\n        if i == k:\n            return \"\".join(map(str, perm))\n    return \"\""
+    },
+    "optimization": "The redundancy is stepping through permutations one at a time. In lexicographic order, all permutations starting with the smallest unused digit come first, then those starting with the second smallest, and so on, and each block has exactly (n-1)! members. So with the 0-indexed rank r = k-1, the first digit is the unused digit at index r // (n-1)!, and what remains is the same question on n-1 digits with rank r % (n-1)!. Repeating this writes r in the factorial number system, each digit choosing one element from the shrinking pool. That is n divisions and list pops, O(n^2), instead of O(n! * n).",
+    "intuition": "Lexicographic order is a tree. The first digit splits the n! leaves into n equal blocks of (n-1)!, the second digit splits each block into n-1 blocks of (n-2)!, and so on. Finding the k-th leaf is a descent through this tree that picks the child by integer division at each level, exactly like reading off the digits of a number in a mixed-radix system.",
+    "geometric": "Picture a ruler of length n! with big ticks every (n-1)! (first digit), smaller ticks every (n-2)! inside each big interval (second digit), and so on. Position k-1 on the ruler is read off tick by tick: each reading says which remaining digit to take next, and taking it removes it from the pool.",
+    "visual": "n=4, k=9 -> r = 8          pool = [1,2,3,4]\ni  i!  divmod(r, i!)  pick pool[idx]  pool after\n3  6   (1, 2)         2               [1,3,4]\n2  2   (1, 0)         3               [1,4]\n1  1   (0, 0)         1               [4]\n0  1   (0, 0)         4               []\nanswer \"2314\"\nblocks of 3! = 6:  1xxx: #1-6 | 2xxx: #7-12 | 3xxx ...\n  k=9 is offset 2 inside block \"2\"; recurse on [1,3,4]",
+    "steps": [
+      "digits = ['1', ..., 'n'] (the unused pool, ascending); fact[i] = i!; r = k - 1.",
+      "For i = n-1 down to 0: idx, r = divmod(r, fact[i]).",
+      "Append digits.pop(idx) to the output.",
+      "Return the joined output."
+    ],
+    "complexity": {
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "why": "n iterations, each popping from a list of length at most n."
+    },
+    "pitfalls": [
+      "Forgetting k is 1-indexed (use r = k - 1).",
+      "Indexing the original digit list instead of the shrinking pool.",
+      "Dividing by the wrong factorial at a step (position i leaves i digits after it, so the block size is i!)."
+    ],
+    "hints": [
+      "How many permutations start with '1'? With '2'?",
+      "Each leading digit owns a block of (n-1)! permutations. Which block does k fall in, and what is its rank inside the block?",
+      "r = k-1; for i from n-1 down to 0: idx, r = divmod(r, i!); take and remove pool[idx]."
+    ],
+    "code": "class Solution:\n    def getPermutation(self, n: int, k: int) -> str:\n        digits = [str(d) for d in range(1, n + 1)]      # unused digits, ascending\n        fact = [1] * n\n        for i in range(1, n):\n            fact[i] = fact[i - 1] * i\n        r = k - 1                                       # 0-indexed rank\n        out = []\n        for i in range(n - 1, -1, -1):                  # i = positions left after this one\n            idx, r = divmod(r, fact[i])                 # each leading digit owns a block of i!\n            out.append(digits.pop(idx))\n        return \"\".join(out)",
+    "related": [
+      "permutations",
+      "kth_smallest_in_lexicographical_order",
+      "number_of_digit_one"
+    ]
+  },
+  {
+    "slug": "poor_pigs",
+    "title": "Poor Pigs",
+    "leetcode": 458,
+    "difficulty": "Hard",
+    "topic": "math_geometry",
+    "pattern": "Information counting (states per pig, mixed-radix labelling)",
+    "file": "math_geometry/poor_pigs.py",
+    "problem": "Of buckets buckets of liquid, exactly one is poisonous. A pig that drinks poison dies minutesToDie minutes later; you have minutesToTest minutes in total and can feed any pigs any buckets at once, wait, then repeat. Return the minimum number of pigs that guarantees identifying the poisoned bucket. Example: buckets=4, minutesToDie=15, minutesToTest=15 -> 2; buckets=1000, 15, 60 -> 5.",
+    "brute_force": {
+      "approach": "Try pigs = 0, 1, 2, ..., and for each count enumerate every outcome vector explicitly (for each pig: died in round 1..T, or survived) with itertools.product, stopping at the first count whose number of outcomes reaches buckets. This is exponential in the number of pigs, and it lists vectors one by one just to count them, when the count is a product we can write down directly.",
+      "time": "O(sum over p of (T+1)^p)",
+      "space": "O((T+1)^p)",
+      "code": "def brute_force(buckets: int, minutesToDie: int, minutesToTest: int) -> int:\n    # Enumerate every outcome vector (round of death or survival per pig) and count them.\n    rounds = minutesToTest // minutesToDie\n    pigs = 0\n    while True:\n        outcomes = set(product(range(rounds + 1), repeat=pigs))   # (T+1)^pigs vectors\n        if len(outcomes) >= buckets:\n            return pigs\n        pigs += 1"
+    },
+    "optimization": "The redundancy is enumerating outcomes instead of counting them. With T = minutesToTest // minutesToDie rounds, each pig ends in exactly one of T+1 states (dies in round 1..T, or survives), independently of the others, so p pigs give (T+1)^p distinguishable outcomes. Each bucket needs its own outcome, so (T+1)^p >= buckets is necessary. It is also sufficient: label bucket b with its p-digit base-(T+1) number, and in round r let pig i drink from every bucket whose i-th digit is r. The round pig i dies in (or none) reveals digit i, and the digits together name the bucket. So the answer is the smallest p with (T+1)^p >= buckets, found with an integer loop.",
+    "intuition": "A pig is a sensor with T+1 readings, not a yes/no bit. The puzzle looks adversarial, but it is really asking how many base-(T+1) digits it takes to write every bucket index. The scheme that reaches the bound has each pig read one digit of the poisoned bucket's label over the rounds.",
+    "geometric": "Arrange the buckets in a p-dimensional grid with side T+1, giving pig i axis i. In round r, pig i drinks every bucket in the slice 'coordinate i equals r'. The round it dies in reports its coordinate, and surviving means coordinate 0. The p reports are the coordinates of the poisoned cell, so the grid must have at least buckets cells.",
+    "visual": "buckets=9, T = 30//15 = 2 rounds -> 3 states per pig\nlabel buckets in base 3: pig A = row, pig B = column\n           B=0  B=1  B=2\n   A=0      0    1    2     round 1: A drinks row A=1\n   A=1      3    4    5              B drinks col B=1\n   A=2      6    7    8     round 2: A drinks row A=2\n                                     B drinks col B=2\npoison=7: A dies in round 2 -> A=2\n          B dies in round 1 -> B=1   => cell (2,1) = 7\n3^1 = 3 < 9,  3^2 = 9 >= 9   -> 2 pigs",
+    "steps": [
+      "states = minutesToTest // minutesToDie + 1.",
+      "pigs = 0; while states ** pigs < buckets: pigs += 1.",
+      "Return pigs (0 when there is a single bucket)."
+    ],
+    "complexity": {
+      "time": "O(log buckets)",
+      "space": "O(1)",
+      "why": "The loop runs once per base-(T+1) digit needed to label every bucket."
+    },
+    "pitfalls": [
+      "Counting only 2 states per pig (ignores WHICH round it died in).",
+      "Using a floating-point log with ceil, which can be off at exact powers.",
+      "Forgetting buckets = 1 needs 0 pigs."
+    ],
+    "hints": [
+      "With several rounds, how many different things can happen to one pig?",
+      "A pig has T+1 outcomes (dies in round 1..T, or survives), independently of the other pigs. How many outcomes do p pigs have, and how many must there be?",
+      "Find the smallest p with (T+1)^p >= buckets. It is achievable by labelling buckets in base T+1 and having pig i test digit i."
+    ],
+    "code": "class Solution:\n    def poorPigs(self, buckets: int, minutesToDie: int, minutesToTest: int) -> int:\n        states = minutesToTest // minutesToDie + 1   # dies in round 1..T, or survives\n        pigs = 0\n        while states ** pigs < buckets:              # need one distinct outcome per bucket\n            pigs += 1\n        return pigs",
+    "related": [
+      "permutation_sequence",
+      "number_of_digit_one",
+      "single_number"
+    ]
+  }
+]

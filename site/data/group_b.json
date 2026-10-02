@@ -1,0 +1,1037 @@
+[
+  {
+    "slug": "best_time_to_buy_and_sell_stock",
+    "title": "Best Time to Buy and Sell Stock",
+    "leetcode": 121,
+    "difficulty": "Easy",
+    "topic": "sliding_window",
+    "pattern": "Running minimum sweep",
+    "file": "sliding_window/best_time_to_buy_and_sell_stock.py",
+    "problem": "prices[i] is the price of a stock on day i. Choose one day to buy and a later day to sell so that profit is maximised; return 0 if no profitable trade exists. Example: prices = [7,1,5,3,6,4] -> 5 (buy at 1 on day 1, sell at 6 on day 4).",
+    "brute_force": {
+      "approach": "Try every pair (buy day i, sell day j > i) and keep the best prices[j] - prices[i]. For each sell day we rescan all earlier days to find the cheapest buy, although that minimum changes at most once between consecutive days.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(prices: List[int]) -> int:\n    best = 0\n    for i in range(len(prices)):\n        for j in range(i + 1, len(prices)):   # rescans all earlier buys for each sell day\n            best = max(best, prices[j] - prices[i])\n    return best"
+    },
+    "optimization": "The redundancy is recomputing 'cheapest price before j' from scratch for every j. Observation: the best buy for sell day j is exactly min(prices[0..j-1]), and that running minimum is maintained in O(1) as j sweeps right. So the inner loop collapses into two scalars: lowest price so far and best profit so far. As a window, the left edge is the cheapest day seen and the right edge is today; the left edge only jumps forward to a new low, so every day is examined once.",
+    "intuition": "Each day ask 'if I sold today, what is the best I could have done?' The answer depends only on the lowest price before today, so carry that single number along instead of rescanning. Updating the minimum after computing today's profit guarantees buy strictly precedes sell.",
+    "geometric": "Picture the price curve. Pointer L sits on the lowest valley seen so far and R walks right. When R dips below L's price the valley moves to R; otherwise the vertical gap R - L is a candidate profit. The largest gap over the sweep is the answer.",
+    "visual": "prices: [ 7, 1, 5, 3, 6, 4 ]\n          R                    min=7  best=0\n             R                 new low: L jumps here, min=1\n             L  R              5-1=4  best=4\n             L     R           3-1=2  best=4\n             L        R        6-1=5  best=5  <- answer\n             L           R     4-1=3  best=5\nL stays on the lowest valley; R sweeps right once.",
+    "steps": [
+      "Set min_price = +inf and best = 0.",
+      "For each price p compute best = max(best, p - min_price) using the minimum of earlier days only.",
+      "Then update min_price = min(min_price, p).",
+      "Return best (0 if prices never rise)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "one pass with two scalars."
+    },
+    "pitfalls": [
+      "Updating min_price before computing the same day's profit.",
+      "Forgetting the answer is 0 when prices only fall.",
+      "Tracking indices when only the running minimum price is needed."
+    ],
+    "hints": [
+      "For a fixed sell day, which single earlier value determines the best profit?",
+      "That value is the minimum price seen so far, and it can be maintained as you sweep right.",
+      "One pass: best = max(best, p - min_so_far); then min_so_far = min(min_so_far, p)."
+    ],
+    "code": "class Solution:\n    def maxProfit(self, prices: List[int]) -> int:\n        min_price = float(\"inf\")\n        best = 0\n        for p in prices:\n            best = max(best, p - min_price)   # sell today, bought at the cheapest day so far\n            min_price = min(min_price, p)\n        return best",
+    "related": [
+      "minimum_size_subarray_sum",
+      "max_consecutive_ones_iii",
+      "container_with_most_water"
+    ]
+  },
+  {
+    "slug": "longest_substring_without_repeating_characters",
+    "title": "Longest Substring Without Repeating Characters",
+    "leetcode": 3,
+    "difficulty": "Medium",
+    "topic": "sliding_window",
+    "pattern": "Variable-size sliding window",
+    "file": "sliding_window/longest_substring_without_repeating_characters.py",
+    "problem": "Given a string s, return the length of the longest substring whose characters are all distinct. Example: s = \"abcabcbb\" -> 3 (\"abc\"); s = \"pwwkew\" -> 3 (\"wke\"); s = \"bbbbb\" -> 1.",
+    "brute_force": {
+      "approach": "For every start index i, extend j to the right while characters stay distinct (tracked in a set) and record the length. After start i fails at position j, start i+1 rebuilds the set from scratch even though s[i+1..j-1] is already known to be distinct.",
+      "time": "O(n^2)",
+      "space": "O(min(n, alphabet))",
+      "code": "def brute_force(s: str) -> int:\n    best = 0\n    for i in range(len(s)):\n        seen = set()                       # rebuilt for every start index\n        for j in range(i, len(s)):\n            if s[j] in seen:\n                break\n            seen.add(s[j])\n        best = max(best, len(seen))\n    return best"
+    },
+    "optimization": "The redundancy is re-verifying a stretch already proved distinct. Observation: if s[left..right] is distinct and s[right+1] duplicates s[p] with left <= p <= right, every window starting at or before p is doomed, so left can jump straight to p+1. Knowing p instantly requires a map last[ch] = most recent index of ch. With it the left edge never moves backwards and each index is touched O(1) times, giving a single linear pass.",
+    "intuition": "Keep the largest duplicate-free window ending at the current position. When the new character repeats, the only way to restore distinctness is to cut off everything up to and including the earlier copy, so jump left there in one step. The guard last[ch] >= left ignores stale copies that already fell out of the window.",
+    "geometric": "An interval [L, R] slides right over the string. R advances one step per iteration; L only ever jumps forward, landing just past the earlier copy of s[R]. Both edges move monotonically, so the window sweeps the string in O(n) total.",
+    "visual": "s:  a  b  c  a  b  c  b  b\n    L        R              R hits 'a'; last[a]=0 >= L\n       L     R              L jumps to last[a]+1 = 1  len 3\n       L        R           'b' last seen at 1 >= L -> L = 2\n          L     R           window \"cab\"  len 3\n                      L  R  'b' at 6 then 7: window \"b\"\nlast = {a:3, b:7, c:5}      best = 3",
+    "steps": [
+      "Create last = {} (char -> latest index), left = 0, best = 0.",
+      "For each right, ch: if ch is in last and last[ch] >= left, set left = last[ch] + 1.",
+      "Record last[ch] = right.",
+      "Update best = max(best, right - left + 1) and return best at the end."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(min(n, alphabet))",
+      "why": "each index enters and leaves the window once."
+    },
+    "pitfalls": [
+      "Omitting the last[ch] >= left guard lets a stale index move left backwards.",
+      "With a set + while-loop variant, forgetting to remove s[left] when shrinking.",
+      "Off-by-one in the window length (right - left + 1)."
+    ],
+    "hints": [
+      "Think of a window that must never contain a repeated character; what forces its left edge to move?",
+      "When s[right] repeats, the left edge must move past the previous occurrence; store each char's last index.",
+      "left = max(left, last[ch] + 1); last[ch] = right; best = max(best, right - left + 1)."
+    ],
+    "code": "class Solution:\n    def lengthOfLongestSubstring(self, s: str) -> int:\n        last = {}                          # char -> most recent index\n        left = best = 0\n        for right, ch in enumerate(s):\n            if ch in last and last[ch] >= left:\n                left = last[ch] + 1        # jump past the earlier copy, never backwards\n            last[ch] = right\n            best = max(best, right - left + 1)\n        return best",
+    "related": [
+      "longest_repeating_character_replacement",
+      "fruit_into_baskets",
+      "minimum_window_substring"
+    ]
+  },
+  {
+    "slug": "longest_repeating_character_replacement",
+    "title": "Longest Repeating Character Replacement",
+    "leetcode": 424,
+    "difficulty": "Medium",
+    "topic": "sliding_window",
+    "pattern": "Variable-size sliding window",
+    "file": "sliding_window/longest_repeating_character_replacement.py",
+    "problem": "Given an uppercase string s and an integer k, you may change at most k characters. Return the length of the longest substring that can be turned into a single repeated letter. Example: s = \"AABABBA\", k = 1 -> 4 (change one letter to get \"AAAA\" or \"BBBB\").",
+    "brute_force": {
+      "approach": "For each start i, extend j to the right keeping a 26-bucket count of the window; the window is achievable iff (j - i + 1) - max(count) <= k. Each new start recounts letters we just counted, and every step rescans 26 buckets for the max.",
+      "time": "O(n^2 * 26)",
+      "space": "O(26)",
+      "code": "def brute_force(s: str, k: int) -> int:\n    best = 0\n    for i in range(len(s)):\n        count = [0] * 26                           # recounted for every start\n        for j in range(i, len(s)):\n            count[ord(s[j]) - 65] += 1\n            if (j - i + 1) - max(count) <= k:\n                best = max(best, j - i + 1)\n    return best"
+    },
+    "optimization": "The redundancy is recounting the same stretch for every start. Observation: validity is 'window length minus the most frequent letter's count <= k', which only grows when a character is added and only shrinks when one is dropped, so a two-pointer window works. Second observation: max_freq need never decrease, because a smaller max_freq could only produce a shorter window than one already recorded, and we want the maximum. So when the window becomes invalid we slide it (advance left once) instead of shrinking with an inner loop; the window never gets smaller than the best so far.",
+    "intuition": "The best window is one whose minority characters (everything except the dominant letter) number at most k. Grow the window while that holds; when it breaks, slide rather than shrink, because a shorter window can never beat a length already achieved. A stale, too-large max_freq can only keep the window from shrinking, never produce an invalid answer, because best was recorded when it was true.",
+    "geometric": "A window [L, R] moves right with a 26-bar histogram inside it; the tallest bar is the letter we keep and the rest are replacements. The window inflates until replacements exceed k, then both edges move together like a rigid bar, growing again only when a new dominant letter appears.",
+    "visual": "s: A A B A B B A        k = 1\n   L     R              A=3 B=1  size 4 - maxf 3 = 1 <= k ok\n   L       R            A=3 B=2  size 5 - 3 = 2 > k -> slide\n     L     R            drop s[0]=A         size 4, best = 4\n     L       R          A=2 B=3  maxf=3  5-3=2 > k -> slide\n       L     R          size stays 4: window never shrinks\n       L       R        A=2 B=3  5-3=2 > k -> slide again\n         L     R        best = 4  (\"AABA\" -> AAAA / \"ABBB\")",
+    "steps": [
+      "count = [0]*26, left = 0, max_freq = 0, best = 0.",
+      "For each right: increment count[s[right]] and max_freq = max(max_freq, that count).",
+      "If (right - left + 1) - max_freq > k: decrement count[s[left]] and left += 1 (slide once).",
+      "best = max(best, right - left + 1); return best."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(26)",
+      "why": "each index enters and leaves the window at most once."
+    },
+    "pitfalls": [
+      "Recomputing the max over 26 letters after each slide (correct but needless).",
+      "Believing max_freq must be lowered when left moves; it need not.",
+      "Using the wrong validity test (must be window length - max_freq <= k)."
+    ],
+    "hints": [
+      "A window is fixable with k changes iff how many of its characters are NOT the most common letter?",
+      "Window length minus the max letter count must be <= k; maintain a 26-count as the window moves.",
+      "Expand right; if length - max_freq > k advance left once; max_freq never needs to decrease."
+    ],
+    "code": "class Solution:\n    def characterReplacement(self, s: str, k: int) -> int:\n        count = [0] * 26\n        left = max_freq = best = 0\n        for right, ch in enumerate(s):\n            idx = ord(ch) - 65\n            count[idx] += 1\n            max_freq = max(max_freq, count[idx])   # never decreases: a stale max can't hurt\n            if right - left + 1 - max_freq > k:    # more than k minority chars: slide\n                count[ord(s[left]) - 65] -= 1\n                left += 1\n            best = max(best, right - left + 1)\n        return best",
+    "related": [
+      "longest_substring_without_repeating_characters",
+      "max_consecutive_ones_iii",
+      "fruit_into_baskets"
+    ]
+  },
+  {
+    "slug": "permutation_in_string",
+    "title": "Permutation in String",
+    "leetcode": 567,
+    "difficulty": "Medium",
+    "topic": "sliding_window",
+    "pattern": "Fixed-size sliding window with counts",
+    "file": "sliding_window/permutation_in_string.py",
+    "problem": "Return True if some permutation of s1 appears as a contiguous substring of s2. Example: s1 = \"ab\", s2 = \"eidbaooo\" -> True (\"ba\"); s1 = \"ab\", s2 = \"eidboaoo\" -> False.",
+    "brute_force": {
+      "approach": "For every start i in s2 take the substring of length len(s1) and compare sorted copies (or rebuild a letter count). Consecutive windows share k-1 characters, yet we re-sort or re-count all k every time.",
+      "time": "O(n * k log k)",
+      "space": "O(k)",
+      "code": "def brute_force(s1: str, s2: str) -> bool:\n    k = len(s1)\n    target = sorted(s1)\n    for i in range(len(s2) - k + 1):\n        if sorted(s2[i:i + k]) == target:       # re-sorts k chars for every start\n            return True\n    return False"
+    },
+    "optimization": "The redundancy is rebuilding a histogram that differs from its predecessor in exactly two cells. Observation: a permutation match is just equality of letter histograms, and sliding the window one step means +1 for the entering letter and -1 for the leaving letter. Keep one 26-bucket histogram for the current window and compare it to s1's histogram after each slide; comparing 26 ints is O(1), so the whole scan is linear.",
+    "intuition": "'Permutation of s1' means 'same multiset of letters as s1'. A fixed-width window over s2 has a multiset that changes by one letter in and one letter out, so track it incrementally and test for equality with s1's multiset.",
+    "geometric": "A rigid window of width k slides along s2. Beside it sit two 26-bar histograms: need (s1) and have (window). Each step one bar in have rises and one falls; a hit is when the two histograms are identical.",
+    "visual": "need: a=1 b=1                    (from s1 = \"ab\")\ns2:  e i d b a o o o             window width k = 2\n    [e i]             have: e=1 i=1        != need\n      [i d]           have: i=1 d=1 (+d -e)\n        [d b]         have: d=1 b=1 (+b -i)\n          [b a]       have: b=1 a=1 (+a -d) == need -> True\neach slide: +1 entering letter, -1 leaving letter",
+    "steps": [
+      "If len(s1) > len(s2) return False; build need[26] from s1.",
+      "Walk s2 with index i: have[s2[i]] += 1.",
+      "If i >= k, have[s2[i-k]] -= 1 to drop the letter that left the window.",
+      "If have == need return True; after the loop return False."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(26)",
+      "why": "one pass; the histograms have constant size."
+    },
+    "pitfalls": [
+      "Dropping the leaving character at the wrong index (i - k, not i - k + 1).",
+      "Not handling len(s1) > len(s2).",
+      "Comparing whole histograms is fine for 26 letters but would need a match counter for large alphabets."
+    ],
+    "hints": [
+      "What single property of a substring tells you it is a permutation of s1?",
+      "Equal letter counts. The window has fixed width len(s1); update counts as it slides.",
+      "have[enter] += 1, have[leave] -= 1, compare have == need after each step."
+    ],
+    "code": "class Solution:\n    def checkInclusion(self, s1: str, s2: str) -> bool:\n        k = len(s1)\n        if k > len(s2):\n            return False\n        need = [0] * 26\n        have = [0] * 26\n        for ch in s1:\n            need[ord(ch) - 97] += 1\n        for i, ch in enumerate(s2):\n            have[ord(ch) - 97] += 1\n            if i >= k:                            # window too wide: drop s2[i-k]\n                have[ord(s2[i - k]) - 97] -= 1\n            if have == need:                      # same letter multiset = a permutation\n                return True\n        return False",
+    "related": [
+      "minimum_window_substring",
+      "find_all_anagrams_in_a_string",
+      "valid_anagram"
+    ]
+  },
+  {
+    "slug": "minimum_window_substring",
+    "title": "Minimum Window Substring",
+    "leetcode": 76,
+    "difficulty": "Hard",
+    "topic": "sliding_window",
+    "pattern": "Variable-size sliding window",
+    "file": "sliding_window/minimum_window_substring.py",
+    "problem": "Given strings s and t, return the shortest substring of s that contains every character of t with multiplicity, or \"\" if none exists. Example: s = \"ADOBECODEBANC\", t = \"ABC\" -> \"BANC\".",
+    "brute_force": {
+      "approach": "For each start i, extend j to the right while counting letters until the window covers t, record it, then move to i+1. Start i+1 recounts the letters s[i+1..j] the previous window already counted, and every step compares full histograms.",
+      "time": "O(n^2 * alphabet)",
+      "space": "O(alphabet)",
+      "code": "def brute_force(s: str, t: str) -> str:\n    need = Counter(t)\n    best = \"\"\n    for i in range(len(s)):\n        have = Counter()                                 # recounted for every start\n        for j in range(i, len(s)):\n            have[s[j]] += 1\n            if all(have[c] >= need[c] for c in need):\n                if not best or j - i + 1 < len(best):\n                    best = s[i:j + 1]\n                break\n    return best"
+    },
+    "optimization": "The redundancy is recounting a stretch that is already counted. Observation: once [left, right] covers t, every larger right also covers t, so right never backs up; and once advancing left breaks coverage only growing right can fix it. Both edges move monotonically. To make 'covers t' an O(1) check keep need[ch] (positive = still required, negative = surplus) plus one counter missing = total characters still required; the window covers t iff missing == 0.",
+    "intuition": "Expand right until the window is a valid cover, then shrink left while it stays valid; the left end then sits on a required character. Record the length, evict that character to break validity, and continue expanding right. Every candidate window is visited exactly once.",
+    "geometric": "Two pointers on s. R races ahead until the window holds all of t; L then creeps right, discarding surplus letters, until it rests on a letter that is needed. Snapshot the interval, nudge L one more step (breaking coverage), and let R run again. The shortest snapshot wins.",
+    "visual": "s: A D O B E C O D E B A N C     t = \"ABC\"\n   L         R                 missing=0: \"ADOBEC\" len 6\n     L       R                 evict A: missing=1, R runs\n     L               R         'A' at 10: missing=0\n             L       R         L skips surplus DOBE: len 6\n               L           R   evict C; R finds 'C' at 12\n                     L     R   L skips ODE: \"BANC\" 4 <- best\nneed[x] > 0: still required   need[x] < 0: surplus",
+    "steps": [
+      "need = Counter(t), missing = len(t), left = 0, best = (0, inf).",
+      "For each right, ch: if need[ch] > 0 then missing -= 1; always need[ch] -= 1.",
+      "While missing == 0: move left over characters with need < 0, restoring their counts.",
+      "Record the window if shorter; then evict s[left] (need += 1, missing += 1, left += 1).",
+      "Return the best window or \"\"."
+    ],
+    "complexity": {
+      "time": "O(|s| + |t|)",
+      "space": "O(alphabet)",
+      "why": "each pointer traverses s once."
+    },
+    "pitfalls": [
+      "Decrementing missing for surplus characters (only when need[ch] > 0).",
+      "Forgetting that need[] goes negative to encode surplus.",
+      "Recording the window before shrinking the left edge."
+    ],
+    "hints": [
+      "Can the right edge ever need to move back once the window covers t?",
+      "No: expand right until covered, then shrink left while still covered; count characters with a map.",
+      "Keep need[ch] and a single missing counter; the window is valid iff missing == 0."
+    ],
+    "code": "class Solution:\n    def minWindow(self, s: str, t: str) -> str:\n        need = Counter(t)\n        missing = len(t)                     # chars of t still not in the window\n        left = 0\n        best_start, best_len = 0, float(\"inf\")\n        for right, ch in enumerate(s):\n            if need[ch] > 0:\n                missing -= 1\n            need[ch] -= 1                    # negative count = surplus copies\n            if missing == 0:                 # window covers t: shrink the left edge\n                while need[s[left]] < 0:\n                    need[s[left]] += 1\n                    left += 1\n                if right - left + 1 < best_len:\n                    best_start, best_len = left, right - left + 1\n                need[s[left]] += 1           # evict a required char so right must grow again\n                missing += 1\n                left += 1\n        return \"\" if best_len == float(\"inf\") else s[best_start:best_start + best_len]",
+    "related": [
+      "permutation_in_string",
+      "longest_substring_without_repeating_characters",
+      "fruit_into_baskets"
+    ]
+  },
+  {
+    "slug": "sliding_window_maximum",
+    "title": "Sliding Window Maximum",
+    "leetcode": 239,
+    "difficulty": "Hard",
+    "topic": "sliding_window",
+    "pattern": "Monotonic deque",
+    "file": "sliding_window/sliding_window_maximum.py",
+    "problem": "Given nums and a window size k, return the maximum of every contiguous window of size k from left to right. Example: nums = [1,3,-1,-3,5,3,6,7], k = 3 -> [3,3,5,5,6,7].",
+    "brute_force": {
+      "approach": "For each of the n-k+1 windows compute max(nums[i:i+k]). Adjacent windows overlap in k-1 elements, yet all k are rescanned every time, including elements that can never again be a maximum.",
+      "time": "O(n*k)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int], k: int) -> List[int]:\n    return [max(nums[i:i + k]) for i in range(len(nums) - k + 1)]"
+    },
+    "optimization": "The redundancy is reconsidering elements that are already dominated. Observation: if nums[j] <= nums[i] with j < i, then nums[j] leaves every future window before nums[i] and is never larger, so it is useless forever. Keep only useful indices in a deque whose values strictly decrease from front to back; the front is the current max. Pushing a new element pops smaller ones from the back; the front is popped when its index slides out of the window. Each index enters and leaves once.",
+    "intuition": "Maintain a shortlist of candidates that could still become a maximum. A newcomer kills every older candidate that is not bigger than it; the oldest survivor is the window max, and it retires only when it falls out of the window. Storing indices rather than values is what makes expiry detectable.",
+    "geometric": "Draw the bars. Standing at the newest bar and looking left, the candidates are the bars visible as a descending staircase; anything hidden behind a taller, newer bar is gone. The deque is that staircase; its leftmost step is the max and it crumbles when the window edge passes it.",
+    "visual": "nums: [ 1, 3, -1, -3, 5, 3, 6, 7 ]   k = 3\ni=0  push 1          dq = [1]\ni=1  3 kills 1       dq = [3]\ni=2  push -1         dq = [3, -1]        out: 3\ni=3  push -3         dq = [3, -1, -3]    out: 3\ni=4  5 kills all     dq = [5]            out: 5\ni=5  push 3          dq = [5, 3]         out: 5\ni=6  6 kills 5, 3    dq = [6]            out: 6\ni=7  7 kills 6       dq = [7]            out: 7\nfront = window max; values decrease front -> back\n(values shown; the code stores indices to expire the front)",
+    "steps": [
+      "dq = deque of indices (values decreasing front to back), out = [].",
+      "For each i: pop from the back while nums[back] <= nums[i], then append i.",
+      "If dq[0] <= i - k pop the front; it slid out of the window.",
+      "Once i >= k - 1 append nums[dq[0]] to out.",
+      "Return out."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(k)",
+      "why": "every index is pushed and popped at most once."
+    },
+    "pitfalls": [
+      "Storing values instead of indices (then you cannot tell when the max expires).",
+      "Evicting from the back with < instead of <= (ties must go too or the deque bloats).",
+      "Off-by-one in the front-expiry test (dq[0] <= i - k)."
+    ],
+    "hints": [
+      "Which elements of the current window can never be the max of any later window?",
+      "Any element with a newer element >= it. Keep the survivors in decreasing order in a deque of indices.",
+      "Pop back while nums[back] <= x; push i; pop front if it is <= i - k; the front is the answer."
+    ],
+    "code": "class Solution:\n    def maxSlidingWindow(self, nums: List[int], k: int) -> List[int]:\n        dq = deque()                               # indices; values strictly decreasing\n        out = []\n        for i, x in enumerate(nums):\n            while dq and nums[dq[-1]] <= x:        # x dominates older, smaller values\n                dq.pop()\n            dq.append(i)\n            if dq[0] <= i - k:                     # front slid out of the window\n                dq.popleft()\n            if i >= k - 1:\n                out.append(nums[dq[0]])\n        return out",
+    "related": [
+      "daily_temperatures",
+      "largest_rectangle_in_histogram",
+      "minimum_size_subarray_sum"
+    ]
+  },
+  {
+    "slug": "fruit_into_baskets",
+    "title": "Fruit Into Baskets",
+    "leetcode": 904,
+    "difficulty": "Medium",
+    "topic": "sliding_window",
+    "pattern": "Variable-size sliding window",
+    "file": "sliding_window/fruit_into_baskets.py",
+    "problem": "fruits[i] is the type of the tree at position i. You have two baskets, each holding a single type in unlimited quantity. Starting anywhere and moving right, pick one fruit per tree until a tree's type fits neither basket. Return the maximum fruits picked, i.e. the longest subarray with at most 2 distinct values. Example: fruits = [1,2,3,2,2] -> 4 ([2,3,2,2]).",
+    "brute_force": {
+      "approach": "For every start i, walk right while the set of types stays <= 2 and record the length. Start i+1 re-walks the stretch that start i already proved has at most two types.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(fruits: List[int]) -> int:\n    best = 0\n    for i in range(len(fruits)):\n        types = set()                        # re-walks the stretch for every start\n        for j in range(i, len(fruits)):\n            types.add(fruits[j])\n            if len(types) > 2:\n                break\n            best = max(best, j - i + 1)\n    return best"
+    },
+    "optimization": "The redundancy is re-validating a stretch already known to be valid. Observation: 'at most 2 distinct' is monotone (sub-windows of a valid window are valid, super-windows of an invalid one are invalid), so when the window becomes invalid we advance left instead of restarting. To know when a type leaves the window we need its count, hence a small map type -> count. The window grows on the right and shrinks on the left only until the third type disappears; each index enters and leaves once.",
+    "intuition": "Keep the longest window ending at the current tree that uses at most two types. A third type arriving forces the left edge forward until one of the old types is exhausted; counts tell you exactly when that happens, and deleting the key at zero keeps len(count) honest.",
+    "geometric": "A window [L, R] slides over the row of trees with a tiny histogram of at most two bars (the baskets) above it. When R hits a third type a third bar appears; L moves right, shrinking bars, until one bar hits zero and vanishes, leaving two again.",
+    "visual": "fruits: [ 3, 3, 3, 1, 2, 1, 1, 2, 3, 3, 4 ]\n          L           R          {3:3,1:1,2:1} 3 types\n                   L  R          L skipped the 3s: {1:1,2:1}\n                   L           R {1:3,2:2} len 5 <- best\n                   L              R  3 arrives: 3 types\n                               L  R  {2:1,3:1} after shrink\nbaskets = keys of the count map (<= 2 after the loop)",
+    "steps": [
+      "count = {} (type -> occurrences in the window), left = 0, best = 0.",
+      "For each right: count[fruits[right]] += 1.",
+      "While len(count) > 2: decrement count[fruits[left]], delete the key at zero, left += 1.",
+      "best = max(best, right - left + 1); return best."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "the map never holds more than 3 keys; each index is touched twice."
+    },
+    "pitfalls": [
+      "Forgetting to delete a key when its count reaches zero (len(count) stays 3).",
+      "Choosing two specific types up front instead of letting the window decide."
+    ],
+    "hints": [
+      "Restate the story: what kind of subarray are you really looking for?",
+      "The longest subarray with at most two distinct values; a window with a type -> count map.",
+      "Expand right; while the map has 3 keys shrink from the left, deleting keys that hit zero."
+    ],
+    "code": "class Solution:\n    def totalFruit(self, fruits: List[int]) -> int:\n        count = defaultdict(int)             # type -> occurrences inside the window\n        left = best = 0\n        for right, f in enumerate(fruits):\n            count[f] += 1\n            while len(count) > 2:            # third type: shrink until one type is gone\n                count[fruits[left]] -= 1\n                if count[fruits[left]] == 0:\n                    del count[fruits[left]]\n                left += 1\n            best = max(best, right - left + 1)\n        return best",
+    "related": [
+      "longest_substring_without_repeating_characters",
+      "max_consecutive_ones_iii",
+      "longest_repeating_character_replacement"
+    ]
+  },
+  {
+    "slug": "max_consecutive_ones_iii",
+    "title": "Max Consecutive Ones III",
+    "leetcode": 1004,
+    "difficulty": "Medium",
+    "topic": "sliding_window",
+    "pattern": "Variable-size sliding window",
+    "file": "sliding_window/max_consecutive_ones_iii.py",
+    "problem": "Given a binary array nums and an integer k, you may flip at most k zeros to ones. Return the length of the longest run of consecutive ones achievable. Example: nums = [1,1,1,0,0,0,1,1,1,1,0], k = 2 -> 6 (flip the zeros at indices 4 and 5).",
+    "brute_force": {
+      "approach": "For each start i, walk right counting zeros until the (k+1)-th zero and record the length. Start i+1 recounts the zeros in a stretch whose zero count we already know (it differs by at most one).",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(nums: List[int], k: int) -> int:\n    best = 0\n    for i in range(len(nums)):\n        zeros = 0                            # recounted from scratch for each start\n        for j in range(i, len(nums)):\n            zeros += nums[j] == 0\n            if zeros > k:\n                break\n            best = max(best, j - i + 1)\n    return best"
+    },
+    "optimization": "The redundancy is recounting zeros in an overlapping range. Observation: 'at most k zeros' is a monotone property of the window, so instead of restarting, when the window gains a (k+1)-th zero we move left forward until one zero drops out. A single integer zeros tracks the invariant with +1/-1 updates as indices enter and leave. Both edges move only rightwards, so the sweep is linear.",
+    "intuition": "Reframe 'flip at most k zeros' as 'find the longest window containing at most k zeros'. Then it is the standard expand-right / shrink-left window with a zero counter; the flips are implicit.",
+    "geometric": "An elastic band [L, R] over the bit string. R stretches it right; each 0 inside is a flip. When the band holds k+1 zeros, L drags right until a zero slips out the left end. The widest the band ever gets is the answer.",
+    "visual": "nums: 1 1 1 0 0 0 1 1 1 1 0        k = 2\n      L         R                  zeros=3 > k: shrink\n              L R                  L passed a 0 -> zeros=2\n              L         R          zeros=2, len 6  <- best\n                L         R        3rd zero at R=10: L moves\nwindow = run of ones after flipping the <= k zeros inside it",
+    "steps": [
+      "left = 0, zeros = 0, best = 0.",
+      "For each right: if nums[right] == 0, zeros += 1.",
+      "While zeros > k: if nums[left] == 0, zeros -= 1; left += 1.",
+      "best = max(best, right - left + 1); return best."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "each index enters and leaves the window once."
+    },
+    "pitfalls": [
+      "k = 0 must still work (longest run of existing ones).",
+      "Measuring the window before shrinking it back to validity."
+    ],
+    "hints": [
+      "Rephrase the flips: what constraint does a valid window of ones satisfy?",
+      "It contains at most k zeros. Track the zero count as the window grows and shrinks.",
+      "Expand right; while zeros > k advance left (decrementing if a zero leaves); record the length."
+    ],
+    "code": "class Solution:\n    def longestOnes(self, nums: List[int], k: int) -> int:\n        left = zeros = best = 0\n        for right, x in enumerate(nums):\n            if x == 0:\n                zeros += 1\n            while zeros > k:                 # k+1 zeros inside: push left past one zero\n                if nums[left] == 0:\n                    zeros -= 1\n                left += 1\n            best = max(best, right - left + 1)\n        return best",
+    "related": [
+      "longest_repeating_character_replacement",
+      "fruit_into_baskets",
+      "minimum_size_subarray_sum"
+    ]
+  },
+  {
+    "slug": "minimum_size_subarray_sum",
+    "title": "Minimum Size Subarray Sum",
+    "leetcode": 209,
+    "difficulty": "Medium",
+    "topic": "sliding_window",
+    "pattern": "Variable-size sliding window",
+    "file": "sliding_window/minimum_size_subarray_sum.py",
+    "problem": "Given an array of positive integers nums and a target, return the minimal length of a contiguous subarray whose sum is >= target, or 0 if none exists. Example: target = 7, nums = [2,3,1,2,4,3] -> 2 ([4,3]).",
+    "brute_force": {
+      "approach": "For every start i, add elements to the right until the running sum reaches target and record the length. Start i+1 re-adds elements whose sum we just computed; the new sum is the old sum minus nums[i].",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(target: int, nums: List[int]) -> int:\n    best = 0\n    for i in range(len(nums)):\n        total = 0                                    # re-summed for every start\n        for j in range(i, len(nums)):\n            total += nums[j]\n            if total >= target:\n                if best == 0 or j - i + 1 < best:\n                    best = j - i + 1\n                break\n    return best"
+    },
+    "optimization": "The redundancy is re-summing an overlapping range. Observation: because all numbers are positive the window sum is monotone in both edges -- adding on the right increases it, removing on the left decreases it. So once [left, right] reaches target we shrink left while the sum stays >= target, recording each valid length; when it drops below, no window ending at right can help, so we grow right. Each edge only moves rightwards with a running sum; no prefix array is needed.",
+    "intuition": "Grow the window on the right until it is heavy enough; then trim from the left while it remains heavy enough, recording lengths. Positivity guarantees trimming only lightens and growing only weighs more, so no configuration is skipped.",
+    "geometric": "A caterpillar crawls along the array: its head R stretches forward until the body weighs >= target, then its tail L catches up until the weight drops below target. The shortest body observed while heavy is the answer.",
+    "visual": "nums: [ 2, 3, 1, 2, 4, 3 ]   target = 7\n        L        R           sum 8 >= 7: len 4\n           L     R           drop 2 -> 6 < 7: grow R\n           L        R        sum 10 len 4; drop 3 -> 7 len 3\n                 L  R        drop 1 -> 6 < 7: grow R\n                 L     R     sum 9 len 3; drop 2 -> 7 len 2\n                    L  R     [4,3] <- best; drop 4 -> 3 done",
+    "steps": [
+      "left = 0, total = 0, best = inf.",
+      "For each right: total += nums[right].",
+      "While total >= target: best = min(best, right - left + 1); total -= nums[left]; left += 1.",
+      "Return 0 if best is still inf, else best."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)",
+      "why": "each index is added once and removed once."
+    },
+    "pitfalls": [
+      "Using if instead of while when shrinking (misses shorter valid windows).",
+      "Applying the technique to arrays with zeros/negatives, where monotonicity breaks.",
+      "Returning inf instead of 0 when no window qualifies."
+    ],
+    "hints": [
+      "What property of the numbers makes the window sum predictable as edges move?",
+      "All positive: sum grows with right, shrinks with left. Expand until >= target, then shrink.",
+      "while total >= target: record length, total -= nums[left], left += 1."
+    ],
+    "code": "class Solution:\n    def minSubArrayLen(self, target: int, nums: List[int]) -> int:\n        left = total = 0\n        best = float(\"inf\")\n        for right, x in enumerate(nums):\n            total += x\n            while total >= target:                   # valid: record, then try shorter\n                best = min(best, right - left + 1)\n                total -= nums[left]\n                left += 1\n        return 0 if best == float(\"inf\") else best",
+    "related": [
+      "best_time_to_buy_and_sell_stock",
+      "max_consecutive_ones_iii",
+      "sliding_window_maximum"
+    ]
+  },
+  {
+    "slug": "valid_parentheses",
+    "title": "Valid Parentheses",
+    "leetcode": 20,
+    "difficulty": "Easy",
+    "topic": "stack",
+    "pattern": "Stack matching",
+    "file": "stack/valid_parentheses.py",
+    "problem": "Given a string of the characters ()[]{} decide whether it is valid: every opener is closed by the same type of bracket and brackets close in nested order. Example: \"()[]{}\" -> True; \"([)]\" -> False; \"{[]}\" -> True.",
+    "brute_force": {
+      "approach": "Repeatedly scan for an adjacent matched pair \"()\", \"[]\" or \"{}\", delete it and restart; valid iff the string shrinks to \"\". Every pass rescans from the beginning even though only the characters around the last deletion could form a new pair.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(s: str) -> bool:\n    changed = True\n    while changed:                                            # rescan from scratch each pass\n        changed = False\n        for pair in (\"()\", \"[]\", \"{}\"):\n            if pair in s:\n                s = s.replace(pair, \"\", 1)\n                changed = True\n    return s == \"\""
+    },
+    "optimization": "The redundancy is rescanning a prefix that cannot contain a new pair. Observation: a closer is valid only if it matches the most recent still-open opener, the innermost one, which is last-in-first-out order. So walk the string once pushing openers; on a closer, pop and compare. The stack is exactly the unfinished business the brute force kept re-reading, and each character now costs O(1).",
+    "intuition": "Nesting is LIFO: the bracket opened most recently must be closed first. A stack remembers open brackets in that order, so each closer has exactly one legal partner, the top. An empty stack at the end means everything was closed.",
+    "geometric": "Picture the string as a path going down a level on each opener and up on each closer. The stack is the trail of openers above you; a closer must match the one directly beneath. The path must end at ground level and never rise above it.",
+    "visual": "s = \"{ [ ] }\"              stack (top on the right)\n     ^      push '{'       [ { ]\n       ^    push '['       [ { [ ]\n         ^  ']' matches top '[' -> pop   [ { ]\n           ^ '}' matches top '{' -> pop  [ ]\nend: stack empty -> valid\n\ns = \"( [ ) ]\"   ')' arrives, top is '[' -> mismatch -> False",
+    "steps": [
+      "pairs = {')': '(', ']': '[', '}': '{'}, stack = [].",
+      "For each character: if it is a closer, the stack must be non-empty and its popped top must equal pairs[ch]; otherwise return False.",
+      "Otherwise push the opener.",
+      "Return True iff the stack is empty at the end."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "one push or pop per character."
+    },
+    "pitfalls": [
+      "Forgetting the empty-stack check on a closer (\"]\" alone).",
+      "Forgetting that leftover openers mean invalid (\"((\").",
+      "Matching only counts rather than types (\"([)]\" has balanced counts)."
+    ],
+    "hints": [
+      "Which opener must a closing bracket match: the first one opened, or the most recent one still open?",
+      "The most recent: that is LIFO order, so keep openers on a stack.",
+      "Push openers; on a closer pop and compare types; valid iff no mismatch and the stack ends empty."
+    ],
+    "code": "class Solution:\n    def isValid(self, s: str) -> bool:\n        pairs = {\")\": \"(\", \"]\": \"[\", \"}\": \"{\"}\n        stack = []\n        for ch in s:\n            if ch in pairs:                                   # closer must match the top\n                if not stack or stack.pop() != pairs[ch]:\n                    return False\n            else:\n                stack.append(ch)\n        return not stack",
+    "related": [
+      "minimum_remove_to_make_valid_parentheses",
+      "generate_parentheses",
+      "decode_string"
+    ]
+  },
+  {
+    "slug": "min_stack",
+    "title": "Min Stack",
+    "leetcode": 155,
+    "difficulty": "Medium",
+    "topic": "stack",
+    "pattern": "Stack with auxiliary state",
+    "file": "stack/min_stack.py",
+    "problem": "Design a stack supporting push, pop, top and getMin, each in O(1) time. Example: push(-2), push(0), push(-3); getMin() -> -3; pop(); top() -> 0; getMin() -> -2.",
+    "brute_force": {
+      "approach": "A plain list; getMin scans the whole list with min(). push/pop/top are O(1) but getMin is O(n). Every getMin rescans elements whose minimum was already known the moment they were pushed, because the stack below any element never changes while it is on the stack.",
+      "time": "O(n) getMin, O(1) others",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    def __init__(self):\n        self.stack = []\n\n    def push(self, val: int) -> None:\n        self.stack.append(val)\n\n    def pop(self) -> None:\n        self.stack.pop()\n\n    def top(self) -> int:\n        return self.stack[-1]\n\n    def getMin(self) -> int:\n        return min(self.stack)"
+    },
+    "optimization": "The redundancy is recomputing min over a prefix that is frozen. Observation: the elements beneath position i never change while i is on the stack (stacks mutate only at the top), so 'minimum of everything up to i' is a constant computable once at push time as min(val, previous min). Store it alongside each value. getMin is the top entry's stored minimum, and pop restores the previous minimum for free because the pairs leave together.",
+    "intuition": "Snapshot the running minimum at every level of the stack. Because a stack is only modified at the top, snapshots below the top stay valid, and popping reveals the right earlier snapshot without any recomputation.",
+    "geometric": "Two parallel columns growing upward: values on the left, min-so-far on the right. The right column is non-increasing going up. Popping removes the top row of both columns at once, so the right column's top is always the min of the left column.",
+    "visual": "push -2, 0, -3           value | min-so-far\n                         ------+-----------\n  top ->   (-3, -3)        -3  |  -3   <- getMin() = -3\n           ( 0, -2)         0  |  -2\n           (-2, -2)        -2  |  -2\npop()  -> top is ( 0, -2):  top() = 0, getMin() = -2\neach level stores the min of everything at or below it",
+    "steps": [
+      "push(val): cur_min = min(val, stack[-1].min) if non-empty else val; append (val, cur_min).",
+      "pop(): remove the top pair; the pair below already holds the correct earlier minimum.",
+      "top(): return stack[-1].val.",
+      "getMin(): return stack[-1].min."
+    ],
+    "complexity": {
+      "time": "O(1) per operation",
+      "space": "O(n)",
+      "why": "one extra integer stored per element."
+    },
+    "pitfalls": [
+      "Keeping a single global min (it breaks after a pop).",
+      "A secondary min-stack that pushes only on strict decrease mishandles duplicate minimums (push on <=)."
+    ],
+    "hints": [
+      "Why can you not simply keep one variable for the current minimum?",
+      "Because pop would need the previous minimum. What never changes while an element sits on the stack?",
+      "Everything below it. Store (value, min_so_far) pairs; getMin reads the top pair."
+    ],
+    "code": "class MinStack:\n    def __init__(self):\n        self.stack = []                          # (value, min of everything at or below it)\n\n    def push(self, val: int) -> None:\n        cur_min = min(val, self.stack[-1][1]) if self.stack else val\n        self.stack.append((val, cur_min))\n\n    def pop(self) -> None:\n        self.stack.pop()                         # the stored min below is still correct\n\n    def top(self) -> int:\n        return self.stack[-1][0]\n\n    def getMin(self) -> int:\n        return self.stack[-1][1]",
+    "related": [
+      "valid_parentheses",
+      "evaluate_reverse_polish_notation",
+      "lru_cache"
+    ]
+  },
+  {
+    "slug": "evaluate_reverse_polish_notation",
+    "title": "Evaluate Reverse Polish Notation",
+    "leetcode": 150,
+    "difficulty": "Medium",
+    "topic": "stack",
+    "pattern": "Stack evaluation",
+    "file": "stack/evaluate_reverse_polish_notation.py",
+    "problem": "Evaluate an arithmetic expression given in postfix (RPN) as a list of tokens: integers and the operators + - * /. Division truncates toward zero and the expression is always valid. Example: [\"2\",\"1\",\"+\",\"3\",\"*\"] -> (2+1)*3 = 9; [\"4\",\"13\",\"5\",\"/\",\"+\"] -> 4 + 13/5 = 6.",
+    "brute_force": {
+      "approach": "Repeatedly scan the token list for the first operator, apply it to the two numbers right before it, splice the result back in as one token and restart. Every pass re-reads the unchanged numbers at the front of the list and each splice rebuilds the list.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(tokens: List[str]) -> int:\n    toks = list(tokens)\n    while len(toks) > 1:                                   # one reduction per full rescan\n        for i, tok in enumerate(toks):\n            if tok in {\"+\", \"-\", \"*\", \"/\"}:\n                a, b = int(toks[i - 2]), int(toks[i - 1])\n                val = a + b if tok == \"+\" else a - b if tok == \"-\" else a * b if tok == \"*\" else int(a / b)\n                toks[i - 2:i + 1] = [str(val)]\n                break\n    return int(toks[0])"
+    },
+    "optimization": "The redundancy is re-reading pending operands. Observation: in postfix the operands of an operator are always the two most recently seen unconsumed values, which is LIFO order. Keep unconsumed values on a stack: a number is pushed, an operator pops two, computes and pushes the result. Every token is processed once in a single pass, and the 'splice back in' becomes a push.",
+    "intuition": "Postfix is designed for a stack: by the time you read an operator its operands are the last two things you saw. Push numbers and let operators consume the top two, remembering that the first pop is the right operand.",
+    "geometric": "Tokens flow in from the left; the stack is a column of pending numbers. A number lands on the column, an operator plucks the top two, fuses them and drops the result back. At the end exactly one number remains.",
+    "visual": "tokens: 2  1  +  3  *\nread 2        stack: [2]\nread 1        stack: [2, 1]\nread +        pop b=1, pop a=2 -> push 2+1    stack: [3]\nread 3        stack: [3, 3]\nread *        pop b=3, pop a=3 -> push 3*3    stack: [9]\nend           answer = 9\noperator: b = pop (right), a = pop (left), push a op b",
+    "steps": [
+      "stack = [].",
+      "For each token: if it is an operator, pop b then a and push a op b (int(a / b) for division).",
+      "Otherwise push int(token).",
+      "Return the single remaining element."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "one push or pop per token."
+    },
+    "pitfalls": [
+      "Operand order: the first pop is the right operand (\"6 3 -\" is 6 - 3).",
+      "Python's // floors toward -inf; use int(a / b) to truncate toward zero.",
+      "Treating \"-3\" as an operator because it starts with '-'."
+    ],
+    "hints": [
+      "When you read an operator in postfix notation, where are its two operands?",
+      "They are the two most recent values not yet consumed: a stack gives you exactly those.",
+      "Push numbers; on an operator pop b, pop a, push a op b; careful with truncating division."
+    ],
+    "code": "class Solution:\n    def evalRPN(self, tokens: List[str]) -> int:\n        ops = {\n            \"+\": lambda a, b: a + b,\n            \"-\": lambda a, b: a - b,\n            \"*\": lambda a, b: a * b,\n            \"/\": lambda a, b: int(a / b),          # truncate toward zero, not floor\n        }\n        stack = []\n        for tok in tokens:\n            if tok in ops:\n                b, a = stack.pop(), stack.pop()    # second-popped is the left operand\n                stack.append(ops[tok](a, b))\n            else:\n                stack.append(int(tok))\n        return stack[0]",
+    "related": [
+      "basic_calculator_ii",
+      "decode_string",
+      "min_stack"
+    ]
+  },
+  {
+    "slug": "daily_temperatures",
+    "title": "Daily Temperatures",
+    "leetcode": 739,
+    "difficulty": "Medium",
+    "topic": "stack",
+    "pattern": "Monotonic stack",
+    "file": "stack/daily_temperatures.py",
+    "problem": "Given daily temperatures, return answer[i] = number of days until a strictly warmer temperature, or 0 if none comes. Example: [73,74,75,71,69,72,76,73] -> [1,1,4,2,1,1,0,0].",
+    "brute_force": {
+      "approach": "For each day i scan forward to the first j > i with a higher temperature. In a descending run like 75,71,69 the scan from 75 walks over 71 and 69 even though those days are themselves still waiting for a warmer day and cannot be the answer for 75.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(temperatures: List[int]) -> List[int]:\n    n = len(temperatures)\n    answer = [0] * n\n    for i in range(n):\n        for j in range(i + 1, n):                # rescans cooler days that are also waiting\n            if temperatures[j] > temperatures[i]:\n                answer[i] = j - i\n                break\n    return answer"
+    },
+    "optimization": "The redundancy is walking over days that are 'still waiting'. Observation: flip the question. Instead of each day looking forward, let each new day announce itself as the answer for all earlier, cooler days still waiting. Those waiting days form a stack with strictly decreasing temperatures. When day i arrives, pop every waiting day cooler than it, set answer = i - j, then push i. Each day is pushed once and popped at most once.",
+    "intuition": "Keep unresolved days on a stack. A new temperature resolves exactly the unresolved days colder than it, and because the stack is sorted (cooler on top) those form a contiguous run at the top. Indices are stored so the distance can be computed.",
+    "geometric": "Viewed from the right, the unresolved days form a descending staircase. A new taller bar arriving on the right floods every shorter step at the top of the stack; each flooded step records how far it is from the flooding bar.",
+    "visual": "temps: 73 74 75 71 69 72 76 73\ni=4 (69)   stack idx [2, 3, 4] = temps 75 71 69 (falling)\ni=5 (72)   72 > 69: pop 4 -> ans[4] = 5-4 = 1\n           72 > 71: pop 3 -> ans[3] = 5-3 = 2\n           72 < 75: stop; push 5        stack: [2, 5]\ni=6 (76)   pops 5 (ans[5]=1) and 2 (ans[2]=4)  stack: [6]\ni=7 (73)   73 < 76: push                stack: [6, 7]\nend: indices still on the stack keep answer 0\nanswer: [1, 1, 4, 2, 1, 1, 0, 0]",
+    "steps": [
+      "answer = [0]*n, stack = [] of indices with decreasing temperatures.",
+      "For each i, t: while stack and temperatures[stack[-1]] < t: j = pop; answer[j] = i - j.",
+      "Push i.",
+      "Return answer; indices never popped keep 0."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "each index is pushed and popped at most once."
+    },
+    "pitfalls": [
+      "Popping on <= instead of < (equal temperature is not warmer).",
+      "Storing temperatures instead of indices loses the distance."
+    ],
+    "hints": [
+      "Instead of each day searching forward, could a new day answer the question for earlier days?",
+      "Yes: keep unresolved days on a stack; a warmer day resolves the cooler ones on top.",
+      "while stack and temps[stack[-1]] < t: j = pop; answer[j] = i - j; then push i."
+    ],
+    "code": "class Solution:\n    def dailyTemperatures(self, temperatures: List[int]) -> List[int]:\n        answer = [0] * len(temperatures)\n        stack = []                               # indices still waiting; temps decreasing\n        for i, t in enumerate(temperatures):\n            while stack and temperatures[stack[-1]] < t:\n                j = stack.pop()                  # day j's first warmer day is today\n                answer[j] = i - j\n            stack.append(i)\n        return answer",
+    "related": [
+      "sliding_window_maximum",
+      "largest_rectangle_in_histogram",
+      "next_greater_element_i"
+    ]
+  },
+  {
+    "slug": "car_fleet",
+    "title": "Car Fleet",
+    "leetcode": 853,
+    "difficulty": "Medium",
+    "topic": "stack",
+    "pattern": "Monotonic stack",
+    "file": "stack/car_fleet.py",
+    "problem": "n cars drive toward target on a one-lane road; car i starts at position[i] with speed[i]. A faster car that catches a slower one slows down and travels with it as a fleet (counted as one). Return the number of fleets that reach the target. Example: target = 12, position = [10,8,0,5,3], speed = [2,4,1,1,3] -> 3.",
+    "brute_force": {
+      "approach": "Compute each car's solo arrival time t_i = (target - p_i) / v_i. Car i leads a fleet iff no car ahead of it has t_j >= t_i. Checking every car against every car ahead recomputes 'slowest arrival among cars ahead' from scratch for each car.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(target: int, position: List[int], speed: List[int]) -> int:\n    n = len(position)\n    fleets = 0\n    for i in range(n):\n        t_i = (target - position[i]) / speed[i]\n        leader = True\n        for j in range(n):                                  # rescans every car ahead of i\n            if position[j] > position[i] and (target - position[j]) / speed[j] >= t_i:\n                leader = False\n        fleets += leader\n    return fleets"
+    },
+    "optimization": "The redundancy is re-deriving the slowest car ahead. Observation: sort by position descending (closest to target first); then 'cars ahead' is exactly the prefix already processed, and the only quantity needed is the arrival time of the fleet immediately ahead. Keep a stack of fleet arrival times: if the current car's time is larger than the top it can never catch that fleet and starts a new one (push); otherwise it merges and contributes nothing. The stack is strictly increasing, each car is handled once, and the sort dominates.",
+    "intuition": "Queue order is fixed by the sort; whether you form your own fleet depends only on comparing your solo arrival time with the fleet right in front. Arriving later means nobody ahead slows you down; arriving sooner means you get stuck behind them and inherit their time.",
+    "geometric": "Draw each car as a line in a (time, position) plot from (0, p_i) to (t_i, target). Lines that cross before the target merge. Processing from the front, the stack holds arrival times of surviving lines; a new line that would hit the target earlier than the one ahead is absorbed, a later one stands alone.",
+    "visual": "sorted by position, closest to target first (target = 12)\npos 10 spd 2 -> t=1.0    push             stack [1.0]\npos  8 spd 4 -> t=1.0    1.0 <= 1.0 merge  stack [1.0]\npos  5 spd 1 -> t=7.0    7.0 >  1.0 push   stack [1.0, 7.0]\npos  3 spd 3 -> t=3.0    3.0 <= 7.0 merge  stack [1.0, 7.0]\npos  0 spd 1 -> t=12.0   12 > 7.0 push    stack [1.0,7.0,12]\nanswer = len(stack) = 3\narriving sooner than the fleet ahead = stuck behind it",
+    "steps": [
+      "Pair positions with speeds and sort by position descending.",
+      "stack = [] of fleet arrival times.",
+      "For each (pos, spd): time = (target - pos) / spd; if the stack is empty or time > stack[-1], push it; otherwise skip (it merges).",
+      "Return len(stack)."
+    ],
+    "complexity": {
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "why": "dominated by the sort; the sweep is linear."
+    },
+    "pitfalls": [
+      "Using integer division for arrival times.",
+      "Sorting ascending and comparing with the wrong neighbour.",
+      "Merging must inherit the fleet ahead's time, which leaving the stack top untouched encodes."
+    ],
+    "hints": [
+      "If you process cars from the one nearest the target backwards, what decides whether a car forms a new fleet?",
+      "Only its solo arrival time compared with the fleet directly ahead of it.",
+      "Sort by position desc; push time if it exceeds the stack top, else it merges; answer is the stack size."
+    ],
+    "code": "class Solution:\n    def carFleet(self, target: int, position: List[int], speed: List[int]) -> int:\n        cars = sorted(zip(position, speed), reverse=True)   # closest to target first\n        stack = []                                          # arrival times of fleet leaders\n        for pos, spd in cars:\n            time = (target - pos) / spd\n            if not stack or time > stack[-1]:               # slower than the fleet ahead\n                stack.append(time)\n            # else: catches the fleet ahead and merges, inheriting its arrival time\n        return len(stack)",
+    "related": [
+      "daily_temperatures",
+      "merge_intervals",
+      "largest_rectangle_in_histogram"
+    ]
+  },
+  {
+    "slug": "largest_rectangle_in_histogram",
+    "title": "Largest Rectangle in Histogram",
+    "leetcode": 84,
+    "difficulty": "Hard",
+    "topic": "stack",
+    "pattern": "Monotonic stack",
+    "file": "stack/largest_rectangle_in_histogram.py",
+    "problem": "Given bar heights of width 1, return the area of the largest rectangle that fits entirely inside the histogram. Example: heights = [2,1,5,6,2,3] -> 10 (height 5 spanning the bars 5 and 6).",
+    "brute_force": {
+      "approach": "For each bar i use heights[i] as the rectangle height and expand left and right while neighbours are >= heights[i]; area = height * width. The expansion re-walks bars that earlier bars already walked, rediscovering the same 'nearest shorter bar' boundaries repeatedly.",
+      "time": "O(n^2)",
+      "space": "O(1)",
+      "code": "def brute_force(heights: List[int]) -> int:\n    best = 0\n    for i, h in enumerate(heights):\n        left = right = i                             # re-walks the neighbours for every bar\n        while left > 0 and heights[left - 1] >= h:\n            left -= 1\n        while right < len(heights) - 1 and heights[right + 1] >= h:\n            right += 1\n        best = max(best, h * (right - left + 1))\n    return best"
+    },
+    "optimization": "The redundancy is recomputing the nearest shorter bar on each side by walking. Observation: both boundaries fall out of one left-to-right pass with a stack of indices whose heights are non-decreasing. When bar i is shorter than the stack top, i is the top's right boundary and the element beneath the top is its left boundary (the nearest shorter bar to its left, by the stack's ordering). Pop, compute the area, and keep popping while the top is taller than i. A sentinel height 0 appended at the end flushes every remaining bar. Each index is pushed and popped once.",
+    "intuition": "A bar's best rectangle extends until the first shorter bar on each side. A stack sorted by height lets each bar discover its right boundary at the moment a shorter bar arrives, and its left boundary is simply its predecessor in the stack.",
+    "geometric": "Sweep a vertical line left to right. The stack holds a rising staircase of open bars. When the sweep line meets a bar lower than the staircase top, the top steps are closed one by one: each closed step's rectangle spans from just after the step below it to just before the sweep line.",
+    "visual": "heights: [2, 1, 5, 6, 2, 3]  + sentinel 0\n 6              #\n 5           #  #\n 4           #  #\n 3           #  #        #\n 2  #        #  #     #  #\n 1  #     #  #  #     #  #\n    0     1  2  3     4  5    <- index\ni=4, h=2: top=3 (6) > 2 -> pop, left=2, area 6*(4-2-1) = 6\n          top=2 (5) > 2 -> pop, left=1, area 5*(4-1-1) = 10\n          top=1 (1) <= 2 -> stop, push 4; stack = [1, 4]\nsentinel i=6 flushes: 2*(6-1-1)=8, 1*6=6 ... best = 10",
+    "steps": [
+      "stack = [], best = 0; iterate i over heights plus a trailing 0 sentinel.",
+      "While stack and heights[stack[-1]] > h: top = pop; left = stack[-1] if stack else -1; best = max(best, heights[top] * (i - left - 1)).",
+      "Push i.",
+      "Return best."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "each index is pushed and popped at most once."
+    },
+    "pitfalls": [
+      "Width formula is i - left - 1, not i - left.",
+      "Forgetting the sentinel (or a final flush loop) leaves bars unprocessed.",
+      "Mixing up > and >= when popping is harmless for area but confusing; pick one."
+    ],
+    "hints": [
+      "For a bar of height h, how far can a rectangle of height h extend?",
+      "Until the nearest shorter bar on each side; a stack of increasing heights finds both boundaries.",
+      "When a shorter bar arrives, pop taller bars: right boundary = current i, left boundary = new stack top."
+    ],
+    "code": "class Solution:\n    def largestRectangleArea(self, heights: List[int]) -> int:\n        stack = []                                   # indices with non-decreasing heights\n        best = 0\n        for i, h in enumerate(heights + [0]):        # sentinel 0 flushes the stack\n            while stack and heights[stack[-1]] > h:\n                top = stack.pop()                    # i is top's first shorter bar on the right\n                left = stack[-1] if stack else -1    # nearest shorter bar on the left\n                best = max(best, heights[top] * (i - left - 1))\n            stack.append(i)\n        return best",
+    "related": [
+      "daily_temperatures",
+      "sliding_window_maximum",
+      "trapping_rain_water",
+      "maximal_rectangle"
+    ]
+  },
+  {
+    "slug": "decode_string",
+    "title": "Decode String",
+    "leetcode": 394,
+    "difficulty": "Medium",
+    "topic": "stack",
+    "pattern": "Stack of nested contexts",
+    "file": "stack/decode_string.py",
+    "problem": "Decode a string where k[encoded] means encoded repeated k times; brackets may nest and digits appear only as repeat counts. Example: \"3[a]2[bc]\" -> \"aaabcbc\"; \"3[a2[c]]\" -> \"accaccacc\".",
+    "brute_force": {
+      "approach": "Repeatedly locate the first ']' -- the group before it is an innermost, bracket-free k[...] -- expand it into a plain string, splice it back and rescan from the start. Each expansion rebuilds the whole string, so text outside the innermost group is copied over and over.",
+      "time": "O(n * output)",
+      "space": "O(output)",
+      "code": "def brute_force(s: str) -> str:\n    while \"[\" in s:                                             # one innermost group per pass\n        close = s.index(\"]\")                                    # first ']' closes an innermost pair\n        open_ = s.rindex(\"[\", 0, close)\n        j = open_\n        while j > 0 and s[j - 1].isdigit():\n            j -= 1\n        k = int(s[j:open_])\n        s = s[:j] + s[open_ + 1:close] * k + s[close + 1:]      # rebuilds the whole string\n    return s"
+    },
+    "optimization": "The redundancy is copying unaffected text on every expansion. Observation: an innermost group can be built on the fly if, upon reaching '[', we park the text built so far together with the pending count and start a fresh buffer; on ']' we pop that frame, repeat the buffer k times and append to the parked text. Park-and-resume is a stack of (prefix, count) frames, the same thing a recursive parser's call stack would hold. One pass, each output character written once per nesting level.",
+    "intuition": "Treat '[' as a call and ']' as a return. The stack frame saves what you had built and how many times to repeat what you are about to build. Nesting falls out naturally, and multi-digit counts are accumulated before the '['.",
+    "geometric": "Columns of frames, each a (prefix, k) pair. Reading \"3[a2[c]]\": push (\"\", 3) at the first '[', push (\"a\", 2) at the second. The first ']' pops (\"a\", 2) producing \"a\" + \"c\"*2 = \"acc\"; the next ']' pops (\"\", 3) producing \"acc\"*3.",
+    "visual": "s = 3 [ a 2 [ c ] ]     stack of (prefix, k)    cur\n    ^                   []                      \"\"  num=3\n      ^ push (\"\",3)     [(\"\",3)]                \"\"\n        ^               [(\"\",3)]                \"a\"\n          ^             num=2\n            ^ push      [(\"\",3), (\"a\",2)]       \"\"\n              ^         [(\"\",3), (\"a\",2)]       \"c\"\n                ^ pop   [(\"\",3)]   cur = \"a\" + \"c\"*2 = \"acc\"\n                  ^ pop []         cur = \"\" + \"acc\"*3\nresult: accaccacc",
+    "steps": [
+      "stack = [], cur = \"\", num = 0.",
+      "Digit: num = num*10 + digit (counts can have several digits).",
+      "'[': push (cur, num); reset cur = \"\" and num = 0.",
+      "']': prev, k = pop; cur = prev + cur*k.",
+      "Letter: cur += letter. Return cur at the end."
+    ],
+    "complexity": {
+      "time": "O(n + output)",
+      "space": "O(depth + output)",
+      "why": "each input character is processed once; output is written once per nesting level."
+    },
+    "pitfalls": [
+      "Multi-digit counts like \"10[a]\".",
+      "Forgetting to reset num after pushing at '['.",
+      "Trying to resolve the innermost bracket first with string surgery (quadratic)."
+    ],
+    "hints": [
+      "What do you need to remember when you enter a '[' so you can finish the outer text later?",
+      "The text built so far and the repeat count: push that pair, start an empty buffer.",
+      "On ']' pop (prev, k) and set cur = prev + cur * k."
+    ],
+    "code": "class Solution:\n    def decodeString(self, s: str) -> str:\n        stack = []                              # frames: (text before '[', repeat count)\n        cur, num = \"\", 0\n        for ch in s:\n            if ch.isdigit():\n                num = num * 10 + int(ch)        # counts may have several digits\n            elif ch == \"[\":\n                stack.append((cur, num))        # park the outer context\n                cur, num = \"\", 0\n            elif ch == \"]\":\n                prev, k = stack.pop()\n                cur = prev + cur * k            # resume the outer context\n            else:\n                cur += ch\n        return cur",
+    "related": [
+      "basic_calculator_ii",
+      "valid_parentheses",
+      "evaluate_reverse_polish_notation"
+    ]
+  },
+  {
+    "slug": "asteroid_collision",
+    "title": "Asteroid Collision",
+    "leetcode": 735,
+    "difficulty": "Medium",
+    "topic": "stack",
+    "pattern": "Stack simulation",
+    "file": "stack/asteroid_collision.py",
+    "problem": "Each asteroid has a size (absolute value) and direction (positive = right, negative = left); all move at the same speed. When two meet the smaller explodes (both if equal). Return the asteroids left after all collisions. Example: [5,10,-5] -> [5,10]; [8,-8] -> []; [10,2,-5] -> [10].",
+    "brute_force": {
+      "approach": "Repeatedly scan the list for an adjacent pair (positive, negative), the only pair that can collide, resolve it and restart. Every restart re-reads the prefix that is already collision-free.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(asteroids: List[int]) -> List[int]:\n    arr = list(asteroids)\n    changed = True\n    while changed:                                    # restart the scan after each collision\n        changed = False\n        for i in range(len(arr) - 1):\n            if arr[i] > 0 and arr[i + 1] < 0:\n                l, r = arr[i], -arr[i + 1]\n                if l == r:\n                    del arr[i:i + 2]                  # both explode\n                else:\n                    del arr[i + 1 if l > r else i]    # smaller one explodes\n                changed = True\n                break\n    return arr"
+    },
+    "optimization": "The redundancy is rescanning a settled prefix. Observation: a right-mover can only be hit by a later left-mover, and that left-mover hits the most recent surviving right-mover first, which is LIFO. Keep survivors on a stack; when a left-mover arrives let it fight the top while the top is a right-mover: pop smaller tops, stop and die on a larger top, both vanish on a tie. All other asteroids are simply pushed. Each asteroid is pushed and popped at most once.",
+    "intuition": "Only -> <- pairs collide, and the newcomer heading left meets the nearest surviving right-mover first. A stack of survivors makes 'nearest' the top; the fight loop pops until the left-mover dies or runs out of right-movers to hit.",
+    "geometric": "Asteroids enter from the right. The stack is the lane so far. A left-mover arriving behind a run of right-movers plows into them from the right end of the run, knocking out smaller ones until it meets one at least as big or the run ends.",
+    "visual": "asteroids: [ 3, 5, -6, 4, -1 ]\nread  3    stack: [3]\nread  5    stack: [3, 5]\nread -6    6 > 5: pop            -> [3]\n           6 > 3: pop            -> []\n           no right-mover left: push -> [-6]\nread  4    stack: [-6, 4]        (<- then -> never collide)\nread -1    1 < 4: -1 explodes    -> [-6, 4]\nonly (-> already on stack, <- arriving) pairs ever collide",
+    "steps": [
+      "stack = [].",
+      "For each asteroid a: alive = True; while alive and a < 0 and the stack top > 0: if top < |a| pop and continue; if top == |a| pop and alive = False; else alive = False.",
+      "If alive, push a.",
+      "Return the stack."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "each asteroid is pushed once and popped at most once."
+    },
+    "pitfalls": [
+      "Forgetting that equal sizes destroy both.",
+      "Letting a left-mover fight a left-mover already on the stack.",
+      "Pushing an asteroid that just exploded."
+    ],
+    "hints": [
+      "Which pairs of asteroids can ever collide, and which one does a new left-mover hit first?",
+      "Only a right-mover followed by a left-mover; the newcomer hits the most recent survivor first (LIFO).",
+      "Keep survivors on a stack; a negative newcomer pops smaller positive tops, dies on a bigger one, both die on a tie."
+    ],
+    "code": "class Solution:\n    def asteroidCollision(self, asteroids: List[int]) -> List[int]:\n        stack = []\n        for a in asteroids:\n            alive = True\n            # only a left-mover can hit right-movers already on the stack\n            while alive and a < 0 and stack and stack[-1] > 0:\n                if stack[-1] < -a:\n                    stack.pop()                       # top explodes, keep fighting\n                elif stack[-1] == -a:\n                    stack.pop()\n                    alive = False                     # both explode\n                else:\n                    alive = False                     # a explodes\n            if alive:\n                stack.append(a)\n        return stack",
+    "related": [
+      "daily_temperatures",
+      "valid_parentheses",
+      "remove_all_adjacent_duplicates_in_string"
+    ]
+  },
+  {
+    "slug": "basic_calculator_ii",
+    "title": "Basic Calculator II",
+    "leetcode": 227,
+    "difficulty": "Medium",
+    "topic": "stack",
+    "pattern": "Stack evaluation",
+    "file": "stack/basic_calculator_ii.py",
+    "problem": "Evaluate a string expression of non-negative integers, the operators + - * /, and spaces, with normal precedence and integer division truncating toward zero. Example: \"3+2*2\" -> 7; \" 3/2 \" -> 1; \" 3+5 / 2 \" -> 5.",
+    "brute_force": {
+      "approach": "Tokenise, then make two passes over the token list: first repeatedly find a * or /, collapse its two neighbours into one number and splice; then do the same for + and -. Each splice shifts the whole tail and the second pass re-reads tokens the first pass already visited.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(s: str) -> int:\n    tokens, num = [], \"\"\n    for ch in s.replace(\" \", \"\") + \"+\":\n        if ch.isdigit():\n            num += ch\n        else:\n            tokens += [int(num), ch]\n            num = \"\"\n    tokens.pop()                                         # drop the trailing '+'\n    apply = {\"*\": lambda a, b: a * b, \"/\": lambda a, b: int(a / b),\n             \"+\": lambda a, b: a + b, \"-\": lambda a, b: a - b}\n    for level in (\"*/\", \"+-\"):                           # two passes: high precedence first\n        i = 1\n        while i < len(tokens):\n            if tokens[i] in level:\n                tokens[i - 1:i + 2] = [apply[tokens[i]](tokens[i - 1], tokens[i + 1])]\n            else:\n                i += 2\n    return tokens[0]"
+    },
+    "optimization": "The redundancy is the two-pass splice-and-shift. Observation: precedence only ever reaches back one term -- 'a * b' must combine b with the term immediately before it -- while + and - can be deferred entirely by pushing signed terms and summing at the end. So keep a stack of resolved terms: on + push num, on - push -num, on * or / pop the previous term, combine with num and push the result. One pass, every character read once, answer = sum(stack).",
+    "intuition": "Treat the expression as a sum of terms, each term a product/quotient chain. The stack holds finished terms; multiplication and division edit the term being built (the top), addition and subtraction start a new one. An operator is applied when the NEXT operator (or end of input) arrives, because only then is its right operand complete.",
+    "geometric": "Reading \"3+5/2\": push 3; '+' pending; 5 arrives; '/' pending; 2 arrives; end of string applies '/' to the top: pop 5, push 5/2 = 2. The stack is [3, 2] and the answer is their sum, 5.",
+    "visual": "s = \"3+5 / 2\"       stack      num   op (pending)\nread 3              []          3    +\nread +  apply '+'   [3]         0    +\nread 5              [3]         5    +\nread /  apply '+'   [3, 5]      0    /\nread 2  (last ch)   [3, 5]      2    /\nend     apply '/'   pop 5 -> push int(5/2) = 2   [3, 2]\nanswer = sum(stack) = 5\n* and / edit the top term; + and - start a new signed term",
+    "steps": [
+      "stack = [], num = 0, op = '+' (the operator preceding the current number).",
+      "For each char: if digit, num = num*10 + d.",
+      "If the char is an operator or the last char: apply op -- '+': push num; '-': push -num; '*': push pop()*num; '/': push int(pop()/num) -- then num = 0, op = char.",
+      "Return sum(stack)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "single pass; the stack holds at most the number of terms."
+    },
+    "pitfalls": [
+      "Forgetting to apply the last pending operator at the end of the string.",
+      "Python // floors toward -inf; use int(a / b) so int(-3 / 2) = -1.",
+      "Triggering the apply branch on spaces (only operators or the final character should)."
+    ],
+    "hints": [
+      "Which operators need the previous value immediately, and which can wait until the end?",
+      "* and / must combine with the term just before them; + and - can be deferred as signed terms.",
+      "Push num for +, -num for -, pop*num for *, int(pop/num) for /; answer is sum of the stack."
+    ],
+    "code": "class Solution:\n    def calculate(self, s: str) -> int:\n        stack = []                                   # resolved terms; answer = their sum\n        num, op = 0, \"+\"                             # op = operator BEFORE the current number\n        for i, ch in enumerate(s):\n            if ch.isdigit():\n                num = num * 10 + int(ch)\n            if ch in \"+-*/\" or i == len(s) - 1:      # number complete: apply pending op\n                if op == \"+\":\n                    stack.append(num)\n                elif op == \"-\":\n                    stack.append(-num)\n                elif op == \"*\":\n                    stack.append(stack.pop() * num)\n                else:\n                    stack.append(int(stack.pop() / num))   # truncate toward zero\n                num, op = 0, ch\n        return sum(stack)",
+    "related": [
+      "evaluate_reverse_polish_notation",
+      "decode_string",
+      "basic_calculator"
+    ]
+  },
+  {
+    "slug": "simplify_path",
+    "title": "Simplify Path",
+    "leetcode": 71,
+    "difficulty": "Medium",
+    "topic": "strings",
+    "pattern": "Stack simulation",
+    "file": "strings/simplify_path.py",
+    "problem": "Convert an absolute Unix path to canonical form: a single leading '/', no trailing '/', no '.' components, '..' resolved to the parent (a no-op at root) and consecutive slashes collapsed. Example: \"/home//foo/\" -> \"/home/foo\"; \"/a/./b/../../c/\" -> \"/c\"; \"/../\" -> \"/\".",
+    "brute_force": {
+      "approach": "Split on '/' and discard \"\" and \".\" parts, then repeatedly find the first \"..\", delete it along with the component before it, and restart the scan. Every pass re-examines the prefix before the first \"..\" although nothing in it changed.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(path: str) -> str:\n    parts = [p for p in path.split(\"/\") if p not in (\"\", \".\")]\n    changed = True\n    while changed:                                 # rescan from the start after each change\n        changed = False\n        for i, p in enumerate(parts):\n            if p == \"..\":\n                del parts[max(i - 1, 0):i + 1]     # cancel \"name/..\"; at root \"..\" vanishes\n                changed = True\n                break\n    return \"/\" + \"/\".join(parts)"
+    },
+    "optimization": "The redundancy is rescanning a prefix that is already canonical. Observation: \"..\" always cancels the most recently added surviving component, which is LIFO. Walk the components once, pushing directory names onto a stack and popping on \"..\" (if non-empty). The stack at the end is the canonical path; join it with '/'. Each component is pushed and popped at most once.",
+    "intuition": "A path is a sequence of 'go into directory' and 'go up' moves. A stack of directory names tracks the current location: a name pushes, \"..\" pops, \".\" and empty parts do nothing. Any other token, including \"...\" or \".hidden\", is an ordinary name.",
+    "geometric": "Walking a tree from the root: each name descends one level (push), \"..\" climbs one level (pop, unless already at the root). After consuming the whole path the stack is the chain of ancestors from root to the final directory.",
+    "visual": "path:  /a/./b/../../c/\nparts: \"\"  a  .  b  ..  ..  c  \"\"\n  a    push        stack: [a]\n  .    skip        stack: [a]\n  b    push        stack: [a, b]\n  ..   pop         stack: [a]\n  ..   pop         stack: []\n  c    push        stack: [c]\n  \"\"   skip\nresult: \"/\" + \"/\".join([c]) = \"/c\"",
+    "steps": [
+      "stack = [].",
+      "For part in path.split('/'): if part == \"..\" pop when the stack is non-empty.",
+      "Else if part is not \"\" and not \".\", push it.",
+      "Return \"/\" + \"/\".join(stack)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "one pass over the characters and one push/pop per component."
+    },
+    "pitfalls": [
+      "Treating \"...\" or \".hidden\" as special (they are valid names).",
+      "Popping on \"..\" at the root (must be a no-op).",
+      "Returning \"\" instead of \"/\" for an empty stack."
+    ],
+    "hints": [
+      "Which earlier component does a \"..\" cancel?",
+      "The most recent surviving one: LIFO, so keep directory names on a stack.",
+      "Split on '/', skip \"\" and \".\", pop on \"..\", push anything else, join with '/'."
+    ],
+    "code": "class Solution:\n    def simplifyPath(self, path: str) -> str:\n        stack = []\n        for part in path.split(\"/\"):\n            if part == \"..\":\n                if stack:\n                    stack.pop()                    # go up one level; no-op at root\n            elif part and part != \".\":\n                stack.append(part)                 # \"\" (from //) and \".\" are skipped\n        return \"/\" + \"/\".join(stack)",
+    "related": [
+      "valid_parentheses",
+      "minimum_remove_to_make_valid_parentheses",
+      "decode_string"
+    ]
+  },
+  {
+    "slug": "minimum_remove_to_make_valid_parentheses",
+    "title": "Minimum Remove to Make Valid Parentheses",
+    "leetcode": 1249,
+    "difficulty": "Medium",
+    "topic": "strings",
+    "pattern": "Stack matching",
+    "file": "strings/minimum_remove_to_make_valid_parentheses.py",
+    "problem": "Given a string of lowercase letters and parentheses, remove the minimum number of parentheses so the result is valid, and return any such result. Example: \"lee(t(c)o)de)\" -> \"lee(t(c)o)de\"; \"a)b(c)d\" -> \"ab(c)d\"; \"))((\" -> \"\".",
+    "brute_force": {
+      "approach": "Scan left to right with a depth counter; the first ')' that drives depth negative is unmatched, so delete it and rescan from the beginning; repeat until none remain, then do the mirror image from the right for unmatched '('. After each deletion the rescan re-walks a prefix whose depth profile is already known.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(s: str) -> str:\n    def strip(s: str, open_: str, close: str) -> str:\n        changed = True\n        while changed:                             # rescan from scratch after each removal\n            changed, depth = False, 0\n            for i, ch in enumerate(s):\n                depth += (ch == open_) - (ch == close)\n                if depth < 0:                      # first unmatched closer\n                    s, changed = s[:i] + s[i + 1:], True\n                    break\n        return s\n    s = strip(s, \"(\", \")\")                         # drop unmatched ')' left-to-right\n    return strip(s[::-1], \")\", \"(\")[::-1]"
+    },
+    "optimization": "The redundancy is rescanning after each deletion. Observation: a ')' is unmatched exactly when no open '(' is available to pair with it, and a '(' is unmatched exactly when it is never closed; both are decidable in one left-to-right pass with a stack of indices of currently-open '('. A ')' pops when possible and is marked for deletion otherwise; whatever remains on the stack at the end is the set of never-closed '(' to delete. One pass plus one join.",
+    "intuition": "Match parentheses as you read: ')' pairs with the most recent open '('. Anything that cannot be paired -- a ')' with no partner, or a '(' still waiting at the end -- is exactly the minimum set to remove, since each removed character was genuinely unmatchable. Marking indices instead of deleting in place keeps positions stable.",
+    "geometric": "Draw depth over position: '(' steps up, ')' steps down. Every downward step that would go below zero is a doomed ')'. At the end the final height is the count of doomed '(' -- the most recent unclosed openers, which are exactly the stack contents.",
+    "visual": "s: l e e ( t ( c ) o ) d e )\n         ^   ^              stack of open '(' : [3, 5]\n                 ^          ')' pops 5         : [3]\n                     ^      ')' pops 3         : []\n                           ^ ')' with empty stack -> delete\nleftover stack = []  (leftover '(' would be deleted too)\nresult: lee(t(c)o)de",
+    "steps": [
+      "chars = list(s), stack = [] of indices of open '('.",
+      "For i, ch: '(' pushes i; ')' pops if the stack is non-empty, else chars[i] = \"\".",
+      "For every index left on the stack set chars[i] = \"\".",
+      "Return \"\".join(chars)."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "a single pass; the stack and the output list are linear."
+    },
+    "pitfalls": [
+      "Deleting from the string while iterating shifts indices; mark instead.",
+      "Removing only one leftover '(' instead of all of them.",
+      "Letting letters affect the stack."
+    ],
+    "hints": [
+      "Which ')' characters are definitely unmatched, and when can you tell?",
+      "A ')' with no open '(' before it; track open '(' indices on a stack as you scan.",
+      "Mark unmatched ')' during the scan and every '(' left on the stack afterwards; join the rest."
+    ],
+    "code": "class Solution:\n    def minRemoveToMakeValid(self, s: str) -> str:\n        chars = list(s)\n        stack = []                                 # indices of '(' not yet closed\n        for i, ch in enumerate(s):\n            if ch == \"(\":\n                stack.append(i)\n            elif ch == \")\":\n                if stack:\n                    stack.pop()\n                else:\n                    chars[i] = \"\"                  # unmatched ')': delete\n        for i in stack:                            # '(' never closed: delete\n            chars[i] = \"\"\n        return \"\".join(chars)",
+    "related": [
+      "valid_parentheses",
+      "simplify_path",
+      "remove_invalid_parentheses"
+    ]
+  },
+  {
+    "slug": "text_justification",
+    "title": "Text Justification",
+    "leetcode": 68,
+    "difficulty": "Hard",
+    "topic": "strings",
+    "pattern": "Greedy line packing",
+    "file": "strings/text_justification.py",
+    "problem": "Pack words greedily into lines of exactly maxWidth characters. Fully justify each line with extra spaces spread as evenly as possible (leftover spaces go to the leftmost gaps); the last line, and any line with a single word, is left-justified and padded. Example: words = [\"This\",\"is\",\"an\",\"example\",\"of\",\"text\",\"justification.\"], maxWidth = 16 -> [\"This    is    an\", \"example  of text\", \"justification.  \"].",
+    "brute_force": {
+      "approach": "Pack the same greedy lines, but distribute spaces by simulation: start every gap at one space, then add one space to the next gap (cycling from the left) and re-join and re-measure the line until it reaches maxWidth. Measuring the whole line after every single space is pure wasted work for something that is arithmetic.",
+      "time": "O(L * maxWidth^2)",
+      "space": "O(maxWidth)",
+      "code": "def brute_force(words: List[str], maxWidth: int) -> List[str]:\n    lines, line = [], []\n    for w in words + [None]:                                 # None flushes the final line\n        if w is None or (line and len(\" \".join(line + [w])) > maxWidth):\n            if w is None or len(line) == 1:\n                text = \" \".join(line)\n                lines.append(text + \" \" * (maxWidth - len(text)))\n            else:\n                gaps, k = [\" \"] * (len(line) - 1), 0\n                while len(\"\".join(line) + \"\".join(gaps)) < maxWidth:   # one space at a time\n                    gaps[k % len(gaps)] += \" \"\n                    k += 1\n                lines.append(\"\".join(a + b for a, b in zip(line, gaps)) + line[-1])\n            line = []\n        if w is not None:\n            line.append(w)\n    return lines"
+    },
+    "optimization": "The redundancy is simulating space distribution one character at a time. Observation: with gaps gaps and spaces total spaces, every gap gets spaces // gaps and the leftmost spaces % gaps gaps get one more, so a single divmod replaces the loop. Greedy packing is mandated by the statement, so the only structure needed is a two-index scan: i marks the first word of the line and j extends while the next word still fits (width + 1 + len(next) <= maxWidth). Each word is examined once and each output character is written once.",
+    "intuition": "Two independent sub-problems: which words go on this line (greedy: take words while they fit) and how to spread the spare spaces (arithmetic: divmod, remainder to the left). The two exceptional cases, a single word and the last line, share the same left-justify code path.",
+    "geometric": "A ruler of length maxWidth. Lay words end to end with one space between them; the leftover length is spaces. Cut it into gaps equal pieces; the remainder is a handful of single units dropped into the leftmost gaps one each. On the last line the words sit flush left and the remainder is one trailing block.",
+    "visual": "words: This is an example of text justification.   W=16\nline 1: [This, is, an]   letters 8, gaps 2, spaces 8\n        divmod(8, 2) = (4, 0)      \"This    is    an\"\nline 2: [example, of, text]  letters 13, gaps 2, spaces 3\n        divmod(3, 2) = (1, 1): left gap 2, right gap 1\n                                   \"example  of text\"\nline 3: last line -> left-justify, pad to W\n                                   \"justification.  \"\npack rule: add the next word while width + 1 + len <= W",
+    "steps": [
+      "i = 0; while i < len(words): j = i, width = len(words[i]).",
+      "While j+1 exists and width + 1 + len(words[j+1]) <= maxWidth: j += 1, width += 1 + len(words[j]).",
+      "line = words[i..j]; if it is the last line or has one word, \" \".join and right-pad.",
+      "Else spaces = maxWidth - total letters; q, r = divmod(spaces, gaps); gap k gets q + (k < r) spaces.",
+      "i = j + 1; return the lines."
+    ],
+    "complexity": {
+      "time": "O(total characters)",
+      "space": "O(maxWidth)",
+      "why": "each word is visited once and each output character written once."
+    },
+    "pitfalls": [
+      "Forgetting the separating space when testing whether the next word fits.",
+      "Fully justifying a single-word non-final line (it must be left-justified).",
+      "Giving the last line more than one space between words."
+    ],
+    "hints": [
+      "Split the task: which words form a line, and how are spaces spread? Solve them separately.",
+      "Greedy packing by width; then total spare spaces over the gaps with divmod, remainder to the left.",
+      "Last line or single word: join with one space and right-pad; everything else uses q + (k < r)."
+    ],
+    "code": "class Solution:\n    def fullJustify(self, words: List[str], maxWidth: int) -> List[str]:\n        lines, i = [], 0\n        while i < len(words):\n            j, width = i, len(words[i])                      # pack words[i..j] greedily\n            while j + 1 < len(words) and width + 1 + len(words[j + 1]) <= maxWidth:\n                j += 1\n                width += 1 + len(words[j])\n            line = words[i:j + 1]\n            gaps = len(line) - 1\n            if gaps == 0 or j == len(words) - 1:             # single word or last line\n                text = \" \".join(line)\n                lines.append(text + \" \" * (maxWidth - len(text)))\n            else:\n                spaces = maxWidth - sum(map(len, line))\n                q, r = divmod(spaces, gaps)                  # leftmost r gaps get one extra\n                text = \"\"\n                for k, w in enumerate(line[:-1]):\n                    text += w + \" \" * (q + (k < r))\n                lines.append(text + line[-1])\n            i = j + 1\n        return lines",
+    "related": [
+      "implement_split",
+      "reverse_words_in_a_string",
+      "simplify_path"
+    ]
+  },
+  {
+    "slug": "implement_split",
+    "title": "Implement String Split",
+    "leetcode": 0,
+    "difficulty": "Easy",
+    "topic": "strings",
+    "pattern": "Linear scan with state",
+    "file": "strings/implement_split.py",
+    "problem": "Implement split(s, sep) with the exact semantics of Python's str.split(sep) for a non-empty separator, without str.split or re: empty pieces between adjacent separators and at the ends are kept, and matches are non-overlapping left to right. Example: split(\"a,,b,\", \",\") -> [\"a\", \"\", \"b\", \"\"]; split(\"aaa\", \"aa\") -> [\"\", \"a\"]; split(\"\", \",\") -> [\"\"].",
+    "brute_force": {
+      "approach": "Loop: k = s.find(sep); if none, emit the remainder and stop; else emit s[:k] and set s = s[k+len(sep):]. Each find scans from the start of the shrinking remainder and each slice copies it, so the remainder is copied once per piece and every boundary is re-derived from a fresh string object.",
+      "time": "O(n*m) matching, O(n^2) worst-case copying",
+      "space": "O(n)",
+      "code": "def brute_force(s: str, sep: str) -> List[str]:\n    if not sep:\n        raise ValueError(\"empty separator\")\n    parts = []\n    while True:\n        k = s.find(sep)                             # rescans from the start of the remainder\n        if k == -1:\n            parts.append(s)\n            return parts\n        parts.append(s[:k])\n        s = s[k + len(sep):]"
+    },
+    "optimization": "The redundancy is rebuilding the remainder after every match. Observation: the remainder is just a suffix identified by a start index, so track start instead of slicing. A single index i walks the string; at each position compare s[i:i+m] with sep: on a match emit s[start:i], jump i past the separator (non-overlapping) and set start = i; otherwise i += 1. After the loop emit s[start:], which is what yields the trailing empty string for \"a,\" and [\"\"] for an empty input. O(n*m) comparisons and no repeated copying.",
+    "intuition": "A split is 'cut at every match, keep whatever lies between cuts, including nothing'. Walk the string once, remembering where the current piece began; each match closes a piece and opens the next one right after the separator. Interview talking points: state the edge cases first (empty s -> [\"\"], s == sep -> [\"\", \"\"], adjacent separators -> empty pieces); an empty separator raises ValueError in Python while some languages split into characters, so ask; multi-char separators match leftmost and non-overlapping, enforced by advancing i by m; Unicode strings are code-point sequences so the algorithm is unchanged, but a separator can land inside a grapheme cluster (base + combining mark), and byte-level UTF-8 splitting needs care; maxsplit and no-argument whitespace split are different semantics worth mentioning as follow-ups.",
+    "geometric": "Two markers on the string: start (beginning of the piece under construction) and i (the scan head). When the window s[i:i+m] equals sep, the segment [start, i) is snipped off as a piece and both markers jump to i+m. At the end the tail [start, n) is the last piece, even if it has zero length.",
+    "visual": "s = \"a,,b,\"  sep = \",\"    start i  action\n          a , , b ,\ni=0       ^              0     0  'a' != sep -> i=1\ni=1         ^            0     1  match: emit \"a\"; start=2\ni=2           ^          2     2  match: emit \"\";  start=3\ni=3             ^        3     3  'b' != sep -> i=4\ni=4               ^      3     4  match: emit \"b\"; start=5\nend  (i=5 > n-m=4)                emit tail s[5:] = \"\"\nresult: [\"a\", \"\", \"b\", \"\"]  empties between/after seps",
+    "steps": [
+      "Reject an empty separator (Python raises ValueError).",
+      "parts = [], start = 0, i = 0, m = len(sep).",
+      "While i <= len(s) - m: if s[i:i+m] == sep, append s[start:i], i += m, start = i; else i += 1.",
+      "Append s[start:] (the final piece, possibly empty) and return parts."
+    ],
+    "complexity": {
+      "time": "O(n*m)",
+      "space": "O(n)",
+      "why": "each position is compared against sep at most once; the output holds every character once plus one slot per separator."
+    },
+    "pitfalls": [
+      "Advancing i by 1 after a match (creates overlapping matches: \"aaa\" / \"aa\" must give [\"\", \"a\"]).",
+      "Forgetting the final piece, which also produces the trailing empty string and [\"\"] for empty input.",
+      "Treating 'no separator found' as [] instead of [s]."
+    ],
+    "hints": [
+      "Write down what Python returns for \"\", \",\", \"a,\", \",a\" and \"a,,b\" before coding.",
+      "Keep the start of the current piece and a scan index; a match closes the piece and skips the whole separator.",
+      "while i <= n - m: compare s[i:i+m]; emit s[start:i] on match and jump i += m; finally emit s[start:]."
+    ],
+    "code": "class Solution:\n    def split(self, s: str, sep: str) -> List[str]:\n        if not sep:\n            raise ValueError(\"empty separator\")\n        m = len(sep)\n        parts, start, i = [], 0, 0\n        while i <= len(s) - m:\n            if s[i:i + m] == sep:                   # separator starts at i\n                parts.append(s[start:i])            # may be \"\" between adjacent separators\n                i += m                              # non-overlapping: skip the whole separator\n                start = i\n            else:\n                i += 1\n        parts.append(s[start:])                     # trailing piece, possibly \"\"\n        return parts",
+    "related": [
+      "text_justification",
+      "reverse_words_in_a_string",
+      "string_to_integer_atoi"
+    ]
+  }
+]

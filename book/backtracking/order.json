@@ -1,0 +1,17 @@
+{"topic": "backtracking", "title": "Backtracking", "order": [
+ {"slug": "subsets", "why_here": "The decision tree itself: choose/explore/un-choose with one shared path, every node an answer."},
+ {"slug": "subsets_ii", "why_here": "Same tree with duplicate inputs: sort, then skip equal siblings to cut identical subtrees."},
+ {"slug": "permutations", "why_here": "Switch from pick-from-index to pick-from-set: a used array replaces the start index."},
+ {"slug": "combination_sum", "why_here": "First real prune: a remaining budget cuts subtrees, and recursing on i allows reuse."},
+ {"slug": "combination_sum_ii", "why_here": "Combines the budget break with the duplicate skip; i+1 because each index is used once."},
+ {"slug": "letter_combinations_of_a_phone_number", "why_here": "Fixed-depth product with a different alphabet per level: recursion as variable nested loops."},
+ {"slug": "generate_parentheses", "why_here": "Choices gated by counters so every branch is a prefix of a valid answer: pruning with zero dead ends."},
+ {"slug": "word_search", "why_here": "Backtracking moves onto a grid: the used set becomes an in-place mark erased on the way back."},
+ {"slug": "unique_paths_iii", "why_here": "Grid walk that must cover every free cell: a remaining-cells count is both prune and success test."},
+ {"slug": "n_queens", "why_here": "Placement under conflicts: row-by-row choices with column and diagonal sets."},
+ {"slug": "sudoku_solver", "why_here": "Constraint backtracking with bitmasks and most-constrained-cell-first to keep the tree narrow."},
+ {"slug": "remove_invalid_parentheses", "why_here": "Search over deletions with a precomputed removal budget and balance pruning."},
+ {"slug": "expression_add_operators", "why_here": "Carry running value plus last operand so multiplication precedence can be undone in O(1)."},
+ {"slug": "twenty_four_game", "why_here": "The state is a shrinking multiset: combine two values, recurse on the rest, with float tolerance."},
+ {"slug": "robot_room_cleaner", "why_here": "Blind backtracking: the tree is unseen, and un-choose is a physical turn-around and step back."}
+]}
