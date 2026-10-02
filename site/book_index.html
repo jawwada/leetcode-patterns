@@ -97,6 +97,7 @@ code,pre{font-family:var(--mono)}
 .statement{margin:6px 0 8px;padding:16px 18px;background:var(--panel);border:1px solid var(--rule);border-left:4px solid var(--accent);border-radius:0 8px 8px 0;font-size:.97em}
 .statement .eyebrow{margin-bottom:8px;color:var(--accent)}
 .statement p{margin:0 0 8px}.statement p:last-child{margin:0}
+.statement .links{display:flex;gap:16px;flex-wrap:wrap}
 .statement a{font-family:var(--display);font-size:13px;text-decoration:none}
 .solution{margin:40px 0 0;border:1px solid var(--rule);border-radius:8px;background:var(--panel)}
 .solution summary{cursor:pointer;padding:12px 16px;font-family:var(--display);font-weight:700;list-style:none;display:flex;justify-content:space-between;align-items:center}
@@ -280,7 +281,7 @@ function renderItem(it){
       <div><div class="lab">Optimal · ${esc(it.time)} time · ${esc(it.space)} space · <code>${esc(it.file)}</code></div><pre><code class="language-python">${esc(it.code)}</code></pre></div>
       <div class="lab">Short form, hints and practice: <a href="https://jawwada.github.io/leetcode-patterns/site/index.html#${it.slug}" target="_blank" rel="noopener">Pattern Board › ${esc(it.title)}</a></div></div></details>` : '';
   main.innerHTML=`<article class="page"><div class="pagehead">${head}${tools(it.id)}</div>
-    ${it.kind==='sec' && it.problem ? `<section class="statement" aria-label="Problem statement"><div class="eyebrow">The problem</div><p>${esc(it.problem)}</p>${it.leetcode?`<a href="https://leetcode.com/problems/${it.slug.replace(/_/g,'-')}/" target="_blank" rel="noopener">Open on LeetCode ↗</a>`:''}</section>` : ''}
+    ${it.kind==='sec' && it.problem ? `<section class="statement" aria-label="Problem statement"><div class="eyebrow">The problem</div><p>${esc(it.problem)}</p><div class="links"><a href="https://jawwada.github.io/leetcode-patterns/site/index.html#${it.slug}" target="_blank" rel="noopener">Open in Pattern Board ↗</a>${it.leetcode?`<a href="https://leetcode.com/problems/${it.slug.replace(/_/g,'-')}/" target="_blank" rel="noopener">Open on LeetCode ↗</a>`:''}</div></section>` : ''}
     <div class="prose">${md2html(it.md)}</div>${sol}
     <nav class="pager">${prev?`<a href="#${prev.id}"><span>Previous</span><span>${esc(prev.title)}</span></a>`:'<span></span>'}${next?`<a class="next" href="#${next.id}"><span>Next</span><span>${esc(next.title)}</span></a>`:'<span></span>'}</nav></article>`;
   if(window.hljs) main.querySelectorAll('code.language-python').forEach(el=>hljs.highlightElement(el));

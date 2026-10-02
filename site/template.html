@@ -330,7 +330,7 @@ function renderProblem(p, opts={}){
   main.innerHTML = `<article class="detail">
     <div class="eyebrow"><a href="#${p.topic}" style="text-decoration:none">${TOPICS[p.topic][0]}</a> · ${esc(p.pattern)}</div>
     <header><h2>${esc(p.title)}</h2>${pill(p)}</header>
-    <div class="meta"><span>${lc(p)}</span><span>·</span><code>${esc(p.file)}</code>${p.leetcode?`<span>·</span><a href="https://leetcode.com/problems/${p.slug.replace(/_/g,'-')}/" target="_blank" rel="noopener">open on LeetCode</a>`:''}</div>
+    <div class="meta"><span>${lc(p)}</span><span>·</span><code>${esc(p.file)}</code><span>·</span><a href="https://jawwada.github.io/leetcode-patterns/site/book_index.html#${p.slug}" target="_blank" rel="noopener">read the long version (Intuition Journey)</a>${p.leetcode?`<span>·</span><a href="https://leetcode.com/problems/${p.slug.replace(/_/g,'-')}/" target="_blank" rel="noopener">open on LeetCode</a>`:''}</div>
     <div class="actions">
       <button id="btn-done" class="${done.has(p.slug)?'on':''}">${done.has(p.slug)?'✓ Solved':'Mark solved'}</button>
       <button id="btn-review" class="${review.has(p.slug)?'on':''}">${review.has(p.slug)?'★ For review':'Mark for review'}</button>
