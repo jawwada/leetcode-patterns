@@ -6,8 +6,9 @@ Problem
 -------
 Given an m x n elevation map, return the volume of water trapped after raining. Water can only
 escape over the border, flowing through 4-directionally adjacent cells.
-Example: [[1,4,3,1,3,2],[3,2,1,3,2,4],[2,3,3,2,3,1]] -> 4 (the 2 and the 1 in the middle row
-fill to height 3: (3-2) + (3-1) = 3, plus the 2 at (2,3) fills to 3: total 4).
+Example: [[1,4,3,1,3,2],[3,2,1,3,2,4],[2,3,3,2,3,1]] -> 4. Only the middle row is interior;
+its cells (1,1)=2, (1,2)=1, (1,3)=3, (1,4)=2 all fill to level 3, holding
+(3-2) + (3-1) + (3-3) + (3-2) = 1 + 2 + 0 + 1 = 4.
 
 Brute force
 -----------

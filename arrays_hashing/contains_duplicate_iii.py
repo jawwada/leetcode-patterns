@@ -53,8 +53,8 @@ Steps
 6. Return False.
 
 Complexity: O(n) time, O(min(n, k)) space — each index does O(1) dict operations.
-Pitfalls: width t instead of t + 1 (values differing by exactly t could land in buckets two
-apart); using int(x / width) instead of floor division for negatives; evicting nums[i - k]
+Pitfalls: width t instead of t + 1 divides by zero when t = 0 (t + 1 is the widest width
+where a shared bucket still guarantees |a - b| <= t, and it works for every t >= 0); using int(x / width) instead of floor division for negatives; evicting nums[i - k]
 one step too early or too late (the window must hold exactly k previous indices); k = 0 means
 no valid pair.
 """

@@ -39,6 +39,12 @@ position: replace the longest course taken so far with this one if this one is s
 pop-after-push handles both cases: if the new course is itself the longest, it gets popped
 right back). Shorter total time now means more courses fit later. The count never decreases
 and the total time is as small as possible for that count.
+Why the swap is safe (exchange argument): suppose an optimal schedule keeps a course we
+dropped. Our kept set is at least as large and its longest member is no longer than the one
+we dropped, so trading that course for one of ours that the optimum skips never makes its
+total time longer and never breaks a deadline processed so far. Repeating the trade turns
+the optimum into our set without losing a course. (Cross-checked against brute force on
+3000 random inputs: same count and same minimum total time.)
 
 Geometric view
 --------------

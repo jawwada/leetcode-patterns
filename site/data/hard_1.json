@@ -1,587 +1,587 @@
 [
-  {
-    "slug": "maximal_rectangle",
-    "title": "Maximal Rectangle",
-    "leetcode": 85,
-    "difficulty": "Hard",
-    "topic": "stack",
-    "pattern": "Monotonic stack",
-    "file": "stack/maximal_rectangle.py",
-    "problem": "Given an m x n binary matrix of '0'/'1' characters, return the area of the largest rectangle containing only '1's. Example: [[\"1\",\"0\",\"1\",\"0\",\"0\"],[\"1\",\"0\",\"1\",\"1\",\"1\"],[\"1\",\"1\",\"1\",\"1\",\"1\"],[\"1\",\"0\",\"0\",\"1\",\"0\"]] -> 6, the 2 x 3 block of 1s in rows 1-2, columns 2-4.",
-    "brute_force": {
-      "approach": "Enumerate every pair of corners (r1,c1) <= (r2,c2) and check that every cell inside is '1'. There are O(m^2 n^2) rectangles and each check costs O(mn), so O(m^3 n^3) overall. The waste is re-scanning the same cells: the rectangles (r1,c1,r2,c2) and (r1,c1,r2,c2+1) share almost all their cells, yet both are verified from scratch.",
-      "time": "O(m^3 n^3)",
-      "space": "O(1)",
-      "code": "def brute_force(matrix: List[List[str]]) -> int:\n    m, n = len(matrix), len(matrix[0]) if matrix else 0\n    best = 0\n    for r1 in range(m):\n        for c1 in range(n):\n            for r2 in range(r1, m):\n                for c2 in range(c1, n):\n                    if all(matrix[r][c] == \"1\"\n                           for r in range(r1, r2 + 1) for c in range(c1, c2 + 1)):\n                        best = max(best, (r2 - r1 + 1) * (c2 - c1 + 1))\n    return best"
-    },
-    "optimization": "Step one (to O(m n^2)): fix the bottom row r and record, per column, height[c] = number of consecutive 1s ending at row r. The tallest all-1 rectangle with bottom edge on row r spanning columns [c1, c2] has height min(height[c1..c2]), so each row becomes a largest-rectangle-in-histogram instance, which brute-forces in O(n^2) per row. Step two (to O(m n)): in a histogram, bar c's maximal rectangle reaches left and right to the nearest shorter bar on each side. A monotonic increasing stack finds both walls for every bar in one pass: when a shorter bar arrives at index i, each taller bar popped from the stack has right wall i and left wall the new stack top. Each bar is pushed and popped once per row, so the whole matrix costs O(m n).",
-    "intuition": "A rectangle of 1s is defined by its bottom row and the shortest column of 1s rising above it. Sweeping the bottom row downward while maintaining 'how many 1s stand above me' per column turns every row into a histogram, with a 0 resetting the bar to the ground. In a histogram, every maximal rectangle is pinned by the bar that is its shortest; the moment a shorter bar arrives from the right, every taller bar still on the stack has just discovered its right wall and its area can be settled. A sentinel bar of height 0 at the end flushes whatever is left.",
-    "geometric": "Picture the matrix as m stacked skylines: row r's skyline has a bar of height h at column c when the last h cells ending at (r, c) are 1s. On each skyline a staircase of column indices with increasing heights climbs from left to right. A drop in height pops the taller steps, and each popped step sweeps out a rectangle between its two nearest shorter neighbours.",
-    "visual": "matrix          heights after row 2 = [3,1,3,2,2]\n1 0 1 0 0        3 | #   #\n1 0 1 1 1        2 | #   # # #     histogram with\n1 1 1 1 1  <--   1 | # # # # #     bottom = row 2\n1 0 0 1 0          +----------\n                     0 1 2 3 4   5=sentinel h=0\nstack (increasing h) at i=5: [1, 3, 4]  (h 1,2,2)\n  pop 4: h=2 left=3  width 5-3-1=1  area 2\n  pop 3: h=2 left=1  width 5-1-1=3  area 6  <- best\n  pop 1: h=1 left=-1 width 5        area 5\na 0 cell resets its column height; every row is a\nfresh largest-rectangle-in-histogram pass",
-    "steps": [
-      "Keep heights[c] for the current row: heights[c] + 1 if the cell is '1', else 0. Append a permanent 0 sentinel at index n.",
-      "For each row, run largest-rectangle-in-histogram over heights with a stack of indices whose heights strictly increase.",
-      "When heights[i] < heights[stack top], pop the top; its height h spans width i - (new top) - 1 (or i when the stack empties). Update best.",
-      "Push i and continue; the sentinel at i = n pops everything that remains.",
-      "Return the best area across all rows."
-    ],
-    "complexity": {
-      "time": "O(m n)",
-      "space": "O(n)",
-      "why": "Each row's histogram pass pushes and pops every column once; only one heights array and one stack are kept."
-    },
-    "pitfalls": [
-      "Omitting the sentinel, so bars still on the stack at the end of a row are never measured.",
-      "Incrementing heights on a '0' instead of resetting to 0 (the column of 1s is broken).",
-      "Comparing string cells to the integer 1; the matrix holds characters."
-    ],
-    "hints": [
-      "What does the matrix look like if, for each row, you record how many consecutive 1s end at each cell in its column?",
-      "Each such row is a histogram; the largest rectangle with its bottom on that row is Largest Rectangle in Histogram. Can you solve that per row in O(n)?",
-      "Use a monotonic increasing stack of column indices with a 0 sentinel: each pop yields a bar whose left wall is the new top and right wall is the current index."
-    ],
-    "code": "class Solution:\n    def maximalRectangle(self, matrix: List[List[str]]) -> int:\n        if not matrix or not matrix[0]:\n            return 0\n        n = len(matrix[0])\n        heights = [0] * (n + 1)          # heights[n] is a permanent 0 sentinel\n        best = 0\n        for row in matrix:\n            for c in range(n):\n                heights[c] = heights[c] + 1 if row[c] == \"1\" else 0\n            stack = []                   # indices with strictly increasing heights\n            for i in range(n + 1):\n                while stack and heights[i] < heights[stack[-1]]:\n                    h = heights[stack.pop()]\n                    left = stack[-1] if stack else -1\n                    best = max(best, h * (i - left - 1))\n                stack.append(i)\n        return best",
-    "related": [
-      "largest_rectangle_in_histogram",
-      "daily_temperatures",
-      "trapping_rain_water"
-    ]
+ {
+  "slug": "maximal_rectangle",
+  "title": "Maximal Rectangle",
+  "leetcode": 85,
+  "difficulty": "Hard",
+  "topic": "stack",
+  "pattern": "Monotonic stack",
+  "file": "stack/maximal_rectangle.py",
+  "problem": "Given an m x n binary matrix of '0'/'1' characters, return the area of the largest rectangle containing only '1's. Example: [[\"1\",\"0\",\"1\",\"0\",\"0\"],[\"1\",\"0\",\"1\",\"1\",\"1\"],[\"1\",\"1\",\"1\",\"1\",\"1\"],[\"1\",\"0\",\"0\",\"1\",\"0\"]] -> 6, the 2 x 3 block of 1s in rows 1-2, columns 2-4.",
+  "brute_force": {
+   "approach": "Enumerate every pair of corners (r1,c1) <= (r2,c2) and check that every cell inside is '1'. There are O(m^2 n^2) rectangles and each check costs O(mn), so O(m^3 n^3) overall. The waste is re-scanning the same cells: the rectangles (r1,c1,r2,c2) and (r1,c1,r2,c2+1) share almost all their cells, yet both are verified from scratch.",
+   "time": "O(m^3 n^3)",
+   "space": "O(1)",
+   "code": "def brute_force(matrix: List[List[str]]) -> int:\n    m, n = len(matrix), len(matrix[0]) if matrix else 0\n    best = 0\n    for r1 in range(m):\n        for c1 in range(n):\n            for r2 in range(r1, m):\n                for c2 in range(c1, n):\n                    if all(matrix[r][c] == \"1\"\n                           for r in range(r1, r2 + 1) for c in range(c1, c2 + 1)):\n                        best = max(best, (r2 - r1 + 1) * (c2 - c1 + 1))\n    return best"
   },
-  {
-    "slug": "shortest_subarray_with_sum_at_least_k",
-    "title": "Shortest Subarray with Sum at Least K",
-    "leetcode": 862,
-    "difficulty": "Hard",
-    "topic": "sliding_window",
-    "pattern": "Monotonic deque",
-    "file": "sliding_window/shortest_subarray_with_sum_at_least_k.py",
-    "problem": "Given an integer array nums whose values may be negative and an integer k, return the length of the shortest non-empty contiguous subarray with sum >= k, or -1 if there is none. Example: nums = [2,-1,2], k = 3 -> 3, because only the whole array reaches 3. nums = [1,2], k = 4 -> -1.",
-    "brute_force": {
-      "approach": "For every start i, extend the end j while keeping a running sum, and record j - i + 1 whenever the sum reaches k. Negatives mean you cannot stop early: a later element can push the sum back over k, so all O(n^2) pairs are examined. The same prefix sums are re-added for every start, and starts that can never beat a known shorter answer are still fully explored.",
-      "time": "O(n^2)",
-      "space": "O(1)",
-      "code": "def brute_force(nums: List[int], k: int) -> int:\n    best = float(\"inf\")\n    for i in range(len(nums)):\n        total = 0\n        for j in range(i, len(nums)):\n            total += nums[j]\n            if total >= k:\n                best = min(best, j - i + 1)\n    return best if best != float(\"inf\") else -1"
-    },
-    "optimization": "Rewrite with prefix sums P (P[0] = 0): find the smallest j - i with P[j] - P[i] >= k. Two observations prune the candidate starts. First, if i1 < i2 and P[i1] >= P[i2], then i1 is useless: any j that works with i1 also works with i2, and i2 is closer, so useful starts have strictly increasing prefix sums and can live in a deque that is monotonic in P. Second, once the front start satisfies P[j] - P[front] >= k for the current j, record j - front and pop it: any later j' would only give a longer subarray with that start. Every index is pushed and popped at most once, so the sweep is O(n) with no heap or sorting.",
-    "intuition": "Negative numbers break the plain sliding window because shrinking from the left can increase the sum, so there is no monotone left boundary to track. Prefix sums restore structure: we want a pair (i, j) with a large difference P[j] - P[i] and a small gap j - i. A start is worth remembering only if its prefix sum is lower than every later remembered start, because a later start with a lower-or-equal prefix dominates it on both distance and sum. That dominance rule is exactly what a monotonic deque maintains, and the front of the deque is always the best candidate to settle.",
-    "geometric": "Plot the prefix sums as points (index, P). The deque holds the lower-left staircase of candidate starts: points that are to the left of and strictly below everything that follows them. For each new point j, pop from the front while j sits at least k above it (each pop is an answer candidate), then pop from the back while the new point is at or below the back (those starts are dominated), then push j.",
-    "visual": "nums = [2,-1,2]  k = 3      P = [0, 2, 1, 3]\nP  3 |           o j=3      dq keeps starts with\n   2 |   x                  strictly rising P\n   1 |       o              x = dropped (dominated)\n   0 | o\n     +--0---1---2---3-- index\nj=0 P=0: push              dq=[0]\nj=1 P=2: 2-0<3; push       dq=[0,1]\nj=2 P=1: 1-0<3; 1<=P[1] -> pop back 1; push  dq=[0,2]\nj=3 P=3: 3-P[0]=3>=3 -> ans=3-0=3, popleft\n         3-P[2]=2<3 ; push                   dq=[2,3]\nanswer = 3",
-    "steps": [
-      "Build prefix sums P of length n + 1 with P[0] = 0.",
-      "Scan j from 0 to n with a deque of indices whose prefix sums strictly increase.",
-      "While the deque is non-empty and P[j] - P[front] >= k: best = min(best, j - front) and pop the front (no later j can do better with that start).",
-      "While the deque is non-empty and P[j] <= P[back]: pop the back (dominated by j).",
-      "Append j. After the scan, return best or -1 if it was never set."
-    ],
-    "complexity": {
-      "time": "O(n)",
-      "space": "O(n)",
-      "why": "Each index enters and leaves the deque at most once; the prefix array is the only extra storage."
-    },
-    "pitfalls": [
-      "Using a plain two-pointer window; it is wrong as soon as the array has negative numbers.",
-      "Popping the front with an if instead of a while; several fronts can qualify for the same j.",
-      "Using < instead of <= on the back pop, which keeps useless equal-prefix starts in the deque.",
-      "Forgetting P[0] = 0 as a start, which loses subarrays beginning at index 0."
-    ],
-    "hints": [
-      "Turn the condition into prefix sums: you need P[j] - P[i] >= k with the smallest j - i. Why does the usual sliding window fail here?",
-      "If an earlier start has a prefix sum at least as large as a later start, can the earlier one ever be the best start? Which starts are worth keeping?",
-      "Keep a deque of starts with strictly increasing prefix sums; for each j, pop and record from the front while it satisfies the sum, then pop dominated starts from the back before pushing j."
-    ],
-    "code": "class Solution:\n    def shortestSubarray(self, nums: List[int], k: int) -> int:\n        prefix = [0] + list(accumulate(nums))\n        best = float(\"inf\")\n        dq = deque()                     # indices whose prefix sums strictly increase\n        for j, pj in enumerate(prefix):\n            # front is the smallest prefix; if it already reaches k, no later j\n            # can beat this start, so settle and drop it\n            while dq and pj - prefix[dq[0]] >= k:\n                best = min(best, j - dq.popleft())\n            # a start with a prefix >= pj is farther away AND no better: dominated\n            while dq and pj <= prefix[dq[-1]]:\n                dq.pop()\n            dq.append(j)\n        return best if best != float(\"inf\") else -1",
-    "related": [
-      "sliding_window_maximum",
-      "minimum_size_subarray_sum",
-      "subarray_sum_equals_k"
-    ]
+  "optimization": "Step one (to O(m n^2)): fix the bottom row r and record, per column, height[c] = number of consecutive 1s ending at row r. The tallest all-1 rectangle with bottom edge on row r spanning columns [c1, c2] has height min(height[c1..c2]), so each row becomes a largest-rectangle-in-histogram instance, which brute-forces in O(n^2) per row. Step two (to O(m n)): in a histogram, bar c's maximal rectangle reaches left and right to the nearest shorter bar on each side. A monotonic increasing stack finds both walls for every bar in one pass: when a shorter bar arrives at index i, each taller bar popped from the stack has right wall i and left wall the new stack top. Each bar is pushed and popped once per row, so the whole matrix costs O(m n).",
+  "intuition": "A rectangle of 1s is defined by its bottom row and the shortest column of 1s rising above it. Sweeping the bottom row downward while maintaining 'how many 1s stand above me' per column turns every row into a histogram, with a 0 resetting the bar to the ground. In a histogram, every maximal rectangle is pinned by the bar that is its shortest; the moment a shorter bar arrives from the right, every taller bar still on the stack has just discovered its right wall and its area can be settled. A sentinel bar of height 0 at the end flushes whatever is left.",
+  "geometric": "Picture the matrix as m stacked skylines: row r's skyline has a bar of height h at column c when the last h cells ending at (r, c) are 1s. On each skyline a staircase of column indices with increasing heights climbs from left to right. A drop in height pops the taller steps, and each popped step sweeps out a rectangle between its two nearest shorter neighbours.",
+  "visual": "matrix          heights after row 2 = [3,1,3,2,2]\n1 0 1 0 0        3 | #   #\n1 0 1 1 1        2 | #   # # #     histogram with\n1 1 1 1 1  <--   1 | # # # # #     bottom = row 2\n1 0 0 1 0          +----------\n                     0 1 2 3 4   5=sentinel h=0\nstack (increasing h) at i=5: [1, 3, 4]  (h 1,2,2)\n  pop 4: h=2 left=3  width 5-3-1=1  area 2\n  pop 3: h=2 left=1  width 5-1-1=3  area 6  <- best\n  pop 1: h=1 left=-1 width 5        area 5\na 0 cell resets its column height; every row is a\nfresh largest-rectangle-in-histogram pass",
+  "steps": [
+   "Keep heights[c] for the current row: heights[c] + 1 if the cell is '1', else 0. Append a permanent 0 sentinel at index n.",
+   "For each row, run largest-rectangle-in-histogram over heights with a stack of indices whose heights strictly increase.",
+   "When heights[i] < heights[stack top], pop the top; its height h spans width i - (new top) - 1 (or i when the stack empties). Update best.",
+   "Push i and continue; the sentinel at i = n pops everything that remains.",
+   "Return the best area across all rows."
+  ],
+  "complexity": {
+   "time": "O(m n)",
+   "space": "O(n)",
+   "why": "Each row's histogram pass pushes and pops every column once; only one heights array and one stack are kept."
   },
-  {
-    "slug": "subarrays_with_k_different_integers",
-    "title": "Subarrays with K Different Integers",
-    "leetcode": 992,
-    "difficulty": "Hard",
-    "topic": "sliding_window",
-    "pattern": "Exactly-K = atMost(K) - atMost(K-1)",
-    "file": "sliding_window/subarrays_with_k_different_integers.py",
-    "problem": "Given an integer array nums and an integer k, count the contiguous subarrays whose number of distinct values is exactly k. Example: nums = [1,2,1,2,3], k = 2 -> 7: [1,2], [2,1], [1,2], [2,3], [1,2,1], [2,1,2], [1,2,1,2].",
-    "brute_force": {
-      "approach": "For every start i, extend j to the right while maintaining a set of the values seen; count the subarray when the set has exactly k elements and stop once it exceeds k. O(n^2) time with an O(k) set. The waste is rebuilding the set for each start: the window beginning at i + 1 shares all but one element with the one beginning at i.",
-      "time": "O(n^2)",
-      "space": "O(k)",
-      "code": "def brute_force(nums: List[int], k: int) -> int:\n    count = 0\n    for i in range(len(nums)):\n        seen = set()\n        for j in range(i, len(nums)):\n            seen.add(nums[j])\n            if len(seen) > k:\n                break\n            if len(seen) == k:\n                count += 1\n    return count"
-    },
-    "optimization": "A sliding window needs a monotone predicate. 'At most k distinct' is monotone: shrinking a window never adds distinct values, so for each right end the valid starts form one contiguous range. 'Exactly k distinct' is not monotone, so there is no single left boundary to maintain. The fix is to count a monotone quantity twice and subtract: exactly(k) = atMost(k) - atMost(k - 1). atMost(limit) is the standard window: for each right end r, advance l until the window has at most limit distinct values, then every start in [l, r] qualifies and contributes r - l + 1. Two linear passes replace the quadratic set rebuilding.",
-    "intuition": "Counting windows with at most k distinct values is easy because the set of valid starts for a fixed right end is an interval ending at r. Exactly-k windows are the thin band between at-most-k and at-most-(k-1): every exactly-k window is an at-most-k window that fails to be an at-most-(k-1) window, so subtracting the two counts isolates precisely the windows we want. The trick generalises to any 'exactly' question whose 'at most' version is monotone.",
-    "geometric": "For each right edge r, draw a bar from l to r marking the valid starts. For atMost(k) that bar is the longest suffix with at most k distinct values; for atMost(k-1) it is a shorter suffix nested inside it. The exactly-k windows ending at r are the starts between the two left edges, the piece of the long bar that sticks out past the short one.",
-    "visual": "nums = [1,2,1,2,3]  k = 2\n         atMost(2)             atMost(1)\nr=0  [1]          l=0 +1       [1]  l=0 +1\nr=1  [1,2]        l=0 +2       [2]  l=1 +1\nr=2  [1,2,1]      l=0 +3       [1]  l=2 +1\nr=3  [1,2,1,2]    l=0 +4       [2]  l=3 +1\nr=4  [2,3]        l=3 +2       [3]  l=4 +1\n                   = 12               = 5\nexactly(2) = 12 - 5 = 7\nat r=3:  1 2 1 2       starts 0..2 have exactly 2\n         ^     ^       l(atMost 2)=0\n               ^       l(atMost 1)=3  -> 3 windows",
-    "steps": [
-      "Write at_most(limit): counts = {}, left = 0, total = 0.",
-      "For each right index r, add nums[r] to counts; while len(counts) > limit, decrement nums[left] (delete it at zero) and move left right.",
-      "Add r - left + 1 to total: every start in [left, r] gives a window with at most limit distinct values.",
-      "Return at_most(k) - at_most(k - 1)."
-    ],
-    "complexity": {
-      "time": "O(n)",
-      "space": "O(k)",
-      "why": "Two passes, and in each pass both pointers move at most n steps; the count map holds at most k + 1 keys."
-    },
-    "pitfalls": [
-      "Trying to slide an 'exactly k' window directly; the predicate is not monotone.",
-      "Not deleting zero-count keys, so len(counts) over-reports the number of distinct values.",
-      "Adding 1 per step instead of r - left + 1, which counts only the longest window ending at r."
-    ],
-    "hints": [
-      "Counting windows with exactly k distinct values is awkward. Is there a related count that a sliding window handles easily?",
-      "'At most k distinct' is monotone: for each right end, the valid starts form a contiguous range, and each right end contributes r - l + 1 windows.",
-      "exactly(k) = atMost(k) - atMost(k-1). Write at_most once with a count map and call it twice."
-    ],
-    "code": "class Solution:\n    def subarraysWithKDistinct(self, nums: List[int], k: int) -> int:\n        def at_most(limit: int) -> int:\n            counts = defaultdict(int)\n            left = total = 0\n            for right, x in enumerate(nums):\n                counts[x] += 1\n                while len(counts) > limit:\n                    y = nums[left]\n                    counts[y] -= 1\n                    if counts[y] == 0:\n                        del counts[y]\n                    left += 1\n                total += right - left + 1   # every start in [left, right] works\n            return total\n\n        return at_most(k) - at_most(k - 1)",
-    "related": [
-      "fruit_into_baskets",
-      "longest_substring_without_repeating_characters",
-      "subarray_sum_equals_k"
-    ]
+  "pitfalls": [
+   "Omitting the sentinel, so bars still on the stack at the end of a row are never measured.",
+   "Incrementing heights on a '0' instead of resetting to 0 (the column of 1s is broken).",
+   "Comparing string cells to the integer 1; the matrix holds characters."
+  ],
+  "hints": [
+   "What does the matrix look like if, for each row, you record how many consecutive 1s end at each cell in its column?",
+   "Each such row is a histogram; the largest rectangle with its bottom on that row is Largest Rectangle in Histogram. Can you solve that per row in O(n)?",
+   "Use a monotonic increasing stack of column indices with a 0 sentinel: each pop yields a bar whose left wall is the new top and right wall is the current index."
+  ],
+  "code": "class Solution:\n    def maximalRectangle(self, matrix: List[List[str]]) -> int:\n        if not matrix or not matrix[0]:\n            return 0\n        n = len(matrix[0])\n        heights = [0] * (n + 1)          # heights[n] is a permanent 0 sentinel\n        best = 0\n        for row in matrix:\n            for c in range(n):\n                heights[c] = heights[c] + 1 if row[c] == \"1\" else 0\n            stack = []                   # indices with strictly increasing heights\n            for i in range(n + 1):\n                while stack and heights[i] < heights[stack[-1]]:\n                    h = heights[stack.pop()]\n                    left = stack[-1] if stack else -1\n                    best = max(best, h * (i - left - 1))\n                stack.append(i)\n        return best",
+  "related": [
+   "largest_rectangle_in_histogram",
+   "daily_temperatures",
+   "trapping_rain_water"
+  ]
+ },
+ {
+  "slug": "shortest_subarray_with_sum_at_least_k",
+  "title": "Shortest Subarray with Sum at Least K",
+  "leetcode": 862,
+  "difficulty": "Hard",
+  "topic": "sliding_window",
+  "pattern": "Monotonic deque",
+  "file": "sliding_window/shortest_subarray_with_sum_at_least_k.py",
+  "problem": "Given an integer array nums whose values may be negative and an integer k, return the length of the shortest non-empty contiguous subarray with sum >= k, or -1 if there is none. Example: nums = [2,-1,2], k = 3 -> 3, because only the whole array reaches 3. nums = [1,2], k = 4 -> -1.",
+  "brute_force": {
+   "approach": "For every start i, extend the end j while keeping a running sum, and record j - i + 1 whenever the sum reaches k. Negatives mean you cannot stop early: a later element can push the sum back over k, so all O(n^2) pairs are examined. The same prefix sums are re-added for every start, and starts that can never beat a known shorter answer are still fully explored.",
+   "time": "O(n^2)",
+   "space": "O(1)",
+   "code": "def brute_force(nums: List[int], k: int) -> int:\n    best = float(\"inf\")\n    for i in range(len(nums)):\n        total = 0\n        for j in range(i, len(nums)):\n            total += nums[j]\n            if total >= k:\n                best = min(best, j - i + 1)\n    return best if best != float(\"inf\") else -1"
   },
-  {
-    "slug": "substring_with_concatenation_of_all_words",
-    "title": "Substring with Concatenation of All Words",
-    "leetcode": 30,
-    "difficulty": "Hard",
-    "topic": "sliding_window",
-    "pattern": "Fixed-size sliding window with counts",
-    "file": "sliding_window/substring_with_concatenation_of_all_words.py",
-    "problem": "Given a string s and a list words of equal-length strings (duplicates allowed), return the start indices of every substring of s that is a concatenation of all the words in some order, each used exactly once. Example: s = \"barfoothefoobarman\", words = [\"foo\",\"bar\"] -> [0, 9] (\"barfoo\" and \"foobar\").",
-    "brute_force": {
-      "approach": "Let L be the word length and m the number of words. For every start i, cut the next m chunks of length L, count them and compare with the multiset of words. O(n * m * L) time with an O(m) counter. Start i and start i + L share m - 1 of their m chunks, yet both counters are rebuilt from scratch.",
-      "time": "O(n * m * L)",
-      "space": "O(m * L)",
-      "code": "def brute_force(s: str, words: List[str]) -> List[int]:\n    if not words:\n        return []\n    L, m = len(words[0]), len(words)\n    need = Counter(words)\n    result = []\n    for i in range(len(s) - m * L + 1):\n        chunks = Counter(s[j:j + L] for j in range(i, i + m * L, L))\n        if chunks == need:\n            result.append(i)\n    return result"
-    },
-    "optimization": "Starts that differ by a multiple of L see the same chunk boundaries, so group the starts into L residue classes (offsets 0..L-1). Within one offset, s is a sequence of fixed chunks and the problem becomes: find runs of exactly m consecutive chunks whose multiset equals words. That is a counting sliding window over the chunk sequence. Maintain a counter of chunks inside the window; a chunk that is not a word is a wall, so reset the window after it. When a word chunk is added and becomes over-counted, drop chunks from the left until it is in budget. When the window holds exactly m chunks, record its start and shift the left edge by one chunk. Each chunk is added and removed once per offset, and the L offsets together cover n/L chunks each, so the total is O(n * L) for slicing, independent of m.",
-    "intuition": "Fixed-length words mean the only freedom is where the chunk grid is anchored. Once the grid is fixed, 'is this run of m chunks a permutation of words?' is the anagram-of-multiset check, and multiset windows can slide by removing one chunk and adding one. A chunk that is not a word is a hard wall no valid window can cross, and an over-counted word tells you exactly how far the left edge must move.",
-    "geometric": "Draw s as a ruler with ticks every L characters, once for each of the L possible phases. On each ruler slide a window of at most m tiles. A tile that would over-count a word pushes the left edge right until that word is back in budget; a tile that is not a word at all cuts the ruler, and the window restarts after it.",
-    "visual": "s = b a r f o o t h e f o o b a r m a n    L=3  m=2\noffset 0: |bar|foo|the|foo|bar|man|\n           bar       have={bar:1} count=1\n           bar foo   count=2 == m -> record 0\n               foo the   'the' not a word -> wall,\n                         clear, left = 9\n                   foo bar   count=2 -> record 9\n                       bar man  wall -> clear\noffset 1: b|arf|oot|hef|oob|arm|an   no words\noffset 2: ba|rfo|oth|efo|oba|rma|n   no words\nanswer = [0, 9]\nover-count case: words=[aa,aa], chunk aa aa aa ->\nthird aa over-counts -> drop left aa, window slides",
-    "steps": [
-      "L = word length, m = number of words, need = Counter(words).",
-      "For each offset in 0..L-1: have = Counter(), left = offset, count = 0.",
-      "Walk right from offset in steps of L and take chunk w = s[right:right+L]. If w is not a word, clear have, set count = 0 and left = right + L.",
-      "Otherwise add w; while have[w] > need[w], remove the chunk at left and advance left by L.",
-      "If count == m, record left, then remove the chunk at left and advance left by L.",
-      "Return all recorded starts."
-    ],
-    "complexity": {
-      "time": "O(n * L)",
-      "space": "O(m * L)",
-      "why": "L offsets, each scanning about n/L chunks with O(L) slicing per chunk; the counters hold at most m words."
-    },
-    "pitfalls": [
-      "Looping over all n starts instead of L offsets, which is the brute force again.",
-      "Using a set instead of a counter; words can repeat.",
-      "Forgetting to reset the window on a chunk that is not a word.",
-      "Off-by-one on the last chunk start (right must satisfy right + L <= n)."
-    ],
-    "hints": [
-      "All words have the same length L. If a valid substring starts at i, what do its chunk boundaries look like, and which other starts share them?",
-      "Group starts by i mod L. Within one group, s is a sequence of L-length chunks and you want runs of exactly m chunks forming the word multiset.",
-      "Slide a counting window over the chunks: non-word chunk resets, over-counted word shrinks from the left, and count == m records the start."
-    ],
-    "code": "class Solution:\n    def findSubstring(self, s: str, words: List[str]) -> List[int]:\n        if not words or not s:\n            return []\n        L, m, n = len(words[0]), len(words), len(s)\n        need = Counter(words)\n        result = []\n        for offset in range(L):\n            have = Counter()\n            left = offset\n            count = 0                         # chunks currently in the window\n            for right in range(offset, n - L + 1, L):\n                w = s[right:right + L]\n                if w not in need:             # wall: no valid window spans it\n                    have.clear()\n                    count = 0\n                    left = right + L\n                    continue\n                have[w] += 1\n                count += 1\n                while have[w] > need[w]:      # shrink until w is back in budget\n                    have[s[left:left + L]] -= 1\n                    count -= 1\n                    left += L\n                if count == m:\n                    result.append(left)\n                    have[s[left:left + L]] -= 1\n                    count -= 1\n                    left += L\n        return result",
-    "related": [
-      "permutation_in_string",
-      "minimum_window_substring",
-      "group_anagrams"
-    ]
+  "optimization": "Rewrite with prefix sums P (P[0] = 0): find the smallest j - i with P[j] - P[i] >= k. Two observations prune the candidate starts. First, if i1 < i2 and P[i1] >= P[i2], then i1 is useless: any j that works with i1 also works with i2, and i2 is closer, so useful starts have strictly increasing prefix sums and can live in a deque that is monotonic in P. Second, once the front start satisfies P[j] - P[front] >= k for the current j, record j - front and pop it: any later j' would only give a longer subarray with that start. Every index is pushed and popped at most once, so the sweep is O(n) with no heap or sorting.",
+  "intuition": "Negative numbers break the plain sliding window because shrinking from the left can increase the sum, so there is no monotone left boundary to track. Prefix sums restore structure: we want a pair (i, j) with a large difference P[j] - P[i] and a small gap j - i. A start is worth remembering only if its prefix sum is lower than every later remembered start, because a later start with a lower-or-equal prefix dominates it on both distance and sum. That dominance rule is exactly what a monotonic deque maintains, and the front of the deque is always the best candidate to settle.",
+  "geometric": "Plot the prefix sums as points (index, P). The deque holds the lower-left staircase of candidate starts: points that are to the left of and strictly below everything that follows them. For each new point j, pop from the front while j sits at least k above it (each pop is an answer candidate), then pop from the back while the new point is at or below the back (those starts are dominated), then push j.",
+  "visual": "nums = [2,-1,2]  k = 3      P = [0, 2, 1, 3]\nP  3 |           o j=3      dq keeps starts with\n   2 |   x                  strictly rising P\n   1 |       o              x = dropped (dominated)\n   0 | o\n     +--0---1---2---3-- index\nj=0 P=0: push              dq=[0]\nj=1 P=2: 2-0<3; push       dq=[0,1]\nj=2 P=1: 1-0<3; 1<=P[1] -> pop back 1; push  dq=[0,2]\nj=3 P=3: 3-P[0]=3>=3 -> ans=3-0=3, popleft\n         3-P[2]=2<3 ; push                   dq=[2,3]\nanswer = 3",
+  "steps": [
+   "Build prefix sums P of length n + 1 with P[0] = 0.",
+   "Scan j from 0 to n with a deque of indices whose prefix sums strictly increase.",
+   "While the deque is non-empty and P[j] - P[front] >= k: best = min(best, j - front) and pop the front (no later j can do better with that start).",
+   "While the deque is non-empty and P[j] <= P[back]: pop the back (dominated by j).",
+   "Append j. After the scan, return best or -1 if it was never set."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)",
+   "why": "Each index enters and leaves the deque at most once; the prefix array is the only extra storage."
   },
-  {
-    "slug": "sliding_window_median",
-    "title": "Sliding Window Median",
-    "leetcode": 480,
-    "difficulty": "Hard",
-    "topic": "sliding_window",
-    "pattern": "Two heaps with lazy deletion",
-    "file": "sliding_window/sliding_window_median.py",
-    "problem": "Given an integer array nums and a window size k, return the median of every contiguous window of size k as it slides from left to right; for even k the median is the mean of the two middle values. Example: nums = [1,3,-1,-3,5,3,6,7], k = 3 -> [1, -1, -1, 3, 5, 6].",
-    "brute_force": {
-      "approach": "For each of the n - k + 1 windows, copy its k elements, sort them and read the middle value(s). O(n k log k) time with an O(k) copy. Consecutive windows differ by one element leaving and one arriving, yet each window is sorted from scratch.",
-      "time": "O(n k log k)",
-      "space": "O(k)",
-      "code": "def brute_force(nums: List[int], k: int) -> List[float]:\n    result = []\n    for i in range(len(nums) - k + 1):\n        window = sorted(nums[i:i + k])\n        if k % 2:\n            result.append(float(window[k // 2]))\n        else:\n            result.append((window[k // 2 - 1] + window[k // 2]) / 2)\n    return result"
-    },
-    "optimization": "Step one: keep the window sorted and update it incrementally with bisect for the insert and the delete; the median becomes an index lookup, but list insertion is O(k), so this is O(n k). Step two: the median only needs the boundary between the lower and upper halves, which a max-heap small (lower half) and a min-heap large (upper half) expose in O(1) with O(log k) inserts. The obstacle is deletion: a heap cannot remove an arbitrary element. Lazy deletion solves it: record the outgoing value in a delayed counter, track the live count of each half separately for balancing, and physically pop a dead value only when it surfaces at a heap top. Every element is pushed once and popped once, giving O(n log k) with medians always read from live tops.",
-    "intuition": "The two-heap median works for a stream because elements only arrive. A sliding window makes elements leave, and an element buried inside a heap is unreachable. The insight is that a buried element is also irrelevant: it does not affect the top, so it does not affect the median. Mark it dead, decrement the logical size of its half, and evict it only if it ever rises to the top. Because balancing is driven by the logical sizes, the median stays correct while corpses sit inside the heaps.",
-    "geometric": "Picture two piles leaning against each other at the median: the lower pile points up with its largest value on top, the upper pile points down with its smallest on top. A new value lands on the pile it belongs to; a departing value is crossed out where it lies. When one pile's live count grows two taller than the other, its top is moved across. Crossed-out values are swept off only when they reach a pile's top.",
-    "visual": "nums = [1,3,-1,-3,5,3,6,7]  k = 3     x = dead (lazy)\nwindow     small (max-heap)   large (min-heap)  median\n[1,3,-1]   top 1 | -1         top 3             1\n[3,-1,-3]  top -1| -3         top 3             -1\n[-1,-3,5]  top -1| -3         top 5             -1\n[-3,5,3]   top 3 | -3         top 5             3\n[5,3,6]    top 5 | 3 -3x      top 6             5\n[3,6,7]    top 6 | 5 3x -3x   top 7             6\nremove(-3) for window 5: -3 is buried under top 3,\nso only small_n drops 2 -> 1 and rebalance moves 5\nacross from large.  Balance uses live counts\n(small_n, large_n), never len(heap).",
-    "steps": [
-      "Keep small (max-heap via negation) for the lower half, large (min-heap) for the upper half, delayed = Counter of pending removals, and live counts small_n, large_n.",
-      "add(x): push to small if x <= top(small) else to large, bump that live count, rebalance.",
-      "remove(x): delayed[x] += 1; decrement the live count of the half x belongs to (x <= top(small) means small); if x is that half's top, prune; rebalance.",
-      "rebalance: if small_n > large_n + 1 move top(small) to large; if small_n < large_n move top(large) to small; prune the heap just popped from.",
-      "prune(heap): while its top is in delayed, pop it and decrement delayed.",
-      "Add the first k values and emit the median; then for each new index add nums[i], remove nums[i - k], and emit top(small) for odd k or the mean of both tops for even k."
-    ],
-    "complexity": {
-      "time": "O(n log k)",
-      "space": "O(n)",
-      "why": "Each element is pushed and popped at most once; dead values can linger in the heaps until they surface, so storage can exceed k."
-    },
-    "pitfalls": [
-      "Balancing on physical heap lengths instead of live counts.",
-      "Deciding which half an outgoing value belongs to without comparing against the current top of small.",
-      "Forgetting to prune after moving an element across, leaving a dead value exposed as a top.",
-      "Using integer division for the even-k median."
-    ],
-    "hints": [
-      "You know the two-heap trick for a running median. What breaks when the oldest element must leave the window?",
-      "A buried heap element cannot be removed, but it also does not influence the median. Can you remove it only when it becomes visible?",
-      "Keep a counter of pending deletions and separate live sizes per half; prune dead tops whenever a top is exposed, and rebalance on live sizes."
-    ],
-    "code": "class Solution:\n    def medianSlidingWindow(self, nums: List[int], k: int) -> List[float]:\n        small, large = [], []            # max-heap (negated) lower half, min-heap upper half\n        delayed = defaultdict(int)       # value -> pending removals not yet popped\n        small_n = large_n = 0            # live (non-deleted) counts per half\n\n        def prune(heap, sign):           # pop stale values sitting on top\n            while heap and delayed[sign * heap[0]]:\n                delayed[sign * heap[0]] -= 1\n                heapq.heappop(heap)\n\n        def rebalance():\n            nonlocal small_n, large_n\n            if small_n > large_n + 1:\n                heapq.heappush(large, -heapq.heappop(small))\n                small_n, large_n = small_n - 1, large_n + 1\n                prune(small, -1)\n            elif small_n < large_n:\n                heapq.heappush(small, -heapq.heappop(large))\n                small_n, large_n = small_n + 1, large_n - 1\n                prune(large, 1)\n\n        def add(x):\n            nonlocal small_n, large_n\n            if not small or x <= -small[0]:\n                heapq.heappush(small, -x)\n                small_n += 1\n            else:\n                heapq.heappush(large, x)\n                large_n += 1\n            rebalance()\n\n        def remove(x):\n            nonlocal small_n, large_n\n            delayed[x] += 1\n            if x <= -small[0]:\n                small_n -= 1\n                if x == -small[0]:\n                    prune(small, -1)\n            else:\n                large_n -= 1\n                if x == large[0]:\n                    prune(large, 1)\n            rebalance()\n\n        def median():\n            return float(-small[0]) if k % 2 else (-small[0] + large[0]) / 2\n\n        for x in nums[:k]:\n            add(x)\n        result = [median()]\n        for i in range(k, len(nums)):\n            add(nums[i])\n            remove(nums[i - k])\n            result.append(median())\n        return result",
-    "related": [
-      "find_median_from_data_stream",
-      "sliding_window_maximum",
-      "kth_largest_element_in_a_stream"
-    ]
+  "pitfalls": [
+   "Using a plain two-pointer window; it is wrong as soon as the array has negative numbers.",
+   "Popping the front with an if instead of a while; several fronts can qualify for the same j.",
+   "Using < instead of <= on the back pop, which keeps useless equal-prefix starts in the deque.",
+   "Forgetting P[0] = 0 as a start, which loses subarrays beginning at index 0."
+  ],
+  "hints": [
+   "Turn the condition into prefix sums: you need P[j] - P[i] >= k with the smallest j - i. Why does the usual sliding window fail here?",
+   "If an earlier start has a prefix sum at least as large as a later start, can the earlier one ever be the best start? Which starts are worth keeping?",
+   "Keep a deque of starts with strictly increasing prefix sums; for each j, pop and record from the front while it satisfies the sum, then pop dominated starts from the back before pushing j."
+  ],
+  "code": "class Solution:\n    def shortestSubarray(self, nums: List[int], k: int) -> int:\n        prefix = [0] + list(accumulate(nums))\n        best = float(\"inf\")\n        dq = deque()                     # indices whose prefix sums strictly increase\n        for j, pj in enumerate(prefix):\n            # front is the smallest prefix; if it already reaches k, no later j\n            # can beat this start, so settle and drop it\n            while dq and pj - prefix[dq[0]] >= k:\n                best = min(best, j - dq.popleft())\n            # a start with a prefix >= pj is farther away AND no better: dominated\n            while dq and pj <= prefix[dq[-1]]:\n                dq.pop()\n            dq.append(j)\n        return best if best != float(\"inf\") else -1",
+  "related": [
+   "sliding_window_maximum",
+   "minimum_size_subarray_sum",
+   "subarray_sum_equals_k"
+  ]
+ },
+ {
+  "slug": "subarrays_with_k_different_integers",
+  "title": "Subarrays with K Different Integers",
+  "leetcode": 992,
+  "difficulty": "Hard",
+  "topic": "sliding_window",
+  "pattern": "Exactly-K = atMost(K) - atMost(K-1)",
+  "file": "sliding_window/subarrays_with_k_different_integers.py",
+  "problem": "Given an integer array nums and an integer k, count the contiguous subarrays whose number of distinct values is exactly k. Example: nums = [1,2,1,2,3], k = 2 -> 7: [1,2], [2,1], [1,2], [2,3], [1,2,1], [2,1,2], [1,2,1,2].",
+  "brute_force": {
+   "approach": "For every start i, extend j to the right while maintaining a set of the values seen; count the subarray when the set has exactly k elements and stop once it exceeds k. O(n^2) time with an O(k) set. The waste is rebuilding the set for each start: the window beginning at i + 1 shares all but one element with the one beginning at i.",
+   "time": "O(n^2)",
+   "space": "O(k)",
+   "code": "def brute_force(nums: List[int], k: int) -> int:\n    count = 0\n    for i in range(len(nums)):\n        seen = set()\n        for j in range(i, len(nums)):\n            seen.add(nums[j])\n            if len(seen) > k:\n                break\n            if len(seen) == k:\n                count += 1\n    return count"
   },
-  {
-    "slug": "maximum_gap",
-    "title": "Maximum Gap",
-    "leetcode": 164,
-    "difficulty": "Hard",
-    "topic": "arrays_hashing",
-    "pattern": "Pigeonhole buckets",
-    "file": "arrays_hashing/maximum_gap.py",
-    "problem": "Given an unsorted integer array nums, return the maximum difference between two successive elements of its sorted form, using linear time and linear extra space; return 0 if there are fewer than two elements. Example: nums = [3,6,9,1] -> 3 (sorted 1,3,6,9 has gaps 2,3,3).",
-    "brute_force": {
-      "approach": "Sort the array and take the maximum adjacent difference. O(n log n) time and it is correct, which is why you state it first. The waste is that sorting fixes the complete order of all n elements when only one quantity, the largest gap, is needed, and the problem explicitly asks for O(n).",
-      "time": "O(n log n)",
-      "space": "O(n)",
-      "code": "def brute_force(nums: List[int]) -> int:\n    ordered = sorted(nums)\n    best = 0\n    for a, b in zip(ordered, ordered[1:]):\n        best = max(best, b - a)\n    return best"
-    },
-    "optimization": "Let lo and hi be the minimum and maximum. The n - 1 sorted gaps sum to hi - lo, so the maximum gap is at least the average gap, ceil((hi - lo) / (n - 1)). Choose buckets of width w = max(1, floor((hi - lo) / (n - 1))), which is at most that average. Two values in the same bucket differ by at most w - 1, strictly less than the maximum gap, so the answer is never an in-bucket pair: it is always the distance from one non-empty bucket's maximum to the next non-empty bucket's minimum. Therefore only each bucket's min and max are needed, filled in one pass, followed by one pass over the buckets in order. There are at most n buckets, so both passes are O(n).",
-    "intuition": "By pigeonhole, n numbers spread over a range must leave at least one gap at least as large as the average gap. If the buckets are narrower than that average, no two numbers in the same bucket can be the extreme pair, so the inside of each bucket never needs sorting. The buckets impose just enough order, which bucket precedes which, and the big gap must straddle a bucket boundary, possibly spanning empty buckets.",
-    "geometric": "Draw the number line from lo to hi split into equal cells of width w. Drop each number into its cell and keep only the leftmost and rightmost mark in each cell. Walk the cells left to right: the gap from one cell's rightmost mark to the next non-empty cell's leftmost mark spans any empty cells between them, and the widest such span is the answer.",
-    "visual": "nums = [3,6,9,1,4]  lo=1 hi=9 n=5  width=(9-1)//4=2\nbucket:    0      1      2      3      4\nrange:   [1,2]  [3,4]  [5,6]  [7,8]  [9,10]\nmin/max:  1/1    3/4    6/6    -/-    9/9\n            \\___/  \\___/  \\___________/\ngaps:         2      2           3      <- max\n3 and 4 share bucket 1: gap 1 <= width-1, never\nthe answer, so we only keep each bucket's min/max.\nempty bucket 3 is skipped; prev_max stays 6 until\nbucket 4's min 9 is seen: 9 - 6 = 3",
-    "steps": [
-      "If n < 2 return 0; compute lo = min, hi = max; if equal return 0.",
-      "width = max(1, (hi - lo) // (n - 1)); number of buckets = (hi - lo) // width + 1.",
-      "For each x, bucket b = (x - lo) // width; update that bucket's min and max.",
-      "Walk buckets in order with prev_max = lo: skip empty ones, best = max(best, bucket_min - prev_max), then prev_max = bucket_max.",
-      "Return best."
-    ],
-    "complexity": {
-      "time": "O(n)",
-      "space": "O(n)",
-      "why": "One pass fills at most n buckets with O(1) work each, and one pass scans them in order."
-    },
-    "pitfalls": [
-      "A bucket width larger than the average gap, which lets an in-bucket pair be the true answer.",
-      "A zero width when hi - lo < n - 1; clamp it to 1.",
-      "Resetting prev_max on empty buckets instead of skipping them.",
-      "Not handling all-equal input (hi == lo)."
-    ],
-    "hints": [
-      "With n numbers between lo and hi, how large must the biggest sorted gap be at least?",
-      "If you cut [lo, hi] into cells narrower than that average gap, can two numbers in the same cell ever form the maximum gap?",
-      "Store only min and max per bucket, then scan buckets in order comparing each bucket's min with the previous non-empty bucket's max."
-    ],
-    "code": "class Solution:\n    def maximumGap(self, nums: List[int]) -> int:\n        n = len(nums)\n        if n < 2:\n            return 0\n        lo, hi = min(nums), max(nums)\n        if lo == hi:\n            return 0\n        # width <= ceil((hi - lo) / (n - 1)) <= max gap, so the max gap\n        # cannot be between two values in the same bucket\n        width = max(1, (hi - lo) // (n - 1))\n        count = (hi - lo) // width + 1\n        bucket_min = [None] * count\n        bucket_max = [None] * count\n        for x in nums:\n            b = (x - lo) // width\n            bucket_min[b] = x if bucket_min[b] is None else min(bucket_min[b], x)\n            bucket_max[b] = x if bucket_max[b] is None else max(bucket_max[b], x)\n        best, prev_max = 0, lo\n        for b in range(count):\n            if bucket_min[b] is None:\n                continue                 # empty bucket: the gap spans it\n            best = max(best, bucket_min[b] - prev_max)\n            prev_max = bucket_max[b]\n        return best",
-    "related": [
-      "top_k_frequent_elements",
-      "first_missing_positive",
-      "longest_consecutive_sequence"
-    ]
+  "optimization": "A sliding window needs a monotone predicate. 'At most k distinct' is monotone: shrinking a window never adds distinct values, so for each right end the valid starts form one contiguous range. 'Exactly k distinct' is not monotone, so there is no single left boundary to maintain. The fix is to count a monotone quantity twice and subtract: exactly(k) = atMost(k) - atMost(k - 1). atMost(limit) is the standard window: for each right end r, advance l until the window has at most limit distinct values, then every start in [l, r] qualifies and contributes r - l + 1. Two linear passes replace the quadratic set rebuilding.",
+  "intuition": "Counting windows with at most k distinct values is easy because the set of valid starts for a fixed right end is an interval ending at r. Exactly-k windows are the thin band between at-most-k and at-most-(k-1): every exactly-k window is an at-most-k window that fails to be an at-most-(k-1) window, so subtracting the two counts isolates precisely the windows we want. The trick generalises to any 'exactly' question whose 'at most' version is monotone.",
+  "geometric": "For each right edge r, draw a bar from l to r marking the valid starts. For atMost(k) that bar is the longest suffix with at most k distinct values; for atMost(k-1) it is a shorter suffix nested inside it. The exactly-k windows ending at r are the starts between the two left edges, the piece of the long bar that sticks out past the short one.",
+  "visual": "nums = [1,2,1,2,3]  k = 2\n         atMost(2)             atMost(1)\nr=0  [1]          l=0 +1       [1]  l=0 +1\nr=1  [1,2]        l=0 +2       [2]  l=1 +1\nr=2  [1,2,1]      l=0 +3       [1]  l=2 +1\nr=3  [1,2,1,2]    l=0 +4       [2]  l=3 +1\nr=4  [2,3]        l=3 +2       [3]  l=4 +1\n                   = 12               = 5\nexactly(2) = 12 - 5 = 7\nat r=3:  1 2 1 2       starts 0..2 have exactly 2\n         ^     ^       l(atMost 2)=0\n               ^       l(atMost 1)=3  -> 3 windows",
+  "steps": [
+   "Write at_most(limit): counts = {}, left = 0, total = 0.",
+   "For each right index r, add nums[r] to counts; while len(counts) > limit, decrement nums[left] (delete it at zero) and move left right.",
+   "Add r - left + 1 to total: every start in [left, r] gives a window with at most limit distinct values.",
+   "Return at_most(k) - at_most(k - 1)."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(k)",
+   "why": "Two passes, and in each pass both pointers move at most n steps; the count map holds at most k + 1 keys."
   },
-  {
-    "slug": "count_of_smaller_numbers_after_self",
-    "title": "Count of Smaller Numbers After Self",
-    "leetcode": 315,
-    "difficulty": "Hard",
-    "topic": "arrays_hashing",
-    "pattern": "Merge sort counting",
-    "file": "arrays_hashing/count_of_smaller_numbers_after_self.py",
-    "problem": "Given an integer array nums, return counts where counts[i] is the number of elements to the right of index i that are strictly smaller than nums[i]. Example: nums = [5,2,6,1] -> [2,1,1,0]: right of 5 are 2 and 1, right of 2 is 1, right of 6 is 1, right of 1 nothing.",
-    "brute_force": {
-      "approach": "For each i, scan every j > i and count nums[j] < nums[i]. O(n^2) time with no extra space. Every pair is compared individually; once the suffix nums[i+1:] is known in sorted order the count for i is a single rank query, but the brute force rediscovers that order one comparison at a time for every i.",
-      "time": "O(n^2)",
-      "space": "O(1)",
-      "code": "def brute_force(nums: List[int]) -> List[int]:\n    counts = []\n    for i in range(len(nums)):\n        smaller = 0\n        for j in range(i + 1, len(nums)):\n            if nums[j] < nums[i]:\n                smaller += 1\n        counts.append(smaller)\n    return counts"
-    },
-    "optimization": "The count for i depends only on how nums[i] ranks among the elements to its right, and merge sort builds exactly that information bottom-up. Sort indices rather than values so each element keeps its identity. When merging a sorted left half with a sorted right half, every right element has a larger original index than every left element. At the moment a left element is emitted, the right elements already emitted are strictly smaller and lie to its right in the original array, so add their number, j - mid, to its count. Emit the left element first on ties so equal values are not counted. Each merge level is O(n) and there are log n levels. A Binary Indexed Tree over compressed values, scanned from the right, gives the same O(n log n) bound.",
-    "intuition": "'Smaller and to the right' is an inversion count per element. Merge sort is the natural inversion counter because the merge step compares two sorted runs where every element of one run precedes every element of the other in index order; the position relation is fixed, so only the value comparison remains. Counts accumulate across levels without any pair being compared twice, and sorting indices instead of values keeps each count attached to its original position.",
-    "geometric": "Picture the index array split into halves down to singletons and merged back up. At each merge two sorted rails are zipped together while a pointer j walks the right rail. Whenever the left rail's head is emitted, the j right-rail items already passed form a block of strictly smaller, later-indexed elements, and that block's size is stamped onto the left head's original position.",
-    "visual": "nums = [5,2,6,1]   sort INDICES; stamp counts on the way up\nsplit  [0 1] [2 3]      values [5 2] [6 1]\nmerge [0] [1]: 2<5 emit 1; emit 0 (+1)  counts[0]=1\nmerge [2] [3]: 1<6 emit 3; emit 2 (+1)  counts[2]=1\nmerge [1,0] (2,5) with [3,2] (1,6):\n   left 2 5      right 1 6\n   1 < 2 : emit 3            j-mid = 1\n   2     : emit 1  +1        counts[1] = 1\n   5 < 6 : emit 0  +1        counts[0] = 1+1 = 2\n   6     : emit 2            right remainder: +0\nsorted order [3,1,0,2]   counts = [2,1,1,0]\nright-half items emitted before a left item are\nexactly its smaller, later-indexed neighbours",
-    "steps": [
-      "idx = [0..n-1], counts = [0] * n; merge sort idx by nums[idx].",
-      "In each merge of idx[lo:mid] and idx[mid:hi], walk i over the left half and j over the right half.",
-      "If nums[idx[j]] < nums[idx[i]], emit idx[j] and advance j; otherwise add j - mid to counts[idx[i]], emit idx[i], advance i.",
-      "When the right half is exhausted, each remaining left element also gets j - mid; then append the remaining right elements.",
-      "Write the merged order back into idx[lo:hi]; return counts at the end."
-    ],
-    "complexity": {
-      "time": "O(n log n)",
-      "space": "O(n)",
-      "why": "log n merge levels of O(n) work each, plus the index array and merge buffer."
-    },
-    "pitfalls": [
-      "Sorting values instead of indices, which loses where each count belongs.",
-      "Counting equal elements as smaller; take the left element first on ties.",
-      "Forgetting to add j - mid to the left remainder after the right half is exhausted."
-    ],
-    "hints": [
-      "For index i, the answer is the rank of nums[i] among the elements to its right. Which sorting algorithm naturally compares a block against everything to its right?",
-      "In merge sort, when two sorted halves are merged, every right element has a larger index than every left element. What do you learn each time you emit a left element?",
-      "Sort indices, and whenever a left element is emitted add the number of right elements already emitted to its count; emit left first on ties."
-    ],
-    "code": "class Solution:\n    def countSmaller(self, nums: List[int]) -> List[int]:\n        n = len(nums)\n        counts = [0] * n\n        idx = list(range(n))             # sort indices so each element keeps its identity\n\n        def sort(lo: int, hi: int) -> None:\n            if hi - lo <= 1:\n                return\n            mid = (lo + hi) // 2\n            sort(lo, mid)\n            sort(mid, hi)\n            merged = []\n            i, j = lo, mid\n            while i < mid and j < hi:\n                if nums[idx[j]] < nums[idx[i]]:\n                    merged.append(idx[j])\n                    j += 1\n                else:\n                    # the j - mid right-half elements already emitted are smaller\n                    # and come after idx[i] in the original order\n                    counts[idx[i]] += j - mid\n                    merged.append(idx[i])\n                    i += 1\n            while i < mid:\n                counts[idx[i]] += j - mid\n                merged.append(idx[i])\n                i += 1\n            merged.extend(idx[j:hi])\n            idx[lo:hi] = merged\n\n        sort(0, n)\n        return counts",
-    "related": [
-      "reverse_pairs",
-      "merge_k_sorted_lists",
-      "kth_largest_element_in_an_array"
-    ]
+  "pitfalls": [
+   "Trying to slide an 'exactly k' window directly; the predicate is not monotone.",
+   "Not deleting zero-count keys, so len(counts) over-reports the number of distinct values.",
+   "Adding 1 per step instead of r - left + 1, which counts only the longest window ending at r."
+  ],
+  "hints": [
+   "Counting windows with exactly k distinct values is awkward. Is there a related count that a sliding window handles easily?",
+   "'At most k distinct' is monotone: for each right end, the valid starts form a contiguous range, and each right end contributes r - l + 1 windows.",
+   "exactly(k) = atMost(k) - atMost(k-1). Write at_most once with a count map and call it twice."
+  ],
+  "code": "class Solution:\n    def subarraysWithKDistinct(self, nums: List[int], k: int) -> int:\n        def at_most(limit: int) -> int:\n            counts = defaultdict(int)\n            left = total = 0\n            for right, x in enumerate(nums):\n                counts[x] += 1\n                while len(counts) > limit:\n                    y = nums[left]\n                    counts[y] -= 1\n                    if counts[y] == 0:\n                        del counts[y]\n                    left += 1\n                total += right - left + 1   # every start in [left, right] works\n            return total\n\n        return at_most(k) - at_most(k - 1)",
+  "related": [
+   "fruit_into_baskets",
+   "longest_substring_without_repeating_characters",
+   "subarray_sum_equals_k"
+  ]
+ },
+ {
+  "slug": "substring_with_concatenation_of_all_words",
+  "title": "Substring with Concatenation of All Words",
+  "leetcode": 30,
+  "difficulty": "Hard",
+  "topic": "sliding_window",
+  "pattern": "Fixed-size sliding window with counts",
+  "file": "sliding_window/substring_with_concatenation_of_all_words.py",
+  "problem": "Given a string s and a list words of equal-length strings (duplicates allowed), return the start indices of every substring of s that is a concatenation of all the words in some order, each used exactly once. Example: s = \"barfoothefoobarman\", words = [\"foo\",\"bar\"] -> [0, 9] (\"barfoo\" and \"foobar\").",
+  "brute_force": {
+   "approach": "Let L be the word length and m the number of words. For every start i, cut the next m chunks of length L, count them and compare with the multiset of words. O(n * m * L) time with an O(m) counter. Start i and start i + L share m - 1 of their m chunks, yet both counters are rebuilt from scratch.",
+   "time": "O(n * m * L)",
+   "space": "O(m * L)",
+   "code": "def brute_force(s: str, words: List[str]) -> List[int]:\n    if not words:\n        return []\n    L, m = len(words[0]), len(words)\n    need = Counter(words)\n    result = []\n    for i in range(len(s) - m * L + 1):\n        chunks = Counter(s[j:j + L] for j in range(i, i + m * L, L))\n        if chunks == need:\n            result.append(i)\n    return result"
   },
-  {
-    "slug": "reverse_pairs",
-    "title": "Reverse Pairs",
-    "leetcode": 493,
-    "difficulty": "Hard",
-    "topic": "arrays_hashing",
-    "pattern": "Merge sort counting",
-    "file": "arrays_hashing/reverse_pairs.py",
-    "problem": "Given an integer array nums, count the reverse pairs: index pairs i < j with nums[i] > 2 * nums[j]. Example: nums = [1,3,2,3,1] -> 2, the pairs (1,4) and (3,4) where 3 > 2 * 1. nums = [2,4,3,5,1] -> 3.",
-    "brute_force": {
-      "approach": "Check every pair i < j and test nums[i] > 2 * nums[j]. O(n^2) time and O(1) space. For a fixed i the test is a rank query in disguise, how many later elements are below nums[i] / 2, and the brute force answers it by touching every later element rather than using any ordering.",
-      "time": "O(n^2)",
-      "space": "O(1)",
-      "code": "def brute_force(nums: List[int]) -> int:\n    count = 0\n    for i in range(len(nums)):\n        for j in range(i + 1, len(nums)):\n            if nums[i] > 2 * nums[j]:\n                count += 1\n    return count"
-    },
-    "optimization": "Split the array in half. Pairs inside one half are counted recursively, leaving only cross pairs with i in the left half and j in the right half, for which i < j holds automatically. If both halves are sorted, the cross count is a two-pointer walk: for each left value x in increasing order, the right values with 2 * r < x form a prefix of the sorted right half, and that prefix only grows as x grows, so the right pointer never moves backwards, O(left + right) per merge. After counting, merge the halves so the parent receives a sorted array. Each level does O(n) work over log n levels. The counting pass must be separate from the merge pass because the merge comparison (x <= r) is not the pair comparison (x > 2r).",
-    "intuition": "Sorting destroys index order, but a reverse pair needs only i < j, and merge sort offers one moment where that order is known for free: everything in the left half precedes everything in the right half. At that moment both halves are sorted, so 'how many right elements does this left element exceed by a factor of two' is a monotone sweep rather than a scan. Divide, count across the cut with two pointers, merge, and the counts from all levels add up to the answer.",
-    "geometric": "Lay the sorted left half above the sorted right half. A pointer j on the lower rail advances while 2 * right[j] < left[i]; as i steps right along the upper rail, j can only step right too, so the two pointers trace a monotone staircase. The area under that staircase, the sum of j over all i, is the number of cross pairs. Then the rails are zipped into one sorted rail for the level above.",
-    "visual": "nums = [1,3,2,3,1]      count i<j with nums[i] > 2*nums[j]\nsplit -> [1,3] | [2,3,1]\nleft  sorted [1,3]    inner pairs 0\nright sorted [1,2,3]  inner pairs 1   (3 > 2*1)\ncross pairs (i in left, j in right => i<j for free):\n  x=1:  2*right[0]=2 < 1 ?  no   j=0   +0\n  x=3:  2*1=2 < 3 yes j=1; 2*2=4 < 3 no  +1\n        j never moves back as x grows\nmerge -> [1,1,2,3,3]     total = 0 + 1 + 1 = 2\ncount with 2*r < x, THEN merge with r < x:\ntwo different comparisons, two separate passes",
-    "steps": [
-      "sort(arr) returns (sorted arr, number of reverse pairs inside arr); a list of length <= 1 returns (arr, 0).",
-      "Recurse on both halves to get left, a and right, b.",
-      "Set j = 0; for each x in left (increasing): advance j while j < len(right) and 2 * right[j] < x; add j to the count.",
-      "Merge left and right into one sorted list.",
-      "Return (merged, a + b + cross count); the answer is the count for the whole array."
-    ],
-    "complexity": {
-      "time": "O(n log n)",
-      "space": "O(n)",
-      "why": "log n levels, each doing a linear two-pointer count and a linear merge."
-    },
-    "pitfalls": [
-      "Restarting the right pointer for every left element, which is O(n^2) again.",
-      "Counting during the merge, where the merge comparison is not the pair comparison.",
-      "Getting the strict inequality wrong for negative values (2 * r < x, not <=)."
-    ],
-    "hints": [
-      "Pairs within the left half, within the right half, and across the halves can be counted separately. Which of the three is new?",
-      "If both halves are sorted, how fast can you count left values x and right values r with x > 2r?",
-      "Two pointers: as x increases over the sorted left half, the right prefix with 2r < x only grows. Count, then merge."
-    ],
-    "code": "class Solution:\n    def reversePairs(self, nums: List[int]) -> int:\n        def sort(arr: List[int]) -> Tuple[List[int], int]:\n            if len(arr) <= 1:\n                return arr, 0\n            mid = len(arr) // 2\n            left, a = sort(arr[:mid])\n            right, b = sort(arr[mid:])\n            count = a + b\n            j = 0                        # right[:j] are exactly the r with 2r < x\n            for x in left:               # x increases, so j never moves back\n                while j < len(right) and 2 * right[j] < x:\n                    j += 1\n                count += j\n            return list(merge(left, right)), count\n\n        return sort(nums)[1]",
-    "related": [
-      "count_of_smaller_numbers_after_self",
-      "merge_k_sorted_lists",
-      "kth_largest_element_in_an_array"
-    ]
+  "optimization": "Starts that differ by a multiple of L see the same chunk boundaries, so group the starts into L residue classes (offsets 0..L-1). Within one offset, s is a sequence of fixed chunks and the problem becomes: find runs of exactly m consecutive chunks whose multiset equals words. That is a counting sliding window over the chunk sequence. Maintain a counter of chunks inside the window; a chunk that is not a word is a wall, so reset the window after it. When a word chunk is added and becomes over-counted, drop chunks from the left until it is in budget. When the window holds exactly m chunks, record its start and shift the left edge by one chunk. Each chunk is added and removed once per offset, and the L offsets together cover n/L chunks each, so the total is O(n * L) for slicing, independent of m.",
+  "intuition": "Fixed-length words mean the only freedom is where the chunk grid is anchored. Once the grid is fixed, 'is this run of m chunks a permutation of words?' is the anagram-of-multiset check, and multiset windows can slide by removing one chunk and adding one. A chunk that is not a word is a hard wall no valid window can cross, and an over-counted word tells you exactly how far the left edge must move.",
+  "geometric": "Draw s as a ruler with ticks every L characters, once for each of the L possible phases. On each ruler slide a window of at most m tiles. A tile that would over-count a word pushes the left edge right until that word is back in budget; a tile that is not a word at all cuts the ruler, and the window restarts after it.",
+  "visual": "s = b a r f o o t h e f o o b a r m a n    L=3  m=2\noffset 0: |bar|foo|the|foo|bar|man|\n           bar       have={bar:1} count=1\n           bar foo   count=2 == m -> record 0\n               foo the   'the' not a word -> wall,\n                         clear, left = 9\n                   foo bar   count=2 -> record 9\n                       bar man  wall -> clear\noffset 1: b|arf|oot|hef|oob|arm|an   no words\noffset 2: ba|rfo|oth|efo|oba|rma|n   no words\nanswer = [0, 9]\nover-count case: words=[aa,aa], chunk aa aa aa ->\nthird aa over-counts -> drop left aa, window slides",
+  "steps": [
+   "L = word length, m = number of words, need = Counter(words).",
+   "For each offset in 0..L-1: have = Counter(), left = offset, count = 0.",
+   "Walk right from offset in steps of L and take chunk w = s[right:right+L]. If w is not a word, clear have, set count = 0 and left = right + L.",
+   "Otherwise add w; while have[w] > need[w], remove the chunk at left and advance left by L.",
+   "If count == m, record left, then remove the chunk at left and advance left by L.",
+   "Return all recorded starts."
+  ],
+  "complexity": {
+   "time": "O(n * L)",
+   "space": "O(m * L)",
+   "why": "L offsets, each scanning about n/L chunks with O(L) slicing per chunk; the counters hold at most m words."
   },
-  {
-    "slug": "contains_duplicate_iii",
-    "title": "Contains Duplicate III",
-    "leetcode": 220,
-    "difficulty": "Hard",
-    "topic": "arrays_hashing",
-    "pattern": "Sliding window of value buckets",
-    "file": "arrays_hashing/contains_duplicate_iii.py",
-    "problem": "Given an integer array nums and integers indexDiff (k) and valueDiff (t), return True if there are two distinct indices i, j with |i - j| <= k and |nums[i] - nums[j]| <= t. Example: nums = [1,2,3,1], k = 3, t = 0 -> True (the two 1s are 3 apart). nums = [1,5,9,1,5,9], k = 2, t = 3 -> False.",
-    "brute_force": {
-      "approach": "For each i, compare nums[i] with each of the next k elements and return True on the first pair within t. O(n k) time and O(1) space. The k comparisons per index re-examine the same window: consecutive windows differ by one element, but nothing is remembered about the window's values between steps, so it is rescanned.",
-      "time": "O(n k)",
-      "space": "O(1)",
-      "code": "def brute_force(nums: List[int], indexDiff: int, valueDiff: int) -> bool:\n    for i in range(len(nums)):\n        for j in range(i + 1, min(i + indexDiff, len(nums) - 1) + 1):\n            if abs(nums[i] - nums[j]) <= valueDiff:\n                return True\n    return False"
-    },
-    "optimization": "Step one (O(n k) to O(n log k)): keep the last k values in a sorted container; for a new x the only candidates are its predecessor and successor in sorted order, found by binary search. Python lacks a balanced BST, so this needs bisect with an O(k) list insert or a sorted-list library. Step two (to O(n)): replace exact order with value buckets of width t + 1, bucket(x) = x // (t + 1). Two values in the same bucket differ by at most t, so a bucket collision is an immediate True; two values within t that are in different buckets must be in adjacent buckets, so only buckets b - 1 and b + 1 need an explicit check. Keep the buckets of the last k indices in a dict. Any bucket with two residents would already have returned True, so each bucket holds one value and eviction is one delete.",
-    "intuition": "'Within k in index' is a plain sliding window; 'within t in value' is the hard part. Buckets of width t + 1 turn the value test into hashing: close values either share a bucket, which guarantees they are within t, or sit in neighbouring buckets, where one absolute-difference check settles it. It is the pigeonhole idea behind bucket sort applied to a moving window rather than the whole array.",
-    "geometric": "Draw the number line cut into cells of width t + 1, and a time window of the last k indices sliding over the array. Each value inside the window lights up one cell. A new value whose cell is already lit is a hit; otherwise look only at the two cells beside it. When the window moves on, the departed value's cell goes dark.",
-    "visual": "nums = [1,5,9,1,5,9]  k=2  t=3  width = t+1 = 4\nvalue line  [0..3] [4..7] [8..11]\nbucket id      0      1      2\ni=0 x=1 -> b0                         {0:1}\ni=1 x=5 -> b1  nbr b0: |1-5|=4 > 3    {0:1,1:5}\ni=2 x=9 -> b2  nbr b1: |5-9|=4 > 3    {0:1,1:5,2:9}\n        evict nums[0]=1 (b0)          {1:5,2:9}\ni=3 x=1 -> b0 free; nbr b1: 4 > 3     {1:5,2:9,0:1}\n        evict nums[1]=5 (b1)          {2:9,0:1}\n...  no hit -> False\nsame bucket     -> diff <= t   (instant True)\nadjacent bucket -> maybe       (one abs() check)",
-    "steps": [
-      "width = t + 1; buckets = {} mapping bucket id to the single value living there.",
-      "For each index i with value x: b = x // width (floor division handles negatives).",
-      "If b is already in buckets, return True.",
-      "For nb in (b - 1, b + 1): if nb is in buckets and |buckets[nb] - x| <= t, return True.",
-      "Store buckets[b] = x; if i >= k, delete the bucket of nums[i - k] so the window keeps exactly the last k indices.",
-      "Return False after the scan."
-    ],
-    "complexity": {
-      "time": "O(n)",
-      "space": "O(min(n, k))",
-      "why": "Each index does a constant number of dict operations, and the dict holds at most k entries."
-    },
-    "pitfalls": [
-      "Using width t instead of t + 1, which can put values differing by exactly t two buckets apart.",
-      "Using int(x / width) instead of floor division for negative values.",
-      "Evicting nums[i - k] one step early or late; the window must hold exactly the k previous indices."
-    ],
-    "hints": [
-      "The index constraint is a sliding window of size k. For the value constraint, what would you need from the window to answer 'is anything within t of x' quickly?",
-      "A sorted structure gives O(log k) per step. To reach O(1), think about bucketing values so that two values within t land in the same or adjacent buckets.",
-      "Use buckets of width t + 1 keyed by x // (t + 1): a collision is an instant True, adjacent buckets need one abs check, and evict the value leaving the window."
-    ],
-    "code": "class Solution:\n    def containsNearbyAlmostDuplicate(self, nums: List[int], indexDiff: int, valueDiff: int) -> bool:\n        width = valueDiff + 1            # same bucket => |a - b| <= valueDiff\n        buckets = {}                     # bucket id -> the single value in it\n        for i, x in enumerate(nums):\n            b = x // width               # floor division keeps negatives correct\n            if b in buckets:\n                return True\n            for nb in (b - 1, b + 1):    # close values can only be in adjacent buckets\n                if nb in buckets and abs(buckets[nb] - x) <= valueDiff:\n                    return True\n            buckets[b] = x\n            if i >= indexDiff:           # keep only the last indexDiff indices\n                del buckets[nums[i - indexDiff] // width]\n        return False",
-    "related": [
-      "contains_duplicate_ii",
-      "maximum_gap",
-      "two_sum"
-    ]
+  "pitfalls": [
+   "Looping over all n starts instead of L offsets, which is the brute force again.",
+   "Using a set instead of a counter; words can repeat.",
+   "Forgetting to reset the window on a chunk that is not a word.",
+   "Off-by-one on the last chunk start (right must satisfy right + L <= n)."
+  ],
+  "hints": [
+   "All words have the same length L. If a valid substring starts at i, what do its chunk boundaries look like, and which other starts share them?",
+   "Group starts by i mod L. Within one group, s is a sequence of L-length chunks and you want runs of exactly m chunks forming the word multiset.",
+   "Slide a counting window over the chunks: non-word chunk resets, over-counted word shrinks from the left, and count == m records the start."
+  ],
+  "code": "class Solution:\n    def findSubstring(self, s: str, words: List[str]) -> List[int]:\n        if not words or not s:\n            return []\n        L, m, n = len(words[0]), len(words), len(s)\n        need = Counter(words)\n        result = []\n        for offset in range(L):\n            have = Counter()\n            left = offset\n            count = 0                         # chunks currently in the window\n            for right in range(offset, n - L + 1, L):\n                w = s[right:right + L]\n                if w not in need:             # wall: no valid window spans it\n                    have.clear()\n                    count = 0\n                    left = right + L\n                    continue\n                have[w] += 1\n                count += 1\n                while have[w] > need[w]:      # shrink until w is back in budget\n                    have[s[left:left + L]] -= 1\n                    count -= 1\n                    left += L\n                if count == m:\n                    result.append(left)\n                    have[s[left:left + L]] -= 1\n                    count -= 1\n                    left += L\n        return result",
+  "related": [
+   "permutation_in_string",
+   "minimum_window_substring",
+   "group_anagrams"
+  ]
+ },
+ {
+  "slug": "sliding_window_median",
+  "title": "Sliding Window Median",
+  "leetcode": 480,
+  "difficulty": "Hard",
+  "topic": "sliding_window",
+  "pattern": "Two heaps with lazy deletion",
+  "file": "sliding_window/sliding_window_median.py",
+  "problem": "Given an integer array nums and a window size k, return the median of every contiguous window of size k as it slides from left to right; for even k the median is the mean of the two middle values. Example: nums = [1,3,-1,-3,5,3,6,7], k = 3 -> [1, -1, -1, 3, 5, 6].",
+  "brute_force": {
+   "approach": "For each of the n - k + 1 windows, copy its k elements, sort them and read the middle value(s). O(n k log k) time with an O(k) copy. Consecutive windows differ by one element leaving and one arriving, yet each window is sorted from scratch.",
+   "time": "O(n k log k)",
+   "space": "O(k)",
+   "code": "def brute_force(nums: List[int], k: int) -> List[float]:\n    result = []\n    for i in range(len(nums) - k + 1):\n        window = sorted(nums[i:i + k])\n        if k % 2:\n            result.append(float(window[k // 2]))\n        else:\n            result.append((window[k // 2 - 1] + window[k // 2]) / 2)\n    return result"
   },
-  {
-    "slug": "longest_duplicate_substring",
-    "title": "Longest Duplicate Substring",
-    "leetcode": 1044,
-    "difficulty": "Hard",
-    "topic": "strings",
-    "pattern": "Binary search on the answer + rolling hash",
-    "file": "strings/longest_duplicate_substring.py",
-    "problem": "Given a string s of lowercase letters, return any duplicated substring of maximum length, where a duplicated substring occurs two or more times and occurrences may overlap; return \"\" if there is none. Example: s = \"banana\" -> \"ana\" (at indices 1 and 3). s = \"abcd\" -> \"\".",
-    "brute_force": {
-      "approach": "For each length L from n - 1 down to 1, put every substring of length L into a set and stop at the first repeat. There are O(n) lengths and O(n) substrings per length, each costing O(L) to slice and hash, so O(n^3) time and O(n^2) space in the worst case. Two things are wasted: every length is tried although the answer length can be searched for, and each substring is hashed from scratch although neighbours share L - 1 characters.",
-      "time": "O(n^3)",
-      "space": "O(n^2)",
-      "code": "def brute_force(s: str) -> str:\n    n = len(s)\n    for L in range(n - 1, 0, -1):\n        seen = set()\n        for i in range(n - L + 1):\n            sub = s[i:i + L]\n            if sub in seen:\n                return sub\n            seen.add(sub)\n    return \"\""
-    },
-    "optimization": "Observation one (O(n) lengths to O(log n)): if some substring of length L is duplicated, every shorter length is too, by taking a prefix of both occurrences. 'Has a duplicate of length L' is monotone in L, so binary search finds the largest feasible L in log n probes. Observation two (O(nL) per probe to O(n)): hash each window as a base-B number modulo a large prime, h = sum(code[i] * B^(L-1-i)); sliding one step is h = (h * B - code[out] * B^L + code[in]) mod M, an O(1) update. Store hashes in a dict and on a hit compare the actual substrings so a collision can never yield a wrong answer. Total O(n log n) expected. A suffix array is deterministic O(n log n) but far longer to write.",
-    "intuition": "Two ideas stack. Binary search converts 'find the longest' into 'check a fixed length' by exploiting monotonicity. Rabin-Karp makes the fixed-length check linear by treating each window as a number whose value is updated arithmetically as it slides. Equal strings have equal hashes, so a repeated hash is a candidate repeat, and verifying the characters on a hit makes the method exact without changing its expected cost.",
-    "geometric": "Picture a window of width L gliding along the string with a single number, its hash, being rolled above it: multiply by the base, drop the leftmost digit's weight, add the new digit. Each number is dropped into a bag; a bag that already holds the same number marks a repeat. Around that inner loop a binary-search dial sets L: a repeat found turns the dial up, none found turns it down.",
-    "visual": "s = b a n a n a      codes a=1 b=2 n=14, base B, mod M\nbinary search on L: lo=1 hi=5\nL=3: ban -> ana -> nan -> ana\n     roll: h = (h*B - code[out]*B^3 + code[in]) % M\n     hash(ana) seen at i=1, again at i=3\n     verify s[1:4] == s[3:6] -> yes, lo = 4\nL=4: bana anan nana   all distinct -> hi = 3\ndone: longest L = 3 -> \"ana\"\n    b a n a n a\n      [a n a]          i=1\n          [a n a]      i=3   (overlap allowed)\nfeasible(L) is monotone: dup of length L => dup of L-1",
-    "steps": [
-      "codes[i] = ord(s[i]) - 96; pick MOD = 2^61 - 1 and a base such as 257.",
-      "search(L): hash the first L codes, store {hash: [0]}, power = BASE^L mod MOD.",
-      "For i in 1..n-L, roll the hash; on a hit compare s[j:j+L] with s[i:i+L] for stored starts j and return i on a true match; otherwise record i.",
-      "Return -1 if no length-L window repeats.",
-      "Binary search L in [1, n - 1]: a hit records (start, L) and moves lo up; a miss moves hi down.",
-      "Return s[start:start+L] or \"\"."
-    ],
-    "complexity": {
-      "time": "O(n log n)",
-      "space": "O(n)",
-      "why": "log n probes, each a linear rolling-hash scan over a dict of at most n hashes; verification is rare with a 61-bit modulus."
-    },
-    "pitfalls": [
-      "Recomputing each window hash from scratch, which makes every probe O(nL).",
-      "Subtracting the outgoing character without multiplying it by BASE^L.",
-      "Trusting hash equality without comparing the substrings.",
-      "Searching lengths up to n; a length-n substring cannot repeat."
-    ],
-    "hints": [
-      "If a duplicated substring of length 5 exists, does one of length 4 exist? What does that tell you about searching over lengths?",
-      "Binary search the length; for a fixed length you need to detect any repeated window in linear time. How can neighbouring windows share hashing work?",
-      "Rabin-Karp rolling hash with a large modulus, hashes in a dict, and a character comparison on each hash hit to rule out collisions."
-    ],
-    "code": "class Solution:\n    def longestDupSubstring(self, s: str) -> str:\n        n = len(s)\n        codes = [ord(c) - 96 for c in s]\n        MOD, BASE = (1 << 61) - 1, 257\n\n        def search(L: int) -> int:       # start of some repeated length-L window, or -1\n            h = 0\n            for c in codes[:L]:\n                h = (h * BASE + c) % MOD\n            seen = {h: [0]}\n            power = pow(BASE, L, MOD)    # weight of the character leaving the window\n            for i in range(1, n - L + 1):\n                h = (h * BASE - codes[i - 1] * power + codes[i + L - 1]) % MOD\n                if h in seen:\n                    if any(s[j:j + L] == s[i:i + L] for j in seen[h]):   # rule out collisions\n                        return i\n                    seen[h].append(i)\n                else:\n                    seen[h] = [i]\n            return -1\n\n        lo, hi = 1, n - 1\n        start, best = -1, 0\n        while lo <= hi:                  # feasibility is monotone in L\n            mid = (lo + hi) // 2\n            i = search(mid)\n            if i >= 0:\n                start, best = i, mid\n                lo = mid + 1\n            else:\n                hi = mid - 1\n        return s[start:start + best] if start >= 0 else \"\"",
-    "related": [
-      "longest_palindromic_substring",
-      "koko_eating_bananas",
-      "longest_repeating_character_replacement"
-    ]
+  "optimization": "Step one: keep the window sorted and update it incrementally with bisect for the insert and the delete; the median becomes an index lookup, but list insertion is O(k), so this is O(n k). Step two: the median only needs the boundary between the lower and upper halves, which a max-heap small (lower half) and a min-heap large (upper half) expose in O(1) with O(log k) inserts. The obstacle is deletion: a heap cannot remove an arbitrary element. Lazy deletion solves it: record the outgoing value in a delayed counter, track the live count of each half separately for balancing, and physically pop a dead value only when it surfaces at a heap top. Every element is pushed once and popped once, giving O(n log k) with medians always read from live tops.",
+  "intuition": "The two-heap median works for a stream because elements only arrive. A sliding window makes elements leave, and an element buried inside a heap is unreachable. The insight is that a buried element is also irrelevant: it does not affect the top, so it does not affect the median. Mark it dead, decrement the logical size of its half, and evict it only if it ever rises to the top. Because balancing is driven by the logical sizes, the median stays correct while corpses sit inside the heaps.",
+  "geometric": "Picture two piles leaning against each other at the median: the lower pile points up with its largest value on top, the upper pile points down with its smallest on top. A new value lands on the pile it belongs to; a departing value is crossed out where it lies. When one pile's live count grows two taller than the other, its top is moved across. Crossed-out values are swept off only when they reach a pile's top.",
+  "visual": "nums = [1,3,-1,-3,5,3,6,7]  k = 3     x = dead (lazy)\nwindow     small (max-heap)   large (min-heap)  median\n[1,3,-1]   top 1 | -1         top 3             1\n[3,-1,-3]  top -1| -3         top 3             -1\n[-1,-3,5]  top -1| -3         top 5             -1\n[-3,5,3]   top 3 | -3         top 5             3\n[5,3,6]    top 5 | 3 -3x      top 6             5\n[3,6,7]    top 6 | 5 3x -3x   top 7             6\nremove(-3) for window 5: -3 is buried under top 3,\nso only small_n drops 2 -> 1 and rebalance moves 5\nacross from large.  Balance uses live counts\n(small_n, large_n), never len(heap).",
+  "steps": [
+   "Keep small (max-heap via negation) for the lower half, large (min-heap) for the upper half, delayed = Counter of pending removals, and live counts small_n, large_n.",
+   "add(x): push to small if x <= top(small) else to large, bump that live count, rebalance.",
+   "remove(x): delayed[x] += 1; decrement the live count of the half x belongs to (x <= top(small) means small); if x is that half's top, prune; rebalance.",
+   "rebalance: if small_n > large_n + 1 move top(small) to large; if small_n < large_n move top(large) to small; prune the heap just popped from.",
+   "prune(heap): while its top is in delayed, pop it and decrement delayed.",
+   "Add the first k values and emit the median; then for each new index add nums[i], remove nums[i - k], and emit top(small) for odd k or the mean of both tops for even k."
+  ],
+  "complexity": {
+   "time": "O(n log k)",
+   "space": "O(n)",
+   "why": "Each element is pushed and popped at most once; dead values can linger in the heaps until they surface, so storage can exceed k."
   },
-  {
-    "slug": "wildcard_matching",
-    "title": "Wildcard Matching",
-    "leetcode": 44,
-    "difficulty": "Hard",
-    "topic": "two_pointers",
-    "pattern": "Greedy two pointers with last-star backtrack",
-    "file": "two_pointers/wildcard_matching.py",
-    "problem": "Given a string s and a pattern p where '?' matches any single character and '*' matches any sequence of characters including the empty one, decide whether p matches all of s. Example: s = \"adceb\", p = \"*a*b\" -> True (\"\" a \"dce\" b). s = \"acdcb\", p = \"a*c?b\" -> False.",
-    "brute_force": {
-      "approach": "Recursive backtracking: match the first characters and recurse; on a '*' try matching it to the empty string (advance p) or to one more character (advance s), succeeding if either branch does. Exponential time: a pattern with k stars can split s in O(n^k) ways, and the recursion re-explores assignments for earlier stars that cannot matter once a later star has been reached.",
-      "time": "O(n^k) exponential in the number of stars",
-      "space": "O(n + m)",
-      "code": "def brute_force(s: str, p: str) -> bool:\n    if not p:\n        return not s\n    if p[0] == \"*\":\n        return brute_force(s, p[1:]) or (bool(s) and brute_force(s[1:], p))\n    return bool(s) and p[0] in (s[0], \"?\") and brute_force(s[1:], p[1:])"
-    },
-    "optimization": "The key question is which star to backtrack to after a mismatch. Any star earlier than the most recent one could absorb more characters, but whatever it absorbs, the most recent star could absorb the same characters instead, since it sits later in the pattern and also matches any sequence. Re-trying earlier stars is therefore redundant and only the last star needs remembering. On a mismatch, return the pattern pointer to just after that star and let the star swallow one more character of s. Two pointers i, j plus two saved positions (star, match) replace the whole recursion; match only ever increases, so the walk is bounded by O(n * m) in the worst case and is linear in practice, with no DP table.",
-    "intuition": "Stars are safety nets. Once a star has been passed, the rest of the pattern only has to match some suffix of the remaining text. If matching that suffix fails, the only useful repair is to let the most recent net catch one more character and retry the following pattern from the next position. Earlier nets are dominated: anything they could absorb, the latest net can absorb too, so the greedy walk never loses a solution.",
-    "geometric": "Two pointers walk in lockstep along s (top rail) and p (bottom rail). When the bottom pointer passes a '*', a bookmark is dropped recording the star's position and the current s position. A mismatch does not unwind everything: the bottom pointer snaps back to just after the bookmarked star, the bookmark on the top rail slides one step right, and the top pointer resumes from there. The bookmark only ever moves right, which bounds the walk.",
-    "visual": "s = a d c e b        p = * a * b\ni=0 j=0  p[j]='*'   star=0 match=0  j=1\ni=0 j=1  'a'=='a'   i=1 j=2\ni=1 j=2  p[j]='*'   star=2 match=1  j=3\ni=1 j=3  'd'!='b'   -> last star eats one more:\n                       match=2 i=2 j=3   (* = \"d\")\ni=2 j=3  'c'!='b'   -> match=3 i=3 j=3   (* = \"dc\")\ni=3 j=3  'e'!='b'   -> match=4 i=4 j=3   (* = \"dce\")\ni=4 j=3  'b'=='b'   i=5 j=4\ni == len(s), j == len(p) -> True\nthe first '*' (j=0) is never revisited: anything it\ncould absorb, the later '*' at j=2 can absorb instead",
-    "steps": [
-      "i = j = 0; star = -1 (index of the last '*' in p); match = 0 (s index that star currently matches up to).",
-      "While i < len(s): if p[j] equals s[i] or is '?', advance both.",
-      "Else if p[j] is '*': star = j, match = i, j += 1 (the star matches the empty string for now).",
-      "Else if a star has been seen: match += 1, i = match, j = star + 1 (the last star eats one more character).",
-      "Else return False.",
-      "Skip trailing '*' in p and return j == len(p)."
-    ],
-    "complexity": {
-      "time": "O(n * m)",
-      "space": "O(1)",
-      "why": "i is reset to match at most n times and each reset rescans at most m pattern characters; only four integers are stored."
-    },
-    "pitfalls": [
-      "Backtracking to an earlier star; only the most recent one matters.",
-      "Forgetting to consume trailing stars after s is exhausted.",
-      "Resetting j to star instead of star + 1, which re-reads the '*'.",
-      "Treating '?' as optional rather than exactly one character."
-    ],
-    "hints": [
-      "Without '*', matching is a straight two-pointer walk. What is the only decision a '*' introduces?",
-      "After a mismatch beyond a '*', you need the star to absorb more. If there are several stars behind you, is there any reason to revisit one other than the most recent?",
-      "Remember the last star's position and the s index it covers; on a mismatch, bump that index by one and resume the pattern right after the star."
-    ],
-    "code": "class Solution:\n    def isMatch(self, s: str, p: str) -> bool:\n        i = j = 0\n        star, match = -1, 0              # last '*' in p, and the s index it has eaten up to\n        while i < len(s):\n            if j < len(p) and p[j] in (s[i], \"?\"):\n                i += 1\n                j += 1\n            elif j < len(p) and p[j] == \"*\":\n                star, match = j, i       # let the star match \"\" for now\n                j += 1\n            elif star != -1:\n                # mismatch after a star: the LAST star swallows one more character\n                # (earlier stars are dominated by it) and we retry the rest of p\n                match += 1\n                i, j = match, star + 1\n            else:\n                return False\n        while j < len(p) and p[j] == \"*\":\n            j += 1\n        return j == len(p)",
-    "related": [
-      "valid_palindrome",
-      "text_justification",
-      "string_to_integer_atoi"
-    ]
+  "pitfalls": [
+   "Balancing on physical heap lengths instead of live counts.",
+   "Deciding which half an outgoing value belongs to without comparing against the current top of small.",
+   "Forgetting to prune after moving an element across, leaving a dead value exposed as a top.",
+   "Using integer division for the even-k median."
+  ],
+  "hints": [
+   "You know the two-heap trick for a running median. What breaks when the oldest element must leave the window?",
+   "A buried heap element cannot be removed, but it also does not influence the median. Can you remove it only when it becomes visible?",
+   "Keep a counter of pending deletions and separate live sizes per half; prune dead tops whenever a top is exposed, and rebalance on live sizes."
+  ],
+  "code": "class Solution:\n    def medianSlidingWindow(self, nums: List[int], k: int) -> List[float]:\n        small, large = [], []            # max-heap (negated) lower half, min-heap upper half\n        delayed = defaultdict(int)       # value -> pending removals not yet popped\n        small_n = large_n = 0            # live (non-deleted) counts per half\n\n        def prune(heap, sign):           # pop stale values sitting on top\n            while heap and delayed[sign * heap[0]]:\n                delayed[sign * heap[0]] -= 1\n                heapq.heappop(heap)\n\n        def rebalance():\n            nonlocal small_n, large_n\n            if small_n > large_n + 1:\n                heapq.heappush(large, -heapq.heappop(small))\n                small_n, large_n = small_n - 1, large_n + 1\n                prune(small, -1)\n            elif small_n < large_n:\n                heapq.heappush(small, -heapq.heappop(large))\n                small_n, large_n = small_n + 1, large_n - 1\n                prune(large, 1)\n\n        def add(x):\n            nonlocal small_n, large_n\n            if not small or x <= -small[0]:\n                heapq.heappush(small, -x)\n                small_n += 1\n            else:\n                heapq.heappush(large, x)\n                large_n += 1\n            rebalance()\n\n        def remove(x):\n            nonlocal small_n, large_n\n            delayed[x] += 1\n            if x <= -small[0]:\n                small_n -= 1\n                if x == -small[0]:\n                    prune(small, -1)\n            else:\n                large_n -= 1\n                if x == large[0]:\n                    prune(large, 1)\n            rebalance()\n\n        def median():\n            return float(-small[0]) if k % 2 else (-small[0] + large[0]) / 2\n\n        for x in nums[:k]:\n            add(x)\n        result = [median()]\n        for i in range(k, len(nums)):\n            add(nums[i])\n            remove(nums[i - k])\n            result.append(median())\n        return result",
+  "related": [
+   "find_median_from_data_stream",
+   "sliding_window_maximum",
+   "kth_largest_element_in_a_stream"
+  ]
+ },
+ {
+  "slug": "maximum_gap",
+  "title": "Maximum Gap",
+  "leetcode": 164,
+  "difficulty": "Hard",
+  "topic": "arrays_hashing",
+  "pattern": "Pigeonhole buckets",
+  "file": "arrays_hashing/maximum_gap.py",
+  "problem": "Given an unsorted integer array nums, return the maximum difference between two successive elements of its sorted form, using linear time and linear extra space; return 0 if there are fewer than two elements. Example: nums = [3,6,9,1] -> 3 (sorted 1,3,6,9 has gaps 2,3,3).",
+  "brute_force": {
+   "approach": "Sort the array and take the maximum adjacent difference. O(n log n) time and it is correct, which is why you state it first. The waste is that sorting fixes the complete order of all n elements when only one quantity, the largest gap, is needed, and the problem explicitly asks for O(n).",
+   "time": "O(n log n)",
+   "space": "O(n)",
+   "code": "def brute_force(nums: List[int]) -> int:\n    ordered = sorted(nums)\n    best = 0\n    for a, b in zip(ordered, ordered[1:]):\n        best = max(best, b - a)\n    return best"
   },
-  {
-    "slug": "candy",
-    "title": "Candy",
-    "leetcode": 135,
-    "difficulty": "Hard",
-    "topic": "greedy",
-    "pattern": "Two-pass greedy (left-to-right, right-to-left)",
-    "file": "greedy/candy.py",
-    "problem": "Children stand in a line with ratings. Each child gets at least one candy, and a child rated higher than an immediate neighbour must get more candies than that neighbour. Return the minimum total number of candies. Example: ratings = [1,0,2] -> 5 (candies [2,1,2]). ratings = [1,2,2] -> 4 (candies [1,2,1]).",
-    "brute_force": {
-      "approach": "Give everyone one candy, then repeatedly sweep the line: whenever a child outranks a neighbour but does not have more candy, raise them to neighbour + 1. Stop when a full sweep changes nothing. A strictly increasing run of length n needs O(n) sweeps to propagate the constraint one cell at a time, so O(n^2) time; a single ordered pass could carry it the whole way.",
-      "time": "O(n^2)",
-      "space": "O(n)",
-      "code": "def brute_force(ratings: List[int]) -> int:\n    n = len(ratings)\n    candies = [1] * n\n    changed = True\n    while changed:                                   # repeat until no rule is violated\n        changed = False\n        for i in range(n):\n            for j in (i - 1, i + 1):\n                if 0 <= j < n and ratings[i] > ratings[j] and candies[i] <= candies[j]:\n                    candies[i] = candies[j] + 1\n                    changed = True\n    return sum(candies)"
-    },
-    "optimization": "The constraints form two independent families: 'higher than my left neighbour means more than them' and the mirror for the right neighbour. Each family is solved by one directional pass: scanning left to right, if ratings[i] > ratings[i-1] set candies[i] = candies[i-1] + 1, otherwise 1; this is the minimal assignment for the left family alone. The right-to-left pass does the same for the right family. A child must satisfy both, so the smallest value that works is the maximum of the two passes. Taking the max never breaks either family, because each pass's value already meets its own requirement and raising a child only strengthens that child's inequalities while the neighbour's requirement was computed against the neighbour's own pass value. Two linear passes and the total is provably minimal, since every candy count equals the length of an increasing chain that forces it.",
-    "intuition": "Think of each rating peak as the top of a hill. The candy a child needs equals the longer of the two strictly increasing slopes that end at them: the climb from the left and the climb from the right. One left-to-right pass measures left climbs, one right-to-left pass measures right climbs, and each child takes the longer. Anything less would violate a neighbour rule along the longer slope; anything more is wasted.",
-    "geometric": "Plot the ratings as terrain. The left pass paints a staircase that rises along every ascending stretch and drops back to one step whenever the terrain fails to rise. The right pass paints the mirror staircase for descending stretches. Overlay the two: the final candy profile is the upper envelope of both staircases, so a peak between two long slopes gets the taller of the two stairs that meet beneath it.",
-    "visual": "ratings    [1, 2, 4, 3, 2, 1]\n                  ^ peak: left climb 3, right climb 4\nleft pass  [1, 2, 3, 1, 1, 1]   +1 on ascent, else 1\nright pass [1, 1, 4, 3, 2, 1]   mirror, scanning back\nmax        [1, 2, 4, 3, 2, 1]   upper envelope -> 13\n   4 |       #\n   3 |       # #            left stair  rises  /\n   2 |    #  # # #          right stair rises  \\\n   1 | #  #  # # # #        peak takes the taller\n       0  1  2 3 4 5",
-    "steps": [
-      "candies = [1] * n.",
-      "Left to right: if ratings[i] > ratings[i-1], candies[i] = candies[i-1] + 1.",
-      "Right to left: if ratings[i] > ratings[i+1], candies[i] = max(candies[i], candies[i+1] + 1).",
-      "Return sum(candies)."
-    ],
-    "complexity": {
-      "time": "O(n)",
-      "space": "O(n)",
-      "why": "Two linear passes over one auxiliary array."
-    },
-    "pitfalls": [
-      "Overwriting instead of taking the max in the second pass, which breaks left constraints at peaks.",
-      "Giving equal-rated neighbours equal candy by rule; equality imposes no constraint and the run restarts at 1.",
-      "Attempting a single pass that tracks slope lengths; it works but is error-prone under time pressure."
-    ],
-    "hints": [
-      "Each child has two separate rules, one about the left neighbour and one about the right. Can you satisfy one family of rules with a single pass?",
-      "A left-to-right pass gives the minimum candy satisfying only left-neighbour rules; a right-to-left pass does the same for right-neighbour rules.",
-      "A child must satisfy both, so take the maximum of the two passes per child and sum."
-    ],
-    "code": "class Solution:\n    def candy(self, ratings: List[int]) -> int:\n        n = len(ratings)\n        candies = [1] * n\n        for i in range(1, n):                        # satisfy \"more than left neighbour\"\n            if ratings[i] > ratings[i - 1]:\n                candies[i] = candies[i - 1] + 1\n        for i in range(n - 2, -1, -1):               # satisfy \"more than right neighbour\"\n            if ratings[i] > ratings[i + 1]:\n                # max keeps the left-pass value where it is already larger\n                candies[i] = max(candies[i], candies[i + 1] + 1)\n        return sum(candies)",
-    "related": [
-      "jump_game_ii",
-      "partition_labels",
-      "trapping_rain_water"
-    ]
-  }
+  "optimization": "Let lo and hi be the minimum and maximum. The n - 1 sorted gaps sum to hi - lo, so the maximum gap is at least the average gap, ceil((hi - lo) / (n - 1)). Choose buckets of width w = max(1, floor((hi - lo) / (n - 1))), which is at most that average. Two values in the same bucket differ by at most w - 1, strictly less than the maximum gap, so the answer is never an in-bucket pair: it is always the distance from one non-empty bucket's maximum to the next non-empty bucket's minimum. Therefore only each bucket's min and max are needed, filled in one pass, followed by one pass over the buckets in order. There are at most n buckets, so both passes are O(n).",
+  "intuition": "By pigeonhole, n numbers spread over a range must leave at least one gap at least as large as the average gap. If the buckets are narrower than that average, no two numbers in the same bucket can be the extreme pair, so the inside of each bucket never needs sorting. The buckets impose just enough order, which bucket precedes which, and the big gap must straddle a bucket boundary, possibly spanning empty buckets.",
+  "geometric": "Draw the number line from lo to hi split into equal cells of width w. Drop each number into its cell and keep only the leftmost and rightmost mark in each cell. Walk the cells left to right: the gap from one cell's rightmost mark to the next non-empty cell's leftmost mark spans any empty cells between them, and the widest such span is the answer.",
+  "visual": "nums = [3,6,9,1,4]  lo=1 hi=9 n=5  width=(9-1)//4=2\nbucket:    0      1      2      3      4\nrange:   [1,2]  [3,4]  [5,6]  [7,8]  [9,10]\nmin/max:  1/1    3/4    6/6    -/-    9/9\n            \\___/  \\___/  \\___________/\ngaps:         2      2           3      <- max\n3 and 4 share bucket 1: gap 1 <= width-1, never\nthe answer, so we only keep each bucket's min/max.\nempty bucket 3 is skipped; prev_max stays 6 until\nbucket 4's min 9 is seen: 9 - 6 = 3",
+  "steps": [
+   "If n < 2 return 0; compute lo = min, hi = max; if equal return 0.",
+   "width = max(1, (hi - lo) // (n - 1)); number of buckets = (hi - lo) // width + 1.",
+   "For each x, bucket b = (x - lo) // width; update that bucket's min and max.",
+   "Walk buckets in order with prev_max = lo: skip empty ones, best = max(best, bucket_min - prev_max), then prev_max = bucket_max.",
+   "Return best."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)",
+   "why": "One pass fills at most n buckets with O(1) work each, and one pass scans them in order."
+  },
+  "pitfalls": [
+   "A bucket width larger than the average gap, which lets an in-bucket pair be the true answer.",
+   "A zero width when hi - lo < n - 1; clamp it to 1.",
+   "Resetting prev_max on empty buckets instead of skipping them.",
+   "Not handling all-equal input (hi == lo)."
+  ],
+  "hints": [
+   "With n numbers between lo and hi, how large must the biggest sorted gap be at least?",
+   "If you cut [lo, hi] into cells narrower than that average gap, can two numbers in the same cell ever form the maximum gap?",
+   "Store only min and max per bucket, then scan buckets in order comparing each bucket's min with the previous non-empty bucket's max."
+  ],
+  "code": "class Solution:\n    def maximumGap(self, nums: List[int]) -> int:\n        n = len(nums)\n        if n < 2:\n            return 0\n        lo, hi = min(nums), max(nums)\n        if lo == hi:\n            return 0\n        # width <= ceil((hi - lo) / (n - 1)) <= max gap, so the max gap\n        # cannot be between two values in the same bucket\n        width = max(1, (hi - lo) // (n - 1))\n        count = (hi - lo) // width + 1\n        bucket_min = [None] * count\n        bucket_max = [None] * count\n        for x in nums:\n            b = (x - lo) // width\n            bucket_min[b] = x if bucket_min[b] is None else min(bucket_min[b], x)\n            bucket_max[b] = x if bucket_max[b] is None else max(bucket_max[b], x)\n        best, prev_max = 0, lo\n        for b in range(count):\n            if bucket_min[b] is None:\n                continue                 # empty bucket: the gap spans it\n            best = max(best, bucket_min[b] - prev_max)\n            prev_max = bucket_max[b]\n        return best",
+  "related": [
+   "top_k_frequent_elements",
+   "first_missing_positive",
+   "longest_consecutive_sequence"
+  ]
+ },
+ {
+  "slug": "count_of_smaller_numbers_after_self",
+  "title": "Count of Smaller Numbers After Self",
+  "leetcode": 315,
+  "difficulty": "Hard",
+  "topic": "arrays_hashing",
+  "pattern": "Merge sort counting",
+  "file": "arrays_hashing/count_of_smaller_numbers_after_self.py",
+  "problem": "Given an integer array nums, return counts where counts[i] is the number of elements to the right of index i that are strictly smaller than nums[i]. Example: nums = [5,2,6,1] -> [2,1,1,0]: right of 5 are 2 and 1, right of 2 is 1, right of 6 is 1, right of 1 nothing.",
+  "brute_force": {
+   "approach": "For each i, scan every j > i and count nums[j] < nums[i]. O(n^2) time with no extra space. Every pair is compared individually; once the suffix nums[i+1:] is known in sorted order the count for i is a single rank query, but the brute force rediscovers that order one comparison at a time for every i.",
+   "time": "O(n^2)",
+   "space": "O(1)",
+   "code": "def brute_force(nums: List[int]) -> List[int]:\n    counts = []\n    for i in range(len(nums)):\n        smaller = 0\n        for j in range(i + 1, len(nums)):\n            if nums[j] < nums[i]:\n                smaller += 1\n        counts.append(smaller)\n    return counts"
+  },
+  "optimization": "The count for i depends only on how nums[i] ranks among the elements to its right, and merge sort builds exactly that information bottom-up. Sort indices rather than values so each element keeps its identity. When merging a sorted left half with a sorted right half, every right element has a larger original index than every left element. At the moment a left element is emitted, the right elements already emitted are strictly smaller and lie to its right in the original array, so add their number, j - mid, to its count. Emit the left element first on ties so equal values are not counted. Each merge level is O(n) and there are log n levels. A Binary Indexed Tree over compressed values, scanned from the right, gives the same O(n log n) bound.",
+  "intuition": "'Smaller and to the right' is an inversion count per element. Merge sort is the natural inversion counter because the merge step compares two sorted runs where every element of one run precedes every element of the other in index order; the position relation is fixed, so only the value comparison remains. Counts accumulate across levels without any pair being compared twice, and sorting indices instead of values keeps each count attached to its original position.",
+  "geometric": "Picture the index array split into halves down to singletons and merged back up. At each merge two sorted rails are zipped together while a pointer j walks the right rail. Whenever the left rail's head is emitted, the j right-rail items already passed form a block of strictly smaller, later-indexed elements, and that block's size is stamped onto the left head's original position.",
+  "visual": "nums = [5,2,6,1]   sort INDICES; stamp counts on the way up\nsplit  [0 1] [2 3]      values [5 2] [6 1]\nmerge [0] [1]: 2<5 emit 1; emit 0 (+1)  counts[0]=1\nmerge [2] [3]: 1<6 emit 3; emit 2 (+1)  counts[2]=1\nmerge [1,0] (2,5) with [3,2] (1,6):\n   left 2 5      right 1 6\n   1 < 2 : emit 3            j-mid = 1\n   2     : emit 1  +1        counts[1] = 1\n   5 < 6 : emit 0  +1        counts[0] = 1+1 = 2\n   6     : emit 2            right remainder: +0\nsorted order [3,1,0,2]   counts = [2,1,1,0]\nright-half items emitted before a left item are\nexactly its smaller, later-indexed neighbours",
+  "steps": [
+   "idx = [0..n-1], counts = [0] * n; merge sort idx by nums[idx].",
+   "In each merge of idx[lo:mid] and idx[mid:hi], walk i over the left half and j over the right half.",
+   "If nums[idx[j]] < nums[idx[i]], emit idx[j] and advance j; otherwise add j - mid to counts[idx[i]], emit idx[i], advance i.",
+   "When the right half is exhausted, each remaining left element also gets j - mid; then append the remaining right elements.",
+   "Write the merged order back into idx[lo:hi]; return counts at the end."
+  ],
+  "complexity": {
+   "time": "O(n log n)",
+   "space": "O(n)",
+   "why": "log n merge levels of O(n) work each, plus the index array and merge buffer."
+  },
+  "pitfalls": [
+   "Sorting values instead of indices, which loses where each count belongs.",
+   "Counting equal elements as smaller; take the left element first on ties.",
+   "Forgetting to add j - mid to the left remainder after the right half is exhausted."
+  ],
+  "hints": [
+   "For index i, the answer is the rank of nums[i] among the elements to its right. Which sorting algorithm naturally compares a block against everything to its right?",
+   "In merge sort, when two sorted halves are merged, every right element has a larger index than every left element. What do you learn each time you emit a left element?",
+   "Sort indices, and whenever a left element is emitted add the number of right elements already emitted to its count; emit left first on ties."
+  ],
+  "code": "class Solution:\n    def countSmaller(self, nums: List[int]) -> List[int]:\n        n = len(nums)\n        counts = [0] * n\n        idx = list(range(n))             # sort indices so each element keeps its identity\n\n        def sort(lo: int, hi: int) -> None:\n            if hi - lo <= 1:\n                return\n            mid = (lo + hi) // 2\n            sort(lo, mid)\n            sort(mid, hi)\n            merged = []\n            i, j = lo, mid\n            while i < mid and j < hi:\n                if nums[idx[j]] < nums[idx[i]]:\n                    merged.append(idx[j])\n                    j += 1\n                else:\n                    # the j - mid right-half elements already emitted are smaller\n                    # and come after idx[i] in the original order\n                    counts[idx[i]] += j - mid\n                    merged.append(idx[i])\n                    i += 1\n            while i < mid:\n                counts[idx[i]] += j - mid\n                merged.append(idx[i])\n                i += 1\n            merged.extend(idx[j:hi])\n            idx[lo:hi] = merged\n\n        sort(0, n)\n        return counts",
+  "related": [
+   "reverse_pairs",
+   "merge_k_sorted_lists",
+   "kth_largest_element_in_an_array"
+  ]
+ },
+ {
+  "slug": "reverse_pairs",
+  "title": "Reverse Pairs",
+  "leetcode": 493,
+  "difficulty": "Hard",
+  "topic": "arrays_hashing",
+  "pattern": "Merge sort counting",
+  "file": "arrays_hashing/reverse_pairs.py",
+  "problem": "Given an integer array nums, count the reverse pairs: index pairs i < j with nums[i] > 2 * nums[j]. Example: nums = [1,3,2,3,1] -> 2, the pairs (1,4) and (3,4) where 3 > 2 * 1. nums = [2,4,3,5,1] -> 3.",
+  "brute_force": {
+   "approach": "Check every pair i < j and test nums[i] > 2 * nums[j]. O(n^2) time and O(1) space. For a fixed i the test is a rank query in disguise, how many later elements are below nums[i] / 2, and the brute force answers it by touching every later element rather than using any ordering.",
+   "time": "O(n^2)",
+   "space": "O(1)",
+   "code": "def brute_force(nums: List[int]) -> int:\n    count = 0\n    for i in range(len(nums)):\n        for j in range(i + 1, len(nums)):\n            if nums[i] > 2 * nums[j]:\n                count += 1\n    return count"
+  },
+  "optimization": "Split the array in half. Pairs inside one half are counted recursively, leaving only cross pairs with i in the left half and j in the right half, for which i < j holds automatically. If both halves are sorted, the cross count is a two-pointer walk: for each left value x in increasing order, the right values with 2 * r < x form a prefix of the sorted right half, and that prefix only grows as x grows, so the right pointer never moves backwards, O(left + right) per merge. After counting, merge the halves so the parent receives a sorted array. Each level does O(n) work over log n levels. The counting pass must be separate from the merge pass because the merge comparison (x <= r) is not the pair comparison (x > 2r).",
+  "intuition": "Sorting destroys index order, but a reverse pair needs only i < j, and merge sort offers one moment where that order is known for free: everything in the left half precedes everything in the right half. At that moment both halves are sorted, so 'how many right elements does this left element exceed by a factor of two' is a monotone sweep rather than a scan. Divide, count across the cut with two pointers, merge, and the counts from all levels add up to the answer.",
+  "geometric": "Lay the sorted left half above the sorted right half. A pointer j on the lower rail advances while 2 * right[j] < left[i]; as i steps right along the upper rail, j can only step right too, so the two pointers trace a monotone staircase. The area under that staircase, the sum of j over all i, is the number of cross pairs. Then the rails are zipped into one sorted rail for the level above.",
+  "visual": "nums = [1,3,2,3,1]      count i<j with nums[i] > 2*nums[j]\nsplit -> [1,3] | [2,3,1]\nleft  sorted [1,3]    inner pairs 0\nright sorted [1,2,3]  inner pairs 1   (3 > 2*1)\ncross pairs (i in left, j in right => i<j for free):\n  x=1:  2*right[0]=2 < 1 ?  no   j=0   +0\n  x=3:  2*1=2 < 3 yes j=1; 2*2=4 < 3 no  +1\n        j never moves back as x grows\nmerge -> [1,1,2,3,3]     total = 0 + 1 + 1 = 2\ncount with 2*r < x, THEN merge with r < x:\ntwo different comparisons, two separate passes",
+  "steps": [
+   "sort(arr) returns (sorted arr, number of reverse pairs inside arr); a list of length <= 1 returns (arr, 0).",
+   "Recurse on both halves to get left, a and right, b.",
+   "Set j = 0; for each x in left (increasing): advance j while j < len(right) and 2 * right[j] < x; add j to the count.",
+   "Merge left and right into one sorted list.",
+   "Return (merged, a + b + cross count); the answer is the count for the whole array."
+  ],
+  "complexity": {
+   "time": "O(n log n)",
+   "space": "O(n)",
+   "why": "log n levels, each doing a linear two-pointer count and a linear merge."
+  },
+  "pitfalls": [
+   "Restarting the right pointer for every left element, which is O(n^2) again.",
+   "Counting during the merge, where the merge comparison is not the pair comparison.",
+   "Getting the strict inequality wrong for negative values (2 * r < x, not <=)."
+  ],
+  "hints": [
+   "Pairs within the left half, within the right half, and across the halves can be counted separately. Which of the three is new?",
+   "If both halves are sorted, how fast can you count left values x and right values r with x > 2r?",
+   "Two pointers: as x increases over the sorted left half, the right prefix with 2r < x only grows. Count, then merge."
+  ],
+  "code": "class Solution:\n    def reversePairs(self, nums: List[int]) -> int:\n        def sort(arr: List[int]) -> Tuple[List[int], int]:\n            if len(arr) <= 1:\n                return arr, 0\n            mid = len(arr) // 2\n            left, a = sort(arr[:mid])\n            right, b = sort(arr[mid:])\n            count = a + b\n            j = 0                        # right[:j] are exactly the r with 2r < x\n            for x in left:               # x increases, so j never moves back\n                while j < len(right) and 2 * right[j] < x:\n                    j += 1\n                count += j\n            return list(merge(left, right)), count\n\n        return sort(nums)[1]",
+  "related": [
+   "count_of_smaller_numbers_after_self",
+   "merge_k_sorted_lists",
+   "kth_largest_element_in_an_array"
+  ]
+ },
+ {
+  "slug": "contains_duplicate_iii",
+  "title": "Contains Duplicate III",
+  "leetcode": 220,
+  "difficulty": "Hard",
+  "topic": "arrays_hashing",
+  "pattern": "Sliding window of value buckets",
+  "file": "arrays_hashing/contains_duplicate_iii.py",
+  "problem": "Given an integer array nums and integers indexDiff (k) and valueDiff (t), return True if there are two distinct indices i, j with |i - j| <= k and |nums[i] - nums[j]| <= t. Example: nums = [1,2,3,1], k = 3, t = 0 -> True (the two 1s are 3 apart). nums = [1,5,9,1,5,9], k = 2, t = 3 -> False.",
+  "brute_force": {
+   "approach": "For each i, compare nums[i] with each of the next k elements and return True on the first pair within t. O(n k) time and O(1) space. The k comparisons per index re-examine the same window: consecutive windows differ by one element, but nothing is remembered about the window's values between steps, so it is rescanned.",
+   "time": "O(n k)",
+   "space": "O(1)",
+   "code": "def brute_force(nums: List[int], indexDiff: int, valueDiff: int) -> bool:\n    for i in range(len(nums)):\n        for j in range(i + 1, min(i + indexDiff, len(nums) - 1) + 1):\n            if abs(nums[i] - nums[j]) <= valueDiff:\n                return True\n    return False"
+  },
+  "optimization": "Step one (O(n k) to O(n log k)): keep the last k values in a sorted container; for a new x the only candidates are its predecessor and successor in sorted order, found by binary search. Python lacks a balanced BST, so this needs bisect with an O(k) list insert or a sorted-list library. Step two (to O(n)): replace exact order with value buckets of width t + 1, bucket(x) = x // (t + 1). Two values in the same bucket differ by at most t, so a bucket collision is an immediate True; two values within t that are in different buckets must be in adjacent buckets, so only buckets b - 1 and b + 1 need an explicit check. Keep the buckets of the last k indices in a dict. Any bucket with two residents would already have returned True, so each bucket holds one value and eviction is one delete.",
+  "intuition": "'Within k in index' is a plain sliding window; 'within t in value' is the hard part. Buckets of width t + 1 turn the value test into hashing: close values either share a bucket, which guarantees they are within t, or sit in neighbouring buckets, where one absolute-difference check settles it. It is the pigeonhole idea behind bucket sort applied to a moving window rather than the whole array.",
+  "geometric": "Draw the number line cut into cells of width t + 1, and a time window of the last k indices sliding over the array. Each value inside the window lights up one cell. A new value whose cell is already lit is a hit; otherwise look only at the two cells beside it. When the window moves on, the departed value's cell goes dark.",
+  "visual": "nums = [1,5,9,1,5,9]  k=2  t=3  width = t+1 = 4\nvalue line  [0..3] [4..7] [8..11]\nbucket id      0      1      2\ni=0 x=1 -> b0                         {0:1}\ni=1 x=5 -> b1  nbr b0: |1-5|=4 > 3    {0:1,1:5}\ni=2 x=9 -> b2  nbr b1: |5-9|=4 > 3    {0:1,1:5,2:9}\n        evict nums[0]=1 (b0)          {1:5,2:9}\ni=3 x=1 -> b0 free; nbr b1: 4 > 3     {1:5,2:9,0:1}\n        evict nums[1]=5 (b1)          {2:9,0:1}\n...  no hit -> False\nsame bucket     -> diff <= t   (instant True)\nadjacent bucket -> maybe       (one abs() check)",
+  "steps": [
+   "width = t + 1; buckets = {} mapping bucket id to the single value living there.",
+   "For each index i with value x: b = x // width (floor division handles negatives).",
+   "If b is already in buckets, return True.",
+   "For nb in (b - 1, b + 1): if nb is in buckets and |buckets[nb] - x| <= t, return True.",
+   "Store buckets[b] = x; if i >= k, delete the bucket of nums[i - k] so the window keeps exactly the last k indices.",
+   "Return False after the scan."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(min(n, k))",
+   "why": "Each index does a constant number of dict operations, and the dict holds at most k entries."
+  },
+  "pitfalls": [
+   "Using width t instead of t + 1: it divides by zero when t = 0. Width t + 1 is the widest width where two values in one bucket are guaranteed within t, and it works for every t >= 0.",
+   "Using int(x / width) instead of floor division for negative values.",
+   "Evicting nums[i - k] one step early or late; the window must hold exactly the k previous indices."
+  ],
+  "hints": [
+   "The index constraint is a sliding window of size k. For the value constraint, what would you need from the window to answer 'is anything within t of x' quickly?",
+   "A sorted structure gives O(log k) per step. To reach O(1), think about bucketing values so that two values within t land in the same or adjacent buckets.",
+   "Use buckets of width t + 1 keyed by x // (t + 1): a collision is an instant True, adjacent buckets need one abs check, and evict the value leaving the window."
+  ],
+  "code": "class Solution:\n    def containsNearbyAlmostDuplicate(self, nums: List[int], indexDiff: int, valueDiff: int) -> bool:\n        width = valueDiff + 1            # same bucket => |a - b| <= valueDiff\n        buckets = {}                     # bucket id -> the single value in it\n        for i, x in enumerate(nums):\n            b = x // width               # floor division keeps negatives correct\n            if b in buckets:\n                return True\n            for nb in (b - 1, b + 1):    # close values can only be in adjacent buckets\n                if nb in buckets and abs(buckets[nb] - x) <= valueDiff:\n                    return True\n            buckets[b] = x\n            if i >= indexDiff:           # keep only the last indexDiff indices\n                del buckets[nums[i - indexDiff] // width]\n        return False",
+  "related": [
+   "contains_duplicate_ii",
+   "maximum_gap",
+   "two_sum"
+  ]
+ },
+ {
+  "slug": "longest_duplicate_substring",
+  "title": "Longest Duplicate Substring",
+  "leetcode": 1044,
+  "difficulty": "Hard",
+  "topic": "strings",
+  "pattern": "Binary search on the answer + rolling hash",
+  "file": "strings/longest_duplicate_substring.py",
+  "problem": "Given a string s of lowercase letters, return any duplicated substring of maximum length, where a duplicated substring occurs two or more times and occurrences may overlap; return \"\" if there is none. Example: s = \"banana\" -> \"ana\" (at indices 1 and 3). s = \"abcd\" -> \"\".",
+  "brute_force": {
+   "approach": "For each length L from n - 1 down to 1, put every substring of length L into a set and stop at the first repeat. There are O(n) lengths and O(n) substrings per length, each costing O(L) to slice and hash, so O(n^3) time and O(n^2) space in the worst case. Two things are wasted: every length is tried although the answer length can be searched for, and each substring is hashed from scratch although neighbours share L - 1 characters.",
+   "time": "O(n^3)",
+   "space": "O(n^2)",
+   "code": "def brute_force(s: str) -> str:\n    n = len(s)\n    for L in range(n - 1, 0, -1):\n        seen = set()\n        for i in range(n - L + 1):\n            sub = s[i:i + L]\n            if sub in seen:\n                return sub\n            seen.add(sub)\n    return \"\""
+  },
+  "optimization": "Observation one (O(n) lengths to O(log n)): if some substring of length L is duplicated, every shorter length is too, by taking a prefix of both occurrences. 'Has a duplicate of length L' is monotone in L, so binary search finds the largest feasible L in log n probes. Observation two (O(nL) per probe to O(n)): hash each window as a base-B number modulo a large prime, h = sum(code[i] * B^(L-1-i)); sliding one step is h = (h * B - code[out] * B^L + code[in]) mod M, an O(1) update. Store hashes in a dict and on a hit compare the actual substrings so a collision can never yield a wrong answer. Total O(n log n) expected. A suffix array is deterministic O(n log n) but far longer to write.",
+  "intuition": "Two ideas stack. Binary search converts 'find the longest' into 'check a fixed length' by exploiting monotonicity. Rabin-Karp makes the fixed-length check linear by treating each window as a number whose value is updated arithmetically as it slides. Equal strings have equal hashes, so a repeated hash is a candidate repeat, and verifying the characters on a hit makes the method exact without changing its expected cost.",
+  "geometric": "Picture a window of width L gliding along the string with a single number, its hash, being rolled above it: multiply by the base, drop the leftmost digit's weight, add the new digit. Each number is dropped into a bag; a bag that already holds the same number marks a repeat. Around that inner loop a binary-search dial sets L: a repeat found turns the dial up, none found turns it down.",
+  "visual": "s = b a n a n a      codes a=1 b=2 n=14, base B, mod M\nbinary search on L: lo=1 hi=5\nL=3: ban -> ana -> nan -> ana\n     roll: h = (h*B - code[out]*B^3 + code[in]) % M\n     hash(ana) seen at i=1, again at i=3\n     verify s[1:4] == s[3:6] -> yes, lo = 4\nL=4: bana anan nana   all distinct -> hi = 3\ndone: longest L = 3 -> \"ana\"\n    b a n a n a\n      [a n a]          i=1\n          [a n a]      i=3   (overlap allowed)\nfeasible(L) is monotone: dup of length L => dup of L-1",
+  "steps": [
+   "codes[i] = ord(s[i]) - 96; pick MOD = 2^61 - 1 and a base such as 257.",
+   "search(L): hash the first L codes, store {hash: [0]}, power = BASE^L mod MOD.",
+   "For i in 1..n-L, roll the hash; on a hit compare s[j:j+L] with s[i:i+L] for stored starts j and return i on a true match; otherwise record i.",
+   "Return -1 if no length-L window repeats.",
+   "Binary search L in [1, n - 1]: a hit records (start, L) and moves lo up; a miss moves hi down.",
+   "Return s[start:start+L] or \"\"."
+  ],
+  "complexity": {
+   "time": "O(n log n)",
+   "space": "O(n)",
+   "why": "log n probes, each a linear rolling-hash scan over a dict of at most n hashes; verification is rare with a 61-bit modulus."
+  },
+  "pitfalls": [
+   "Recomputing each window hash from scratch, which makes every probe O(nL).",
+   "Subtracting the outgoing character without multiplying it by BASE^L.",
+   "Trusting hash equality without comparing the substrings.",
+   "Searching lengths up to n; a length-n substring cannot repeat."
+  ],
+  "hints": [
+   "If a duplicated substring of length 5 exists, does one of length 4 exist? What does that tell you about searching over lengths?",
+   "Binary search the length; for a fixed length you need to detect any repeated window in linear time. How can neighbouring windows share hashing work?",
+   "Rabin-Karp rolling hash with a large modulus, hashes in a dict, and a character comparison on each hash hit to rule out collisions."
+  ],
+  "code": "class Solution:\n    def longestDupSubstring(self, s: str) -> str:\n        n = len(s)\n        codes = [ord(c) - 96 for c in s]\n        MOD, BASE = (1 << 61) - 1, 257\n\n        def search(L: int) -> int:       # start of some repeated length-L window, or -1\n            h = 0\n            for c in codes[:L]:\n                h = (h * BASE + c) % MOD\n            seen = {h: [0]}\n            power = pow(BASE, L, MOD)    # weight of the character leaving the window\n            for i in range(1, n - L + 1):\n                h = (h * BASE - codes[i - 1] * power + codes[i + L - 1]) % MOD\n                if h in seen:\n                    if any(s[j:j + L] == s[i:i + L] for j in seen[h]):   # rule out collisions\n                        return i\n                    seen[h].append(i)\n                else:\n                    seen[h] = [i]\n            return -1\n\n        lo, hi = 1, n - 1\n        start, best = -1, 0\n        while lo <= hi:                  # feasibility is monotone in L\n            mid = (lo + hi) // 2\n            i = search(mid)\n            if i >= 0:\n                start, best = i, mid\n                lo = mid + 1\n            else:\n                hi = mid - 1\n        return s[start:start + best] if start >= 0 else \"\"",
+  "related": [
+   "longest_palindromic_substring",
+   "koko_eating_bananas",
+   "longest_repeating_character_replacement"
+  ]
+ },
+ {
+  "slug": "wildcard_matching",
+  "title": "Wildcard Matching",
+  "leetcode": 44,
+  "difficulty": "Hard",
+  "topic": "two_pointers",
+  "pattern": "Greedy two pointers with last-star backtrack",
+  "file": "two_pointers/wildcard_matching.py",
+  "problem": "Given a string s and a pattern p where '?' matches any single character and '*' matches any sequence of characters including the empty one, decide whether p matches all of s. Example: s = \"adceb\", p = \"*a*b\" -> True (\"\" a \"dce\" b). s = \"acdcb\", p = \"a*c?b\" -> False.",
+  "brute_force": {
+   "approach": "Recursive backtracking: match the first characters and recurse; on a '*' try matching it to the empty string (advance p) or to one more character (advance s), succeeding if either branch does. Exponential time: a pattern with k stars can split s in O(n^k) ways, and the recursion re-explores assignments for earlier stars that cannot matter once a later star has been reached.",
+   "time": "O(n^k) exponential in the number of stars",
+   "space": "O(n + m)",
+   "code": "def brute_force(s: str, p: str) -> bool:\n    if not p:\n        return not s\n    if p[0] == \"*\":\n        return brute_force(s, p[1:]) or (bool(s) and brute_force(s[1:], p))\n    return bool(s) and p[0] in (s[0], \"?\") and brute_force(s[1:], p[1:])"
+  },
+  "optimization": "The key question is which star to backtrack to after a mismatch. Any star earlier than the most recent one could absorb more characters, but whatever it absorbs, the most recent star could absorb the same characters instead, since it sits later in the pattern and also matches any sequence. Re-trying earlier stars is therefore redundant and only the last star needs remembering. On a mismatch, return the pattern pointer to just after that star and let the star swallow one more character of s. Two pointers i, j plus two saved positions (star, match) replace the whole recursion; match only ever increases, so the walk is bounded by O(n * m) in the worst case and is linear in practice, with no DP table.",
+  "intuition": "Stars are safety nets. Once a star has been passed, the rest of the pattern only has to match some suffix of the remaining text. If matching that suffix fails, the only useful repair is to let the most recent net catch one more character and retry the following pattern from the next position. Earlier nets are dominated: anything they could absorb, the latest net can absorb too, so the greedy walk never loses a solution.",
+  "geometric": "Two pointers walk in lockstep along s (top rail) and p (bottom rail). When the bottom pointer passes a '*', a bookmark is dropped recording the star's position and the current s position. A mismatch does not unwind everything: the bottom pointer snaps back to just after the bookmarked star, the bookmark on the top rail slides one step right, and the top pointer resumes from there. The bookmark only ever moves right, which bounds the walk.",
+  "visual": "s = a d c e b        p = * a * b\ni=0 j=0  p[j]='*'   star=0 match=0  j=1\ni=0 j=1  'a'=='a'   i=1 j=2\ni=1 j=2  p[j]='*'   star=2 match=1  j=3\ni=1 j=3  'd'!='b'   -> last star eats one more:\n                       match=2 i=2 j=3   (* = \"d\")\ni=2 j=3  'c'!='b'   -> match=3 i=3 j=3   (* = \"dc\")\ni=3 j=3  'e'!='b'   -> match=4 i=4 j=3   (* = \"dce\")\ni=4 j=3  'b'=='b'   i=5 j=4\ni == len(s), j == len(p) -> True\nthe first '*' (j=0) is never revisited: anything it\ncould absorb, the later '*' at j=2 can absorb instead",
+  "steps": [
+   "i = j = 0; star = -1 (index of the last '*' in p); match = 0 (s index that star currently matches up to).",
+   "While i < len(s): if p[j] equals s[i] or is '?', advance both.",
+   "Else if p[j] is '*': star = j, match = i, j += 1 (the star matches the empty string for now).",
+   "Else if a star has been seen: match += 1, i = match, j = star + 1 (the last star eats one more character).",
+   "Else return False.",
+   "Skip trailing '*' in p and return j == len(p)."
+  ],
+  "complexity": {
+   "time": "O(n * m)",
+   "space": "O(1)",
+   "why": "i is reset to match at most n times and each reset rescans at most m pattern characters; only four integers are stored."
+  },
+  "pitfalls": [
+   "Backtracking to an earlier star; only the most recent one matters.",
+   "Forgetting to consume trailing stars after s is exhausted.",
+   "Resetting j to star instead of star + 1, which re-reads the '*'.",
+   "Treating '?' as optional rather than exactly one character."
+  ],
+  "hints": [
+   "Without '*', matching is a straight two-pointer walk. What is the only decision a '*' introduces?",
+   "After a mismatch beyond a '*', you need the star to absorb more. If there are several stars behind you, is there any reason to revisit one other than the most recent?",
+   "Remember the last star's position and the s index it covers; on a mismatch, bump that index by one and resume the pattern right after the star."
+  ],
+  "code": "class Solution:\n    def isMatch(self, s: str, p: str) -> bool:\n        i = j = 0\n        star, match = -1, 0              # last '*' in p, and the s index it has eaten up to\n        while i < len(s):\n            if j < len(p) and p[j] in (s[i], \"?\"):\n                i += 1\n                j += 1\n            elif j < len(p) and p[j] == \"*\":\n                star, match = j, i       # let the star match \"\" for now\n                j += 1\n            elif star != -1:\n                # mismatch after a star: the LAST star swallows one more character\n                # (earlier stars are dominated by it) and we retry the rest of p\n                match += 1\n                i, j = match, star + 1\n            else:\n                return False\n        while j < len(p) and p[j] == \"*\":\n            j += 1\n        return j == len(p)",
+  "related": [
+   "valid_palindrome",
+   "text_justification",
+   "string_to_integer_atoi"
+  ]
+ },
+ {
+  "slug": "candy",
+  "title": "Candy",
+  "leetcode": 135,
+  "difficulty": "Hard",
+  "topic": "greedy",
+  "pattern": "Two-pass greedy (left-to-right, right-to-left)",
+  "file": "greedy/candy.py",
+  "problem": "Children stand in a line with ratings. Each child gets at least one candy, and a child rated higher than an immediate neighbour must get more candies than that neighbour. Return the minimum total number of candies. Example: ratings = [1,0,2] -> 5 (candies [2,1,2]). ratings = [1,2,2] -> 4 (candies [1,2,1]).",
+  "brute_force": {
+   "approach": "Give everyone one candy, then repeatedly sweep the line: whenever a child outranks a neighbour but does not have more candy, raise them to neighbour + 1. Stop when a full sweep changes nothing. A strictly increasing run of length n needs O(n) sweeps to propagate the constraint one cell at a time, so O(n^2) time; a single ordered pass could carry it the whole way.",
+   "time": "O(n^2)",
+   "space": "O(n)",
+   "code": "def brute_force(ratings: List[int]) -> int:\n    n = len(ratings)\n    candies = [1] * n\n    changed = True\n    while changed:                                   # repeat until no rule is violated\n        changed = False\n        for i in range(n):\n            for j in (i - 1, i + 1):\n                if 0 <= j < n and ratings[i] > ratings[j] and candies[i] <= candies[j]:\n                    candies[i] = candies[j] + 1\n                    changed = True\n    return sum(candies)"
+  },
+  "optimization": "The constraints form two independent families: 'higher than my left neighbour means more than them' and the mirror for the right neighbour. Each family is solved by one directional pass: scanning left to right, if ratings[i] > ratings[i-1] set candies[i] = candies[i-1] + 1, otherwise 1; this is the minimal assignment for the left family alone. The right-to-left pass does the same for the right family. A child must satisfy both, so the smallest value that works is the maximum of the two passes. Taking the max never breaks either family, because each pass's value already meets its own requirement and raising a child only strengthens that child's inequalities while the neighbour's requirement was computed against the neighbour's own pass value. Two linear passes and the total is provably minimal, since every candy count equals the length of an increasing chain that forces it.",
+  "intuition": "Think of each rating peak as the top of a hill. The candy a child needs equals the longer of the two strictly increasing slopes that end at them: the climb from the left and the climb from the right. One left-to-right pass measures left climbs, one right-to-left pass measures right climbs, and each child takes the longer. Anything less would violate a neighbour rule along the longer slope; anything more is wasted.",
+  "geometric": "Plot the ratings as terrain. The left pass paints a staircase that rises along every ascending stretch and drops back to one step whenever the terrain fails to rise. The right pass paints the mirror staircase for descending stretches. Overlay the two: the final candy profile is the upper envelope of both staircases, so a peak between two long slopes gets the taller of the two stairs that meet beneath it.",
+  "visual": "ratings    [1, 2, 4, 3, 2, 1]\n                  ^ peak: left climb 3, right climb 4\nleft pass  [1, 2, 3, 1, 1, 1]   +1 on ascent, else 1\nright pass [1, 1, 4, 3, 2, 1]   mirror, scanning back\nmax        [1, 2, 4, 3, 2, 1]   upper envelope -> 13\n   4 |       #\n   3 |       # #            left stair  rises  /\n   2 |    #  # # #          right stair rises  \\\n   1 | #  #  # # # #        peak takes the taller\n       0  1  2 3 4 5",
+  "steps": [
+   "candies = [1] * n.",
+   "Left to right: if ratings[i] > ratings[i-1], candies[i] = candies[i-1] + 1.",
+   "Right to left: if ratings[i] > ratings[i+1], candies[i] = max(candies[i], candies[i+1] + 1).",
+   "Return sum(candies)."
+  ],
+  "complexity": {
+   "time": "O(n)",
+   "space": "O(n)",
+   "why": "Two linear passes over one auxiliary array."
+  },
+  "pitfalls": [
+   "Overwriting instead of taking the max in the second pass, which breaks left constraints at peaks.",
+   "Giving equal-rated neighbours equal candy by rule; equality imposes no constraint and the run restarts at 1.",
+   "Attempting a single pass that tracks slope lengths; it works but is error-prone under time pressure."
+  ],
+  "hints": [
+   "Each child has two separate rules, one about the left neighbour and one about the right. Can you satisfy one family of rules with a single pass?",
+   "A left-to-right pass gives the minimum candy satisfying only left-neighbour rules; a right-to-left pass does the same for right-neighbour rules.",
+   "A child must satisfy both, so take the maximum of the two passes per child and sum."
+  ],
+  "code": "class Solution:\n    def candy(self, ratings: List[int]) -> int:\n        n = len(ratings)\n        candies = [1] * n\n        for i in range(1, n):                        # satisfy \"more than left neighbour\"\n            if ratings[i] > ratings[i - 1]:\n                candies[i] = candies[i - 1] + 1\n        for i in range(n - 2, -1, -1):               # satisfy \"more than right neighbour\"\n            if ratings[i] > ratings[i + 1]:\n                # max keeps the left-pass value where it is already larger\n                candies[i] = max(candies[i], candies[i + 1] + 1)\n        return sum(candies)",
+  "related": [
+   "jump_game_ii",
+   "partition_labels",
+   "trapping_rain_water"
+  ]
+ }
 ]

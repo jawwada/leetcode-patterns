@@ -1,584 +1,584 @@
 [
-  {
-    "slug": "ipo",
-    "title": "IPO",
-    "leetcode": 502,
-    "difficulty": "Hard",
-    "topic": "heap",
-    "pattern": "Sort by threshold + max-heap of unlocked candidates",
-    "file": "heap/ipo.py",
-    "problem": "You have capital w and may run at most k projects. Project i needs capital[i] <= your current capital to start and pays profits[i], which is added to your capital when done. Pick at most k distinct projects one after another to maximise final capital. Example: k=2, w=0, profits=[1,2,3], capital=[0,1,1] -> 4 (project 0 lifts w to 1, then project 2 adds 3).",
-    "brute_force": {
-      "approach": "Greedy with a full rescan: k times, scan all n projects for the affordable unpicked one with the largest profit and take it. Trying all orderings is pointless because capital only grows, so an affordable project stays affordable. The waste is that every round re-examines every project, rediscovering the same affordable set plus a few newly unlocked ones.",
-      "time": "O(k * n)",
-      "space": "O(n)",
-      "code": "def brute_force(k: int, w: int, profits: List[int], capital: List[int]) -> int:\n    # k rounds; each round rescans all projects for the best affordable unpicked one.\n    done = [False] * len(profits)\n    for _ in range(k):\n        best = -1\n        for j in range(len(profits)):\n            if not done[j] and capital[j] <= w and (best < 0 or profits[j] > profits[best]):\n                best = j\n        if best < 0:\n            break\n        done[best] = True\n        w += profits[best]\n    return w"
-    },
-    "optimization": "The redundancy is rescanning projects whose status never changes: once affordable, a project stays affordable forever because capital is non-decreasing. So the affordable set only grows, and it grows in capital order. Sort projects by required capital and keep a pointer; each round, advance the pointer to push every newly affordable project's profit into a max-heap. The heap answers 'best affordable project' in O(log n) instead of O(n). Each project is pushed once and popped at most once, giving O((n + k) log n); if the heap is empty nothing is affordable now or ever, so stop early.",
-    "intuition": "Capital is a key that unlocks projects, and keys only get stronger. The heap is the pile of unlocked projects. The best move is always the biggest profit in that pile because profit is pure gain and never disables another option: by an exchange argument, taking the largest unlocked profit first unlocks at least as much as any other choice would. The sorted pointer guarantees each project is examined exactly once on its way into the heap.",
-    "geometric": "Projects are points on a capital axis, sorted left to right. A vertical bar at position w sweeps right as capital grows; every point it passes drops into a max-heap triangle whose apex is the largest profit seen so far. Each round: move the bar right over newly affordable points, pop the apex, add it to w, repeat k times.",
-    "visual": "projects sorted by capital: (c0,p1) (c1,p2) (c1,p3)\ncapital axis  0-----1-----2-----3-----4\n              ^c0   ^c1,c1\nround 1 w=0: unlock cap<=0 -> heap [1]   pop 1 -> w=1\nround 2 w=1: unlock cap<=1 -> push 2, 3\n             max-heap   3     invariant: heap holds\n                       /      every affordable,\n                      2       unpicked project\n             pop 3 -> w=4\npointer i only moves right; no project is rescanned",
-    "steps": [
-      "Pair projects as (capital, profit) and sort by capital; i = 0.",
-      "Repeat up to k times: while i < n and projects[i].capital <= w, push -profit onto the heap and advance i.",
-      "If the heap is empty, break: nothing is affordable and nothing will become affordable.",
-      "w += -heappop(heap) (the largest affordable profit).",
-      "Return w."
-    ],
-    "complexity": {
-      "time": "O((n + k) log n)",
-      "space": "O(n)",
-      "why": "Each project is pushed into the heap once and at most k pops happen; the sort costs n log n."
-    },
-    "pitfalls": [
-      "Re-sorting or rescanning the projects every round.",
-      "Forgetting the early break when the heap is empty (pops from an empty heap or loops uselessly).",
-      "Using a min-heap or forgetting to negate the profits."
-    ],
-    "hints": [
-      "Capital never decreases. What does that say about the set of affordable projects over time?",
-      "Sort projects by required capital; a pointer sweeps over them only once as capital grows.",
-      "Push newly affordable profits into a max-heap; each round pop the largest and add it to w."
-    ],
-    "code": "class Solution:\n    def findMaximizedCapital(self, k: int, w: int, profits: List[int], capital: List[int]) -> int:\n        projects = sorted(zip(capital, profits))      # by required capital\n        unlocked = []                                 # max-heap (negated) of affordable profits\n        i, n = 0, len(projects)\n        for _ in range(k):\n            while i < n and projects[i][0] <= w:      # w only grows, so i only moves right\n                heapq.heappush(unlocked, -projects[i][1])\n                i += 1\n            if not unlocked:                          # nothing affordable now or ever\n                break\n            w -= heapq.heappop(unlocked)              # add the largest affordable profit\n        return w",
-    "related": [
-      "kth_largest_element_in_an_array",
-      "task_scheduler",
-      "maximum_performance_of_a_team"
-    ]
+ {
+  "slug": "ipo",
+  "title": "IPO",
+  "leetcode": 502,
+  "difficulty": "Hard",
+  "topic": "heap",
+  "pattern": "Sort by threshold + max-heap of unlocked candidates",
+  "file": "heap/ipo.py",
+  "problem": "You have capital w and may run at most k projects. Project i needs capital[i] <= your current capital to start and pays profits[i], which is added to your capital when done. Pick at most k distinct projects one after another to maximise final capital. Example: k=2, w=0, profits=[1,2,3], capital=[0,1,1] -> 4 (project 0 lifts w to 1, then project 2 adds 3).",
+  "brute_force": {
+   "approach": "Greedy with a full rescan: k times, scan all n projects for the affordable unpicked one with the largest profit and take it. Trying all orderings is pointless because capital only grows, so an affordable project stays affordable. The waste is that every round re-examines every project, rediscovering the same affordable set plus a few newly unlocked ones.",
+   "time": "O(k * n)",
+   "space": "O(n)",
+   "code": "def brute_force(k: int, w: int, profits: List[int], capital: List[int]) -> int:\n    # k rounds; each round rescans all projects for the best affordable unpicked one.\n    done = [False] * len(profits)\n    for _ in range(k):\n        best = -1\n        for j in range(len(profits)):\n            if not done[j] and capital[j] <= w and (best < 0 or profits[j] > profits[best]):\n                best = j\n        if best < 0:\n            break\n        done[best] = True\n        w += profits[best]\n    return w"
   },
-  {
-    "slug": "course_schedule_iii",
-    "title": "Course Schedule III",
-    "leetcode": 630,
-    "difficulty": "Hard",
-    "topic": "heap",
-    "pattern": "Sort by deadline + max-heap of taken durations (swap out the longest)",
-    "file": "heap/course_schedule_iii.py",
-    "problem": "Course i takes duration[i] days and must be finished on or before lastDay[i]. You start on day 1 and take courses one at a time, back to back. Return the maximum number of courses you can complete. Example: [[100,200],[200,1300],[1000,1250],[2000,3200]] -> 3 (take 100, then 1000, then 200; 2000 cannot fit). [[3,2],[4,3]] -> 0.",
-    "brute_force": {
-      "approach": "Any feasible set can be taken in deadline order (swapping two adjacent out-of-order courses never breaks feasibility), so sort by deadline and try every subset: walk it in that order, accumulate time, check each course meets its deadline, and keep the largest feasible subset. Exponential. The waste: 2^n subsets are checked although most differ only by swapping one long course for a shorter one, and the sorted scan already tells us which course to drop.",
-      "time": "O(2^n * n)",
-      "space": "O(n)",
-      "code": "def brute_force(courses: List[List[int]]) -> int:\n    # Exponential: try every subset in deadline order and keep the largest feasible one.\n    cs = sorted(courses, key=lambda c: c[1])\n    n, best = len(cs), 0\n    for mask in range(1 << n):\n        time, ok, count = 0, True, 0\n        for i in range(n):\n            if mask >> i & 1:\n                time += cs[i][0]\n                count += 1\n                if time > cs[i][1]:\n                    ok = False\n                    break\n        if ok:\n            best = max(best, count)\n    return best"
-    },
-    "optimization": "The redundancy is enumerating subsets when a single greedy pass decides membership. Step 1: scan courses by deadline, provisionally take each one; if the running total exceeds its deadline, drop the longest taken course: it frees the most time, keeps the count unchanged (one dropped, one added) and makes every later deadline easier. Finding the longest by scanning the taken list is O(n) per step, so O(n^2). Step 2: the only query on the taken set is 'give me the longest', so keep durations in a max-heap: push each course, and if time overflows pop the root and subtract it. O(n log n). Invariant: after course i, the heap holds a largest feasible set among the first i courses with the smallest total duration for that size.",
-    "intuition": "Processing deadlines in order makes 'does this fit?' depend only on the total time already committed. When a course does not fit, the count cannot grow, but you can still improve your position: swap the longest course taken so far for this one if this one is shorter (push then pop handles both cases, since if the new course is itself the longest it is popped right back). Shorter committed time now means more courses fit later. The count never decreases and the committed time is minimal for that count.",
-    "geometric": "A timeline growing to the right; taken courses are bars laid end to end with their deadlines as fences. A max-heap triangle beside the timeline holds the bar lengths with the longest at the apex. When the stacked bars pass the current fence, the apex bar is pulled out and the timeline shrinks back to the left: the same number of bars, less total length.",
-    "visual": "(dur,deadline) sorted by deadline:\n  (100,200) (1000,1250) (200,1300) (2000,3200)\ntake 100 : time=100  <= 200   heap [100]\ntake 1000: time=1100 <= 1250  heap [1000,100]\ntake 200 : time=1300 <= 1300  heap [1000,200,100]\ntake 2000: time=3300 >  3200  -> evict the longest\n    max-heap    2000     pop 2000 -> time=1300\n               /    \\    heap [1000,200,100]\n            1000    200  answer = len(heap) = 3\n            /\n          100\ninvariant: heap = largest feasible set so far,\n           with the smallest total time for that size",
-    "steps": [
-      "Sort courses by lastDay.",
-      "taken = [] (max-heap of durations via negation), time = 0.",
-      "For each (duration, last): push -duration, time += duration.",
-      "If time > last: pop the longest duration and subtract it from time.",
-      "Return len(taken)."
-    ],
-    "complexity": {
-      "time": "O(n log n)",
-      "space": "O(n)",
-      "why": "Sorting plus one push and at most one pop per course on a heap of at most n durations."
-    },
-    "pitfalls": [
-      "Sorting by duration instead of deadline.",
-      "Dropping the current course instead of the longest one taken so far.",
-      "Checking time > last before adding the current course's duration."
-    ],
-    "hints": [
-      "If a set of courses is feasible at all, it is feasible when taken in deadline order. Sort by deadline.",
-      "When the next course would miss its deadline, you must drop one. Which one frees the most time without lowering the count?",
-      "Max-heap of taken durations: push each course; if the running time exceeds the deadline, pop the longest and subtract it."
-    ],
-    "code": "class Solution:\n    def scheduleCourse(self, courses: List[List[int]]) -> int:\n        courses.sort(key=lambda c: c[1])              # by deadline\n        taken = []                                    # max-heap (negated) of durations we keep\n        time = 0\n        for duration, last in courses:\n            heapq.heappush(taken, -duration)\n            time += duration\n            if time > last:                           # over the deadline: evict the longest course\n                time += heapq.heappop(taken)          # popped value is negative\n        return len(taken)",
-    "related": [
-      "non_overlapping_intervals",
-      "meeting_rooms_ii",
-      "ipo"
-    ]
+  "optimization": "The redundancy is rescanning projects whose status never changes: once affordable, a project stays affordable forever because capital is non-decreasing. So the affordable set only grows, and it grows in capital order. Sort projects by required capital and keep a pointer; each round, advance the pointer to push every newly affordable project's profit into a max-heap. The heap answers 'best affordable project' in O(log n) instead of O(n). Each project is pushed once and popped at most once, giving O((n + k) log n); if the heap is empty nothing is affordable now or ever, so stop early.",
+  "intuition": "Capital is a key that unlocks projects, and keys only get stronger. The heap is the pile of unlocked projects. The best move is always the biggest profit in that pile because profit is pure gain and never disables another option: by an exchange argument, taking the largest unlocked profit first unlocks at least as much as any other choice would. The sorted pointer guarantees each project is examined exactly once on its way into the heap.",
+  "geometric": "Projects are points on a capital axis, sorted left to right. A vertical bar at position w sweeps right as capital grows; every point it passes drops into a max-heap triangle whose apex is the largest profit seen so far. Each round: move the bar right over newly affordable points, pop the apex, add it to w, repeat k times.",
+  "visual": "projects sorted by capital: (c0,p1) (c1,p2) (c1,p3)\ncapital axis  0-----1-----2-----3-----4\n              ^c0   ^c1,c1\nround 1 w=0: unlock cap<=0 -> heap [1]   pop 1 -> w=1\nround 2 w=1: unlock cap<=1 -> push 2, 3\n             max-heap   3     invariant: heap holds\n                       /      every affordable,\n                      2       unpicked project\n             pop 3 -> w=4\npointer i only moves right; no project is rescanned",
+  "steps": [
+   "Pair projects as (capital, profit) and sort by capital; i = 0.",
+   "Repeat up to k times: while i < n and projects[i].capital <= w, push -profit onto the heap and advance i.",
+   "If the heap is empty, break: nothing is affordable and nothing will become affordable.",
+   "w += -heappop(heap) (the largest affordable profit).",
+   "Return w."
+  ],
+  "complexity": {
+   "time": "O((n + k) log n)",
+   "space": "O(n)",
+   "why": "Each project is pushed into the heap once and at most k pops happen; the sort costs n log n."
   },
-  {
-    "slug": "smallest_range_covering_elements_from_k_lists",
-    "title": "Smallest Range Covering Elements from K Lists",
-    "leetcode": 632,
-    "difficulty": "Hard",
-    "topic": "heap",
-    "pattern": "K-way merge with a min-heap of list pointers (track the running max)",
-    "file": "heap/smallest_range_covering_elements_from_k_lists.py",
-    "problem": "Given k sorted integer lists, find the smallest range [a, b] that contains at least one number from every list; [a, b] beats [c, d] if b - a < d - c, or if equal and a < c. Example: [[4,10,15,24,26],[0,9,12,20],[5,18,22,30]] -> [20,24] (20 from list 2, 24 from list 1, 22 from list 3).",
-    "brute_force": {
-      "approach": "Every candidate range can start and end at values that occur in the lists. For every pair of values (lo, hi) with lo <= hi, check whether each list has an element in [lo, hi] and keep the smallest valid range. The waste: for a fixed lo the best hi is forced (the largest of 'first element >= lo' per list), and moving lo to the next value only changes that first element in one list, yet everything is recomputed.",
-      "time": "O(N^3) for N total elements",
-      "space": "O(N)",
-      "code": "def brute_force(nums: List[List[int]]) -> List[int]:\n    # Try every (lo, hi) pair of values; check all k lists have an element inside.\n    values = sorted(set(v for row in nums for v in row))\n    best = None\n    for a in range(len(values)):\n        for b in range(a, len(values)):\n            lo, hi = values[a], values[b]\n            if best is not None and hi - lo >= best[1] - best[0]:\n                break                                   # wider than best already; larger b only worse\n            if all(any(lo <= v <= hi for v in row) for row in nums):\n                best = [lo, hi]\n                break                                   # smallest hi for this lo found\n    return best"
-    },
-    "optimization": "Redundancy one: for a fixed lower bound the only hi worth checking is forced, giving an O(N * k) sweep over lo. Redundancy two: as lo advances to the next value in merged order, only one list's pointer moves. So treat it as a k-way merge: one pointer per list and a min-heap of (value, list, index) over the current pointers. The heap root is the smallest current element (the range's low end) and a running max of pushed values is the forced high end. Record [root, max], then advance the list that owns the root; keeping that element can never shrink a later range because every later range has a lower bound at least as large. Stop when any list is exhausted. O(N log k).",
-    "intuition": "Put one finger on each list, all at index 0. The k fingered values define a window [min, max] that covers every list. The only way to shrink the window is to raise its minimum, and the only finger that can raise the minimum is the one sitting on the minimum. Advance that finger, update the max, re-read the min. When that finger runs off its list, no later window can cover that list, so you are done.",
-    "geometric": "k horizontal rows of dots (sorted values) above a shared number line, one marker per row. The window is the span from the leftmost marker to the rightmost marker. Each step picks the leftmost marker (the heap root) and slides it right one dot; the right edge only ever moves right and the left edge jumps to the new leftmost marker. The narrowest span seen is the answer.",
-    "visual": "L0: 4 10 15 24 26     heap = min-heap of (val, list, idx)\nL1: 0  9 12 20        low end = heap top, high = run max\nL2: 5 18 22 30\nstep  heap (top first)       max  range   width\n 1    (0,L1)(4,L0)(5,L2)     5    [0,5]   5  <- best\n 2    (4,L0)(5,L2)(9,L1)     9    [4,9]   5\n 3    (5,L2)(9,L1)(10,L0)    10   [5,10]  5\n ...  only the top pointer ever moves\n 9    (20,L1)(22,L2)(24,L0)  24   [20,24] 4  <- best\n10    pop (20,L1): L1 exhausted -> stop\nanswer [20,24]",
-    "steps": [
-      "Push (nums[i][0], i, 0) for every list into a min-heap; cur_max = max of those first elements.",
-      "best = [heap top, cur_max].",
-      "Loop: pop (val, i, j). If cur_max - val < best width, best = [val, cur_max].",
-      "If j + 1 == len(nums[i]) return best (list i exhausted).",
-      "Push (nums[i][j+1], i, j+1) and cur_max = max(cur_max, nums[i][j+1])."
-    ],
-    "complexity": {
-      "time": "O(N log k)",
-      "space": "O(k)",
-      "why": "Each of the N elements enters the heap once; the heap only ever holds one entry per list."
-    },
-    "pitfalls": [
-      "Forgetting to update the running max when pushing the next element.",
-      "Checking exhaustion before recording the range that includes the popped element.",
-      "Using <= instead of < when comparing widths, so a later equal-width range with a larger start replaces the right one."
-    ],
-    "hints": [
-      "Keep one pointer per list. The current pointers define a window [min, max] that already covers every list.",
-      "Which pointer can you move to make the window smaller? Only the one at the minimum.",
-      "Min-heap of (value, list, index) plus a running max: pop the min, record [min, max], advance that list, stop when a list runs out."
-    ],
-    "code": "class Solution:\n    def smallestRange(self, nums: List[List[int]]) -> List[int]:\n        heap = [(row[0], i, 0) for i, row in enumerate(nums)]   # (value, list id, index)\n        heapq.heapify(heap)\n        cur_max = max(row[0] for row in nums)\n        best = [heap[0][0], cur_max]\n        while True:\n            val, i, j = heapq.heappop(heap)            # smallest current element = low end\n            if cur_max - val < best[1] - best[0]:\n                best = [val, cur_max]\n            if j + 1 == len(nums[i]):                  # list i exhausted: no later range covers it\n                return best\n            nxt = nums[i][j + 1]\n            heapq.heappush(heap, (nxt, i, j + 1))\n            cur_max = max(cur_max, nxt)                # high end only moves right",
-    "related": [
-      "merge_k_sorted_lists",
-      "minimum_window_substring",
-      "kth_smallest_element_in_a_bst"
-    ]
+  "pitfalls": [
+   "Re-sorting or rescanning the projects every round.",
+   "Forgetting the early break when the heap is empty (pops from an empty heap or loops uselessly).",
+   "Using a min-heap or forgetting to negate the profits."
+  ],
+  "hints": [
+   "Capital never decreases. What does that say about the set of affordable projects over time?",
+   "Sort projects by required capital; a pointer sweeps over them only once as capital grows.",
+   "Push newly affordable profits into a max-heap; each round pop the largest and add it to w."
+  ],
+  "code": "class Solution:\n    def findMaximizedCapital(self, k: int, w: int, profits: List[int], capital: List[int]) -> int:\n        projects = sorted(zip(capital, profits))      # by required capital\n        unlocked = []                                 # max-heap (negated) of affordable profits\n        i, n = 0, len(projects)\n        for _ in range(k):\n            while i < n and projects[i][0] <= w:      # w only grows, so i only moves right\n                heapq.heappush(unlocked, -projects[i][1])\n                i += 1\n            if not unlocked:                          # nothing affordable now or ever\n                break\n            w -= heapq.heappop(unlocked)              # add the largest affordable profit\n        return w",
+  "related": [
+   "kth_largest_element_in_an_array",
+   "task_scheduler",
+   "maximum_performance_of_a_team"
+  ]
+ },
+ {
+  "slug": "course_schedule_iii",
+  "title": "Course Schedule III",
+  "leetcode": 630,
+  "difficulty": "Hard",
+  "topic": "heap",
+  "pattern": "Sort by deadline + max-heap of taken durations (swap out the longest)",
+  "file": "heap/course_schedule_iii.py",
+  "problem": "Course i takes duration[i] days and must be finished on or before lastDay[i]. You start on day 1 and take courses one at a time, back to back. Return the maximum number of courses you can complete. Example: [[100,200],[200,1300],[1000,1250],[2000,3200]] -> 3 (take 100, then 1000, then 200; 2000 cannot fit). [[3,2],[4,3]] -> 0.",
+  "brute_force": {
+   "approach": "Any feasible set can be taken in deadline order (swapping two adjacent out-of-order courses never breaks feasibility), so sort by deadline and try every subset: walk it in that order, accumulate time, check each course meets its deadline, and keep the largest feasible subset. Exponential. The waste: 2^n subsets are checked although most differ only by swapping one long course for a shorter one, and the sorted scan already tells us which course to drop.",
+   "time": "O(2^n * n)",
+   "space": "O(n)",
+   "code": "def brute_force(courses: List[List[int]]) -> int:\n    # Exponential: try every subset in deadline order and keep the largest feasible one.\n    cs = sorted(courses, key=lambda c: c[1])\n    n, best = len(cs), 0\n    for mask in range(1 << n):\n        time, ok, count = 0, True, 0\n        for i in range(n):\n            if mask >> i & 1:\n                time += cs[i][0]\n                count += 1\n                if time > cs[i][1]:\n                    ok = False\n                    break\n        if ok:\n            best = max(best, count)\n    return best"
   },
-  {
-    "slug": "maximum_performance_of_a_team",
-    "title": "Maximum Performance of a Team",
-    "leetcode": 1383,
-    "difficulty": "Hard",
-    "topic": "heap",
-    "pattern": "Sort by the bottleneck (efficiency desc) + min-heap of the top-k other values",
-    "file": "heap/maximum_performance_of_a_team.py",
-    "problem": "n engineers have speed[i] and efficiency[i]. Choose at most k of them; a team's performance is (sum of speeds) * (minimum efficiency). Return the maximum performance modulo 1e9+7. Example: speed=[2,10,3,1,5,8], efficiency=[5,4,3,9,7,2], k=2 -> 60 (engineers 1 and 4: speeds 10+5=15, min efficiency 4).",
-    "brute_force": {
-      "approach": "Enumerate every subset of size 1..k, compute sum(speed) * min(efficiency), and keep the best. Exponential in k. The waste: the product is governed by a single bottleneck engineer (the one with the minimum efficiency), yet subsets with the same bottleneck are enumerated over and over, each rebuilding a speed sum, when for a fixed bottleneck the best team is simply the k-1 fastest engineers at least as efficient.",
-      "time": "O(C(n,1) + ... + C(n,k)) * O(k), exponential",
-      "space": "O(k)",
-      "code": "def brute_force(n: int, speed: List[int], efficiency: List[int], k: int) -> int:\n    # Exponential: every subset of size 1..k, score = sum(speed) * min(efficiency).\n    from itertools import combinations\n    best = 0\n    for size in range(1, k + 1):\n        for team in combinations(range(n), size):\n            perf = sum(speed[i] for i in team) * min(efficiency[i] for i in team)\n            best = max(best, perf)\n    return best % (10 ** 9 + 7)"
-    },
-    "optimization": "Redundancy one: for a fixed minimum-efficiency engineer e the optimal team is forced: e plus the up-to-(k-1) fastest engineers among those at least as efficient. That reduces 2^n subsets to n candidates, each costing a sort by speed, O(n^2 log n). Redundancy two: visiting engineers in decreasing efficiency makes the pool 'at least as efficient as e' exactly the engineers already visited, so the pool grows by one per step and we need 'the top k speeds in a growing pool': a min-heap of size k. Push each speed, and if the heap exceeds k pop the smallest (subtracting it from a running sum). The candidate at each step is running_sum * efficiency[e]. O(n log n). If e's own speed was evicted, the heap still represents a team whose true bottleneck is at least efficiency[e], so the score is a valid lower bound and that team is scored exactly at its own bottleneck.",
-    "intuition": "Decide the bottleneck first. Sort by efficiency descending so that when you stand on engineer e, everyone before you is at least as efficient and free to join without lowering the minimum. Among those you want the k-1 largest speeds plus e, and a size-k min-heap keeps exactly the k largest speeds seen so far. Score every position: the true optimum has some bottleneck, and when the sweep reaches that engineer the heap holds the best possible teammates.",
-    "geometric": "Engineers on a horizontal axis sorted by efficiency, high on the left. A sweep line moves right; its position fixes the multiplier. Left of the line is the eligible pool, and a triangle (min-heap) above it keeps the k tallest speed bars from that pool, with the shortest kept bar at the apex ready to be ejected. Performance at each step is (height of kept bars) * (efficiency at the line).",
-    "visual": "sorted by efficiency desc (k=2):\n eff   9    7    5    4    3    2\n spd   1    5    2   10    3    8\n       ------------> sweep: eff at line = multiplier\nstep push  min-heap (kept)   evict  sum  sum*eff\n 1    1    [1]               -       1   1*9= 9\n 2    5    [1,5]             -       6   6*7=42\n 3    2    [1,2,5]->[2,5]    1       7   7*5=35\n 4   10    [2,5,10]->[5,10]  2      15  15*4=60 <-best\n 5    3    [3,5,10]->[5,10]  3      15  15*3=45\n 6    8    [5,8,10]->[8,10]  5      18  18*2=36\nheap apex = slowest kept speed, ejected when size > k",
-    "steps": [
-      "Pair (efficiency, speed) and sort by efficiency descending.",
-      "speeds = [] (min-heap), total = 0, best = 0.",
-      "For each (e, s): push s, total += s.",
-      "If len(speeds) > k: total -= heappop(speeds).",
-      "best = max(best, total * e).",
-      "Return best % (10^9 + 7)."
-    ],
-    "complexity": {
-      "time": "O(n log n)",
-      "space": "O(k)",
-      "why": "Sorting plus one push and at most one pop per engineer on a heap capped at k entries."
-    },
-    "pitfalls": [
-      "Taking the modulo before the max comparison (modulo destroys ordering).",
-      "Sorting by efficiency ascending, or using a max-heap (we evict the smallest speed).",
-      "Forgetting that the team may have fewer than k members."
-    ],
-    "hints": [
-      "The product has a single bottleneck: the minimum efficiency. Fix who that is and the rest of the team is forced.",
-      "Visit engineers in decreasing efficiency; everyone seen so far is eligible without lowering the minimum.",
-      "Keep a min-heap of at most k speeds with a running sum; score sum * efficiency at every step."
-    ],
-    "code": "class Solution:\n    def maxPerformance(self, n: int, speed: List[int], efficiency: List[int], k: int) -> int:\n        engineers = sorted(zip(efficiency, speed), reverse=True)   # bottleneck first\n        speeds = []                                                # min-heap of kept speeds\n        total = best = 0\n        for eff, spd in engineers:\n            heapq.heappush(speeds, spd)\n            total += spd\n            if len(speeds) > k:\n                total -= heapq.heappop(speeds)                     # evict the slowest\n            best = max(best, total * eff)                          # eff is the min so far\n        return best % (10 ** 9 + 7)",
-    "related": [
-      "ipo",
-      "kth_largest_element_in_an_array",
-      "k_closest_points_to_origin"
-    ]
+  "optimization": "The redundancy is enumerating subsets when a single greedy pass decides membership. Step 1: scan courses by deadline, provisionally take each one; if the running total exceeds its deadline, drop the longest taken course: it frees the most time, keeps the count unchanged (one dropped, one added) and makes every later deadline easier. Finding the longest by scanning the taken list is O(n) per step, so O(n^2). Step 2: the only query on the taken set is 'give me the longest', so keep durations in a max-heap: push each course, and if time overflows pop the root and subtract it. O(n log n). Invariant: after course i, the heap holds a largest feasible set among the first i courses with the smallest total duration for that size.",
+  "intuition": "Processing deadlines in order makes 'does this fit?' depend only on the total time already committed. When a course does not fit, the count cannot grow, but you can still improve your position: swap the longest course taken so far for this one if this one is shorter (push then pop handles both cases, since if the new course is itself the longest it is popped right back). Shorter committed time now means more courses fit later. The count never decreases and the committed time is minimal for that count. Why swapping out the longest course is safe: if an optimal schedule kept a course we dropped, trading it for one of ours that it skips never lengthens its total time or breaks a deadline, so the optimum can be turned into our set without losing a course.",
+  "geometric": "A timeline growing to the right; taken courses are bars laid end to end with their deadlines as fences. A max-heap triangle beside the timeline holds the bar lengths with the longest at the apex. When the stacked bars pass the current fence, the apex bar is pulled out and the timeline shrinks back to the left: the same number of bars, less total length.",
+  "visual": "(dur,deadline) sorted by deadline:\n  (100,200) (1000,1250) (200,1300) (2000,3200)\ntake 100 : time=100  <= 200   heap [100]\ntake 1000: time=1100 <= 1250  heap [1000,100]\ntake 200 : time=1300 <= 1300  heap [1000,200,100]\ntake 2000: time=3300 >  3200  -> evict the longest\n    max-heap    2000     pop 2000 -> time=1300\n               /    \\    heap [1000,200,100]\n            1000    200  answer = len(heap) = 3\n            /\n          100\ninvariant: heap = largest feasible set so far,\n           with the smallest total time for that size",
+  "steps": [
+   "Sort courses by lastDay.",
+   "taken = [] (max-heap of durations via negation), time = 0.",
+   "For each (duration, last): push -duration, time += duration.",
+   "If time > last: pop the longest duration and subtract it from time.",
+   "Return len(taken)."
+  ],
+  "complexity": {
+   "time": "O(n log n)",
+   "space": "O(n)",
+   "why": "Sorting plus one push and at most one pop per course on a heap of at most n durations."
   },
-  {
-    "slug": "minimize_deviation_in_array",
-    "title": "Minimize Deviation in Array",
-    "leetcode": 1675,
-    "difficulty": "Hard",
-    "topic": "heap",
-    "pattern": "Max-heap of normalised values, repeatedly shrink the maximum",
-    "file": "heap/minimize_deviation_in_array.py",
-    "problem": "You may apply any number of operations to nums: halve an even element or double an odd element. The deviation is max(nums) - min(nums). Return the minimum deviation achievable. Example: [1,2,3,4] -> 1 (double 1, halve 4: [2,2,3,2]). [4,1,5,20,3] -> 3. [2,10,8] -> 3.",
-    "brute_force": {
-      "approach": "Each element can only reach a short chain of values: an odd x reaches {x, 2x}; an even x reaches {x, x/2, x/4, ..., its odd core} (doubling an even number is never useful because halving undoes it). Enumerate every combination of one value per element and keep the smallest max - min. Exponential. The waste: almost all combinations are dominated, because lowering any element that is not the current maximum cannot reduce the deviation and may raise it.",
-      "time": "O(prod of chain lengths), about (log M)^n, exponential",
-      "space": "O(n)",
-      "code": "def brute_force(nums: List[int]) -> int:\n    # Exponential: every element independently picks one rung of its ladder\n    # (odd x -> {x, 2x}; even x -> {x, x/2, ..., odd core}); score max - min.\n    from itertools import product\n    ladders = []\n    for x in nums:\n        if x % 2:\n            rungs = [x, 2 * x]\n        else:\n            rungs = []\n            while x % 2 == 0:\n                rungs.append(x)\n                x //= 2\n            rungs.append(x)                                 # the odd core\n        ladders.append(rungs)\n    return min(max(choice) - min(choice) for choice in product(*ladders))"
-    },
-    "optimization": "The redundancy is varying elements independently when only the maximum matters. Observation 1: every element's reachable values form a geometric ladder, and the only sensible starting state is the top of each ladder (double every odd, evens stay). From there every move is a halving. Observation 2: halving a non-maximum element cannot shrink max - min, so the only useful move is to halve the current maximum, and only if it is even. So push all top-of-ladder values into a max-heap, track the min, record the deviation, pop the max; if it is odd nothing can help any more, stop; otherwise halve it, push it back and update the min. Each element is halved at most log M times: O(n log M log n).",
-    "intuition": "Normalise so that the only operation left is 'halve'. Then the deviation is a quantity only a halving of the maximum can improve, and a halving of the maximum can also hurt (if it drops below the current min), so take the best deviation seen along the way rather than the final one. The process is forced: the maximum is the only element whose move can shrink the gap, and once the maximum is odd it is frozen, and so is every deviation after it.",
-    "geometric": "Each element is a vertical ladder of rungs at x, x/2, x/4, ... down to its odd core, and every element starts on its top rung. A max-heap triangle holds the current rung of each element with the highest at the apex. Each step the apex element steps down one rung; the band between the highest and lowest rung is the deviation, and you remember its narrowest width. The process stops when the apex sits on an odd rung.",
-    "visual": "nums [4,1,5,20,3] -> ladder tops: odd x2, even stays\n      4  2  10  20  6          lo = 2\nmax-heap        20             dev = 20-2 = 18\n              /    \\\n            10      6\n           /  \\\n          4    2\npop 20 even -> push 10, lo 2   top 10  dev 8\npop 10 even -> push 5,  lo 2   top 10  dev 8\npop 10 even -> push 5,  lo 2   top 6   dev 4\npop 6  even -> push 3,  lo 2   top 5   dev 3 <- best\npop 5  odd  -> frozen, stop          answer = 3\nonly the max ever moves; min is tracked separately",
-    "steps": [
-      "For each x: v = 2x if x is odd else x. Push -v onto a max-heap; lo = min of all v.",
-      "best = infinity.",
-      "Loop: hi = -heap[0]; best = min(best, hi - lo).",
-      "If hi is odd, return best (the maximum cannot be halved any more).",
-      "Replace the root with hi // 2 and lo = min(lo, hi // 2)."
-    ],
-    "complexity": {
-      "time": "O(n log M log n)",
-      "space": "O(n)",
-      "why": "Each element is halved at most log M times and every halving is one heap operation on n entries."
-    },
-    "pitfalls": [
-      "Returning the final deviation instead of the minimum seen.",
-      "Forgetting to update the running minimum after a halving.",
-      "Treating 'double an even number' as a useful move."
-    ],
-    "hints": [
-      "Which values can a single element ever take? Write out the chain for 12 and for 7.",
-      "Start every element at the top of its chain; then the only move left is halving. Which element is ever worth halving?",
-      "Max-heap of normalised values plus a running min: pop the max, record the deviation, halve if even, stop when the max is odd."
-    ],
-    "code": "class Solution:\n    def minimumDeviation(self, nums: List[int]) -> int:\n        heap = [-(x * 2 if x % 2 else x) for x in nums]   # every element at the top of its ladder\n        heapq.heapify(heap)\n        lo = -max(heap)                                    # running minimum (max of negatives)\n        best = float(\"inf\")\n        while True:\n            hi = -heap[0]                                  # the only element worth moving\n            best = min(best, hi - lo)\n            if hi % 2:                                     # odd maximum: frozen, nothing else helps\n                return best\n            heapq.heapreplace(heap, -(hi // 2))\n            lo = min(lo, hi // 2)",
-    "related": [
-      "kth_largest_element_in_an_array",
-      "find_median_from_data_stream",
-      "course_schedule_iii"
-    ]
+  "pitfalls": [
+   "Sorting by duration instead of deadline.",
+   "Dropping the current course instead of the longest one taken so far.",
+   "Checking time > last before adding the current course's duration."
+  ],
+  "hints": [
+   "If a set of courses is feasible at all, it is feasible when taken in deadline order. Sort by deadline.",
+   "When the next course would miss its deadline, you must drop one. Which one frees the most time without lowering the count?",
+   "Max-heap of taken durations: push each course; if the running time exceeds the deadline, pop the longest and subtract it."
+  ],
+  "code": "class Solution:\n    def scheduleCourse(self, courses: List[List[int]]) -> int:\n        courses.sort(key=lambda c: c[1])              # by deadline\n        taken = []                                    # max-heap (negated) of durations we keep\n        time = 0\n        for duration, last in courses:\n            heapq.heappush(taken, -duration)\n            time += duration\n            if time > last:                           # over the deadline: evict the longest course\n                time += heapq.heappop(taken)          # popped value is negative\n        return len(taken)",
+  "related": [
+   "non_overlapping_intervals",
+   "meeting_rooms_ii",
+   "ipo"
+  ]
+ },
+ {
+  "slug": "smallest_range_covering_elements_from_k_lists",
+  "title": "Smallest Range Covering Elements from K Lists",
+  "leetcode": 632,
+  "difficulty": "Hard",
+  "topic": "heap",
+  "pattern": "K-way merge with a min-heap of list pointers (track the running max)",
+  "file": "heap/smallest_range_covering_elements_from_k_lists.py",
+  "problem": "Given k sorted integer lists, find the smallest range [a, b] that contains at least one number from every list; [a, b] beats [c, d] if b - a < d - c, or if equal and a < c. Example: [[4,10,15,24,26],[0,9,12,20],[5,18,22,30]] -> [20,24] (20 from list 2, 24 from list 1, 22 from list 3).",
+  "brute_force": {
+   "approach": "Every candidate range can start and end at values that occur in the lists. For every pair of values (lo, hi) with lo <= hi, check whether each list has an element in [lo, hi] and keep the smallest valid range. The waste: for a fixed lo the best hi is forced (the largest of 'first element >= lo' per list), and moving lo to the next value only changes that first element in one list, yet everything is recomputed.",
+   "time": "O(N^3) for N total elements",
+   "space": "O(N)",
+   "code": "def brute_force(nums: List[List[int]]) -> List[int]:\n    # Try every (lo, hi) pair of values; check all k lists have an element inside.\n    values = sorted(set(v for row in nums for v in row))\n    best = None\n    for a in range(len(values)):\n        for b in range(a, len(values)):\n            lo, hi = values[a], values[b]\n            if best is not None and hi - lo >= best[1] - best[0]:\n                break                                   # wider than best already; larger b only worse\n            if all(any(lo <= v <= hi for v in row) for row in nums):\n                best = [lo, hi]\n                break                                   # smallest hi for this lo found\n    return best"
   },
-  {
-    "slug": "minimum_number_of_refueling_stops",
-    "title": "Minimum Number of Refueling Stops",
-    "leetcode": 871,
-    "difficulty": "Hard",
-    "topic": "heap",
-    "pattern": "Greedy with a max-heap of passed-but-unused options (refuel only when stuck)",
-    "file": "heap/minimum_number_of_refueling_stops.py",
-    "problem": "A car starts with startFuel litres and must reach position target, using one litre per mile. stations[i] = [position, fuel] are sorted by position and lie before the target. Return the minimum number of refuelling stops, or -1 if the target is unreachable; the tank is unlimited. Example: target=100, startFuel=10, stations=[[10,60],[20,30],[30,30],[60,40]] -> 2 (stop at 10 for 60 litres, then at 60 for 40).",
-    "brute_force": {
-      "approach": "Try every subset of stations: drive in order, refuel at the chosen ones, check the fuel never runs out before the next chosen station and the target, and keep the smallest feasible subset. Exponential. The waste: whether the car can pass station i depends only on the total fuel collected so far, not on which stations supplied it, so subsets with the same count and the same prefix are re-simulated endlessly.",
-      "time": "O(2^n * n), exponential",
-      "space": "O(n)",
-      "code": "def brute_force(target: int, startFuel: int, stations: List[List[int]]) -> int:\n    # Exponential: every subset of stations, simulated in order; keep the smallest feasible one.\n    n, best = len(stations), -1\n    for mask in range(1 << n):\n        fuel, ok = startFuel, True\n        for i in range(n):\n            if mask >> i & 1:\n                if fuel < stations[i][0]:\n                    ok = False\n                    break\n                fuel += stations[i][1]\n        if ok and fuel >= target:\n            count = bin(mask).count(\"1\")\n            if best < 0 or count < best:\n                best = count\n    return best"
-    },
-    "optimization": "The redundancy is deciding at each station whether to stop, as if the decision had to be made on the spot. Observation: fuel from a station we have already driven past can be banked retroactively; it does not matter whether we poured it in when we passed or decide later, as long as every counted stop is a station we actually reached. So drive forward without stopping and keep the fuel amounts of all passed stations in a max-heap. Whenever the next position is out of reach, retroactively take the largest passed station (fewest stops for the most range) and repeat until the position is reachable or the heap is empty (then -1). Exchange argument: any optimal plan that refuelled at a smaller passed station can swap to the largest without reducing fuel at any point. Each station is pushed once and popped at most once: O(n log n).",
-    "intuition": "Procrastinate the decision. Driving past a station costs nothing; you only need to commit to stops when you would otherwise run dry, and at that moment you know exactly which stations are behind you. Picking the biggest available tank each time minimises the number of commits. Treating the target as a final station with zero fuel keeps the loop uniform.",
-    "geometric": "A number line from 0 to target with station ticks. The car's reach is a bar from 0 to startFuel. Each station the bar covers drops its fuel into a max-heap triangle. When the next tick (or the target) lies beyond the bar's end, pull the apex of the triangle out and extend the bar by that amount; keep pulling until the tick is covered or the triangle is empty.",
-    "visual": "0----10----20----30--------60----------------100\n     s60   s30   s30       s40               target\nfuel=10: reach 10 -> push 60       heap [60]\npos 20 : 10 < 20 -> pop 60, fuel=70, stops=1\n         push 30                   heap [30]\npos 30 : 70 >= 30 -> push 30       heap [30,30]\npos 60 : 70 >= 60 -> push 40       heap [40,30,30]\ntarget : 70 < 100 -> pop 40, fuel=110, stops=2\n         max-heap    40     apex = biggest tank\n                    /  \\    we drove past\n                  30    30\nanswer = 2; a stop is committed only when stuck",
-    "steps": [
-      "Append [target, 0] to the stations so the target is handled like any stop; fuel = startFuel.",
-      "passed = [] (max-heap of fuel amounts, negated), stops = 0.",
-      "For each (pos, gas): while fuel < pos: if passed is empty return -1; fuel += pop max; stops += 1.",
-      "Push gas onto passed (this station has now been reached).",
-      "Return stops."
-    ],
-    "complexity": {
-      "time": "O(n log n)",
-      "space": "O(n)",
-      "why": "Each station is pushed into the heap once and popped at most once."
-    },
-    "pitfalls": [
-      "Refuelling eagerly at every station, which counts stops you did not need.",
-      "Forgetting to treat the target as the final stop.",
-      "Pushing a station's fuel before checking that it was actually reached."
-    ],
-    "hints": [
-      "You do not have to decide at a station whether to stop; what matters is only how much fuel you have when you get stuck.",
-      "Keep every passed station's fuel available; when stuck, which one should you retroactively have used?",
-      "Max-heap of passed fuel amounts: while fuel < next position, pop the largest and count a stop; -1 if the heap is empty."
-    ],
-    "code": "class Solution:\n    def minRefuelStops(self, target: int, startFuel: int, stations: List[List[int]]) -> int:\n        passed = []                                   # max-heap (negated) of fuel at passed stations\n        fuel, stops = startFuel, 0\n        for pos, gas in stations + [[target, 0]]:     # treat the target as the last stop\n            while fuel < pos:                         # cannot reach pos: retroactively refuel\n                if not passed:\n                    return -1\n                fuel -= heapq.heappop(passed)         # take the largest tank we drove past\n                stops += 1\n            heapq.heappush(passed, -gas)              # reached pos: its fuel is now available\n        return stops",
-    "related": [
-      "jump_game_ii",
-      "gas_station",
-      "ipo"
-    ]
+  "optimization": "Redundancy one: for a fixed lower bound the only hi worth checking is forced, giving an O(N * k) sweep over lo. Redundancy two: as lo advances to the next value in merged order, only one list's pointer moves. So treat it as a k-way merge: one pointer per list and a min-heap of (value, list, index) over the current pointers. The heap root is the smallest current element (the range's low end) and a running max of pushed values is the forced high end. Record [root, max], then advance the list that owns the root; keeping that element can never shrink a later range because every later range has a lower bound at least as large. Stop when any list is exhausted. O(N log k).",
+  "intuition": "Put one finger on each list, all at index 0. The k fingered values define a window [min, max] that covers every list. The only way to shrink the window is to raise its minimum, and the only finger that can raise the minimum is the one sitting on the minimum. Advance that finger, update the max, re-read the min. When that finger runs off its list, no later window can cover that list, so you are done.",
+  "geometric": "k horizontal rows of dots (sorted values) above a shared number line, one marker per row. The window is the span from the leftmost marker to the rightmost marker. Each step picks the leftmost marker (the heap root) and slides it right one dot; the right edge only ever moves right and the left edge jumps to the new leftmost marker. The narrowest span seen is the answer.",
+  "visual": "L0: 4 10 15 24 26     heap = min-heap of (val, list, idx)\nL1: 0  9 12 20        low end = heap top, high = run max\nL2: 5 18 22 30\nstep  heap (top first)       max  range   width\n 1    (0,L1)(4,L0)(5,L2)     5    [0,5]   5  <- best\n 2    (4,L0)(5,L2)(9,L1)     9    [4,9]   5\n 3    (5,L2)(9,L1)(10,L0)    10   [5,10]  5\n ...  only the top pointer ever moves\n 9    (20,L1)(22,L2)(24,L0)  24   [20,24] 4  <- best\n10    pop (20,L1): L1 exhausted -> stop\nanswer [20,24]",
+  "steps": [
+   "Push (nums[i][0], i, 0) for every list into a min-heap; cur_max = max of those first elements.",
+   "best = [heap top, cur_max].",
+   "Loop: pop (val, i, j). If cur_max - val < best width, best = [val, cur_max].",
+   "If j + 1 == len(nums[i]) return best (list i exhausted).",
+   "Push (nums[i][j+1], i, j+1) and cur_max = max(cur_max, nums[i][j+1])."
+  ],
+  "complexity": {
+   "time": "O(N log k)",
+   "space": "O(k)",
+   "why": "Each of the N elements enters the heap once; the heap only ever holds one entry per list."
   },
-  {
-    "slug": "meeting_rooms_iii",
-    "title": "Meeting Rooms III",
-    "leetcode": 2402,
-    "difficulty": "Hard",
-    "topic": "heap",
-    "pattern": "Two heaps (free rooms by id, busy rooms by end time) over a sorted sweep",
-    "file": "heap/meeting_rooms_iii.py",
-    "problem": "There are n rooms numbered 0..n-1 and meetings [start, end) with distinct starts. Each meeting takes the lowest-numbered free room; if none is free it is delayed until the earliest room frees up (ties: lowest number), keeping its duration. Return the room that hosts the most meetings (lowest number on ties). Example: n=2, [[0,10],[1,5],[2,7],[3,4]] -> 0 (room 0 hosts [0,10] and [10,11]; room 1 hosts [1,5] and the delayed [5,10]).",
-    "brute_force": {
-      "approach": "Keep an array free_at[r] of when each room becomes free. Process meetings in start order; for each one scan all n rooms: take the lowest-numbered room with free_at[r] <= start, or, if none, the room with the smallest free_at (lowest number on ties) and delay the meeting to that time. The waste: every meeting rescans all n rooms although the set of free rooms changes by only a few entries between consecutive meetings.",
-      "time": "O(m log m + m * n)",
-      "space": "O(n)",
-      "code": "def brute_force(n: int, meetings: List[List[int]]) -> int:\n    # Scan all n rooms for every meeting: lowest free room, else earliest-free room.\n    meetings = sorted(meetings)\n    free_at = [0] * n\n    count = [0] * n\n    for start, end in meetings:\n        room = next((r for r in range(n) if free_at[r] <= start), -1)\n        if room < 0:\n            room = min(range(n), key=lambda r: (free_at[r], r))\n            end = free_at[room] + (end - start)\n        free_at[room] = end\n        count[room] += 1\n    return count.index(max(count))"
-    },
-    "optimization": "The redundancy is the full scan over rooms to answer two questions: 'lowest free room id' and 'earliest-ending busy room'. Each is a min-query over a set that only changes incrementally, so give each its own min-heap: free holds room ids, busy holds (end, room). Sweeping meetings by start, first move every busy room with end <= start into free. If free is non-empty its root is the answer; otherwise the busy root (end, room) is the earliest to free up, ties broken by room id automatically by tuple ordering, and the meeting is rescheduled to [end, end + duration] in that room. Each meeting does O(1) heap operations, so O((m + n) log n) after the O(m log m) sort.",
-    "intuition": "Two queues of rooms: idle ones ordered by number, busy ones ordered by when they finish. Meetings arrive in time order, so before placing one, release every room whose meeting has finished by now. The lowest idle room wins; if there are none, the soonest-free room wins and the meeting simply slides forward to that moment. Counting assignments per room gives the answer.",
-    "geometric": "Rooms are horizontal lanes stacked top to bottom, time runs right. A sweep line at each new start pulls finished bars' lanes into the free pile (a min-heap by lane number) and leaves running bars in the busy pile (a min-heap by right edge). A new bar lands in the top-most free lane, or, if every lane is occupied at the sweep line, is pushed right until the earliest right edge and glued onto that lane.",
-    "visual": "time   0    2    4    6    8    10   12\nroom0  [0,10)========================][10,11)\nroom1       [1,5)========][5,10)=======]\nfree = min-heap of ids    busy = min-heap of (end,room)\nt=0 [0,10): free [0,1] -> room 0   busy [(10,0)]\nt=1 [1,5) : free [1]   -> room 1   busy [(5,1),(10,0)]\nt=2 [2,7) : free []    -> pop busy (5,1): delay\n            to [5,10) in room 1    busy [(10,0),(10,1)]\nt=3 [3,4) : free []    -> pop (10,0): [10,11) room 0\ncount = [2, 2] -> lowest id with the max = 0",
-    "steps": [
-      "Sort meetings by start. free = heap of [0..n-1]; busy = [] of (end, room); count = [0] * n.",
-      "For (s, e): while busy and busy[0].end <= s, pop it and push its room onto free.",
-      "If free is non-empty: room = heappop(free), end = e.",
-      "Else: (t, room) = heappop(busy); end = t + (e - s).",
-      "heappush(busy, (end, room)); count[room] += 1.",
-      "Return the index of the maximum count (first one on ties)."
-    ],
-    "complexity": {
-      "time": "O(m log m + (m + n) log n)",
-      "space": "O(n)",
-      "why": "Sorting the meetings, then a constant number of heap operations per meeting on heaps of size at most n."
-    },
-    "pitfalls": [
-      "Not releasing all expired rooms before choosing, so a lower-numbered free room is missed.",
-      "Forgetting to preserve the duration when a meeting is delayed.",
-      "Releasing with < instead of <= (a meeting may start exactly when a room frees)."
-    ],
-    "hints": [
-      "Two different questions are asked per meeting: which idle room has the lowest id, and which busy room finishes first.",
-      "Each question is a min over a set that changes by one element at a time; give each its own heap.",
-      "Sort meetings by start; move busy rooms with end <= start into free; take free's root or delay into busy's root."
-    ],
-    "code": "class Solution:\n    def mostBooked(self, n: int, meetings: List[List[int]]) -> int:\n        meetings.sort()\n        free = list(range(n))                          # min-heap of idle room ids\n        busy = []                                      # min-heap of (end time, room id)\n        count = [0] * n\n        for start, end in meetings:\n            while busy and busy[0][0] <= start:        # release every room that has finished\n                _, room = heapq.heappop(busy)\n                heapq.heappush(free, room)\n            if free:\n                room = heapq.heappop(free)\n            else:                                      # all busy: wait for the earliest, lowest id\n                t, room = heapq.heappop(busy)\n                end = t + (end - start)                # same duration, delayed start\n            heapq.heappush(busy, (end, room))\n            count[room] += 1\n        return count.index(max(count))",
-    "related": [
-      "meeting_rooms_ii",
-      "task_scheduler",
-      "find_median_from_data_stream"
-    ]
+  "pitfalls": [
+   "Forgetting to update the running max when pushing the next element.",
+   "Checking exhaustion before recording the range that includes the popped element.",
+   "Using <= instead of < when comparing widths, so a later equal-width range with a larger start replaces the right one."
+  ],
+  "hints": [
+   "Keep one pointer per list. The current pointers define a window [min, max] that already covers every list.",
+   "Which pointer can you move to make the window smaller? Only the one at the minimum.",
+   "Min-heap of (value, list, index) plus a running max: pop the min, record [min, max], advance that list, stop when a list runs out."
+  ],
+  "code": "class Solution:\n    def smallestRange(self, nums: List[List[int]]) -> List[int]:\n        heap = [(row[0], i, 0) for i, row in enumerate(nums)]   # (value, list id, index)\n        heapq.heapify(heap)\n        cur_max = max(row[0] for row in nums)\n        best = [heap[0][0], cur_max]\n        while True:\n            val, i, j = heapq.heappop(heap)            # smallest current element = low end\n            if cur_max - val < best[1] - best[0]:\n                best = [val, cur_max]\n            if j + 1 == len(nums[i]):                  # list i exhausted: no later range covers it\n                return best\n            nxt = nums[i][j + 1]\n            heapq.heappush(heap, (nxt, i, j + 1))\n            cur_max = max(cur_max, nxt)                # high end only moves right",
+  "related": [
+   "merge_k_sorted_lists",
+   "minimum_window_substring",
+   "kth_smallest_element_in_a_bst"
+  ]
+ },
+ {
+  "slug": "maximum_performance_of_a_team",
+  "title": "Maximum Performance of a Team",
+  "leetcode": 1383,
+  "difficulty": "Hard",
+  "topic": "heap",
+  "pattern": "Sort by the bottleneck (efficiency desc) + min-heap of the top-k other values",
+  "file": "heap/maximum_performance_of_a_team.py",
+  "problem": "n engineers have speed[i] and efficiency[i]. Choose at most k of them; a team's performance is (sum of speeds) * (minimum efficiency). Return the maximum performance modulo 1e9+7. Example: speed=[2,10,3,1,5,8], efficiency=[5,4,3,9,7,2], k=2 -> 60 (engineers 1 and 4: speeds 10+5=15, min efficiency 4).",
+  "brute_force": {
+   "approach": "Enumerate every subset of size 1..k, compute sum(speed) * min(efficiency), and keep the best. Exponential in k. The waste: the product is governed by a single bottleneck engineer (the one with the minimum efficiency), yet subsets with the same bottleneck are enumerated over and over, each rebuilding a speed sum, when for a fixed bottleneck the best team is simply the k-1 fastest engineers at least as efficient.",
+   "time": "O(C(n,1) + ... + C(n,k)) * O(k), exponential",
+   "space": "O(k)",
+   "code": "def brute_force(n: int, speed: List[int], efficiency: List[int], k: int) -> int:\n    # Exponential: every subset of size 1..k, score = sum(speed) * min(efficiency).\n    from itertools import combinations\n    best = 0\n    for size in range(1, k + 1):\n        for team in combinations(range(n), size):\n            perf = sum(speed[i] for i in team) * min(efficiency[i] for i in team)\n            best = max(best, perf)\n    return best % (10 ** 9 + 7)"
   },
-  {
-    "slug": "rearrange_string_k_distance_apart",
-    "title": "Rearrange String k Distance Apart",
-    "leetcode": 358,
-    "difficulty": "Hard",
-    "topic": "heap",
-    "pattern": "Greedy max-heap by remaining count + fixed-length cooldown queue",
-    "file": "heap/rearrange_string_k_distance_apart.py",
-    "problem": "Rearrange string s so that identical characters are at least k positions apart. Return any valid rearrangement, or an empty string if none exists (k = 0 means no constraint). Example: s=\"aabbcc\", k=3 -> \"abcabc\". s=\"aaabc\", k=3 -> \"\". s=\"aaadbbcc\", k=2 -> \"abacabcd\" (one of several valid answers).",
-    "brute_force": {
-      "approach": "Backtracking: fill positions left to right; at each position try every character that still has copies and does not appear in the previous k-1 positions. Exponential. The waste: the search explores orderings that are doomed early (whenever a frequent character is postponed it later needs more slots than remain) and retries equivalent prefixes that differ only in the order of characters with identical counts.",
-      "time": "O(26^n), exponential",
-      "space": "O(n)",
-      "code": "def brute_force(s: str, k: int) -> str:\n    # Exponential backtracking: at each slot try every char not used in the previous k-1 slots.\n    counts = Counter(s)\n    out: List[str] = []\n\n    def place() -> bool:\n        if len(out) == len(s):\n            return True\n        recent = set(out[-(k - 1):]) if k > 1 else set()\n        for ch in sorted(counts):\n            if counts[ch] and ch not in recent:\n                counts[ch] -= 1\n                out.append(ch)\n                if place():\n                    return True\n                out.pop()\n                counts[ch] += 1\n        return False\n\n    return \"\".join(out) if place() else \"\""
-    },
-    "optimization": "The redundancy is searching over which character to place when one choice is provably safe: the eligible character with the most remaining copies. If another eligible character were placed first, swapping it with the next placement of the most-frequent one never creates a violation (exchange argument), so a greedy sequence of choices is optimal. Two structures make 'most frequent eligible character' O(log 26): a max-heap keyed by remaining count for eligible characters, and a FIFO cooldown queue of length k holding the characters placed in the last k slots. After placing a character it goes to the back of the queue; once the queue holds k entries its front has waited k slots and, if it still has copies, returns to the heap. If the heap is empty before the string is complete, no arrangement exists. O(n log 26).",
-    "intuition": "Think of the characters as workers who need a k-slot rest after each shift. Always schedule the rested worker with the most shifts left: postponing them only piles up their shifts into fewer remaining slots. The rest bench is a queue: whoever sat down first stands up first, exactly k slots later. An empty pool of rested workers while slots remain means someone must break the rest rule, so the answer is the empty string.",
-    "geometric": "A conveyor belt of empty slots moving left. Above it a triangle (max-heap) of rested letters with the biggest count at the apex; beside it a short tube of length k (the cooldown queue). Each tick the apex letter drops onto the belt and slides into the back of the tube, pushing the letter at the tube's front out and back up into the triangle. The tube's length is precisely the gap the problem demands.",
-    "visual": "s=\"aabbcc\" k=3   heap (count,ch) max on top   queue len k\nheap    (2,a)              invariant: a char is in the\n       /     \\             heap only if its last use is\n    (2,b)   (2,c)          >= k slots ago\nslot pop  out      queue after push    released\n 0   a    a        [a1]                -\n 1   b    ab       [a1,b1]             -\n 2   c    abc      [a1,b1,c1] full ->  a1 -> heap\n 3   a    abca     [b1,c1,a0]          b1 -> heap\n 4   b    abcab    [c1,a0,b0]          c1 -> heap\n 5   c    abcabc   [a0,b0,c0]          a0 (used up)\nheap empty with slots left => \"\"  (e.g. \"aaabc\", k=3)",
-    "steps": [
-      "If k <= 1 return s. Count characters; heap = max-heap of (-count, ch).",
-      "cooldown = deque(); out = [].",
-      "For each of n positions: if the heap is empty return \"\"; pop (-cnt, ch); append ch; push (-(cnt-1), ch) onto cooldown (even if the count is now 0, so positions line up).",
-      "If len(cooldown) == k: pop its front; if its count > 0 push it back onto the heap.",
-      "Return \"\".join(out)."
-    ],
-    "complexity": {
-      "time": "O(n log A), A = alphabet size",
-      "space": "O(A + k)",
-      "why": "Each placement is one heap pop and at most one push on a heap of at most 26 entries; the queue holds k."
-    },
-    "pitfalls": [
-      "Releasing a character after k-1 slots instead of k.",
-      "Skipping the cooldown queue for characters whose count hit zero, so the queue length no longer measures distance.",
-      "Not handling k <= 1, where every string is valid."
-    ],
-    "hints": [
-      "Which character is the most dangerous to postpone? The one with the most copies left.",
-      "After placing a character it must sit out exactly k slots. What structure releases things in the order they were placed?",
-      "Max-heap of (count, char) plus a deque of length k: pop the most frequent, place it, enqueue it; when the deque is full, dequeue and re-push if copies remain."
-    ],
-    "code": "class Solution:\n    def rearrangeString(self, s: str, k: int) -> str:\n        if k <= 1:\n            return s\n        heap = [(-cnt, ch) for ch, cnt in Counter(s).items()]   # max-heap by remaining count\n        heapq.heapify(heap)\n        cooldown = deque()                                      # chars placed in the last k slots\n        out = []\n        for _ in range(len(s)):\n            if not heap:                                        # nobody is rested: impossible\n                return \"\"\n            neg, ch = heapq.heappop(heap)\n            out.append(ch)\n            cooldown.append((neg + 1, ch))                      # one fewer copy left\n            if len(cooldown) == k:                              # front has waited k slots\n                neg, ch = cooldown.popleft()\n                if neg < 0:\n                    heapq.heappush(heap, (neg, ch))\n        return \"\".join(out)",
-    "related": [
-      "reorganize_string",
-      "task_scheduler",
-      "top_k_frequent_words"
-    ]
+  "optimization": "Redundancy one: for a fixed minimum-efficiency engineer e the optimal team is forced: e plus the up-to-(k-1) fastest engineers among those at least as efficient. That reduces 2^n subsets to n candidates, each costing a sort by speed, O(n^2 log n). Redundancy two: visiting engineers in decreasing efficiency makes the pool 'at least as efficient as e' exactly the engineers already visited, so the pool grows by one per step and we need 'the top k speeds in a growing pool': a min-heap of size k. Push each speed, and if the heap exceeds k pop the smallest (subtracting it from a running sum). The candidate at each step is running_sum * efficiency[e]. O(n log n). If e's own speed was evicted, the heap still represents a team whose true bottleneck is at least efficiency[e], so the score is a valid lower bound and that team is scored exactly at its own bottleneck.",
+  "intuition": "Decide the bottleneck first. Sort by efficiency descending so that when you stand on engineer e, everyone before you is at least as efficient and free to join without lowering the minimum. Among those you want the k-1 largest speeds plus e, and a size-k min-heap keeps exactly the k largest speeds seen so far. Score every position: the true optimum has some bottleneck, and when the sweep reaches that engineer the heap holds the best possible teammates.",
+  "geometric": "Engineers on a horizontal axis sorted by efficiency, high on the left. A sweep line moves right; its position fixes the multiplier. Left of the line is the eligible pool, and a triangle (min-heap) above it keeps the k tallest speed bars from that pool, with the shortest kept bar at the apex ready to be ejected. Performance at each step is (height of kept bars) * (efficiency at the line).",
+  "visual": "sorted by efficiency desc (k=2):\n eff   9    7    5    4    3    2\n spd   1    5    2   10    3    8\n       ------------> sweep: eff at line = multiplier\nstep push  min-heap (kept)   evict  sum  sum*eff\n 1    1    [1]               -       1   1*9= 9\n 2    5    [1,5]             -       6   6*7=42\n 3    2    [1,2,5]->[2,5]    1       7   7*5=35\n 4   10    [2,5,10]->[5,10]  2      15  15*4=60 <-best\n 5    3    [3,5,10]->[5,10]  3      15  15*3=45\n 6    8    [5,8,10]->[8,10]  5      18  18*2=36\nheap apex = slowest kept speed, ejected when size > k",
+  "steps": [
+   "Pair (efficiency, speed) and sort by efficiency descending.",
+   "speeds = [] (min-heap), total = 0, best = 0.",
+   "For each (e, s): push s, total += s.",
+   "If len(speeds) > k: total -= heappop(speeds).",
+   "best = max(best, total * e).",
+   "Return best % (10^9 + 7)."
+  ],
+  "complexity": {
+   "time": "O(n log n)",
+   "space": "O(k)",
+   "why": "Sorting plus one push and at most one pop per engineer on a heap capped at k entries."
   },
-  {
-    "slug": "trapping_rain_water_ii",
-    "title": "Trapping Rain Water II",
-    "leetcode": 407,
-    "difficulty": "Hard",
-    "topic": "heap",
-    "pattern": "Min-heap frontier expanding inward from the boundary (lowest wall first)",
-    "file": "heap/trapping_rain_water_ii.py",
-    "problem": "Given an m x n elevation map, return the volume of water trapped after raining. Water can only escape over the border, flowing through 4-directionally adjacent cells. Example: [[1,4,3,1,3,2],[3,2,1,3,2,4],[2,3,3,2,3,1]] -> 4 (the middle row's 2, 1 and 2 fill up to height 3).",
-    "brute_force": {
-      "approach": "Let level[c] be the final water surface at cell c: border cells have level = height, and every interior cell obeys level[c] = max(height[c], min over neighbours of level). Initialise interior levels to infinity and sweep the grid repeatedly, lowering levels by that rule until a full sweep changes nothing; answer = sum(level - height). A level drop can propagate one cell per sweep along a snaking path, so there can be O(mn) sweeps. The waste: every sweep re-examines every cell although only cells next to a just-lowered neighbour can change.",
-      "time": "O((mn)^2)",
-      "space": "O(mn)",
-      "code": "def brute_force(heightMap: List[List[int]]) -> int:\n    # Relax level[c] = max(h[c], min(neighbour levels)) over the whole grid until stable.\n    m, n = len(heightMap), len(heightMap[0])\n    inf = float(\"inf\")\n    level = [[h if r in (0, m - 1) or c in (0, n - 1) else inf\n              for c, h in enumerate(row)] for r, row in enumerate(heightMap)]\n    changed = True\n    while changed:\n        changed = False\n        for r in range(1, m - 1):\n            for c in range(1, n - 1):\n                low = min(level[r - 1][c], level[r + 1][c], level[r][c - 1], level[r][c + 1])\n                new = max(heightMap[r][c], low)\n                if new < level[r][c]:\n                    level[r][c] = new\n                    changed = True\n    return sum(level[r][c] - heightMap[r][c] for r in range(m) for c in range(n))"
-    },
-    "optimization": "The redundancy is visiting cells whose level cannot change yet. Observation: the water level at a cell equals the minimax path value to the border, the smallest over all escape paths of the tallest wall on the path. That is a shortest-path problem with max instead of sum, so Dijkstra applies: start from all border cells (level = their own height) in a min-heap keyed by level, repeatedly pop the lowest cell on the frontier, and for each unvisited neighbour set its level to max(popped level, its height), bank the difference as water, and push it. Popping in increasing order guarantees that when a cell is settled no lower escape route exists. Each cell enters the heap once: O(mn log(mn)).",
-    "intuition": "Imagine the outer ring as a dam of varying height with water rising from outside. The weakest point of the dam is its lowest cell; water pours over it into the neighbour behind, which either sits lower (fills up to the dam's level, trapping water) or higher (becomes part of a new, taller wall). Either way that neighbour now belongs to the dam and the old low point is retired. Always breach the lowest cell of the current dam and the fill levels come out exactly right.",
-    "geometric": "A ring of boundary cells drawn as a closed curve; a min-heap triangle holds the ring with its lowest cell at the apex. Each step pops the apex, pulls its unvisited neighbours into the ring at height max(apex level, own height), and the ring shrinks inward. The volume accumulates as the sum over cells of (level they joined the ring at - own height).",
-    "visual": "grid   1 4 3 1 3 2    B = border cell (seeded in heap)\n       3 . . . . 4    . = interior, not yet reached\n       2 3 3 2 3 1    heap = min-heap (level, r, c)\npop (1,0,0),(1,0,3)...: lowest dam cells first\n  (1,0,3) -> nb (1,3)=3: +0 water, push lvl 3\npop (2,*): all neighbours already seen\npop (3,0,2) -> nb (1,2)=1: +2 water, push lvl 3\npop (3,0,4) -> nb (1,4)=2: +1 water, push lvl 3\npop (3,1,0) -> nb (1,1)=2: +1 water, push lvl 3\nrest pops find nothing unseen        answer = 4\ninvariant: popped level = min escape height so far",
-    "steps": [
-      "Push every border cell (height, r, c) into a min-heap and mark it visited.",
-      "While the heap is not empty: pop (level, r, c), the lowest point of the current dam.",
-      "For each unvisited 4-neighbour: mark it visited, water += max(0, level - h), push (max(level, h), nr, nc).",
-      "Return water."
-    ],
-    "complexity": {
-      "time": "O(mn log(mn))",
-      "space": "O(mn)",
-      "why": "Every cell is pushed and popped exactly once; the visited grid and the heap are the extra memory."
-    },
-    "pitfalls": [
-      "Pushing the neighbour's own height instead of max(level, height): the water level never drops moving inward.",
-      "Marking visited at pop time instead of push time, so cells are pushed twice with different levels.",
-      "Expecting water in grids with fewer than 3 rows or columns."
-    ],
-    "hints": [
-      "Water at a cell is bounded by the lowest 'wall' it must climb over on its best route to the border.",
-      "That is a shortest path where the cost of a path is its maximum height. Which algorithm settles cells in increasing cost?",
-      "Dijkstra from all border cells with a min-heap: pop the lowest, neighbours get level max(popped, own height), bank the difference."
-    ],
-    "code": "class Solution:\n    def trapRainWater(self, heightMap: List[List[int]]) -> int:\n        m, n = len(heightMap), len(heightMap[0])\n        seen = [[False] * n for _ in range(m)]\n        frontier = []                                 # min-heap of (water level, r, c)\n        for r in range(m):\n            for c in range(n):\n                if r in (0, m - 1) or c in (0, n - 1):\n                    seen[r][c] = True\n                    frontier.append((heightMap[r][c], r, c))\n        heapq.heapify(frontier)\n        water = 0\n        while frontier:\n            level, r, c = heapq.heappop(frontier)     # lowest point of the current dam\n            for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                if 0 <= nr < m and 0 <= nc < n and not seen[nr][nc]:\n                    seen[nr][nc] = True\n                    h = heightMap[nr][nc]\n                    water += max(0, level - h)        # fills up to the dam's level\n                    heapq.heappush(frontier, (max(level, h), nr, nc))\n        return water",
-    "related": [
-      "trapping_rain_water",
-      "network_delay_time",
-      "pacific_atlantic_water_flow",
-      "rotting_oranges"
-    ]
+  "pitfalls": [
+   "Taking the modulo before the max comparison (modulo destroys ordering).",
+   "Sorting by efficiency ascending, or using a max-heap (we evict the smallest speed).",
+   "Forgetting that the team may have fewer than k members."
+  ],
+  "hints": [
+   "The product has a single bottleneck: the minimum efficiency. Fix who that is and the rest of the team is forced.",
+   "Visit engineers in decreasing efficiency; everyone seen so far is eligible without lowering the minimum.",
+   "Keep a min-heap of at most k speeds with a running sum; score sum * efficiency at every step."
+  ],
+  "code": "class Solution:\n    def maxPerformance(self, n: int, speed: List[int], efficiency: List[int], k: int) -> int:\n        engineers = sorted(zip(efficiency, speed), reverse=True)   # bottleneck first\n        speeds = []                                                # min-heap of kept speeds\n        total = best = 0\n        for eff, spd in engineers:\n            heapq.heappush(speeds, spd)\n            total += spd\n            if len(speeds) > k:\n                total -= heapq.heappop(speeds)                     # evict the slowest\n            best = max(best, total * eff)                          # eff is the min so far\n        return best % (10 ** 9 + 7)",
+  "related": [
+   "ipo",
+   "kth_largest_element_in_an_array",
+   "k_closest_points_to_origin"
+  ]
+ },
+ {
+  "slug": "minimize_deviation_in_array",
+  "title": "Minimize Deviation in Array",
+  "leetcode": 1675,
+  "difficulty": "Hard",
+  "topic": "heap",
+  "pattern": "Max-heap of normalised values, repeatedly shrink the maximum",
+  "file": "heap/minimize_deviation_in_array.py",
+  "problem": "You may apply any number of operations to nums: halve an even element or double an odd element. The deviation is max(nums) - min(nums). Return the minimum deviation achievable. Example: [1,2,3,4] -> 1 (double 1, halve 4: [2,2,3,2]). [4,1,5,20,3] -> 3. [2,10,8] -> 3.",
+  "brute_force": {
+   "approach": "Each element can only reach a short chain of values: an odd x reaches {x, 2x}; an even x reaches {x, x/2, x/4, ..., its odd core} (doubling an even number is never useful because halving undoes it). Enumerate every combination of one value per element and keep the smallest max - min. Exponential. The waste: almost all combinations are dominated, because lowering any element that is not the current maximum cannot reduce the deviation and may raise it.",
+   "time": "O(prod of chain lengths), about (log M)^n, exponential",
+   "space": "O(n)",
+   "code": "def brute_force(nums: List[int]) -> int:\n    # Exponential: every element independently picks one rung of its ladder\n    # (odd x -> {x, 2x}; even x -> {x, x/2, ..., odd core}); score max - min.\n    from itertools import product\n    ladders = []\n    for x in nums:\n        if x % 2:\n            rungs = [x, 2 * x]\n        else:\n            rungs = []\n            while x % 2 == 0:\n                rungs.append(x)\n                x //= 2\n            rungs.append(x)                                 # the odd core\n        ladders.append(rungs)\n    return min(max(choice) - min(choice) for choice in product(*ladders))"
   },
-  {
-    "slug": "the_skyline_problem",
-    "title": "The Skyline Problem",
-    "leetcode": 218,
-    "difficulty": "Hard",
-    "topic": "heap",
-    "pattern": "Sweep line over events + max-heap with lazy removal",
-    "file": "heap/the_skyline_problem.py",
-    "problem": "Buildings are given as [left, right, height] rectangles on a shared ground line. Return the skyline as a list of key points [x, y] where the outline's height changes, sorted by x and ending with a point of height 0; consecutive points must not share a height. Example: [[2,9,10],[3,7,15],[5,12,12],[15,20,10],[19,24,8]] -> [[2,10],[3,15],[7,12],[12,0],[15,10],[20,8],[24,0]].",
-    "brute_force": {
-      "approach": "The outline can only change at a building edge. Collect all distinct left/right x values, sort them, and at each x compute the tallest building with left <= x < right by scanning all n buildings; emit [x, height] whenever that height differs from the previous one. The waste: at each of the 2n edges the whole set of buildings is rescanned for the max, although between consecutive edges exactly one building was added or removed.",
-      "time": "O(n^2)",
-      "space": "O(n)",
-      "code": "def brute_force(buildings: List[List[int]]) -> List[List[int]]:\n    # At every edge x, rescan all buildings for the tallest covering x (left <= x < right).\n    xs = sorted({x for l, r, _ in buildings for x in (l, r)})\n    out, prev = [], 0\n    for x in xs:\n        h = max((hh for l, r, hh in buildings if l <= x < r), default=0)\n        if h != prev:\n            out.append([x, h])\n            prev = h\n    return out"
-    },
-    "optimization": "The redundancy is recomputing 'the tallest building covering x' from scratch when the covering set changes by one building per edge. Maintain that set in a max-heap of (height, right) as the sweep line crosses sorted edges: a left edge pushes its building; a right edge should remove one, but heaps cannot delete arbitrary entries. Lazy removal solves it: leave dead buildings in the heap and, before reading the top, pop while the top's right <= x. Since only the top is ever read, stale entries deeper down are harmless until they surface. Each building is pushed once and popped once: O(n log n). Sorting edges as (x, -height, right) with right edges as (x, 0, 0) makes starts at the same x come before ends and taller starts first, so equal-x ties produce no spurious points.",
-    "intuition": "Walk left to right; the skyline height at the sweep line is the tallest building currently alive. Births are easy to record; deaths are deferred until the dead building would otherwise be reported as the maximum. A sentinel (height 0, infinite right) keeps the heap non-empty so ground level is reported automatically when the last building ends. Append a key point only when the max changes, which is the definition of a key point.",
-    "geometric": "Rectangles standing on a line. A vertical sweep line slides right and stops at every left and right edge. Beside it a max-heap triangle holds the live rectangles, tallest at the apex; the apex height is the skyline height at the sweep line. Some entries in the triangle are ghosts (already ended) and are blown away only when they reach the apex. Whenever the apex height differs from the last recorded height, a new corner of the outline is drawn.",
-    "visual": "h15       +-------+\nh12       |       +---------+\nh10     +-+                 |     +---------+\nh 8     |                   |     |         +-------+\nh 0 ----+-------------------+-----+-----------------+-\n        2 3       7         12    15        20      24\nevents sorted (x,-h,r); live = max-heap (-h,r), lazy pops\nx=2  push (10,r9)        top 10 -> [2,10]\nx=3  push (15,r7)        top 15 -> [3,15]\nx=5  push (12,r12)       top 15 (no change)\nx=7  end: pop r7<=7      top 12 -> [7,12]\nx=9  end: r9 not on top  ghost stays in heap\nx=12 end: pop r12, r9    top 0  -> [12,0]",
-    "steps": [
-      "events = [(l, -h, r) for each building] + [(r, 0, 0) for each building]; sort.",
-      "live = [(0, inf)] (max-heap via negated heights; the sentinel never expires); out = [[0, 0]].",
-      "For (x, negh, r): while live[0].right <= x, pop (lazy removal of ended buildings).",
-      "If negh < 0: push (negh, r).",
-      "If -live[0][0] != out[-1][1]: append [x, -live[0][0]].",
-      "Return out[1:]."
-    ],
-    "complexity": {
-      "time": "O(n log n)",
-      "space": "O(n)",
-      "why": "2n events are sorted, and each building is pushed once and popped once."
-    },
-    "pitfalls": [
-      "Popping expired buildings with < instead of <= (a building ending at x does not cover x).",
-      "Processing a right edge before a left edge at the same x, producing a phantom dip to 0.",
-      "Emitting a point when the height did not change, or forgetting to drop the leading dummy point."
-    ],
-    "hints": [
-      "The outline only changes at building edges. What is the height at any edge x?",
-      "Sweep the edges in order and keep the set of buildings currently covering x; you only ever need its maximum.",
-      "Max-heap of (height, right). Can't delete from the middle? Leave dead entries in and pop them when they reach the top."
-    ],
-    "code": "class Solution:\n    def getSkyline(self, buildings: List[List[int]]) -> List[List[int]]:\n        # starts sort before ends at the same x (negative height < 0); taller starts first\n        events = sorted([(l, -h, r) for l, r, h in buildings] + [(r, 0, 0) for _, r, _ in buildings])\n        live = [(0, float(\"inf\"))]                   # max-heap of (-height, right); sentinel ground\n        out = [[0, 0]]                               # dummy so out[-1][1] always exists\n        for x, neg_h, right in events:\n            while live[0][1] <= x:                   # lazy removal: top has already ended\n                heapq.heappop(live)\n            if neg_h:\n                heapq.heappush(live, (neg_h, right))\n            if -live[0][0] != out[-1][1]:            # max changed: a corner of the outline\n                out.append([x, -live[0][0]])\n        return out[1:]",
-    "related": [
-      "merge_intervals",
-      "meeting_rooms_ii",
-      "largest_rectangle_in_histogram",
-      "sliding_window_maximum"
-    ]
+  "optimization": "The redundancy is varying elements independently when only the maximum matters. Observation 1: every element's reachable values form a geometric ladder, and the only sensible starting state is the top of each ladder (double every odd, evens stay). From there every move is a halving. Observation 2: halving a non-maximum element cannot shrink max - min, so the only useful move is to halve the current maximum, and only if it is even. So push all top-of-ladder values into a max-heap, track the min, record the deviation, pop the max; if it is odd nothing can help any more, stop; otherwise halve it, push it back and update the min. Each element is halved at most log M times: O(n log M log n).",
+  "intuition": "Normalise so that the only operation left is 'halve'. Then the deviation is a quantity only a halving of the maximum can improve, and a halving of the maximum can also hurt (if it drops below the current min), so take the best deviation seen along the way rather than the final one. The process is forced: the maximum is the only element whose move can shrink the gap, and once the maximum is odd it is frozen, and so is every deviation after it.",
+  "geometric": "Each element is a vertical ladder of rungs at x, x/2, x/4, ... down to its odd core, and every element starts on its top rung. A max-heap triangle holds the current rung of each element with the highest at the apex. Each step the apex element steps down one rung; the band between the highest and lowest rung is the deviation, and you remember its narrowest width. The process stops when the apex sits on an odd rung.",
+  "visual": "nums [4,1,5,20,3] -> ladder tops: odd x2, even stays\n      4  2  10  20  6          lo = 2\nmax-heap        20             dev = 20-2 = 18\n              /    \\\n            10      6\n           /  \\\n          4    2\npop 20 even -> push 10, lo 2   top 10  dev 8\npop 10 even -> push 5,  lo 2   top 10  dev 8\npop 10 even -> push 5,  lo 2   top 6   dev 4\npop 6  even -> push 3,  lo 2   top 5   dev 3 <- best\npop 5  odd  -> frozen, stop          answer = 3\nonly the max ever moves; min is tracked separately",
+  "steps": [
+   "For each x: v = 2x if x is odd else x. Push -v onto a max-heap; lo = min of all v.",
+   "best = infinity.",
+   "Loop: hi = -heap[0]; best = min(best, hi - lo).",
+   "If hi is odd, return best (the maximum cannot be halved any more).",
+   "Replace the root with hi // 2 and lo = min(lo, hi // 2)."
+  ],
+  "complexity": {
+   "time": "O(n log M log n)",
+   "space": "O(n)",
+   "why": "Each element is halved at most log M times and every halving is one heap operation on n entries."
   },
-  {
-    "slug": "employee_free_time",
-    "title": "Employee Free Time",
-    "leetcode": 759,
-    "difficulty": "Hard",
-    "topic": "intervals",
-    "pattern": "K-way merge of sorted interval lists with a min-heap, emitting gaps",
-    "file": "intervals/employee_free_time.py",
-    "problem": "schedule[i] is the sorted, non-overlapping list of working intervals of employee i. Return the finite intervals of positive length during which every employee is free, in sorted order. Example: [[[1,2],[5,6]],[[1,3]],[[4,10]]] -> [[3,4]]. [[[1,3],[6,7]],[[2,4]],[[2,5],[9,12]]] -> [[5,6],[7,9]].",
-    "brute_force": {
-      "approach": "A common free interval must start at some employee's end time e and finish at some start time s > e, with no interval of anyone covering a point strictly between them. Try every (end, start) pair and check every interval; the valid pairs are exactly the maximal gaps. The waste: the check rescans all N intervals for every pair although, in time order, only the interval that ends latest so far decides whether a gap opens before the next start.",
-      "time": "O(N^3) for N total intervals",
-      "space": "O(N)",
-      "code": "def brute_force(schedule: List[List[Interval]]) -> List[Interval]:\n    # Every (end, start) pair is a candidate gap; keep it if no interval covers its interior.\n    all_iv = [iv for emp in schedule for iv in emp]\n    gaps = set()\n    for a in all_iv:\n        for b in all_iv:\n            if a.end < b.start and all(iv.end <= a.end or iv.start >= b.start for iv in all_iv):\n                gaps.add((a.end, b.start))\n    return [Interval(s, e) for s, e in sorted(gaps)]"
-    },
-    "optimization": "Redundancy one: gaps can be found in a single pass if all intervals are visited in start order while tracking the furthest end seen; a gap opens whenever the next start exceeds that end. Flattening and sorting everyone's intervals gives this in O(N log N). Redundancy two: each employee's list is already sorted, so a full re-sort ignores the given structure. A k-way merge replaces it: push each employee's first interval into a min-heap keyed by start, pop the earliest, compare its start against the running furthest end (gap if larger), extend the end, and push that employee's next interval. O(N log k) with k employees, the same mechanism as merging k sorted lists with 'emit a gap' instead of 'append a node'.",
-    "intuition": "You need the union of everyone's busy time; the free time is its complement minus the unbounded ends. Intervals popped in start order from the heap arrive exactly like a single merged sorted list. Keep 'the latest moment anyone has been busy up to now'; if the next busy interval starts after that moment, the stretch in between is free for all. Nested or touching intervals never open a gap because reach only grows.",
-    "geometric": "k rows of bars (one per employee) above a shared time axis; a min-heap triangle holds the leftmost unprocessed bar from each row, earliest start at the apex. A sweep line sits at the furthest right edge merged so far. Each pop takes the apex bar: if its left edge is beyond the sweep line, the white space between them is a free interval; either way the sweep line jumps to max(itself, the bar's right edge).",
-    "visual": "time  1  2  3  4  5  6  7  8  9  10 11 12\ne0    [=====]        [==]\ne1       [=====]\ne2       [========]           [========]\nfree              ^^^^  ^^^^^^^\nheap (start, emp, idx): pop earliest start each time\npop (1,e0) reach=3 | pop (2,e1) reach=4 | pop (2,e2) reach=5\npop (6,e0): 6 > reach 5 -> FREE [5,6]; reach=7\npop (9,e2): 9 > reach 7 -> FREE [7,9]; reach=12\nanswer [[5,6],[7,9]]; a gap opens only when start > reach",
-    "steps": [
-      "heap = [(schedule[i][0].start, i, 0) for every non-empty employee i]; heapify.",
-      "Pop (start, i, j); if reach is set and start > reach, emit Interval(reach, start).",
-      "reach = max(reach, schedule[i][j].end).",
-      "If j + 1 < len(schedule[i]) push (schedule[i][j+1].start, i, j+1).",
-      "Repeat until the heap is empty; return the emitted intervals."
-    ],
-    "complexity": {
-      "time": "O(N log k)",
-      "space": "O(k)",
-      "why": "Each of the N intervals passes once through a heap that holds at most one entry per employee."
-    },
-    "pitfalls": [
-      "Emitting zero-length gaps when an interval starts exactly when another ends.",
-      "Setting reach to the popped interval's end without taking the max, so a nested interval shrinks the busy span.",
-      "Crashing on employees with empty schedules."
-    ],
-    "hints": [
-      "Free time for everyone is the complement of the union of all busy intervals. How do you compute a union of intervals?",
-      "Visit all intervals in start order while tracking the furthest end so far; a gap appears when the next start is beyond it.",
-      "The lists are already sorted: k-way merge them with a min-heap of (start, employee, index) instead of re-sorting everything."
-    ],
-    "code": "class Solution:\n    def employeeFreeTime(self, schedule: List[List[Interval]]) -> List[Interval]:\n        heap = [(emp[0].start, i, 0) for i, emp in enumerate(schedule) if emp]\n        heapq.heapify(heap)                           # (start, employee, index): k-way merge\n        free = []\n        reach = None                                  # furthest end of busy time merged so far\n        while heap:\n            start, i, j = heapq.heappop(heap)\n            iv = schedule[i][j]\n            if reach is not None and start > reach:   # nobody is busy in (reach, start)\n                free.append(Interval(reach, start))\n            reach = iv.end if reach is None else max(reach, iv.end)\n            if j + 1 < len(schedule[i]):\n                heapq.heappush(heap, (schedule[i][j + 1].start, i, j + 1))\n        return free",
-    "related": [
-      "merge_intervals",
-      "merge_k_sorted_lists",
-      "meeting_rooms_ii",
-      "insert_interval"
-    ]
+  "pitfalls": [
+   "Returning the final deviation instead of the minimum seen.",
+   "Forgetting to update the running minimum after a halving.",
+   "Treating 'double an even number' as a useful move."
+  ],
+  "hints": [
+   "Which values can a single element ever take? Write out the chain for 12 and for 7.",
+   "Start every element at the top of its chain; then the only move left is halving. Which element is ever worth halving?",
+   "Max-heap of normalised values plus a running min: pop the max, record the deviation, halve if even, stop when the max is odd."
+  ],
+  "code": "class Solution:\n    def minimumDeviation(self, nums: List[int]) -> int:\n        heap = [-(x * 2 if x % 2 else x) for x in nums]   # every element at the top of its ladder\n        heapq.heapify(heap)\n        lo = -max(heap)                                    # running minimum (max of negatives)\n        best = float(\"inf\")\n        while True:\n            hi = -heap[0]                                  # the only element worth moving\n            best = min(best, hi - lo)\n            if hi % 2:                                     # odd maximum: frozen, nothing else helps\n                return best\n            heapq.heapreplace(heap, -(hi // 2))\n            lo = min(lo, hi // 2)",
+  "related": [
+   "kth_largest_element_in_an_array",
+   "find_median_from_data_stream",
+   "course_schedule_iii"
+  ]
+ },
+ {
+  "slug": "minimum_number_of_refueling_stops",
+  "title": "Minimum Number of Refueling Stops",
+  "leetcode": 871,
+  "difficulty": "Hard",
+  "topic": "heap",
+  "pattern": "Greedy with a max-heap of passed-but-unused options (refuel only when stuck)",
+  "file": "heap/minimum_number_of_refueling_stops.py",
+  "problem": "A car starts with startFuel litres and must reach position target, using one litre per mile. stations[i] = [position, fuel] are sorted by position and lie before the target. Return the minimum number of refuelling stops, or -1 if the target is unreachable; the tank is unlimited. Example: target=100, startFuel=10, stations=[[10,60],[20,30],[30,30],[60,40]] -> 2 (stop at 10 for 60 litres, then at 60 for 40).",
+  "brute_force": {
+   "approach": "Try every subset of stations: drive in order, refuel at the chosen ones, check the fuel never runs out before the next chosen station and the target, and keep the smallest feasible subset. Exponential. The waste: whether the car can pass station i depends only on the total fuel collected so far, not on which stations supplied it, so subsets with the same count and the same prefix are re-simulated endlessly.",
+   "time": "O(2^n * n), exponential",
+   "space": "O(n)",
+   "code": "def brute_force(target: int, startFuel: int, stations: List[List[int]]) -> int:\n    # Exponential: every subset of stations, simulated in order; keep the smallest feasible one.\n    n, best = len(stations), -1\n    for mask in range(1 << n):\n        fuel, ok = startFuel, True\n        for i in range(n):\n            if mask >> i & 1:\n                if fuel < stations[i][0]:\n                    ok = False\n                    break\n                fuel += stations[i][1]\n        if ok and fuel >= target:\n            count = bin(mask).count(\"1\")\n            if best < 0 or count < best:\n                best = count\n    return best"
   },
-  {
-    "slug": "minimum_interval_to_include_each_query",
-    "title": "Minimum Interval to Include Each Query",
-    "leetcode": 1851,
-    "difficulty": "Hard",
-    "topic": "intervals",
-    "pattern": "Offline queries sorted + sweep by start + min-heap by size with lazy removal",
-    "file": "intervals/minimum_interval_to_include_each_query.py",
-    "problem": "Given intervals [left, right] and queries q, answer each query with the size (right - left + 1) of the smallest interval containing q, or -1 if none does. Answers must be returned in the original query order. Example: intervals=[[1,4],[2,4],[3,6],[4,4]], queries=[2,3,4,5] -> [3,3,1,4].",
-    "brute_force": {
-      "approach": "For each query scan every interval and keep the smallest size among those with left <= q <= right. The waste: consecutive queries (in sorted order) share almost all of their containing intervals, yet every query rediscovers the whole set from scratch.",
-      "time": "O(n * m)",
-      "space": "O(1)",
-      "code": "def brute_force(intervals: List[List[int]], queries: List[int]) -> List[int]:\n    # For each query, scan every interval and keep the smallest size that contains it.\n    return [min((r - l + 1 for l, r in intervals if l <= q <= r), default=-1) for q in queries]"
-    },
-    "optimization": "The redundancy is recomputing 'which intervals contain q' independently per query. Answer the queries offline in increasing order, remembering their original positions. Then an interval becomes a candidate once its left <= q and stays one for all later queries until q passes its right. Sort intervals by left and push every interval whose left <= q into a candidate set as q grows. Within the candidates we want the smallest size among those with right >= q, so keep them in a min-heap keyed by (size, right); before answering, pop the top while its right < q (expired, lazily removed; an expired interval below the top does no harm because only the top is read). Each interval is pushed once and popped at most once: O((n + m) log n) plus the two sorts.",
-    "intuition": "Sort both sides so the sweep moves one way only. Walking the queries from left to right, the pool of intervals that have started grows and never shrinks; some of those have ended and are useless, but you only need to discard them when they would otherwise be reported as the answer. The heap's top is always the smallest live candidate, so each query is answered in amortised O(log n).",
-    "geometric": "Intervals are horizontal bars above a number line, sorted by left edge. A vertical sweep line jumps from query to query, left to right. Every bar whose left edge the line has passed is dropped into a min-heap triangle with the shortest bar at the apex. Bars whose right edge is behind the line are dead: they stay in the triangle until they reach the apex and are then discarded. The apex length is the answer for the query at the line.",
-    "visual": "num   1  2  3  4  5  6\n[1,4] [========]          size 4\n[2,4]    [=====]          size 3\n[3,6]       [========]    size 4\n[4,4]          []         size 1\nqueries sorted 2 3 4 5; heap = min-heap of (size, right)\nq=2: push left<=2: (4,r4) (3,r4)   top (3,r4) -> 3\nq=3: push (4,r6)                    top (3,r4) -> 3\nq=4: push (1,r4)                    top (1,r4) -> 1\nq=5: pop r4<5 three times (lazy)    top (4,r6) -> 4\nanswers back in original order: [3,3,1,4]",
-    "steps": [
-      "Sort intervals by left; sort query indices by query value; i = 0; live = [].",
-      "For each query q in ascending order: while i < n and intervals[i].left <= q, push (size, right) and advance i.",
-      "While live and live[0].right < q: pop (expired).",
-      "ans[original index] = live[0].size if live else -1.",
-      "Return ans."
-    ],
-    "complexity": {
-      "time": "O(n log n + m log m)",
-      "space": "O(n + m)",
-      "why": "Two sorts, then each interval is pushed and popped at most once across all queries."
-    },
-    "pitfalls": [
-      "Returning answers in sorted-query order instead of the original order.",
-      "Popping with <= instead of <, since a query equal to the right endpoint is contained.",
-      "Using right - left instead of right - left + 1 as the size."
-    ],
-    "hints": [
-      "Nothing forces you to answer the queries in the given order. What becomes easy if you sort them?",
-      "As q increases, intervals with left <= q accumulate; among them you need the smallest that has not ended yet.",
-      "Min-heap of (size, right): push intervals as their left is passed, pop while the top's right < q, read the top."
-    ],
-    "code": "class Solution:\n    def minInterval(self, intervals: List[List[int]], queries: List[int]) -> List[int]:\n        intervals.sort()                                        # by left edge\n        order = sorted(range(len(queries)), key=queries.__getitem__)\n        live = []                                               # min-heap of (size, right)\n        ans = [-1] * len(queries)\n        i = 0\n        for qi in order:\n            q = queries[qi]\n            while i < len(intervals) and intervals[i][0] <= q:  # intervals that have started\n                left, right = intervals[i]\n                heapq.heappush(live, (right - left + 1, right))\n                i += 1\n            while live and live[0][1] < q:                      # lazy removal of ended ones\n                heapq.heappop(live)\n            if live:\n                ans[qi] = live[0][0]\n        return ans",
-    "related": [
-      "meeting_rooms_ii",
-      "merge_intervals",
-      "the_skyline_problem",
-      "non_overlapping_intervals"
-    ]
-  }
+  "optimization": "The redundancy is deciding at each station whether to stop, as if the decision had to be made on the spot. Observation: fuel from a station we have already driven past can be banked retroactively; it does not matter whether we poured it in when we passed or decide later, as long as every counted stop is a station we actually reached. So drive forward without stopping and keep the fuel amounts of all passed stations in a max-heap. Whenever the next position is out of reach, retroactively take the largest passed station (fewest stops for the most range) and repeat until the position is reachable or the heap is empty (then -1). Exchange argument: any optimal plan that refuelled at a smaller passed station can swap to the largest without reducing fuel at any point. Each station is pushed once and popped at most once: O(n log n).",
+  "intuition": "Procrastinate the decision. Driving past a station costs nothing; you only need to commit to stops when you would otherwise run dry, and at that moment you know exactly which stations are behind you. Picking the biggest available tank each time minimises the number of commits. Treating the target as a final station with zero fuel keeps the loop uniform.",
+  "geometric": "A number line from 0 to target with station ticks. The car's reach is a bar from 0 to startFuel. Each station the bar covers drops its fuel into a max-heap triangle. When the next tick (or the target) lies beyond the bar's end, pull the apex of the triangle out and extend the bar by that amount; keep pulling until the tick is covered or the triangle is empty.",
+  "visual": "0----10----20----30--------60----------------100\n     s60   s30   s30       s40               target\nfuel=10: reach 10 -> push 60       heap [60]\npos 20 : 10 < 20 -> pop 60, fuel=70, stops=1\n         push 30                   heap [30]\npos 30 : 70 >= 30 -> push 30       heap [30,30]\npos 60 : 70 >= 60 -> push 40       heap [40,30,30]\ntarget : 70 < 100 -> pop 40, fuel=110, stops=2\n         max-heap    40     apex = biggest tank\n                    /  \\    we drove past\n                  30    30\nanswer = 2; a stop is committed only when stuck",
+  "steps": [
+   "Append [target, 0] to the stations so the target is handled like any stop; fuel = startFuel.",
+   "passed = [] (max-heap of fuel amounts, negated), stops = 0.",
+   "For each (pos, gas): while fuel < pos: if passed is empty return -1; fuel += pop max; stops += 1.",
+   "Push gas onto passed (this station has now been reached).",
+   "Return stops."
+  ],
+  "complexity": {
+   "time": "O(n log n)",
+   "space": "O(n)",
+   "why": "Each station is pushed into the heap once and popped at most once."
+  },
+  "pitfalls": [
+   "Refuelling eagerly at every station, which counts stops you did not need.",
+   "Forgetting to treat the target as the final stop.",
+   "Pushing a station's fuel before checking that it was actually reached."
+  ],
+  "hints": [
+   "You do not have to decide at a station whether to stop; what matters is only how much fuel you have when you get stuck.",
+   "Keep every passed station's fuel available; when stuck, which one should you retroactively have used?",
+   "Max-heap of passed fuel amounts: while fuel < next position, pop the largest and count a stop; -1 if the heap is empty."
+  ],
+  "code": "class Solution:\n    def minRefuelStops(self, target: int, startFuel: int, stations: List[List[int]]) -> int:\n        passed = []                                   # max-heap (negated) of fuel at passed stations\n        fuel, stops = startFuel, 0\n        for pos, gas in stations + [[target, 0]]:     # treat the target as the last stop\n            while fuel < pos:                         # cannot reach pos: retroactively refuel\n                if not passed:\n                    return -1\n                fuel -= heapq.heappop(passed)         # take the largest tank we drove past\n                stops += 1\n            heapq.heappush(passed, -gas)              # reached pos: its fuel is now available\n        return stops",
+  "related": [
+   "jump_game_ii",
+   "gas_station",
+   "ipo"
+  ]
+ },
+ {
+  "slug": "meeting_rooms_iii",
+  "title": "Meeting Rooms III",
+  "leetcode": 2402,
+  "difficulty": "Hard",
+  "topic": "heap",
+  "pattern": "Two heaps (free rooms by id, busy rooms by end time) over a sorted sweep",
+  "file": "heap/meeting_rooms_iii.py",
+  "problem": "There are n rooms numbered 0..n-1 and meetings [start, end) with distinct starts. Each meeting takes the lowest-numbered free room; if none is free it is delayed until the earliest room frees up (ties: lowest number), keeping its duration. Return the room that hosts the most meetings (lowest number on ties). Example: n=2, [[0,10],[1,5],[2,7],[3,4]] -> 0 (room 0 hosts [0,10] and [10,11]; room 1 hosts [1,5] and the delayed [5,10]).",
+  "brute_force": {
+   "approach": "Keep an array free_at[r] of when each room becomes free. Process meetings in start order; for each one scan all n rooms: take the lowest-numbered room with free_at[r] <= start, or, if none, the room with the smallest free_at (lowest number on ties) and delay the meeting to that time. The waste: every meeting rescans all n rooms although the set of free rooms changes by only a few entries between consecutive meetings.",
+   "time": "O(m log m + m * n)",
+   "space": "O(n)",
+   "code": "def brute_force(n: int, meetings: List[List[int]]) -> int:\n    # Scan all n rooms for every meeting: lowest free room, else earliest-free room.\n    meetings = sorted(meetings)\n    free_at = [0] * n\n    count = [0] * n\n    for start, end in meetings:\n        room = next((r for r in range(n) if free_at[r] <= start), -1)\n        if room < 0:\n            room = min(range(n), key=lambda r: (free_at[r], r))\n            end = free_at[room] + (end - start)\n        free_at[room] = end\n        count[room] += 1\n    return count.index(max(count))"
+  },
+  "optimization": "The redundancy is the full scan over rooms to answer two questions: 'lowest free room id' and 'earliest-ending busy room'. Each is a min-query over a set that only changes incrementally, so give each its own min-heap: free holds room ids, busy holds (end, room). Sweeping meetings by start, first move every busy room with end <= start into free. If free is non-empty its root is the answer; otherwise the busy root (end, room) is the earliest to free up, ties broken by room id automatically by tuple ordering, and the meeting is rescheduled to [end, end + duration] in that room. Each meeting does O(1) heap operations, so O((m + n) log n) after the O(m log m) sort.",
+  "intuition": "Two queues of rooms: idle ones ordered by number, busy ones ordered by when they finish. Meetings arrive in time order, so before placing one, release every room whose meeting has finished by now. The lowest idle room wins; if there are none, the soonest-free room wins and the meeting simply slides forward to that moment. Counting assignments per room gives the answer.",
+  "geometric": "Rooms are horizontal lanes stacked top to bottom, time runs right. A sweep line at each new start pulls finished bars' lanes into the free pile (a min-heap by lane number) and leaves running bars in the busy pile (a min-heap by right edge). A new bar lands in the top-most free lane, or, if every lane is occupied at the sweep line, is pushed right until the earliest right edge and glued onto that lane.",
+  "visual": "time   0    2    4    6    8    10   12\nroom0  [0,10)========================][10,11)\nroom1       [1,5)========][5,10)=======]\nfree = min-heap of ids    busy = min-heap of (end,room)\nt=0 [0,10): free [0,1] -> room 0   busy [(10,0)]\nt=1 [1,5) : free [1]   -> room 1   busy [(5,1),(10,0)]\nt=2 [2,7) : free []    -> pop busy (5,1): delay\n            to [5,10) in room 1    busy [(10,0),(10,1)]\nt=3 [3,4) : free []    -> pop (10,0): [10,11) room 0\ncount = [2, 2] -> lowest id with the max = 0",
+  "steps": [
+   "Sort meetings by start. free = heap of [0..n-1]; busy = [] of (end, room); count = [0] * n.",
+   "For (s, e): while busy and busy[0].end <= s, pop it and push its room onto free.",
+   "If free is non-empty: room = heappop(free), end = e.",
+   "Else: (t, room) = heappop(busy); end = t + (e - s).",
+   "heappush(busy, (end, room)); count[room] += 1.",
+   "Return the index of the maximum count (first one on ties)."
+  ],
+  "complexity": {
+   "time": "O(m log m + (m + n) log n)",
+   "space": "O(n)",
+   "why": "Sorting the meetings, then a constant number of heap operations per meeting on heaps of size at most n."
+  },
+  "pitfalls": [
+   "Not releasing all expired rooms before choosing, so a lower-numbered free room is missed.",
+   "Forgetting to preserve the duration when a meeting is delayed.",
+   "Releasing with < instead of <= (a meeting may start exactly when a room frees)."
+  ],
+  "hints": [
+   "Two different questions are asked per meeting: which idle room has the lowest id, and which busy room finishes first.",
+   "Each question is a min over a set that changes by one element at a time; give each its own heap.",
+   "Sort meetings by start; move busy rooms with end <= start into free; take free's root or delay into busy's root."
+  ],
+  "code": "class Solution:\n    def mostBooked(self, n: int, meetings: List[List[int]]) -> int:\n        meetings.sort()\n        free = list(range(n))                          # min-heap of idle room ids\n        busy = []                                      # min-heap of (end time, room id)\n        count = [0] * n\n        for start, end in meetings:\n            while busy and busy[0][0] <= start:        # release every room that has finished\n                _, room = heapq.heappop(busy)\n                heapq.heappush(free, room)\n            if free:\n                room = heapq.heappop(free)\n            else:                                      # all busy: wait for the earliest, lowest id\n                t, room = heapq.heappop(busy)\n                end = t + (end - start)                # same duration, delayed start\n            heapq.heappush(busy, (end, room))\n            count[room] += 1\n        return count.index(max(count))",
+  "related": [
+   "meeting_rooms_ii",
+   "task_scheduler",
+   "find_median_from_data_stream"
+  ]
+ },
+ {
+  "slug": "rearrange_string_k_distance_apart",
+  "title": "Rearrange String k Distance Apart",
+  "leetcode": 358,
+  "difficulty": "Hard",
+  "topic": "heap",
+  "pattern": "Greedy max-heap by remaining count + fixed-length cooldown queue",
+  "file": "heap/rearrange_string_k_distance_apart.py",
+  "problem": "Rearrange string s so that identical characters are at least k positions apart. Return any valid rearrangement, or an empty string if none exists (k = 0 means no constraint). Example: s=\"aabbcc\", k=3 -> \"abcabc\". s=\"aaabc\", k=3 -> \"\". s=\"aaadbbcc\", k=2 -> \"abacabcd\" (one of several valid answers).",
+  "brute_force": {
+   "approach": "Backtracking: fill positions left to right; at each position try every character that still has copies and does not appear in the previous k-1 positions. Exponential. The waste: the search explores orderings that are doomed early (whenever a frequent character is postponed it later needs more slots than remain) and retries equivalent prefixes that differ only in the order of characters with identical counts.",
+   "time": "O(26^n), exponential",
+   "space": "O(n)",
+   "code": "def brute_force(s: str, k: int) -> str:\n    # Exponential backtracking: at each slot try every char not used in the previous k-1 slots.\n    counts = Counter(s)\n    out: List[str] = []\n\n    def place() -> bool:\n        if len(out) == len(s):\n            return True\n        recent = set(out[-(k - 1):]) if k > 1 else set()\n        for ch in sorted(counts):\n            if counts[ch] and ch not in recent:\n                counts[ch] -= 1\n                out.append(ch)\n                if place():\n                    return True\n                out.pop()\n                counts[ch] += 1\n        return False\n\n    return \"\".join(out) if place() else \"\""
+  },
+  "optimization": "The redundancy is searching over which character to place when one choice is provably safe: the eligible character with the most remaining copies. If another eligible character were placed first, swapping it with the next placement of the most-frequent one never creates a violation (exchange argument), so a greedy sequence of choices is optimal. Two structures make 'most frequent eligible character' O(log 26): a max-heap keyed by remaining count for eligible characters, and a FIFO cooldown queue of length k holding the characters placed in the last k slots. After placing a character it goes to the back of the queue; once the queue holds k entries its front has waited k slots and, if it still has copies, returns to the heap. If the heap is empty before the string is complete, no arrangement exists. O(n log 26).",
+  "intuition": "Think of the characters as workers who need a k-slot rest after each shift. Always schedule the rested worker with the most shifts left: postponing them only piles up their shifts into fewer remaining slots. The rest bench is a queue: whoever sat down first stands up first, exactly k slots later. An empty pool of rested workers while slots remain means someone must break the rest rule, so the answer is the empty string.",
+  "geometric": "A conveyor belt of empty slots moving left. Above it a triangle (max-heap) of rested letters with the biggest count at the apex; beside it a short tube of length k (the cooldown queue). Each tick the apex letter drops onto the belt and slides into the back of the tube, pushing the letter at the tube's front out and back up into the triangle. The tube's length is precisely the gap the problem demands.",
+  "visual": "s=\"aabbcc\" k=3   heap (count,ch) max on top   queue len k\nheap    (2,a)              invariant: a char is in the\n       /     \\             heap only if its last use is\n    (2,b)   (2,c)          >= k slots ago\nslot pop  out      queue after push    released\n 0   a    a        [a1]                -\n 1   b    ab       [a1,b1]             -\n 2   c    abc      [a1,b1,c1] full ->  a1 -> heap\n 3   a    abca     [b1,c1,a0]          b1 -> heap\n 4   b    abcab    [c1,a0,b0]          c1 -> heap\n 5   c    abcabc   [a0,b0,c0]          a0 (used up)\nheap empty with slots left => \"\"  (e.g. \"aaabc\", k=3)",
+  "steps": [
+   "If k <= 1 return s. Count characters; heap = max-heap of (-count, ch).",
+   "cooldown = deque(); out = [].",
+   "For each of n positions: if the heap is empty return \"\"; pop (-cnt, ch); append ch; push (-(cnt-1), ch) onto cooldown (even if the count is now 0, so positions line up).",
+   "If len(cooldown) == k: pop its front; if its count > 0 push it back onto the heap.",
+   "Return \"\".join(out)."
+  ],
+  "complexity": {
+   "time": "O(n log A), A = alphabet size",
+   "space": "O(A + k)",
+   "why": "Each placement is one heap pop and at most one push on a heap of at most 26 entries; the queue holds k."
+  },
+  "pitfalls": [
+   "Releasing a character after k-1 slots instead of k.",
+   "Skipping the cooldown queue for characters whose count hit zero, so the queue length no longer measures distance.",
+   "Not handling k <= 1, where every string is valid."
+  ],
+  "hints": [
+   "Which character is the most dangerous to postpone? The one with the most copies left.",
+   "After placing a character it must sit out exactly k slots. What structure releases things in the order they were placed?",
+   "Max-heap of (count, char) plus a deque of length k: pop the most frequent, place it, enqueue it; when the deque is full, dequeue and re-push if copies remain."
+  ],
+  "code": "class Solution:\n    def rearrangeString(self, s: str, k: int) -> str:\n        if k <= 1:\n            return s\n        heap = [(-cnt, ch) for ch, cnt in Counter(s).items()]   # max-heap by remaining count\n        heapq.heapify(heap)\n        cooldown = deque()                                      # chars placed in the last k slots\n        out = []\n        for _ in range(len(s)):\n            if not heap:                                        # nobody is rested: impossible\n                return \"\"\n            neg, ch = heapq.heappop(heap)\n            out.append(ch)\n            cooldown.append((neg + 1, ch))                      # one fewer copy left\n            if len(cooldown) == k:                              # front has waited k slots\n                neg, ch = cooldown.popleft()\n                if neg < 0:\n                    heapq.heappush(heap, (neg, ch))\n        return \"\".join(out)",
+  "related": [
+   "reorganize_string",
+   "task_scheduler",
+   "top_k_frequent_words"
+  ]
+ },
+ {
+  "slug": "trapping_rain_water_ii",
+  "title": "Trapping Rain Water II",
+  "leetcode": 407,
+  "difficulty": "Hard",
+  "topic": "heap",
+  "pattern": "Min-heap frontier expanding inward from the boundary (lowest wall first)",
+  "file": "heap/trapping_rain_water_ii.py",
+  "problem": "Given an m x n elevation map, return the volume of water trapped after raining. Water can only escape over the border, flowing through 4-directionally adjacent cells. Example: [[1,4,3,1,3,2],[3,2,1,3,2,4],[2,3,3,2,3,1]] -> 4 (the middle row's 2, 1 and 2 fill up to height 3).",
+  "brute_force": {
+   "approach": "Let level[c] be the final water surface at cell c: border cells have level = height, and every interior cell obeys level[c] = max(height[c], min over neighbours of level). Initialise interior levels to infinity and sweep the grid repeatedly, lowering levels by that rule until a full sweep changes nothing; answer = sum(level - height). A level drop can propagate one cell per sweep along a snaking path, so there can be O(mn) sweeps. The waste: every sweep re-examines every cell although only cells next to a just-lowered neighbour can change.",
+   "time": "O((mn)^2)",
+   "space": "O(mn)",
+   "code": "def brute_force(heightMap: List[List[int]]) -> int:\n    # Relax level[c] = max(h[c], min(neighbour levels)) over the whole grid until stable.\n    m, n = len(heightMap), len(heightMap[0])\n    inf = float(\"inf\")\n    level = [[h if r in (0, m - 1) or c in (0, n - 1) else inf\n              for c, h in enumerate(row)] for r, row in enumerate(heightMap)]\n    changed = True\n    while changed:\n        changed = False\n        for r in range(1, m - 1):\n            for c in range(1, n - 1):\n                low = min(level[r - 1][c], level[r + 1][c], level[r][c - 1], level[r][c + 1])\n                new = max(heightMap[r][c], low)\n                if new < level[r][c]:\n                    level[r][c] = new\n                    changed = True\n    return sum(level[r][c] - heightMap[r][c] for r in range(m) for c in range(n))"
+  },
+  "optimization": "The redundancy is visiting cells whose level cannot change yet. Observation: the water level at a cell equals the minimax path value to the border, the smallest over all escape paths of the tallest wall on the path. That is a shortest-path problem with max instead of sum, so Dijkstra applies: start from all border cells (level = their own height) in a min-heap keyed by level, repeatedly pop the lowest cell on the frontier, and for each unvisited neighbour set its level to max(popped level, its height), bank the difference as water, and push it. Popping in increasing order guarantees that when a cell is settled no lower escape route exists. Each cell enters the heap once: O(mn log(mn)).",
+  "intuition": "Imagine the outer ring as a dam of varying height with water rising from outside. The weakest point of the dam is its lowest cell; water pours over it into the neighbour behind, which either sits lower (fills up to the dam's level, trapping water) or higher (becomes part of a new, taller wall). Either way that neighbour now belongs to the dam and the old low point is retired. Always breach the lowest cell of the current dam and the fill levels come out exactly right.",
+  "geometric": "A ring of boundary cells drawn as a closed curve; a min-heap triangle holds the ring with its lowest cell at the apex. Each step pops the apex, pulls its unvisited neighbours into the ring at height max(apex level, own height), and the ring shrinks inward. The volume accumulates as the sum over cells of (level they joined the ring at - own height).",
+  "visual": "grid   1 4 3 1 3 2    B = border cell (seeded in heap)\n       3 . . . . 4    . = interior, not yet reached\n       2 3 3 2 3 1    heap = min-heap (level, r, c)\npop (1,0,0),(1,0,3)...: lowest dam cells first\n  (1,0,3) -> nb (1,3)=3: +0 water, push lvl 3\npop (2,*): all neighbours already seen\npop (3,0,2) -> nb (1,2)=1: +2 water, push lvl 3\npop (3,0,4) -> nb (1,4)=2: +1 water, push lvl 3\npop (3,1,0) -> nb (1,1)=2: +1 water, push lvl 3\nrest pops find nothing unseen        answer = 4\ninvariant: popped level = min escape height so far",
+  "steps": [
+   "Push every border cell (height, r, c) into a min-heap and mark it visited.",
+   "While the heap is not empty: pop (level, r, c), the lowest point of the current dam.",
+   "For each unvisited 4-neighbour: mark it visited, water += max(0, level - h), push (max(level, h), nr, nc).",
+   "Return water."
+  ],
+  "complexity": {
+   "time": "O(mn log(mn))",
+   "space": "O(mn)",
+   "why": "Every cell is pushed and popped exactly once; the visited grid and the heap are the extra memory."
+  },
+  "pitfalls": [
+   "Pushing the neighbour's own height instead of max(level, height): the water level never drops moving inward.",
+   "Marking visited at pop time instead of push time, so cells are pushed twice with different levels.",
+   "Expecting water in grids with fewer than 3 rows or columns."
+  ],
+  "hints": [
+   "Water at a cell is bounded by the lowest 'wall' it must climb over on its best route to the border.",
+   "That is a shortest path where the cost of a path is its maximum height. Which algorithm settles cells in increasing cost?",
+   "Dijkstra from all border cells with a min-heap: pop the lowest, neighbours get level max(popped, own height), bank the difference."
+  ],
+  "code": "class Solution:\n    def trapRainWater(self, heightMap: List[List[int]]) -> int:\n        m, n = len(heightMap), len(heightMap[0])\n        seen = [[False] * n for _ in range(m)]\n        frontier = []                                 # min-heap of (water level, r, c)\n        for r in range(m):\n            for c in range(n):\n                if r in (0, m - 1) or c in (0, n - 1):\n                    seen[r][c] = True\n                    frontier.append((heightMap[r][c], r, c))\n        heapq.heapify(frontier)\n        water = 0\n        while frontier:\n            level, r, c = heapq.heappop(frontier)     # lowest point of the current dam\n            for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):\n                if 0 <= nr < m and 0 <= nc < n and not seen[nr][nc]:\n                    seen[nr][nc] = True\n                    h = heightMap[nr][nc]\n                    water += max(0, level - h)        # fills up to the dam's level\n                    heapq.heappush(frontier, (max(level, h), nr, nc))\n        return water",
+  "related": [
+   "trapping_rain_water",
+   "network_delay_time",
+   "pacific_atlantic_water_flow",
+   "rotting_oranges"
+  ]
+ },
+ {
+  "slug": "the_skyline_problem",
+  "title": "The Skyline Problem",
+  "leetcode": 218,
+  "difficulty": "Hard",
+  "topic": "heap",
+  "pattern": "Sweep line over events + max-heap with lazy removal",
+  "file": "heap/the_skyline_problem.py",
+  "problem": "Buildings are given as [left, right, height] rectangles on a shared ground line. Return the skyline as a list of key points [x, y] where the outline's height changes, sorted by x and ending with a point of height 0; consecutive points must not share a height. Example: [[2,9,10],[3,7,15],[5,12,12],[15,20,10],[19,24,8]] -> [[2,10],[3,15],[7,12],[12,0],[15,10],[20,8],[24,0]].",
+  "brute_force": {
+   "approach": "The outline can only change at a building edge. Collect all distinct left/right x values, sort them, and at each x compute the tallest building with left <= x < right by scanning all n buildings; emit [x, height] whenever that height differs from the previous one. The waste: at each of the 2n edges the whole set of buildings is rescanned for the max, although between consecutive edges exactly one building was added or removed.",
+   "time": "O(n^2)",
+   "space": "O(n)",
+   "code": "def brute_force(buildings: List[List[int]]) -> List[List[int]]:\n    # At every edge x, rescan all buildings for the tallest covering x (left <= x < right).\n    xs = sorted({x for l, r, _ in buildings for x in (l, r)})\n    out, prev = [], 0\n    for x in xs:\n        h = max((hh for l, r, hh in buildings if l <= x < r), default=0)\n        if h != prev:\n            out.append([x, h])\n            prev = h\n    return out"
+  },
+  "optimization": "The redundancy is recomputing 'the tallest building covering x' from scratch when the covering set changes by one building per edge. Maintain that set in a max-heap of (height, right) as the sweep line crosses sorted edges: a left edge pushes its building; a right edge should remove one, but heaps cannot delete arbitrary entries. Lazy removal solves it: leave dead buildings in the heap and, before reading the top, pop while the top's right <= x. Since only the top is ever read, stale entries deeper down are harmless until they surface. Each building is pushed once and popped once: O(n log n). Sorting edges as (x, -height, right) with right edges as (x, 0, 0) makes starts at the same x come before ends and taller starts first, so equal-x ties produce no spurious points.",
+  "intuition": "Walk left to right; the skyline height at the sweep line is the tallest building currently alive. Births are easy to record; deaths are deferred until the dead building would otherwise be reported as the maximum. A sentinel (height 0, infinite right) keeps the heap non-empty so ground level is reported automatically when the last building ends. Append a key point only when the max changes, which is the definition of a key point.",
+  "geometric": "Rectangles standing on a line. A vertical sweep line slides right and stops at every left and right edge. Beside it a max-heap triangle holds the live rectangles, tallest at the apex; the apex height is the skyline height at the sweep line. Some entries in the triangle are ghosts (already ended) and are blown away only when they reach the apex. Whenever the apex height differs from the last recorded height, a new corner of the outline is drawn.",
+  "visual": "h15       +-------+\nh12       |       +---------+\nh10     +-+                 |     +---------+\nh 8     |                   |     |         +-------+\nh 0 ----+-------------------+-----+-----------------+-\n        2 3       7         12    15        20      24\nevents sorted (x,-h,r); live = max-heap (-h,r), lazy pops\nx=2  push (10,r9)        top 10 -> [2,10]\nx=3  push (15,r7)        top 15 -> [3,15]\nx=5  push (12,r12)       top 15 (no change)\nx=7  end: pop r7<=7      top 12 -> [7,12]\nx=9  end: r9 not on top  ghost stays in heap\nx=12 end: pop r12, r9    top 0  -> [12,0]",
+  "steps": [
+   "events = [(l, -h, r) for each building] + [(r, 0, 0) for each building]; sort.",
+   "live = [(0, inf)] (max-heap via negated heights; the sentinel never expires); out = [[0, 0]].",
+   "For (x, negh, r): while live[0].right <= x, pop (lazy removal of ended buildings).",
+   "If negh < 0: push (negh, r).",
+   "If -live[0][0] != out[-1][1]: append [x, -live[0][0]].",
+   "Return out[1:]."
+  ],
+  "complexity": {
+   "time": "O(n log n)",
+   "space": "O(n)",
+   "why": "2n events are sorted, and each building is pushed once and popped once."
+  },
+  "pitfalls": [
+   "Popping expired buildings with < instead of <= (a building ending at x does not cover x).",
+   "Processing a right edge before a left edge at the same x, producing a phantom dip to 0.",
+   "Emitting a point when the height did not change, or forgetting to drop the leading dummy point."
+  ],
+  "hints": [
+   "The outline only changes at building edges. What is the height at any edge x?",
+   "Sweep the edges in order and keep the set of buildings currently covering x; you only ever need its maximum.",
+   "Max-heap of (height, right). Can't delete from the middle? Leave dead entries in and pop them when they reach the top."
+  ],
+  "code": "class Solution:\n    def getSkyline(self, buildings: List[List[int]]) -> List[List[int]]:\n        # starts sort before ends at the same x (negative height < 0); taller starts first\n        events = sorted([(l, -h, r) for l, r, h in buildings] + [(r, 0, 0) for _, r, _ in buildings])\n        live = [(0, float(\"inf\"))]                   # max-heap of (-height, right); sentinel ground\n        out = [[0, 0]]                               # dummy so out[-1][1] always exists\n        for x, neg_h, right in events:\n            while live[0][1] <= x:                   # lazy removal: top has already ended\n                heapq.heappop(live)\n            if neg_h:\n                heapq.heappush(live, (neg_h, right))\n            if -live[0][0] != out[-1][1]:            # max changed: a corner of the outline\n                out.append([x, -live[0][0]])\n        return out[1:]",
+  "related": [
+   "merge_intervals",
+   "meeting_rooms_ii",
+   "largest_rectangle_in_histogram",
+   "sliding_window_maximum"
+  ]
+ },
+ {
+  "slug": "employee_free_time",
+  "title": "Employee Free Time",
+  "leetcode": 759,
+  "difficulty": "Hard",
+  "topic": "intervals",
+  "pattern": "K-way merge of sorted interval lists with a min-heap, emitting gaps",
+  "file": "intervals/employee_free_time.py",
+  "problem": "schedule[i] is the sorted, non-overlapping list of working intervals of employee i. Return the finite intervals of positive length during which every employee is free, in sorted order. Example: [[[1,2],[5,6]],[[1,3]],[[4,10]]] -> [[3,4]]. [[[1,3],[6,7]],[[2,4]],[[2,5],[9,12]]] -> [[5,6],[7,9]].",
+  "brute_force": {
+   "approach": "A common free interval must start at some employee's end time e and finish at some start time s > e, with no interval of anyone covering a point strictly between them. Try every (end, start) pair and check every interval; the valid pairs are exactly the maximal gaps. The waste: the check rescans all N intervals for every pair although, in time order, only the interval that ends latest so far decides whether a gap opens before the next start.",
+   "time": "O(N^3) for N total intervals",
+   "space": "O(N)",
+   "code": "def brute_force(schedule: List[List[Interval]]) -> List[Interval]:\n    # Every (end, start) pair is a candidate gap; keep it if no interval covers its interior.\n    all_iv = [iv for emp in schedule for iv in emp]\n    gaps = set()\n    for a in all_iv:\n        for b in all_iv:\n            if a.end < b.start and all(iv.end <= a.end or iv.start >= b.start for iv in all_iv):\n                gaps.add((a.end, b.start))\n    return [Interval(s, e) for s, e in sorted(gaps)]"
+  },
+  "optimization": "Redundancy one: gaps can be found in a single pass if all intervals are visited in start order while tracking the furthest end seen; a gap opens whenever the next start exceeds that end. Flattening and sorting everyone's intervals gives this in O(N log N). Redundancy two: each employee's list is already sorted, so a full re-sort ignores the given structure. A k-way merge replaces it: push each employee's first interval into a min-heap keyed by start, pop the earliest, compare its start against the running furthest end (gap if larger), extend the end, and push that employee's next interval. O(N log k) with k employees, the same mechanism as merging k sorted lists with 'emit a gap' instead of 'append a node'.",
+  "intuition": "You need the union of everyone's busy time; the free time is its complement minus the unbounded ends. Intervals popped in start order from the heap arrive exactly like a single merged sorted list. Keep 'the latest moment anyone has been busy up to now'; if the next busy interval starts after that moment, the stretch in between is free for all. Nested or touching intervals never open a gap because reach only grows.",
+  "geometric": "k rows of bars (one per employee) above a shared time axis; a min-heap triangle holds the leftmost unprocessed bar from each row, earliest start at the apex. A sweep line sits at the furthest right edge merged so far. Each pop takes the apex bar: if its left edge is beyond the sweep line, the white space between them is a free interval; either way the sweep line jumps to max(itself, the bar's right edge).",
+  "visual": "time  1  2  3  4  5  6  7  8  9  10 11 12\ne0    [=====]        [==]\ne1       [=====]\ne2       [========]           [========]\nfree              ^^^^  ^^^^^^^\nheap (start, emp, idx): pop earliest start each time\npop (1,e0) reach=3 | pop (2,e1) reach=4 | pop (2,e2) reach=5\npop (6,e0): 6 > reach 5 -> FREE [5,6]; reach=7\npop (9,e2): 9 > reach 7 -> FREE [7,9]; reach=12\nanswer [[5,6],[7,9]]; a gap opens only when start > reach",
+  "steps": [
+   "heap = [(schedule[i][0].start, i, 0) for every non-empty employee i]; heapify.",
+   "Pop (start, i, j); if reach is set and start > reach, emit Interval(reach, start).",
+   "reach = max(reach, schedule[i][j].end).",
+   "If j + 1 < len(schedule[i]) push (schedule[i][j+1].start, i, j+1).",
+   "Repeat until the heap is empty; return the emitted intervals."
+  ],
+  "complexity": {
+   "time": "O(N log k)",
+   "space": "O(k)",
+   "why": "Each of the N intervals passes once through a heap that holds at most one entry per employee."
+  },
+  "pitfalls": [
+   "Emitting zero-length gaps when an interval starts exactly when another ends.",
+   "Setting reach to the popped interval's end without taking the max, so a nested interval shrinks the busy span.",
+   "Crashing on employees with empty schedules."
+  ],
+  "hints": [
+   "Free time for everyone is the complement of the union of all busy intervals. How do you compute a union of intervals?",
+   "Visit all intervals in start order while tracking the furthest end so far; a gap appears when the next start is beyond it.",
+   "The lists are already sorted: k-way merge them with a min-heap of (start, employee, index) instead of re-sorting everything."
+  ],
+  "code": "class Solution:\n    def employeeFreeTime(self, schedule: List[List[Interval]]) -> List[Interval]:\n        heap = [(emp[0].start, i, 0) for i, emp in enumerate(schedule) if emp]\n        heapq.heapify(heap)                           # (start, employee, index): k-way merge\n        free = []\n        reach = None                                  # furthest end of busy time merged so far\n        while heap:\n            start, i, j = heapq.heappop(heap)\n            iv = schedule[i][j]\n            if reach is not None and start > reach:   # nobody is busy in (reach, start)\n                free.append(Interval(reach, start))\n            reach = iv.end if reach is None else max(reach, iv.end)\n            if j + 1 < len(schedule[i]):\n                heapq.heappush(heap, (schedule[i][j + 1].start, i, j + 1))\n        return free",
+  "related": [
+   "merge_intervals",
+   "merge_k_sorted_lists",
+   "meeting_rooms_ii",
+   "insert_interval"
+  ]
+ },
+ {
+  "slug": "minimum_interval_to_include_each_query",
+  "title": "Minimum Interval to Include Each Query",
+  "leetcode": 1851,
+  "difficulty": "Hard",
+  "topic": "intervals",
+  "pattern": "Offline queries sorted + sweep by start + min-heap by size with lazy removal",
+  "file": "intervals/minimum_interval_to_include_each_query.py",
+  "problem": "Given intervals [left, right] and queries q, answer each query with the size (right - left + 1) of the smallest interval containing q, or -1 if none does. Answers must be returned in the original query order. Example: intervals=[[1,4],[2,4],[3,6],[4,4]], queries=[2,3,4,5] -> [3,3,1,4].",
+  "brute_force": {
+   "approach": "For each query scan every interval and keep the smallest size among those with left <= q <= right. The waste: consecutive queries (in sorted order) share almost all of their containing intervals, yet every query rediscovers the whole set from scratch.",
+   "time": "O(n * m)",
+   "space": "O(1)",
+   "code": "def brute_force(intervals: List[List[int]], queries: List[int]) -> List[int]:\n    # For each query, scan every interval and keep the smallest size that contains it.\n    return [min((r - l + 1 for l, r in intervals if l <= q <= r), default=-1) for q in queries]"
+  },
+  "optimization": "The redundancy is recomputing 'which intervals contain q' independently per query. Answer the queries offline in increasing order, remembering their original positions. Then an interval becomes a candidate once its left <= q and stays one for all later queries until q passes its right. Sort intervals by left and push every interval whose left <= q into a candidate set as q grows. Within the candidates we want the smallest size among those with right >= q, so keep them in a min-heap keyed by (size, right); before answering, pop the top while its right < q (expired, lazily removed; an expired interval below the top does no harm because only the top is read). Each interval is pushed once and popped at most once: O((n + m) log n) plus the two sorts.",
+  "intuition": "Sort both sides so the sweep moves one way only. Walking the queries from left to right, the pool of intervals that have started grows and never shrinks; some of those have ended and are useless, but you only need to discard them when they would otherwise be reported as the answer. The heap's top is always the smallest live candidate, so each query is answered in amortised O(log n).",
+  "geometric": "Intervals are horizontal bars above a number line, sorted by left edge. A vertical sweep line jumps from query to query, left to right. Every bar whose left edge the line has passed is dropped into a min-heap triangle with the shortest bar at the apex. Bars whose right edge is behind the line are dead: they stay in the triangle until they reach the apex and are then discarded. The apex length is the answer for the query at the line.",
+  "visual": "num   1  2  3  4  5  6\n[1,4] [========]          size 4\n[2,4]    [=====]          size 3\n[3,6]       [========]    size 4\n[4,4]          []         size 1\nqueries sorted 2 3 4 5; heap = min-heap of (size, right)\nq=2: push left<=2: (4,r4) (3,r4)   top (3,r4) -> 3\nq=3: push (4,r6)                    top (3,r4) -> 3\nq=4: push (1,r4)                    top (1,r4) -> 1\nq=5: pop r4<5 three times (lazy)    top (4,r6) -> 4\nanswers back in original order: [3,3,1,4]",
+  "steps": [
+   "Sort intervals by left; sort query indices by query value; i = 0; live = [].",
+   "For each query q in ascending order: while i < n and intervals[i].left <= q, push (size, right) and advance i.",
+   "While live and live[0].right < q: pop (expired).",
+   "ans[original index] = live[0].size if live else -1.",
+   "Return ans."
+  ],
+  "complexity": {
+   "time": "O(n log n + m log m)",
+   "space": "O(n + m)",
+   "why": "Two sorts, then each interval is pushed and popped at most once across all queries."
+  },
+  "pitfalls": [
+   "Returning answers in sorted-query order instead of the original order.",
+   "Popping with <= instead of <, since a query equal to the right endpoint is contained.",
+   "Using right - left instead of right - left + 1 as the size."
+  ],
+  "hints": [
+   "Nothing forces you to answer the queries in the given order. What becomes easy if you sort them?",
+   "As q increases, intervals with left <= q accumulate; among them you need the smallest that has not ended yet.",
+   "Min-heap of (size, right): push intervals as their left is passed, pop while the top's right < q, read the top."
+  ],
+  "code": "class Solution:\n    def minInterval(self, intervals: List[List[int]], queries: List[int]) -> List[int]:\n        intervals.sort()                                        # by left edge\n        order = sorted(range(len(queries)), key=queries.__getitem__)\n        live = []                                               # min-heap of (size, right)\n        ans = [-1] * len(queries)\n        i = 0\n        for qi in order:\n            q = queries[qi]\n            while i < len(intervals) and intervals[i][0] <= q:  # intervals that have started\n                left, right = intervals[i]\n                heapq.heappush(live, (right - left + 1, right))\n                i += 1\n            while live and live[0][1] < q:                      # lazy removal of ended ones\n                heapq.heappop(live)\n            if live:\n                ans[qi] = live[0][0]\n        return ans",
+  "related": [
+   "meeting_rooms_ii",
+   "merge_intervals",
+   "the_skyline_problem",
+   "non_overlapping_intervals"
+  ]
+ }
 ]

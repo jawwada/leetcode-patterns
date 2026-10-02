@@ -95,7 +95,7 @@ def main() -> int:
             bf = p.get("brute_force") or {}
             sections.append({
                 "slug": slug, "title": p["title"], "leetcode": p["leetcode"], "difficulty": p["difficulty"],
-                "pattern": p["pattern"], "file": p["file"], "why_here": o.get("why_here", ""), "md": md,
+                "pattern": p["pattern"], "file": p["file"], "problem": p["problem"], "why_here": o.get("why_here", ""), "md": md,
                 "code": p["code"], "time": p["complexity"]["time"], "space": p["complexity"]["space"],
                 "brute_code": bf.get("code", ""), "brute_time": bf.get("time", ""), "brute_space": bf.get("space", ""),
             })
