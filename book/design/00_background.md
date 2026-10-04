@@ -1,6 +1,6 @@
 # Design: Implement a Tracker
 
-*22 problems · Reading time ~22 min*
+*22 problems · Reading time ~35 min*
 
 ## Why this chapter exists
 
@@ -156,6 +156,140 @@ Picture a ledger with several columns that must always agree, and a clerk who an
 
 For windowed problems, overlay a second picture: a bracket sliding right along a timeline, with the clerk only ever writing at the right edge and erasing at the left.
 
+## Advanced patterns
+
+The parts above carry you through the Easy and Medium problems. Each Hard problem leans on one extra idea: a reason why bookkeeping that looks expensive is O(1), or a way to postpone work until it is free. Here are the seven.
+
+### Count buckets with an extreme that moves by one
+
+**When it shows up.** The question is about frequencies, and you need the least or most frequent key on demand in O(1): "evict the least frequently used", "return a key with the maximal count", "pop the most frequent element, ties to the most recent".
+
+**The intuition.** A heap keyed by count cannot find the key whose count changed. The observation that kills the heap is that each operation changes one key's count by exactly one. So a key only ever moves to an *adjacent* bucket, and the extreme count (the minimum or maximum over all keys) can only change by one step, at a moment you can see happening. In LFU Cache, `min_freq` changes only when a key leaves the bucket `min_freq` and leaves it empty, and then the new minimum is exactly `min_freq + 1`, because the key you just moved is sitting there. In Maximum Frequency Stack, `maxfreq` drops by exactly one when its group empties. In All O`one, where counts go both up and down, the buckets themselves are kept as a sorted doubly linked list of distinct counts, and a new bucket is always spliced in right next to the old one, so the list stays sorted with O(1) local edits and the min and max are simply its two ends. The tie-break lives *inside* the bucket: an ordered dict for recency in LFU, a stack in Maximum Frequency Stack.
+
+```text
+ LFU, capacity 3.  before get(3):   min_freq = 1
+   freq 1: [3]            freq 2: [1, 4]
+                         oldest ^     ^ newest
+ get(3): 3 leaves freq 1; it empties and 1 == min_freq
+   freq 1: [ ]            freq 2: [1, 4, 3]
+   min_freq = 2   (jump by one: 3 is sitting there)
+ put(5) when full: evict the oldest in freq 2 -> key 1
+```
+
+**Where you'll use it.** LFU Cache, All O`one Data Structure, Maximum Frequency Stack. Beyond: bucket sort in Top K Frequent Elements (347).
+
+### Keep every version and answer "as of t" with a right bisect
+
+**When it shows up.** Queries ask about the past: "the value at timestamp t", "the value at snapshot k", and writes arrive in time order.
+
+**The intuition.** Copying the whole state at every snapshot is O(n) per snapshot and O(n * snaps) memory. Store *changes* instead: each key (or each cell) gets an append-only list of `(time, value)` pairs, one per write. Because the clock only moves forward, appending keeps the list sorted for free, so you never sort and never insert in the middle. The value "as of t" is the last pair with time `<= t`, which is `bisect_right(times, t) - 1`. The clock does not have to be a user's timestamp: in Snapshot Array it is your own counter, the snap id, and `snap()` just increments it. Overwrite the last pair when a cell is written twice in one period, and seed each list with a default pair so the bisect always has something to its left.
+
+```text
+ Snapshot Array, cell 2, history as (snap_id, value):
+   [ (0,0) (1,7) (3,4) ]        current snap_id = 4
+ get(2, snap=2): bisect_right(ids [0,1,3], 2) = 2
+                 index 2 - 1 = 1          -> 7
+ get(2, snap=3): bisect_right(..., 3) = 3 -> index 2 -> 4
+ snap(): returns 4, snap_id becomes 5; nothing is copied
+```
+
+**Where you'll use it.** Time Based Key-Value Store, Snapshot Array. Beyond: Online Election (911) precomputes the leader after each vote and answers "leader at time t" with the same right bisect.
+
+### Record the operation, not its effect
+
+**When it shows up.** One operation touches every element ("flip all bits", "add x to everything", "clear all forward history"), but reads only ever look at one element or at an aggregate.
+
+**The intuition.** Do not perform the global operation; store it as a *lens* that every read looks through. In Design Bitset the lens is one flag: the bit a user sees is `physical[i] XOR flipped`, so `flip()` toggles the flag and every logical bit inverts at once. The aggregate you are asked for is maintained by formula instead of recount: after a flip, `ones = size - ones`. The one place this bites is a point write while the lens is on: you must read the *logical* bit first, and if it needs to change, toggle the physical bit, so that it reads correctly through the lens. Browser History uses the same idea in a simpler form: "clear forward history" is not deletion, it is moving a logical end bound, and the old entries are overwritten later for free.
+
+```text
+ Bitset, size 5.     logical = physical XOR flipped
+   flipped=0  physical 1 0 0 1 0  logical 1 0 0 1 0  ones=2
+ flip():   only the flag and the tally change
+   flipped=1  physical 1 0 0 1 0  logical 0 1 1 0 1  ones=3
+ fix(0):   logical bit 0 is 0 -> toggle physical bit 0
+   flipped=1  physical 0 0 0 1 0  logical 1 1 1 0 1  ones=4
+```
+
+**Where you'll use it.** Design Bitset, Design Browser History. Beyond: Fancy Sequence (1622) keeps a global "multiply then add" lens and stores each new value pre-divided through it.
+
+### Lazy deletion with a validity test that cannot be fooled
+
+**When it shows up.** You need "the smallest available" (smallest stack with room, cheapest unrented copy) while items keep being removed, changed and returned, in places a heap cannot reach.
+
+**The intuition.** A heap can only hand you its top; it cannot find an arbitrary entry to remove. So keep the truth somewhere else (a map, a list of stacks), push a fresh heap entry whenever something becomes available, and never remove entries when they go stale. Instead, when you look at the top, test it against the truth and pop it if it fails; repeat until the top passes. Each entry is popped at most once, so cleaning is O(log n) amortised. The subtle part is the *test*. "Does the item look available right now?" is not enough when an item can leave and come back: the old entry from its previous stay passes the test again and you report it twice. Either make the test exactly the current fact and tolerate harmless duplicates (Dinner Plate Stacks asks "is this index inside the list and is that stack not full?"), or stamp every entry with a version that is bumped on every change, so a stale entry can never match again (Movie Rental).
+
+```text
+ Movie Rental, copy (shop 0, movie 1); entries (price,shop,ver)
+   start:   heap [(5,0,v0)]                     ver = 0
+   rent:    ver = 1; (5,0,v0) is stale, left in heap
+   drop:    ver = 2; push (5,0,v2)
+            heap [(5,0,v0) (5,0,v2)]
+   search:  top (5,0,v0): v0 != current v2 -> pop, discard
+            top (5,0,v2): matches           -> report shop 0
+```
+
+**Where you'll use it.** Dinner Plate Stacks, Design Movie Rental System. Beyond: Stock Price Fluctuation (2034) and Sliding Window Median (480) both keep heaps honest the same way.
+
+### Sorted disjoint intervals as a flat list of boundaries
+
+**When it shows up.** The state is a set of covered points that arrives or leaves in chunks: "add range / remove range / is [l, r) fully tracked?", or "summarise the stream as disjoint intervals".
+
+**The intuition.** Keep the intervals sorted, disjoint and merged at all times. Then any new point or range interacts only with a *contiguous* run of intervals, found by binary search, and everything strictly inside the new range is swallowed. Range Module goes one step further and flattens the intervals into one sorted list of boundaries `[l0, r0, l1, r1, ...]`. Now the insertion position of a coordinate tells you where it is: odd means inside a block, even means in a gap. `addRange(l, r)` deletes the boundaries between `i = bisect_left(ends, l)` and `j = bisect_right(ends, r)`, then keeps `l` as a new opener only if `i` is even and `r` as a new closer only if `j` is even. `removeRange` is the mirror image, with odd instead of even. Each boundary is inserted once and deleted once, so the work is amortised over the operations that created it.
+
+```text
+ ends:  [10, 14, 16, 20, 30, 40]  blocks [10,14) [16,20) [30,40)
+ index:   0   1   2   3   4   5   even = opener, odd = closer
+ addRange(12, 18):  i = bisect_left(ends, 12)  = 1  (odd)
+                    j = bisect_right(ends, 18) = 3  (odd)
+   delete ends[1:3] = [14, 16]; i, j odd -> add nothing
+   ends:  [10, 20, 30, 40]           two blocks merged
+ removeRange(32, 35): i = j = 3 (both odd) -> insert 32, 35
+   ends:  [10, 20, 30, 32, 35, 40]   block [30,40) split
+```
+
+**Where you'll use it.** Data Stream as Disjoint Intervals (the point version, using `starts` and `ends` lists and the left and right neighbours), Range Module (the range version). Beyond: My Calendar I/II (729, 731) and Count Integers in Intervals (2276).
+
+### Prefix sums that survive updates: the Fenwick tree
+
+**When it shows up.** Point updates and range-sum queries interleave, both up to about 10^4 to 10^5 times, so neither "recompute the prefix sums" nor "sum the range by scanning" fits.
+
+**The intuition.** A prefix-sum array answers a query in O(1) but an update has to rewrite O(n) entries; a plain array is the other way round. A Fenwick tree sits in the middle. Slot `t[i]` stores the sum of a block that ends at i and reaches back `lowbit(i) = i & -i` cells. Every prefix `[1, k]` is the disjoint union of the blocks you visit by repeatedly stripping the lowest set bit of k, and every index lies in the blocks you visit by repeatedly *adding* its lowest set bit. Both walks have at most log2(n) + 1 steps. In two dimensions you nest the idea, a Fenwick tree whose slots are Fenwick trees, so both operations cost O(log m * log n), and any rectangle is four prefix rectangles combined by inclusion-exclusion. Since the problem's update is "set to v", keep a copy of the matrix and push the delta `v - old`.
+
+```text
+ block t[i] covers (i - lowbit(i), i]
+ index:   1   2   3   4   5   6   7   8
+ t[1]:    [-]
+ t[2]:    [-----]
+ t[3]:            [-]
+ t[4]:    [-------------]
+ t[5]:                    [-]
+ t[6]:                    [-----]
+ t[7]:                            [-]
+ t[8]:    [-----------------------------]
+ prefix(7) = t[7] + t[6] + t[4]     walk 7 -> 6 -> 4 -> 0
+ update(3) touches t[3], t[4], t[8] walk 3 -> 4 -> 8
+```
+
+**Where you'll use it.** Range Sum Query 2D - Mutable. Beyond: Range Sum Query - Mutable (307) is the 1D version, and Count of Smaller Numbers After Self (315) uses a Fenwick tree over values.
+
+### Randomness as a design tool
+
+**When it shows up.** A deterministic structure would need heavy machinery (rebalancing, segment trees of candidates), but a random choice has a tiny chance of going badly: "expected O(log n) without a library", "the majority element of any subarray", "return a uniformly random element".
+
+**The intuition.** Both uses put randomness inside the algorithm, so no input can defeat it. *Sample to guess, structure to check*: in Online Majority Element, a value that fills more than half of `[left, right]` is hit by a random position with probability above 1/2, so 20 samples all miss with probability below 2^-20, about one in a million. Each guess is verified exactly with the value's sorted position list and two bisects, so a wrong element is never returned. *Random shape instead of rebalancing*: in Design Skiplist each new node flips coins for its height, so row i holds about n / 2^i nodes, there are about log2 n rows, and a search moves right O(1) expected times per row before dropping down. The coin flips replace rebalancing.
+
+```text
+ search(6): move right while next < 6, else drop a row
+ row 2: H ================> 4 ----------------> 8
+                            |  next 8 >= 6: drop
+ row 1: H ------> 2 ------> 4 ------> 6 ------> 8
+                            |  next 6 >= 6: drop
+ row 0: H -> 1 -> 2 -> 3 -> 4 => 5 -> 6 -> 7 -> 8
+                                 ^ next is 6: found
+```
+
+**Where you'll use it.** Design Skiplist, Online Majority Element in Subarray, Insert Delete GetRandom O(1). Beyond: Linked List Random Node (382) uses reservoir sampling, the streaming cousin.
+
 ## Signals in a problem statement
 
 - "Implement the `X` class" with several methods: you are in this chapter.
@@ -211,25 +345,58 @@ Quirks worth knowing: `heapq` compares whole tuples, so a tie on the first field
 
 ## The journey ahead
 
-1. **Moving Average from Data Stream** — a queue plus a running sum; update by what enters and leaves.
-2. **Logger Rate Limiter** — one hash map value per key holding the only fact that matters.
-3. **Design Hit Counter** — the window is in time, not count; eviction becomes a loop, same-time hits merge.
-4. **Design HashMap** — opens the hash map itself: buckets, chaining, resizing, amortised O(1).
-5. **Insert Delete GetRandom O(1)** — the first true combination: array + index map with swap-with-last.
-6. **Design Browser History** — array + cursor; "clearing" becomes moving a logical end.
-7. **Design Underground System** — two maps with two lifetimes; aggregate into (sum, count).
-8. **Time Based Key-Value Store** — keep every version; sorted list per key + bisect.
-9. **Snapshot Array** — versioned lists per index, snapshot as a clock tick.
-10. **Design Bitset** — lazy global flip flag and a maintained count.
-11. **LRU Cache** — hash map + doubly linked list, the canonical combination.
-12. **LFU Cache** — LRU lists inside frequency buckets plus a min-frequency pointer.
-13. **All O`one Data Structure** — count buckets in a linked list so min and max sit at the ends.
-14. **Maximum Frequency Stack** — buckets as stacks with a max pointer; recency comes free.
-15. **Dinner Plate Stacks** — list of stacks plus a heap of free slots with lazy invalidation.
-16. **Data Stream as Disjoint Intervals** — sorted disjoint intervals, merging neighbours on insert.
-17. **Range Module** — the same intervals with range add and remove that split and swallow.
-18. **Range Sum Query 2D Mutable** — a 2D Fenwick tree when point updates and range sums interleave.
-19. **Online Majority Element in Subarray** — value to positions + bisect, with random sampling.
-20. **Design Movie Rental System** — several heap views of the same records, lazy deletion by version.
-21. **Design In-Memory File System** — a trie whose edges are path components.
-22. **Design Skiplist** — build the ordered structure itself from stacked linked lists.
+Each problem adds one new part, or one new reason a part is cheap; the Hard problems combine parts you have already built.
+
+### Warm-up: a stream, a window, a key
+
+**Moving Average from Data Stream.** The naive version keeps every value and sums the last k on each call, O(k) of repeated work for an answer that changes by only two numbers. The new sum is the old sum plus what entered minus what left: a queue for "what leaves next" and one running scalar, and the habit of updating state by the change.
+
+**Logger Rate Limiter.** Now the stream is keyed by message, and the tempting design stores every print time per message. Ask "what is the only fact a future call needs?": one number per message, its next allowed time. It teaches compressing state to the one fact that decides every future answer.
+
+**Design Hit Counter.** Back to a window, but measured in seconds rather than in items, so one call may expire many old hits at once and eviction becomes a while loop. A million hits in the same second should not be a million queue entries, so equal timestamps merge into `(t, count)`.
+
+### Opening the box and the first combinations
+
+**Design HashMap.** Every problem so far trusted a dict to be O(1); here you build one. Buckets, chaining and resizing when the load factor grows explain exactly when that O(1) is an average and when it is amortised.
+
+**Insert Delete GetRandom O(1).** A set gives O(1) insert and delete but no random access; an array gives random access but O(n) delete. The puzzle is to get all three, and the answer is the first real combination: an array of values plus a map from value to index, joined by the swap-with-last delete. From here on, every design is "which two structures, and who points at whom".
+
+**Design Browser History.** The trap is to delete the forward pages on every visit. Instead, keep an array and a cursor, and treat "clear forward history" as moving a logical end bound; stale entries are overwritten later for free. Clearing data becomes a number you change rather than work you do.
+
+**Design Underground System.** Two kinds of state with different lifetimes: a trip in progress (keyed by customer, deleted at check-out) and route statistics (kept forever). How much of a finished trip must you keep? Only `(sum, count)` per route: the logger's lesson applied to aggregates.
+
+### Remembering the past, and doing work lazily
+
+**Time Based Key-Value Store.** For the first time the past matters: `get(key, t)` asks for the value as of time t, so you cannot overwrite. Keeping every version sounds expensive until you notice that timestamps only increase, so appending keeps each key's list sorted and a right bisect answers the query in O(log n).
+
+**Snapshot Array.** Same versioned-list idea, but the obvious design copies the whole array on every `snap()`, which is O(n) per snapshot. Store changes per cell instead, with the snap id as your own clock, and `snap()` becomes a counter increment.
+
+**Design Bitset.** `flip()` touches every bit, and calls may arrive 10^5 times. The puzzle is to make a global operation O(1), and the answer is to record it as a flag that every read looks through, while keeping the count of ones by formula. Browser History moved a bound; this toggles a lens.
+
+### Order on top of a map
+
+**LRU Cache.** The classic: lookup by key and a recency order that changes on every access, both in O(1). An array of keys would need O(n) shifts on every touch; a doubly linked list moves a node in O(1) if something can hand you that node, and the dict does. This is the canonical "map stores a pointer into the second structure" design, with sentinels removing every edge case.
+
+**LFU Cache.** Eviction now asks two nested questions: which count is smallest, and among those keys, which is least recent. The second is an LRU list inside each count bucket; the first looks like it needs a heap, until you see that counts move by one, so `min_freq` only ever jumps to `min_freq + 1` at a moment you can see. This is the first use of the "extreme moves by one" argument.
+
+**All O`one Data Structure.** Counts now go both up and down, and you must report a max and a min key in O(1). The buckets themselves become a sorted doubly linked list of distinct counts, and because a key only moves to an adjacent count, a new bucket is always spliced in next to the old one. The two answers sit at its ends.
+
+**Maximum Frequency Stack.** Pop the most frequent value, ties going to the most recent push, which sounds like LFU with a recency clock. The surprise is that you need no per-key pointers at all: if each frequency level is a stack and a value stays in every lower level it has reached, a pop never has to move anything. Same "max moves by one" argument as LFU, with a far simpler structure.
+
+### The Hard end: lazy heaps, ranges, trees, randomness
+
+**Dinner Plate Stacks.** `push` must find the leftmost stack with room, and scanning is O(n). Room only appears when a plate is popped, at a known index, so a min-heap of candidate indices answers `push`; the twist is that entries go stale when stacks refill or are trimmed away. This is the chapter's first heap with lazy deletion.
+
+**Data Stream as Disjoint Intervals.** Points arrive one by one and you must report the covered set as merged intervals. Keeping the intervals sorted and disjoint means a new point can only touch its two neighbours, found with one bisect, giving five local cases: covered, extend left, extend right, bridge, alone.
+
+**Range Module.** Now whole ranges are added and removed, so one call may swallow many intervals or split one in two. Flattening the intervals into a single sorted list of boundaries turns all three operations into "bisect twice, read parity, replace a slice".
+
+**Range Sum Query 2D - Mutable.** Updates and rectangle sums interleave, so neither a prefix-sum table (slow update) nor a raw matrix (slow query) works. The Fenwick tree splits every prefix into O(log n) power-of-two blocks, and nesting it gives O(log m * log n) for both. Here the part you need is not in the stdlib, so you build it from its invariant.
+
+**Online Majority Element in Subarray.** Each query asks whether some value fills at least a threshold of a subarray, and a full scan per query is too slow. Counting any one value in a range is easy with its sorted position list and two bisects; the hard part is guessing which value to count, and random sampling does that with failure probability below one in a million.
+
+**Design Movie Rental System.** Several ordered views of the same records (cheapest copy of a movie, cheapest rented copies overall) must stay consistent as copies are rented and dropped. Each view is a heap with lazy deletion, as in Dinner Plate Stacks, but a copy can leave and come back, so the naive "is it available?" test reports ghosts. Version stamps on every entry fix that: many views, one truth.
+
+**Design In-Memory File System.** Paths look like strings, but their meaning is "this name inside that parent", so the right index is a tree of dictionaries, a trie whose edges are path components. Every operation is a walk of one lookup per component.
+
+**Design Skiplist.** The last step is to build an ordered structure from scratch without a balanced tree. Sorted linked lists stacked into express lanes, with random coin-flip heights, give expected O(log n) search, insert and erase with no rebalancing. Sentinels from LRU and randomness from the majority problem both come back.

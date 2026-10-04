@@ -1,5 +1,5 @@
 # Intervals and Sweep Lines
-*8 problems · Reading time ~12 min*
+*8 problems · Reading time ~25 min*
 
 ## Why this chapter exists
 
@@ -210,6 +210,135 @@ Keep two pictures, and switch between them.
 
 Rectangle Area II lifts this into two dimensions. The vertical line now cuts a set of y-intervals, and the skyline becomes "how much of the line is covered", multiplied by how far the line moves.
 
+## Advanced patterns
+
+The basic material gives you one sort and one running value. The Hard problems in this chapter push on that in three ways. The state the line carries becomes a *set* rather than a number. The input arrives in several streams instead of one. And the line has to move through a second dimension. The six patterns below are the moves that make those pushes manageable. Each one is still "sort, then sweep with a small state"; what changes is what you sort and what the state is.
+
+### 1. Choosing the sort key: start for merging, end for choosing
+
+**When it shows up**: any time the problem asks you to *pick* intervals (keep the most, remove the fewest, shoot the fewest arrows, attend the most events), not to combine them.
+
+**The intuition**: sorting by start is right when every bar will end up in the answer in some form, because then you only care about who arrives next. When you are choosing, the question is different: which bar should win a collision? The bar that ends earliest leaves the most room for everything after it. The exchange argument makes this exact. Take any optimal choice. Its first bar ends no earlier than the globally earliest-ending bar `g`, so swapping `g` in breaks nothing to the right and keeps the count the same. Repeat on what is left. Sorting by start gives no such guarantee, because an early-starting bar can be enormously long and block everything.
+
+```text
+[1,10]  [=================]
+[2,3]     [=]
+[4,5]         [=]
+[6,7]             [=]
+        +-+-+-+-+-+-+-+-+-+
+        1       5        10
+
+ sorted by START: [1,10] first, kept, free at 10
+                  [2,3] [4,5] [6,7] all collide   -> 1 kept
+ sorted by END:   [2,3] free at 3, [4,5] free at 5,
+                  [6,7] free at 7, [1,10] collides -> 3 kept
+```
+
+**Where you'll use it**: Non-overlapping Intervals is built on it. Beyond the chapter: Minimum Number of Arrows to Burst Balloons (452) and Maximum Number of Events That Can Be Attended (1353), where the same earliest-end rule is applied day by day through a heap of end times.
+
+### 2. A heap of the live set, keyed by what you will ask
+
+**When it shows up**: the sweep needs more than a count of the bars under the line. It needs a property of one of them: the one that ends first, the shortest, the tallest.
+
+**The intuition**: as the line moves right, bars enter at their starts and must leave at their ends. You could keep the live bars in a list, but then every question scans the list. The observation is that at each stop you ask only *one* question, and that question names an extreme: "has the earliest-ending bar ended yet?" or "which live bar is shortest?". A min-heap keyed on exactly that quantity answers it in O(1) and updates in O(log n). In Meeting Rooms II the key is the end time, so the bars that must leave are precisely the ones on top, and the heap's size is the number of rooms in use. Pick the key to match the question, and the heap turns a set into a single readable value.
+
+```text
+ meetings (half-open): [1,5) [2,7) [4,6) [6,9)
+ start  heap of ends (array)    rooms in use
+   1    [5]                     1
+   2    [5, 7]                  2
+   4    [5, 7, 6]               3  <- peak
+   6    pop 5, pop 6, push 9
+        [7, 9]                  2
+           7
+          /        at start 6: the top (5) has ended, pop;
+         9         the new top (6) has ended, pop; 7 stays
+```
+
+**Where you'll use it**: Meeting Rooms II (key = end), Minimum Interval to Include Each Query (key = size). Beyond the chapter: The Skyline Problem (218), where the key is the negated height.
+
+### 3. K-way merge of sorted streams, with a reach that exposes gaps
+
+**When it shows up**: the input is already several sorted lists (one per person, machine, or file), and you want the global order without paying for a full re-sort. Or you want the *complement* of a union: the free time, the holes, the uncovered stretches.
+
+**The intuition**: inside one sorted list, the first unread item is the earliest of that list. So the globally earliest unread item is the earliest of the k fronts, and a heap holding one front per list hands it to you in O(log k). Pop it and push the next item from the same list. Feed the popped bars into Merge Intervals' running end, which here is called the *reach*: "someone is busy at least until here". A start that lands strictly beyond the reach proves that nobody covers the stretch between them, because every bar that could cover it has already been popped. The complement of the union appears without ever building the union.
+
+```text
+ E0 [1,3] [8,9]   E1 [2,4]   E2 [6,7]
+
+ mid-run, after popping [1,3] and [2,4]:
+ fronts heap: [(6,E2), (8,E0)]        reach = 4
+ next pop: 6 > 4  -> gap [4,6], reach = 7
+ next pop: 8 > 7  -> gap [7,8], reach = 9
+
+busy   [========]     [==]  [==]
+free            [=====]  [==]
+       +--+--+--+--+--+--+--+--+--+
+       1     3     5     7     9
+```
+
+**Where you'll use it**: Employee Free Time. Beyond the chapter: Merge k Sorted Lists (23) is the same frontier without the reach, and Interval List Intersections (986) is the k = 2 case with two pointers.
+
+### 4. Offline queries swept alongside intervals, with lazy deletion
+
+**When it shows up**: many point queries, each asking about the intervals that contain it, with n and m both near 10^5. You see all the queries before you answer any.
+
+**The intuition**: "contains q" means two conditions, `left <= q` and `right >= q`. If you answer queries in increasing order, the first condition only ever admits more intervals, so a pointer through intervals sorted by left adds each one exactly once. The second condition only ever *removes* intervals, and an interval that has ended for one query has ended for every later one. That permanence is what makes lazy deletion safe: leave dead intervals in the heap and throw one away only when it reaches the top and would otherwise be reported. Each interval is pushed once and popped at most once, however the queries fall. Sort query *indices*, not values, so each answer goes back to its original slot.
+
+```text
+ intervals [1,4] [2,9] [3,5]    queries (slot:value) 0:6 1:3 2:8
+ heap key = (size, right); swept order 3, 6, 8
+
+ q=3  push all three   heap {(3,5) (4,4) (8,9)}
+      top (3,5): 5 >= 3 alive          ans[1] = 3
+ q=6  top (3,5): 5 < 6 dead, pop
+      top (4,4): 4 < 6 dead, pop
+      top (8,9): alive                 ans[0] = 8
+ q=8  top (8,9): alive                 ans[2] = 8
+ answer in input order: [8, 3, 8]
+```
+
+**Where you'll use it**: Minimum Interval to Include Each Query. Beyond the chapter: Number of Flowers in Full Bloom (2251), where the heap collapses into two `bisect` counts.
+
+### 5. A sparse difference map, maintained online
+
+**When it shows up**: bookings arrive one at a time, and after each one you must report a coverage fact (the peak overlap, whether a triple booking exists), with coordinates far too large for an array.
+
+**The intuition**: coverage is a step function. It changes only at boundaries, and the size of each step is (starts there) minus (ends there). So store just that: a dictionary from boundary to net change, plus a sorted list of the boundaries. A new booking touches two entries. A prefix sum along the sorted boundaries redraws the whole skyline, and its maximum is the peak. Ends and starts at the same coordinate land in one slot and cancel *before* the sweep reads them, which is exactly the half-open convention without any special-case code. This is coordinate compression done lazily: a boundary gets a slot only when some booking mentions it.
+
+```text
+ after [3,8) and [5,12):
+ point   3   5   8  12
+ delta  +1  +1  -1  -1
+ prefix  1   2   1   0        peak 2
+
+ book [8,10): delta[8] = -1 + 1 = 0, new point 10
+ point   3   5   8  10  12
+ delta  +1  +1   0  -1  -1
+ prefix  1   2   2   1   0    peak 2 (8 is a seam,
+                              not a third layer)
+```
+
+**Where you'll use it**: My Calendar III. Beyond the chapter: My Calendar I and II (729, 731), and Car Pooling (1094) when coordinates are small enough for a plain array.
+
+### 6. Sweep one axis, measure the other
+
+**When it shows up**: rectangles, or anything with two interval dimensions, and a question about the union: total area, perimeter, whether they tile.
+
+**The intuition**: move a vertical line across x. Rectangles enter at x1 and leave at x2, and between two consecutive x-events the line cuts the same set of rectangles, so the covered length on the line is constant. Area is then a sum of slabs, each (width between events) times (covered length). Measuring that length is a 1D problem: merge the active y-intervals, or compress the y-coordinates into elementary segments and keep a cover count per segment, counting the widths of segments with count > 0. Add each slab *before* applying the event at its right edge, because the slab belongs to the old active set. Keeping per-segment cover counts in a segment tree is the step that takes this from O(n^2) to O(n log n).
+
+```text
+ rectangles A [0,0,2,2]  B [1,0,2,3]  C [1,0,3,1]
+ line inside strip x in [1,2): active y = (0,2) (0,1) (0,3)
+
+ ys       0     1     2     3
+ segment  [0,1) [1,2) [2,3)
+ count      3     2     1      every segment covered
+ covered = 1 + 1 + 1 = 3      slab = width 1 * 3 = 3
+```
+
+**Where you'll use it**: Rectangle Area II. Beyond the chapter: Perfect Rectangle (391) and The Skyline Problem (218), which sweeps the same x-events with a heap of heights as the state.
+
 ## Signals in a problem statement
 
 - "intervals", "meetings", "bookings", "shifts", "ranges", `[start, end]` pairs: you are in this chapter.
@@ -275,11 +404,26 @@ insort(points, p)                   # keep keys sorted
 
 ## The journey ahead
 
-1. **Merge Intervals**: sort by start and keep one running interval. This is the base move every later problem reuses.
-2. **Insert Interval**: the input is already sorted, so skip the sort and see the answer as three contiguous phases (left, fused, right).
-3. **Non-overlapping Intervals**: the first time the sort key changes. Sorting by end makes greedy provably safe, via an exchange argument.
-4. **Meeting Rooms II**: stop merging and start counting the stack, with a min-heap of end times as the state the sweep carries.
-5. **Employee Free Time**: several pre-sorted lists, k-way merged by a heap, while the merge's "reach" exposes gaps.
-6. **Minimum Interval to Include Each Query**: sort the questions too (offline), sweep both streams, and use a heap with lazy deletion.
-7. **My Calendar III**: drop heaps for pure +1/-1 events in a sparse difference array, rebuilt as bookings arrive online.
-8. **Rectangle Area II**: the closing problem. Sweep in x, merge intervals in y, and multiply. Every earlier idea appears at once.
+The eight problems climb in one direction: the state the sweep carries gets richer. It starts as one running interval, becomes a single number, then a heap of live bars, then a map of boundaries, and finally a whole set of intervals measured at every stop. Each problem keeps what the previous one taught and changes exactly one thing.
+
+### Foundations: one sort, one running value
+
+**Merge Intervals.** Overlapping bars in random order, collapse them. The naive instinct is to compare every pair and keep merging until nothing changes, which is quadratic and fiddly. The question worth asking is: what order makes a single comparison enough? Sorting by start does, and the running interval plus `end = max(end, e)` is the base move every later problem reuses.
+
+**Insert Interval.** The list is already sorted and disjoint, and one new bar arrives. You could append and re-run Merge Intervals in O(n log n), but that ignores what you were given. The new idea is to see the answer as three contiguous phases (bars wholly left, bars that fuse with the newcomer, bars wholly right), which is O(n) and teaches you to exploit sortedness rather than re-create it.
+
+**Non-overlapping Intervals.** Now you choose instead of combine: remove the fewest bars so the rest never collide. The trap is to keep the sort by start, which happily keeps a giant bar that blocks everything. This is the first time the sort key changes. Sorting by end and keeping whatever fits is provably optimal by an exchange argument, and that argument is the template for every interval greedy you will meet.
+
+### Carrying a set, not a number
+
+**Meeting Rooms II.** How many rooms do the meetings need? A single running end no longer suffices, because several meetings are open at once and you must know which frees up first. The curious question is "when a new meeting starts, who has left?", and the answer is always the meetings with the smallest end times. A min-heap of end times becomes the state, and its size at each start is the room count. Pattern 2 starts here.
+
+**Employee Free Time.** Each employee's schedule is already sorted, and you want the times when nobody works. Flattening and re-sorting works, but it throws away the order you were given. The new idea is the k-way merge: a heap holding only each employee's next shift produces the global order, and Merge Intervals' reach turns "this start is beyond everything seen" into a gap. It builds on Meeting Rooms II by using the heap as a frontier over streams instead of a live set.
+
+**Minimum Interval to Include Each Query.** Now the questions are points, a hundred thousand of them, each asking for the shortest interval that contains it. Testing every pair is 10^10 checks. The leap is to treat the queries as a second sorted stream: sweep both together, admit intervals with a forward-only pointer, and keep a heap keyed by size whose dead entries are thrown away lazily, only when they surface. It combines the live-set heap of Meeting Rooms II with the two-stream sweep of Employee Free Time.
+
+### Events and the plane
+
+**My Calendar III.** Bookings arrive one by one, and after each you report the peak overlap. There is no batch to sort and the coordinates reach 10^9. The new idea drops the heap entirely: store only the net +1/-1 change at each boundary in a sparse map, and a prefix sum redraws the skyline on demand. It is Meeting Rooms II's count rebuilt for an online setting, and it introduces the event view that the last problem needs.
+
+**Rectangle Area II.** The union of rectangles can be any jagged shape, and inclusion-exclusion has 2^n terms. The question that unlocks it is: what does a vertical line see, and when does that change? Sweep x with enter and leave events (My Calendar III's events), and at each stop measure the covered y-length with Merge Intervals (the first problem). Every earlier idea appears at once, and the step to a segment tree is the natural follow-up.

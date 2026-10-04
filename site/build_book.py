@@ -29,7 +29,7 @@ PROBLEM_HEADINGS = [
 ]
 BG_HEADINGS = [
     "Why this chapter exists", "What it is", "Operations and what they cost", "The invariant",
-    "How to picture it", "Signals in a problem statement", "Python toolbox",
+    "How to picture it", "Advanced patterns", "Signals in a problem statement", "Python toolbox",
     "Mistakes people make", "The journey ahead",
 ]
 

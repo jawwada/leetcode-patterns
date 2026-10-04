@@ -1,6 +1,6 @@
 # Backtracking
 
-*15 problems · Reading time ~24 min*
+*15 problems · Reading time ~27 min*
 
 ## Why this chapter exists
 
@@ -259,6 +259,140 @@ Two more mental images help:
 - **Count the tree to know the cost.** Time is (number of nodes visited) x (work per node). Subsets: 2^n nodes. Permutations: about e·n! nodes. Parentheses: Catalan-many leaves. If you cannot estimate the tree's size, you cannot estimate the running time.
 - **Tree versus DAG.** If two different paths reach states that behave identically for the rest of the search (same index, same remaining sum, regardless of how you got there), the tree is secretly a DAG and memoisation or DP may beat backtracking. Backtracking is the right tool when the path itself is part of the answer, so the states cannot be merged.
 
+## Advanced patterns
+
+The skeleton above solves every Medium in this chapter. The Hards use the same skeleton, but each adds one idea about *what the state is* or *where to cut*. These are the ideas to recognise on sight.
+
+### 1. Constraint state updated incrementally
+
+**When it shows up**: placement problems where a new piece must not conflict with any piece already placed (queens on a board, digits in a sudoku row), and checking "against everything so far" would cost O(n) per node.
+
+**The intuition**: do not re-check the board; keep a summary of *what is already forbidden* and update it on choose and un-choose. The trick is finding a label so that "these two squares conflict" becomes "these two squares have the same key". For queens, every square on a down-right diagonal has the same `r - c`, and every square on a down-left diagonal has the same `r + c`. So the whole attack picture is three sets of integers: columns, `r - c` values, `r + c` values. Placing a queen adds three keys; lifting it removes the same three. The test at a node is three O(1) lookups, and it happens at the moment of choosing, so an illegal partial board is never extended.
+
+```text
+ queen at (r=1, c=2) on 4x4; keys it owns:
+    c0  c1  c2  c3
+ r0  .   \   .   /     col  2  : every square in col 2
+ r1  .   .   Q   .     r-c -1  : the "\" line
+ r2  .   /   .   \     r+c  3  : the "/" line
+ r3  /   .   .   .
+ sets: cols={2}  diag={-1}  anti={3}
+ square (3,0): c=0 ok, r-c=3 ok, r+c=3 HIT -> pruned
+```
+
+**Where you'll use it**: N-Queens (column and diagonal sets), Sudoku Solver (row, column and box sets). Beyond the chapter: N-Queens II and Valid Sudoku use the same keys without the search.
+
+### 2. Bitmasks as the used set
+
+**When it shows up**: the universe of things that can be "used" is small (9 digits, n <= 15 columns, a grid with <= 20 free cells), and you test, add and remove members at every node.
+
+**The intuition**: a set of small integers is one integer, bit `k` set meaning "k is in". Union is `|`, membership is `>> k & 1`, adding a known-absent member is `|=`, removing it is `^=`. The real win is that *all the candidates at once* come out of one expression: for sudoku, `~(row | col | box) & 0x3FE` is the set of legal digits for a cell; for queens, `~(cols | dr | dl) & full` is the set of safe columns in the next row. Then `low = free & -free` peels off one candidate at a time. For queens there is an extra gift: shifting the diagonal masks left and right by one moves every attack one row down, so the diagonals need no `r - c` arithmetic at all. A bitmask is also hashable, which is what lets a search over "which cells are used" turn into a memo table when the same mask keeps reappearing.
+
+```text
+ 4-queens, queen placed in row 0 at col 1 (col 0 leftmost)
+ moving to row 1:     c0 c1 c2 c3
+   cols (same col)    0  1  0  0
+   dr   (moves right) 0  0  1  0   attack down-right
+   dl   (moves left)  1  0  0  0   attack down-left
+   OR                 1  1  1  0
+   free = ~OR         0  0  0  1   only col 3 is safe
+ full 4-queens search: 17 nodes visited, versus 341 in the
+ unpruned 4-ary tree of depth 4
+```
+
+**Where you'll use it**: Sudoku Solver (nine-bit masks per row, column, box), N-Queens (bitmask variant); Unique Paths III when you memoise `(cell, visited mask)`. Beyond: Shortest Path Visiting All Nodes (847) and Partition to K Equal Sum Subsets (698).
+
+### 3. Most constrained first, and forced moves
+
+**When it shows up**: you are free to choose *which* variable to decide next (any empty sudoku cell, any unplaced piece), and the branching factor differs a lot from variable to variable.
+
+**The intuition**: the order of decisions does not change the set of solutions (every empty cell needs some digit eventually), but it changes the shape of the tree enormously. Branch on the cell with the fewest candidates. If that number is 0, the board is already dead, and you learn it now instead of after ten more guesses elsewhere. If it is 1, the move is forced: a tree level with a single child costs nothing, and filling it often leaves another cell with one candidate, so forced moves chain. Only when every cell has two or more options do you really guess, and then you guess where the odds are best and a wrong guess is refuted soonest. Put generally: cut high in the tree, because one cut near the root removes exponentially more than one near the leaves.
+
+```text
+ one empty cell, its three masks (bit d = digit d used)
+   row  {3,5,7}       0 0 1 0 1 0 1 0 0    digits 1..9
+   col  {1,6,8,9}     1 0 0 0 0 1 0 1 1
+   box  {3,5,6,8,9}   0 0 1 0 1 1 0 1 1
+   used = OR          1 0 1 0 1 1 1 1 1
+   cand = ~used       . 2 . 4 . . . . .  -> 2 candidates
+ MRV scans all empty cells: counts 2, 4, 1, 3 ...
+ pick the "1" (forced), then rescan; a "0" ends the branch
+```
+
+**Where you'll use it**: Sudoku Solver is the chapter's showcase. N-Queens uses a fixed row order, which is safe because each row needs exactly one queen. Beyond: exact-cover solvers (Algorithm X picks the least-covered constraint), graph colouring.
+
+### 4. Count the minimum first, then search with a budget
+
+**When it shows up**: the answers must be optimal ("remove the **minimum** number", "fewest changes") and you are asked to list all of them. Searching over every number of edits and keeping the best is the trap.
+
+**The intuition**: split the problem into a cheap counting pass and a search. For parentheses, one left-to-right scan with a balance counter tells you exactly how many `(` and how many `)` must go: every `)` that would drive the balance negative forces one deletion, and every `(` still open at the end forces one more. These counts are necessary and sufficient, so the search no longer asks "how many?", only "which ones?". The budget caps the depth of deletion, and a second fence (the running balance may never go negative) cuts bad prefixes at their first wrong character. A leaf is accepted only with both budgets at exactly zero, so every answer is minimal by construction. The same "count what is still owed" idea appears in Unique Paths III: a `todo` counter of unvisited cells turns the "covered everything?" check into one integer comparison at the end cell.
+
+```text
+ s = ( ) ( ) ) ( )     scan: balance 1 0 1 0 -1 ...
+     0 1 2 3 4 5 6           index 4 cannot match: right=1
+ budget: left=0, right=1   (one ")" must go, no "(")
+
+ delete idx 1 -> ( ( ) ) ( )   valid   "(())()"
+ delete idx 3 -> ( ) ( ) ( )   valid   "()()()"
+ delete idx 4 -> ( ) ( ) ( )   same string: dedupe
+ keep 0..4    -> balance -1 at idx 4: pruned on the spot
+```
+
+**Where you'll use it**: Remove Invalid Parentheses (removal budgets plus balance fence), Unique Paths III (cells-still-owed counter). Duplicate answers can still appear from deleting either of two equal adjacent brackets; collect into a set, or skip deleting a bracket equal to the one just kept.
+
+### 5. Carry an undoable aggregate: running value plus last operand
+
+**When it shows up**: each choice extends an expression or a sequence, and the prefix has a value you need at the leaf, but the next choice can retroactively change how the prefix evaluates (multiplication binds tighter than the `+` before it).
+
+**The intuition**: never re-evaluate the prefix string; carry its value down as an argument. The difficulty is precedence: in `1 + 2 * 3`, the `*3` must act on the `2`, not on the `3` already summed. Treat the expression as a sum of terms, where `+` and `-` start a new term and `*` grows the current one. Carry `value` (the whole prefix) and `last` (the signed last term). Then `*x` is "take the last term out, put `last * x` back": `value - last + last * x`. The sign must live inside `last`, or `2 - 3 * 4` goes wrong. Because the pair is passed as arguments, un-choose is free: the caller's copies never changed.
+
+```text
+ building 2 - 3 * 4 + 5, state after each step
+ step   value              last
+ 2      2                  2
+ -3     2 - 3      = -1    -3
+ *4     -1 + 3 - 12 = -10  -12   undo -3, add -3*4
+ +5     -10 + 5    = -5    5
+ check: 2 - 12 + 5 = -5    (O(1) work per edge)
+```
+
+**Where you'll use it**: Expression Add Operators. Beyond: Basic Calculator II (227) uses the same `last` trick to evaluate, not search; Target Sum (494) drops `*` and collapses into DP.
+
+### 6. Shrink the state instead of extending a path
+
+**When it shows up**: any two items may combine in any order (bracket placement is free), so there is no left-to-right prefix to build. "Use these numbers with `+ - * /` and any parentheses" is the classic shape.
+
+**The intuition**: every expression tree is evaluated by repeatedly taking two values that are ready and replacing them with one. So the state is the multiset of values on the table, and one move is "pick a pair, pick an operation, recurse on a table one smaller". Parentheses never appear explicitly: which pair you merge first *is* the bracketing. Because the state shrinks, the depth is fixed (k values, k - 1 merges) and the tree is small enough to walk fully: for four cards, at most 36 x 18 x 6 = 3,888 leaves. Two details matter. Subtraction and division are not commutative, so for a pair `(a, b)` you try `a-b`, `b-a`, `a/b` and `b/a`. And real division means floats, so the leaf test is `|x - 24| < 1e-6`.
+
+```text
+ table [4, 1, 8, 7]
+   merge 8,4 with "-"  -> [1, 7, 4]
+   merge 7,1 with "-"  -> [4, 6]
+   merge 4,6 with "*"  -> [24]      leaf: |24-24| < 1e-6
+ expression recovered: (8 - 4) * (7 - 1)
+```
+
+**Where you'll use it**: 24 Game. Contrast with Expression Add Operators: if the order of items is fixed, carry a prefix (pattern 5); if any pair may go first, shrink a multiset. Memoising on the sorted table helps when the card count grows.
+
+### 7. Relative coordinates and a physical undo
+
+**When it shows up**: you cannot see the search space. You are an agent with "move forward, turn, is there a wall?" and no map, and every un-choose must be carried out by actions in the world.
+
+**The intuition**: you do not need the true map to remember where you have been; you need a consistent frame. Call the starting cell `(0, 0)` and the starting heading "up", and track your own position and heading as you move; the visited set uses these invented coordinates. Un-choose is now a sequence of commands: when the child returns, the parent is directly behind the robot, so "turn twice, move, turn twice" puts it back on the parent cell *facing the same way as before*. That last detail is the contract that makes the recursion work: every call hands the robot back to its caller on the same cell with the same heading, so the parent's loop of "try ahead, turn right" stays in sync with the code's idea of direction.
+
+```text
+ invented frame: start S = (0,0), facing up = dir 0
+ dirs: 0 up (-1,0)  1 right (0,1)  2 down (1,0)  3 left (0,-1)
+
+  row -1    A      robot on S facing up; ahead is A
+            ^      A unvisited, move() ok -> dfs(A, up)
+  row  0    S      A's subtree done: turn, turn, move,
+          col 0    turn, turn -> on S, facing up again
+                   turnRight -> now trying dir 1 (right)
+```
+
+**Where you'll use it**: Robot Room Cleaner. Beyond: Minimum Path Cost in a Hidden Grid (1810), which first maps the room this way and then runs Dijkstra on the map.
+
 ## Signals in a problem statement
 
 Point here:
@@ -306,9 +440,9 @@ words = ["".join(p) for p in product("abc", "def")]
 Other quirks worth knowing:
 
 ```python
-import sys; sys.setrecursionlimit(10_000)   # deep grid walks
-nonlocal best                               # rebind an int in a closure
-s = "".join(path)                           # O(n) string answer
+import sys; sys.setrecursionlimit(10_000)  # deep grid walks
+nonlocal best                              # rebind outer int
+s = "".join(path)                          # O(n) string answer
 ```
 
 Lists are mutable and shared by reference, which is exactly why one `path` works for the whole walk and exactly why you must copy it when recording. Ints and strings are immutable, so passing `remaining - x` or `prefix + ch` as an argument "un-chooses" for free: the caller's value never changed.
@@ -328,18 +462,42 @@ Lists are mutable and shared by reference, which is exactly why one `path` works
 
 ## The journey ahead
 
-1. **Subsets**: the decision tree itself, choose/explore/un-choose, and the pick-from-index template where every node is an answer.
-2. **Subsets II**: duplicates in the input; sort + skip equal siblings to cut identical subtrees.
-3. **Permutations**: the pick-from-set template; a `used` array replaces the `start` index.
-4. **Combination Sum**: the first real prune (remaining budget) and reuse via recursing on `i`; sorted order turns `continue` into `break`.
-5. **Combination Sum II**: two cuts at once, budget break plus duplicate skip, with `i + 1` because reuse is gone.
-6. **Letter Combinations**: a fixed-depth tree with a different alphabet per level; recursion as a variable number of nested loops.
-7. **Generate Parentheses**: choices constrained by counters, so every branch taken is a prefix of a valid answer and no dead ends exist.
-8. **Word Search**: backtracking on a grid; the "used" set becomes a mark on the board that you erase on the way back.
-9. **Unique Paths III**: grid walk that must cover every free cell; counting remaining cells is the prune and the success test.
-10. **N-Queens**: row-by-row placement with column and diagonal sets; constraints propagate across the board.
-11. **Sudoku Solver**: constraint backtracking with bitmasks and choosing the most constrained cell first, so the tree stays narrow.
-12. **Remove Invalid Parentheses**: search over deletions; count the exact removals needed first so the tree has a fixed budget.
-13. **Expression Add Operators**: carry a running value and the last operand so multiplication can be undone in O(1).
-14. **24 Game**: the state is a shrinking multiset; each step combines two numbers, with real-number tolerance.
-15. **Robot Room Cleaner**: backtracking where you cannot see the tree; un-choose is a physical turn-around and step back.
+The fifteen problems climb in four stages. The first stage builds the three templates; the second learns to cut; the third moves the walk onto a board; the last changes what the state *is*. Each problem adds one idea to the previous one, so the order matters.
+
+### Stage 1: the three tree shapes
+
+**Subsets.** The plainest possible question, and the right place to meet the tree: there are 2^n answers, so no algorithm can beat listing them, and the only question is how to list each exactly once with no wasted work. It teaches choose/explore/un-choose with a single shared `path`, the pick-from-index template where every node is an answer, and the habit of copying the path when you record it.
+
+**Subsets II.** Add one repeated value and the same code prints `[1,2]` twice. The tempting fix is a set of tuples at the end, which still builds every duplicate subtree. The new idea is to stop duplicates where they are born: sort, then skip a child whose value equals its left sibling's, with the `i > start` guard that keeps `[2,2]` legal.
+
+**Permutations.** Now order matters, so the start index stops working: after choosing 3 you still need to be able to choose 1. The puzzle is what replaces it, and the answer is a `used` flag per element, which turns pick-from-index into pick-from-set. This `used` array is the ancestor of every visited mark and attack set later in the chapter.
+
+### Stage 2: learning to cut
+
+**Combination Sum.** The first problem where most of the tree is hopeless: once the running sum overshoots, nothing below can come back. That gives the first real prune (a remaining budget), and two small twists worth understanding: recursing on `i` rather than `i + 1` allows reuse, and sorting turns `continue` into `break`, cutting a whole fan of siblings with one comparison.
+
+**Combination Sum II.** Two earlier ideas meet: the duplicate skip from Subsets II and the budget break from Combination Sum, with reuse switched off (`i + 1`). The interesting question is whether the two cuts interfere; they do not, because one compares siblings and the other compares against the budget.
+
+**Letter Combinations.** A breather with a new shape: the depth is fixed by the input, and each level has its own alphabet. The idea it teaches is that recursion is a way to write a variable number of nested loops, which is exactly what you need when you do not know at coding time how many loops there will be.
+
+**Generate Parentheses.** Here the prune is so good that there are no dead ends at all. Two counters (opens used, closes used) decide which characters are allowed next, so every branch taken is a prefix of some valid answer. It is the first taste of "make illegal states impossible to enter" rather than "detect them and back off".
+
+### Stage 3: the walk moves onto a board
+
+**Word Search.** Backtracking on a grid: the tree's children are the four neighbours, and the `used` flag becomes a mark written on the board itself and erased on the way back. The puzzle is why you cannot just keep a global visited set as in an ordinary flood fill: a cell used by one failed path must be free for the next one.
+
+**Unique Paths III.** The walk must cover every free cell and end on a specific square. Checking coverage at the end would be the brute force; the new idea is a `todo` counter that is both the prune and the success test, which is the "count what is still owed" pattern in its simplest form. Watch the off-by-one for the end cell.
+
+**N-Queens.** The first Hard, and the first problem where a choice constrains distant parts of the state. Placing row by row removes the row conflict for free; the new idea is labelling diagonals by `r - c` and `r + c`, so that the conflict test becomes three set lookups at the moment of choosing (Advanced pattern 1).
+
+**Sudoku Solver.** N-Queens with nine values per line and a free choice of which cell to fill. Two ideas arrive together: bitmasks that produce all candidates of a cell in one expression, and branching on the most constrained cell, which turns most of the puzzle into forced moves (patterns 2 and 3).
+
+### Stage 4: the state itself changes shape
+
+**Remove Invalid Parentheses.** The answers must be minimal, and the naive search tries every number of deletions. The new idea is to count the exact number of `(` and `)` deletions first, then search only over *which* ones, with a balance fence pruning bad prefixes (pattern 4).
+
+**Expression Add Operators.** Each edge appends an operator and an operand, and the puzzle is precedence: a `*` must reach back into the term you already added. The idea is to carry `value` and the signed `last` term so that multiplication is undone and redone in O(1) (pattern 5).
+
+**24 Game.** Same flavour of "operators between numbers", but now any pair may be combined first and parentheses are free. A prefix no longer describes the state; the multiset of remaining values does. The search becomes "merge two, recurse on the smaller table", with float tolerance at the leaf (pattern 6).
+
+**Robot Room Cleaner.** The final step removes the map. You explore through a robot's API, so the tree is invisible and un-choose is a physical action that must leave the robot on the same cell with the same heading. Relative coordinates and the turn-around return trip close the chapter (pattern 7): if you can backtrack here, you understand exactly what "restore the state" means.

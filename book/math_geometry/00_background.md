@@ -1,6 +1,6 @@
 # Math and Geometry
 
-*10 problems · Reading time ~12 min*
+*10 problems · Reading time ~22 min*
 
 ## Why this chapter exists
 
@@ -166,8 +166,8 @@ Legal versus illegal, for slopes:
    (0,0)->(3,1)  key (3,1)
    (0,0)->(6,2)  key (3,1)     same key, same line: exact
  ILLEGAL: key = dy / dx as a float
-   1/3  = 0.3333333333333333
-   (big coords) 9999/29997 may round differently from 1/3
+   94911150/94911151 == 94911151/94911152 -> True,
+   yet the cross-multiplied difference is -1: different
    (0,0)->(0,5)  dy/dx -> ZeroDivisionError
 ```
 
@@ -196,6 +196,144 @@ Carry four pictures, one per family.
               6    8   10   12
                    ^ rank 8 lands in "23.." -> 2314
 ```
+
+## Advanced patterns
+
+The basics above give you the tools: coordinate formulas, mixed-radix digits, outcome counts, gcd keys and the cross product. The chapter's seven Hard problems need more than the tools. Each one leans on a *way of using* a tool that is easy to miss the first time. These are the seven ideas worth carrying out of the chapter.
+
+### Count, then descend (unranking)
+
+**When it shows up**: "return the k-th object" in some order, where the objects are far too many to list (`n!` permutations, `10^9` numbers, `C(m+n, n)` paths), but you can *count* how many objects start with any given prefix.
+
+**The intuition**: An ordered family of objects built one choice at a time is a tree, and the order is a left-to-right walk of that tree. You do not need to walk it. At each choice point, look at the options in order and ask how many complete objects hang under each one. If `k` is larger than that count, the target is not under this option: subtract the count and move to the next option. Otherwise the target is inside: commit to the option and repeat one level down with what remains of `k`. The factorial number system is this idea in the special case where every option owns the same count, `(m-1)!`, so the "subtract until it fits" loop collapses into one `divmod`. The reverse direction, *ranking*, is the same walk read backwards: for each chosen item, add (number of smaller unused options) times (block size).
+
+```text
+ unrank k=9 (r=8) among permutations of 1234
+ level  options : block size          r   decision
+   1    1:6  2:6  3:6  4:6            8   skip 1, take 2, r=2
+   2    1:2  3:2  4:2                 2   skip 1, take 3, r=0
+   3    1:1  4:1                      0   take 1
+   4    4:1                           0   take 4   -> 2314
+ rank 2314 back:  2 -> 1 smaller unused * 3! = 6
+                  3 -> 1 smaller unused * 2! = 2
+                  1 -> 0,  4 -> 0           rank = 8
+```
+
+**Where you'll use it**: Permutation Sequence (equal blocks, one division per level) and K-th Smallest in Lexicographical Order (unequal blocks, so the loop really does subtract). Beyond the chapter, Kth Smallest Instructions (LeetCode 1643) uses the same walk with binomial coefficients as the block sizes.
+
+### Sizing a clipped implicit subtree
+
+**When it shows up**: the tree from the previous pattern is not stored anywhere, its shape follows a rule (node `v` has children `10v..10v+9`), and an upper limit `n` cuts off part of it, so block sizes differ from option to option.
+
+**The intuition**: You cannot count a subtree by visiting it; it may hold hundreds of millions of nodes. But in the denary tree, the descendants of prefix `v` at depth `d` are exactly the integers in one contiguous range, `[v * 10^d, (v+1) * 10^d)`. A contiguous range intersected with `1..n` is still a contiguous range, so each level's count is one subtraction, and there are at most ten levels. The whole subtree is a stack of intervals, each clipped at `n + 1`. The clipping is what makes the blocks uneven, and it is also why a closed-form like `(m-1)!` does not exist here: the last level of each subtree can be full, partial or empty depending on where `n` falls.
+
+```text
+ subtree of prefix 1, n = 1234: one interval per level
+ level 0  [1, 2)                              ->   1
+ level 1  [10, 20)                            ->  10
+ level 2  [100, 200)                          -> 100
+ level 3  [1000, 2000) clipped [1000, 1235)   -> 235
+ level 4  [10000, ..)  starts past n          -> stop
+                                       size   =  346
+ check: prefixes 2..9 have 1 + 10 + 100 = 111 each,
+        346 + 8 * 111 = 1234 = n   (every number counted)
+```
+
+**Where you'll use it**: K-th Smallest in Lexicographical Order, where this count feeds the skip-or-descend decision. Lexicographical Numbers (LeetCode 386) walks the same tree without the counting.
+
+### Swap the order of summation (count columns, not rows)
+
+**When it shows up**: "count the total number of X across all numbers from 1 to n" (or across all pairs), where `n` is up to `10^9` and looping over the numbers is out.
+
+**The intuition**: Picture the numbers as rows of a table and the digit positions as columns. The answer is the number of marked cells. Counting row by row means visiting `n` rows. Counting column by column means visiting about ten columns, and a single column is not random: the digit at weight `p` cycles `0, 1, ..., 9`, each value held for `p` consecutive numbers. That rhythm gives each column's count as a formula in `high`, `cur` and `low`. Nothing about the answer changed; you only regrouped the same sum. The move generalises to any per-position or per-bit total: decide what one column contributes, in closed form, and add the columns.
+
+```text
+ count the digit 1 in 1..13
+ number  tens units      column by column
+    1     0    1         units: 1, 11           -> 2
+    2     0    2                (high=1, cur=3: 1*1 + 1)
+   ..    ..   ..         tens : 10, 11, 12, 13  -> 4
+   10     1    0                (high=0, cur=1: low+1=4)
+   11     1    1
+   12     1    2         total = 2 + 4 = 6
+   13     1    3         13 rows scanned vs 2 formulas
+```
+
+**Where you'll use it**: Number of Digit One. Total Hamming Distance (LeetCode 477) is the same regrouping on bits: per bit, the contribution is (count of ones) times (count of zeros).
+
+### Information counting: a lower bound plus a construction that meets it
+
+**When it shows up**: "the minimum number of tests, pigs, weighings or queries to identify one item out of N", where the clever strategy seems hard to search for directly.
+
+**The intuition**: Do not search strategies. Count what any strategy could possibly observe. If one test ends in `s` distinguishable ways and you run `p` tests, there are at most `s^p` different observations. If `N > s^p`, two items must produce the same observation (pigeonhole), so no strategy, however adaptive, can separate them. That gives a lower bound with zero cleverness. The second half is to *meet* the bound: label each item with a distinct outcome vector (its base-`s` digits) and design the tests so that the test result spells out the label. When the construction achieves `s^p >= N`, the bound is tight and the answer is just the smallest such `p`. The pitfall is counting `s` wrongly; in Poor Pigs, *when* a pig dies is information, so `s = T + 1`, not `2`.
+
+```text
+ T = 2 rounds: a pig ends as died-r1 / died-r2 / lived
+ 2 pigs -> 3 x 3 = 9 possible observations
+                 pig 1:  r1    r2    lived
+   pig 0 r1             [  ]  [  ]  [  ]
+   pig 0 r2             [  ]  [  ]  [  ]
+   pig 0 lived          [  ]  [  ]  [  ]
+ 10 buckets into 9 cells: two buckets share a cell,
+ so no scheme with 2 pigs can work; 3 pigs give 27
+```
+
+**Where you'll use it**: Poor Pigs. The same argument is behind the `log2(n!)` lower bound for comparison sorting and behind why binary search is optimal for comparison-based lookup.
+
+### Canonical exact keys for geometric relations
+
+**When it shows up**: grouping or comparing geometric things (lines, directions, slopes, ratios) computed from integer coordinates, especially with a hash map.
+
+**The intuition**: A hash map groups by *equality of bits*, so the key must be a representation in which equal things are byte-for-byte equal and different things never are. A float ratio fails both ways: vertical lines have no value, and two different large ratios can round to the same double. The fix is to keep the relation in integers and pick one canonical representative per equivalence class: divide by the gcd to get the primitive vector, then fix the sign by a rule. When you only need to compare two ratios rather than hash them, skip the gcd and cross-multiply: `a/b == c/d` iff `a*d == b*c`, exactly. Both moves keep every decision in integer arithmetic.
+
+```text
+ A=(0,0)  B=(94911151,94911150)  C=(94911152,94911151)
+ float slopes: 94911150/94911151 == 94911151/94911152
+               -> True   (wrong: they are different)
+ cross-multiply: 94911150*94911152 - 94911151*94911151
+               = -1      (not 0: not collinear, exact)
+ gcd keys: (94911151,94911150) vs (94911152,94911151)
+           already primitive, different -> different lines
+```
+
+**Where you'll use it**: Max Points on a Line, with an anchor plus a `Counter` of gcd keys. Minimum Lines to Represent a Line Chart (LeetCode 2280) is famous for failing float solutions; cross-multiplication fixes it.
+
+### Local parity certifies a global shape
+
+**When it shows up**: "do these pieces form exactly X" (a perfect tiling, a closed loop, a valid cover), where checking the whole shape directly would mean drawing it cell by cell.
+
+**The intuition**: Find quantities that are cheap to accumulate piece by piece and that a correct answer pins down. Area is additive: a perfect tiling's areas sum to the box's area. Corner multiplicity is local: around any interior point the tiles' angles must sum to 360 degrees, which forces an even number of tile corners there, while each outline corner sees exactly one. Each test alone has a loophole, because each one only sees part of the picture: identical tiles cancel in the corner parity, and a gap can be paid for by an overlap of equal area. Together they leave no room. Toggling a set (add if absent, remove if present) computes parity for free, and nothing depends on the order the pieces arrive.
+
+```text
+ area fooled, corners not:
+ y=2  +-----+. . . .     A = [0,0,2,1]  area 2
+      |  C  :  gap  :    B = [1,0,2,1]  area 1 (overlaps A)
+ y=1  +-----+-------+    C = [0,1,1,2]  area 1
+      |  A  |  A+B  |    sum 4 == box [0,0,2,2] area 4
+ y=0  +-----+-------+
+     x=0   x=1     x=2
+ odd corners left: (0,0) (1,0) (0,2) (1,2)
+ box corners:      (0,0) (2,0) (0,2) (2,2)   -> not perfect
+```
+
+**Where you'll use it**: Perfect Rectangle. The habit of "find an invariant that a correct configuration must satisfy, then show it is also sufficient" shows up again in greedy proofs and in parity arguments for grid puzzles.
+
+### Orientation as the only primitive; sort, then a turn-checking stack
+
+**When it shows up**: anything about the boundary of a point set: enclosing fences, convexity checks, "is this polygon convex", "are all these points on one line".
+
+**The intuition**: Every geometric decision in a hull reduces to one question about three points: left turn, right turn or straight, answered by the sign of an integer cross product. Sorting by `(x, y)` turns the 2-D problem into two 1-D sweeps, because each half of the boundary is monotone in `x`. Along a sweep, the stack is always a chain that only turns left; a new point that makes the top turn right proves the top is inside, so it is popped and never seen again. Each point is pushed once and popped at most once per chain, which is why the sweep is linear after the sort. The remaining subtlety is the straight case: `cross == 0` points lie on the boundary, and whether you keep them is a policy choice, not a geometric fact. Keeping them means the same point can land in both chains, so merge with a set rather than by slicing off endpoints.
+
+```text
+ all trees collinear: (0,0) (1,1) (2,2) (3,3)
+ every triple has cross = 0, nothing is popped (pop on < 0)
+ lower chain: (0,0) (1,1) (2,2) (3,3)
+ upper chain: (3,3) (2,2) (1,1) (0,0)
+ lower[:-1] + upper[:-1] -> (1,1), (2,2) listed twice
+ set(lower) | set(upper)  -> 4 trees, each once
+```
+
+**Where you'll use it**: Erect the Fence. Check If It Is a Straight Line (LeetCode 1232) is the single-sign version: every cross product must be zero.
 
 ## Signals in a problem statement
 
@@ -254,13 +392,32 @@ Python integers never overflow, so `states ** pigs` and `high * p` are safe here
 
 ## The journey ahead
 
-1. **Rotate Image** — a geometric move is a formula on coordinates, and a rotation is two in-place reflections.
-2. **Spiral Matrix** — the same board, walked layer by layer; four bounds replace a visited grid.
-3. **Set Matrix Zeroes** — the board's own border becomes storage; order of updates matters when you write into your input.
-4. **Permutation Sequence** — leave the board for number systems: blocks of `(n-1)!`, the factorial number system.
-5. **K-th Smallest in Lexicographical Order** — the same block skipping, but block sizes must be computed on a ragged 10-ary tree.
-6. **Number of Digit One** — count across positions instead of across numbers: the `high / cur / low` split.
-7. **Poor Pigs** — counting turned into a lower bound, and a base-`s` labelling that meets it.
-8. **Max Points on a Line** — exact geometry begins: a slope as a canonical integer pair, grouped in a hash map.
-9. **Perfect Rectangle** — integer invariants (area and corner parity) that certify a whole tiling in one pass.
-10. **Erect the Fence** — the cross-product sign drives a stack sweep that builds the convex hull; the chapter's capstone.
+The ten problems climb from a board you can see, to numbers you cannot list, to shapes you must not approximate. Each one keeps something from the problem before it and changes one thing.
+
+### Stage 1: the board as a coordinate system
+
+**Rotate Image.** Rotating a square in place looks like it needs a second matrix, because writing a cell destroys a value you still need. The puzzle dissolves once a rotation is a formula, `(r, c) -> (c, n-1-r)`, and you notice it factors into two reflections, each of which is a set of independent swaps. The new idea is that grid moves are algebra on coordinates, not cell shuffling.
+
+**Spiral Matrix.** The board stays, but the question changes from moving cells to visiting them in a strange order. The naive approach keeps a visited grid and turns on collisions; the better one sees that the unvisited part is always a rectangle, described by four integers that close in after each straight run. The new idea is that a layer is a rectangle's border, and its bounds replace memory. The trap to watch is a single leftover row or column visited twice.
+
+**Set Matrix Zeroes.** Now you must write into the board while still reading it, and the follow-up forbids extra memory. The question is where the "this row has a zero" flags can live; the answer is the board's own first row and column, plus one extra bit for the cell they share. The new idea, building on the previous two, is that the order of updates matters when the input is also your scratch space: process the interior first, the flags last.
+
+### Stage 2: numbers as addresses
+
+**Permutation Sequence.** Listing `n!` permutations to find the k-th one is honest and hopeless. The question a curious person asks is "how many permutations start with 1?", and the answer, `(n-1)!` for every leading digit, turns the search into division. The new idea is the factorial number system: a rank is a mixed-radix numeral whose digits are indices into the shrinking pool of unused digits.
+
+**K-th Smallest in Lexicographical Order.** The same "skip whole blocks" walk, but the blocks now have different sizes, because `n` cuts the denary tree off unevenly. What makes it interesting is that you need the size of a subtree that you cannot afford to visit. The new idea is counting a clipped implicit subtree level by level, each level one contiguous range, and choosing between skipping a sibling and stepping down.
+
+**Number of Digit One.** Here there is no k-th object to find, only a total to count, and the obvious loop over `1..n` fails at `n = 10^9`. The twist is to stop counting numbers and start counting digit positions, where the digit at weight `p` cycles with period `10p`. The new idea is swapping the order of summation, with the `high / cur / low` split giving one column's count in `O(1)`, and the `cur == 1` case needing the partial run `low + 1`.
+
+### Stage 3: what an experiment can tell you
+
+**Poor Pigs.** It reads like a puzzle about clever pig schedules, and searching for schedules goes nowhere. The question to ask instead is how many different things you could possibly observe at the end, which caps what any schedule can achieve. The new idea is an information-theoretic lower bound, `(T+1)^p >= buckets`, met exactly by labelling buckets in base `T + 1`, so the digits from Stage 2 reappear as the experiment's design.
+
+### Stage 4: exact geometry
+
+**Max Points on a Line.** The brute force over all lines is fine in principle; what breaks naive solutions is representing a slope. Floats divide by zero on vertical lines and can merge different slopes. The new idea is a canonical integer key, the gcd-reduced direction with a fixed sign, counted from each anchor point, so that "same line" becomes "same dictionary key".
+
+**Perfect Rectangle.** Checking a tiling cell by cell is too slow, and checking only area is fooled by a gap that an overlap pays for. The puzzle is to find something cheap that a perfect tiling must satisfy and an imperfect one cannot fake. The new idea is a pair of integer invariants, total area and odd-count corners via set toggles, each closing the other's loophole, continuing the "keep everything exact" habit from the previous problem.
+
+**Erect the Fence.** The capstone combines exact integer tests with a stack sweep. The trees are sorted, then two passes keep a chain that never turns right, using the cross-product sign from the basics and the monotonic-stack habit from earlier chapters. The new idea is the collinear policy: pop only on a strict right turn so every tree on the rope stays, and merge the two chains with a set because straight stretches can appear in both.

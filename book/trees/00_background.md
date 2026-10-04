@@ -1,6 +1,6 @@
 # Trees
 
-*28 problems · Reading time ~20 min*
+*28 problems · Reading time ~32 min*
 
 ## Why this chapter exists
 
@@ -236,6 +236,216 @@ record on the side. BFS is a horizontal line sweeping down the drawing one row a
 
 For a BST, picture the values projected onto a number line: the tree is a recipe for binary search over that line.
 
+## Advanced patterns
+
+The basic moves (return a value up, carry a value down, sweep by rows, use the BST order) solve the Easy and Medium
+problems on their own. The Hard problems in this chapter combine them in specific ways. Each pattern below is one of
+those combinations. If you can name the pattern while reading a problem, you are most of the way to the solution.
+
+### 1. Return one arm, record both arms
+
+**When it shows up.** The answer is a path that may bend at any node: longest path, heaviest path, any "between two
+nodes" quantity. Often the values can be negative.
+
+**The intuition.** A path through the tree has exactly one highest node, where it bends. Below that node it goes down
+at most two arms, one left and one right. So "best path overall" is "best over all nodes X of the best path that bends
+at X". In post-order, when X holds both children's answers, it can score its own bending path right away. What it
+hands its parent is something different: a path that goes down from X along one arm only, because the parent can attach
+just one arm per side. Negative values add one rule. An arm that sums below zero is worse than no arm, so the parent
+clips it to 0 before using it. The node's own value is never clipped, because a path must contain at least one node.
+
+```text
+ tree:      -10          post-order, arms clipped at 0
+            /  \
+           9    20       node  L   R   record      return
+               /  \       9    0   0     9           9
+              15   -7    15    0   0    15          15
+                         -7    0   0    -7          -7
+                         20   15   0    35  <- best 35
+                        -10    9  35    34          25
+
+ at 20: arm -7 clipped to 0, bend = 20+15+0 = 35
+        return 20+15 = 35 (one arm only) to -10
+```
+
+The best path is 15 -> 20 with sum 35. Passing through -10 to reach 9 costs more than it gains: 34 < 35.
+
+**Where you'll use it.** Diameter of Binary Tree (heights, no negatives) and Binary Tree Maximum Path Sum (weights,
+clipping). Beyond the chapter: Longest Univalue Path (LeetCode 687), where an arm only counts if its value matches.
+
+### 2. Post-order states and a greedy choice from the leaves
+
+**When it shows up.** "Place the minimum number of X so that every node is covered / watched / monitored." Each node's
+fate depends on its neighbours, both above and below.
+
+**The intuition.** A number is not enough to describe a subtree here. What the parent needs to know is a small fact:
+does this child need help, is it fine, or does it offer help upward? That gives three states: NEEDS, COVERED,
+HAS_CAMERA. Decide from the leaves upward, and be lazy: a node puts a camera on itself only when a child NEEDS one,
+because only then is the decision forced. A leaf never takes one: its parent can watch it, and from that higher spot
+the parent also watches its own parent and the leaf's sibling. An empty child reports COVERED, since it needs nothing and
+offers nothing. That one choice is what makes leaves report NEEDS. The root has no parent to defer to, so if it ends up
+NEEDS, it pays for one more camera.
+
+```text
+ chain 1-2-3-4-5, states computed bottom-up:
+
+   1  CAM      child 2 NEEDS  -> camera here     cameras
+   |                                              = 2
+   2  NEEDS    child 3 only COVERED, nobody sees me
+   |
+   3  COVERED  child 4 has a camera
+   |
+   4  CAM      child 5 NEEDS  -> camera here
+   |
+   5  NEEDS    leaf: both empty children COVERED
+```
+
+**Where you'll use it.** Binary Tree Cameras. The same "return a small state, act only when forced" idea solves House
+Robber III (LeetCode 337), where each node returns the pair (best if robbed, best if not).
+
+### 3. In-order as a sorted stream, read one step behind
+
+**When it shows up.** A BST question that is really a question about its sorted sequence: k-th smallest, the minimum
+gap between values, two values that were swapped, checking validity.
+
+**The intuition.** In-order of a BST prints the values in increasing order. So any "look at neighbours in sorted
+order" question becomes a question about adjacent pairs in that stream. You don't need the stream as a list. Keep one
+pointer, `prev`, to the node visited just before the current one, and compare at each visit. For two swapped values,
+a swap leaves one or two "dips" where `prev > cur`. The culprits are the left side of the first dip and the right side
+of the last dip. The iterative walk with a stack is the natural host: each pop is the next value in sorted order.
+
+```text
+ BST 1..5 with 2 and 5 swapped:     in-order stream:
+
+          3                         1   5   3   4   2
+         / \                            \_/     \_/
+        5   4                           dip     dip
+       /     \                        5 > 3   4 > 2
+      1       2
+                      first  = prev of first dip = 5
+                      second = cur of last dip   = 2
+                      swap their values back
+```
+
+**Where you'll use it.** Binary Tree Inorder Traversal (the machine itself), Kth Smallest Element in a BST (stop after
+k pops), Recover Binary Search Tree (dips). Beyond: Minimum Absolute Difference in BST (LeetCode 530).
+
+### 4. Paused in-order iterators, started in the middle
+
+**When it shows up.** You need the values of a BST in sorted order, but starting near some target and walking outward,
+or you need two sorted streams merged without listing everything.
+
+**The intuition.** The stack of the iterative in-order walk is a paused traversal. It holds exactly the ancestors whose
+values are still to come, and its top is the next value. Instead of starting the walk at the minimum, you can start
+it anywhere with one BST search. Going down toward the target, every node with value <= target goes on a predecessor
+stack (then turn right), and every larger node goes on a successor stack (then turn left). When the search falls off,
+the two tops are the closest values on each side. Advancing a successor stack pops the top, then pushes its right child
+and that child's left chain. Predecessors mirror it. Each stream gets farther from the target as it advances, so the
+k closest values come from merging the two heads, like the merge step of merge sort.
+
+```text
+ BST:      4          target 3.7, k = 2
+          / \
+         2   5        search: 4 > t  succ=[4], go left
+        / \                   2 <= t pred=[2], go right
+       1   3                  3 <= t pred=[2,3], go right
+                                     -> None, stop
+
+ heads: pred 3 (dist 0.7)   succ 4 (dist 0.3)
+ take 4; succ pops 4, pushes 5        succ=[5]
+ heads: pred 3 (dist 0.7)   succ 5 (dist 1.3)
+ take 3                               answer [4, 3]
+```
+
+**Where you'll use it.** Closest Binary Search Tree Value II. Beyond: Binary Search Tree Iterator (LeetCode 173) and
+Two Sum IV on a BST (LeetCode 653), which runs a forward and a backward iterator toward each other.
+
+### 5. Self-delimiting pre-order: sentinels or counts, one cursor
+
+**When it shows up.** "Serialize", "encode", "compare subtrees as strings", or any format where a tree must be
+written as a flat sequence and read back without ambiguity.
+
+**The intuition.** A plain pre-order list does not identify a tree: `1 2 3` could be a chain or a root with two
+children. Write a sentinel `#` for every empty child and the ambiguity disappears, because every branch now says where
+it ends. A tree of n nodes has n + 1 empty slots, so the tape is 2n + 1 tokens. The decoder is the encoder run in
+reverse: read a token; if `#`, return None; else make a node, read its left subtree, then its right. One cursor moves
+forward and never goes back. The pending recursive calls remember which slots are still open, so there is no index
+arithmetic. When nodes have any number of children, write the child count after each value instead of sentinels, and
+the decoder calls itself exactly that many times.
+
+```text
+ tree:     1
+          / \       tape:  1 2 # # 3 4 # # 5 # #
+         2   3      index: 0 1 2 3 4 5 6 7 8 9 10
+            / \                     ^
+           4   5                   cursor at index 4
+
+ after 4 tokens: read(2) is done (both # consumed);
+ read(1) has its left child and now calls read() for
+ its right, which will consume tokens 4..10
+ n = 5 nodes, 6 sentinels, 11 tokens = 2n + 1
+```
+
+**Where you'll use it.** Subtree of Another Tree (serialize both, then substring search), Serialize and Deserialize
+Binary Tree, Serialize and Deserialize N-ary Tree. Beyond: Find Duplicate Subtrees (LeetCode 652), which uses each
+subtree's serialization as a hash key.
+
+### 6. Rebuilding from a traversal: the root comes first, the boundary is found, not scanned
+
+**When it shows up.** "Construct the tree from these traversals", or a string that describes a tree by depth.
+
+**The intuition.** Pre-order always writes a root before its subtrees, so it tells you who the root is. It does not
+tell you where the left subtree ends. Something else must answer that. With an in-order list, the root's position
+splits it into left and right parts. A dict from value to in-order index makes that lookup O(1), so the whole build is
+O(n) instead of O(n^2). With depth markers (dashes), the answer is a stack whose length is the current depth: a node at
+depth d pops the stack down to length d, and the top is its parent. Everything popped belonged to subtrees that pre-order
+has finished and will never revisit. In both cases you never search ahead for where a subtree stops; the structure of
+the input tells you when you get there.
+
+```text
+ pre  = [3, 9, 20, 15, 7]   in = [9, 3, 15, 20, 7]
+                                   0  1   2   3  4
+ root 3 -> in-index 1 -> left = in[0..0], right = in[2..4]
+ root 9 -> in-index 0 -> a leaf
+ root 20 -> in-index 3 -> left = in[2..2], right = in[4..4]
+
+ "1-2--3--4-5--6--7", depth stack by token:
+   token 4, d=2: pop to len 2 -> [1, 2], parent 2, push 4
+   token 5, d=1: pop to len 1 -> [1],    parent 1, push 5
+                 stack now [1, 5]; subtree of 2 is closed
+```
+
+**Where you'll use it.** Construct Binary Tree from Preorder and Inorder Traversal (index map), Recover a Tree From
+Preorder Traversal (depth stack). Beyond: Construct Binary Search Tree from Preorder Traversal (LeetCode 1008), where
+(low, high) bounds replace the in-order list.
+
+### 7. Coordinates first, then sort
+
+**When it shows up.** The output order is geometric (columns, diagonals, a picture of the tree on a grid) and
+does not follow any traversal order.
+
+**The intuition.** No single walk visits nodes in "column, then row, then value" order. So stop trying to make one
+do it. Give every node coordinates during any walk: the root is (row 0, col 0), a left child is (row + 1, col - 1),
+a right child is (row + 1, col + 1). Each coordinate comes from the parent in O(1), carried down like depth. Once every
+node is a record, the tree's shape no longer matters. Sort by a tuple key in priority order, and group. Python compares
+tuples element by element, so `(row, val)` sorted inside each column bucket applies both tie rules at once.
+
+```text
+ tree:        1           (row, col) per node:
+            /   \         1 (0, 0)
+           2     3        2 (1,-1)   3 (1, 1)
+          / \   / \       4 (2,-2)   6 (2, 0)
+         4   6 5   7      5 (2, 0)   7 (2, 2)
+
+ column 0 bucket: (0,1) (2,6) (2,5) -> sorted -> [1, 5, 6]
+ 6 and 5 share a cell, so the smaller value goes first
+ answer: [[4], [2], [1, 5, 6], [3], [7]]
+```
+
+**Where you'll use it.** Vertical Order Traversal of a Binary Tree. The "carry a coordinate down" half also appears in
+Cousins in Binary Tree (depth and parent). Beyond: Maximum Width of Binary Tree (LeetCode 662), where the coordinate is
+a heap-style position index.
+
 ## Signals in a problem statement
 
 - "binary tree", "root", "subtree", "leaf": recursive DFS on the shape, base case on `None`.
@@ -291,31 +501,121 @@ explicitly. `a is b` on two possibly-`None` nodes is the cleanest "both empty" t
 
 ## The journey ahead
 
-1. **Maximum depth**: the first "trust the child" function; return one number up.
-2. **Invert**: the same walk, but the work is a change to the tree, not a value.
-3. **Same tree**: recursion over two trees in lockstep.
-4. **Symmetric tree**: lockstep again, but crossing over (outer with outer, inner with inner).
-5. **Subtree of another tree**: lockstep from every node, then a pre-order string that makes it linear.
-6. **Balanced**: return a height up, and a sentinel when a check fails below.
-7. **Diameter**: return a height up, record an answer on the side; the template in full.
-8. **Sum of left leaves**: the parent hands a fact down (am I a left child?).
-9. **Path sum**: carry a running total down to the leaves.
-10. **Path sum II**: carry the whole path down and backtrack it.
-11. **Count good nodes**: carry the running maximum down.
-12. **Maximum path sum**: the diameter template with negative values, so arms can be dropped.
-13. **Level order**: the BFS queue with a level snapshot.
-14. **Right side view**: the last node of each level, or first-visit per depth in DFS.
-15. **Cousins**: same depth, different parent; carry both down.
-16. **Vertical order**: give every node coordinates, then sort.
-17. **In-order traversal**: the iterative stack version of the walk.
-18. **Validate BST**: (low, high) bounds carried down.
-19. **K-th smallest in a BST**: in-order with early stop.
-20. **LCA of a BST**: one ordered descent; the split point is the answer.
-21. **LCA of a binary tree**: no order, so post-order "found below me".
-22. **Closest BST values II**: two in-order iterators walking outward.
-23. **Recover BST**: in-order with a previous pointer to spot two swapped values.
-24. **Construct from preorder and inorder**: build a tree from index ranges.
-25. **Recover from preorder string**: build with a stack of ancestors by depth.
-26. **Serialize binary tree**: pre-order with null markers, read back by a cursor.
-27. **Serialize n-ary tree**: child counts replace null markers.
-28. **Binary tree cameras**: post-order returning one of three states, greedy from the leaves.
+The order is built so that each problem reuses the previous one's machinery and adds one new piece. The early problems
+are short on purpose: their job is to make "trust the child" feel automatic before the Hard problems lean on it.
+
+### Warm-up: one function, one value up
+
+**Maximum Depth of Binary Tree.** It sounds like you must explore every root-to-leaf path and keep the longest. You
+don't: the depth of a node is one more than the deeper child's depth, and that single sentence is the whole solution.
+This is where you learn to write the function for one node and trust the calls on its children.
+
+**Invert Binary Tree.** Same one-visit-per-node walk, but now the work is changing the tree instead of computing a number.
+The trap is losing a child while swapping. The new idea is that recursion can rebuild a structure, not just measure it.
+
+**Same Tree.** Now there are two trees, walked in lockstep with two fingers. The interesting part is the base cases:
+both empty, one empty, values differ. Get those three right and the recursion writes itself.
+
+**Symmetric Tree.** Lockstep again, but within one tree and in mirror image: the left's left pairs with the right's
+right. The question to ask is "what are the two things I am comparing?" The answer is two subtrees, not one node,
+and that is the step up from Same Tree.
+
+**Subtree of Another Tree.** The obvious answer runs Same Tree from every node, which is O(n * m). The curious question
+is whether a tree can be turned into a string so that "subtree" becomes "substring". It can, if empty children are
+written down as markers. This is your first look at serialization.
+
+### Returning more than an answer
+
+**Balanced Binary Tree.** Checking balance at every node and recomputing heights each time costs O(n^2) on a stick. The
+fix is to return the height and fold the check into it, with -1 as a "already failed below" signal that stops the work
+early. One return value now carries two meanings.
+
+**Diameter of Binary Tree.** The longest path may not touch the root at all, which breaks the naive "height of left plus
+height of right at the root" answer. The function returns a height, but at every node it records left + right on the
+side. This is the "return one arm, record both" template in its cleanest form.
+
+### Carrying state down
+
+**Sum of Left Leaves.** A node cannot tell on its own whether it is a left child; only its parent knows. So the parent
+passes that fact down as an argument. This is the first time information flows down instead of up.
+
+**Path Sum.** Carry a running total down and test it at the leaves. The trap is testing at a node with one child,
+which is not a leaf. The idea is that the argument you pass down is the state of the path so far.
+
+**Path Sum II.** Now you need every matching path, not just yes or no. Copying the path at each step is wasteful; the
+better move is one shared list, append on the way down, pop on the way up. That append-recurse-pop rhythm is
+backtracking, and it is also where the "forgot to copy the path" bug lives.
+
+**Count Good Nodes in Binary Tree.** A node is good if nothing above it is bigger. You don't need the whole path, only
+its maximum. The lesson is to carry the smallest summary of the path that answers the question.
+
+**Binary Tree Maximum Path Sum.** Diameter's template, but with values that can be negative. Now an arm can hurt, so it
+is clipped at zero, and the answer must start at negative infinity because a path needs at least one node. It is Hard
+because three small details (clip, no clip on the node itself, initial value) must all be right at once.
+
+### Thinking in rows
+
+**Binary Tree Level Order Traversal.** Switch from depth to breadth. A queue holds the next nodes, and taking a snapshot
+of its length tells you where one row ends. The question it answers is "how do I know a level is over?"
+
+**Binary Tree Right Side View.** One node per row: the last one popped in each level. The DFS alternative is just as
+instructive: visit right before left and keep the first node seen at each new depth.
+
+**Cousins in Binary Tree.** Two nodes are cousins if they share a depth but not a parent. Carry both facts down, then
+compare two pairs. It is short, but it trains you to carry a tuple of facts rather than one.
+
+**Vertical Order Traversal of a Binary Tree.** No traversal visits nodes column by column with the right tie rule. The
+way out is to stop fighting the shape: give every node coordinates, then sort records. It is the chapter's first lesson
+that a tree problem can turn into a sorting problem.
+
+### The BST order
+
+**Binary Tree Inorder Traversal.** The recursive version is three lines. The real content is the iterative one: a
+stack that holds the left spine still to visit. Every later BST problem that needs to stop early, pause, or run two
+walks at once is built on this machine.
+
+**Validate Binary Search Tree.** Checking each node against its parent passes on trees that are wrong. The BST rule is
+global, so each node must sit inside a (low, high) window inherited from all its ancestors. Bounds carried down are
+the new idea.
+
+**Kth Smallest Element in a BST.** In-order is sorted, so the k-th pop is the answer. The interesting part is stopping:
+the iterative walk lets you quit after k pops instead of building the whole list.
+
+**Lowest Common Ancestor of a Binary Search Tree.** With order, you never need to search both sides. Walk down from the
+root; while both targets are on the same side, go that way. The first node where they split is the answer.
+
+**Lowest Common Ancestor of a Binary Tree.** Without order, you can't tell which side a node is on without looking. So
+each call reports "I found something below me", and the first node that hears yes from both sides (or is a target
+itself with a yes below) is the answer. It turns the BST descent into a post-order signal.
+
+**Closest Binary Search Tree Value II.** Listing everything and sorting by distance ignores the BST. The better question
+is: can an in-order walk start at the target and go both ways? Two paused iterators, seeded by one search, merge outward.
+It builds directly on the iterative in-order stack.
+
+**Recover Binary Search Tree.** Two values were swapped; find them without a list. The in-order stream now has one or
+two dips, and one pointer to the previous node is enough to spot them. It reuses the same walk, now watching neighbours.
+
+### Building and flattening
+
+**Construct Binary Tree from Preorder and Inorder Traversal.** Pre-order tells you the root; in-order tells you how
+many nodes go left. Scanning for the root each time costs O(n^2); an index map makes it O(n). This is the first time
+you reverse a traversal.
+
+**Recover a Tree From Preorder Traversal.** Now the input is one string with dashes for depth. There is no in-order to
+split on, so the question is how to know where a subtree ends. A stack indexed by depth answers it: a shallower token
+pops the finished nodes.
+
+**Serialize and Deserialize Binary Tree.** Now you design the format yourself. Pre-order with a `#` for every empty
+child is complete, and the reader is the writer's recursion run backwards with one cursor. It ties back to the string
+trick from Subtree of Another Tree.
+
+**Serialize and Deserialize N-ary Tree.** Any number of children breaks the "two `#` per leaf" rule. Writing a child
+count after each value restores self-delimiting order. The idea generalises: the format must tell the reader how much
+to read next.
+
+### The finale
+
+**Binary Tree Cameras.** The minimum number of cameras to watch every node. It looks like it needs search over
+placements, but a post-order that returns one of three states, with a lazy rule (only take a camera when a child needs
+one), is provably optimal. It combines the post-order template from Diameter with a greedy argument, and it is the best
+test of whether "decide what goes up" has become second nature.

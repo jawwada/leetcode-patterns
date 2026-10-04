@@ -395,6 +395,219 @@ off now. Picture union-find as **a forest of short trees** whose roots are the c
 under another's root. Picture Dijkstra as the same wave as BFS, except that the ground is uneven and the wave moves
 slower over expensive edges; the heap tells you which part of the shore gets wet next.
 
+## Advanced patterns
+
+The tools above get you through the Mediums. Each Hard adds one twist: the node is redefined, the edges are thinned,
+the queries are reordered, or the cost is computed differently. These seven twists cover every Hard here.
+
+### 1. The node is "where I am plus what I carry"
+
+**When it shows up.** A shortest-path question on a grid or small graph, plus something that changes what is possible
+later: walls you may still break, keys on your ring, which nodes you have already seen, where the box sits. The
+constraints give it away: k <= 40, at most 6 keys, n <= 12.
+
+**The intuition.** BFS is correct only if two visits to the same node have the same future. A cell reached with a key
+and the same cell reached without one do not have the same future: one can pass the door, the other cannot. So the cell
+is the wrong node. Put the extra into the node, `(cell, keys)`, and the futures match again, so BFS works unchanged. The
+price is the state count: cells times the number of possible extras (times 2^6 for keys, times k + 1 for a budget).
+Picture one copy of the grid per value of the extra,
+stacked like floors; picking up a key takes the stairs.
+
+```text
+  corridor:  $   A   @   .   a     $ goal, A door, a key
+  index:     0   1   2   3   4     start at @ (index 2)
+
+  visited keyed on cell only:
+    2 -> 3 -> 4 (key!) -> 3? already seen. stuck.
+
+  visited keyed on (cell, keys):    numbers = BFS distance
+  floor keys={}  :  .   x   0   1   2   x = door blocks
+                                    |   pick up a: stairs
+  floor keys={a} :  6   5   4   3   2
+  goal reached on the {a} floor at distance 6
+```
+
+**Where you'll use it.** Shortest Path in a Grid with Obstacles Elimination (budget), Shortest Path to Get All Keys
+(key mask), Shortest Path Visiting All Nodes (visited mask, every node a source), Minimum Moves to Move a Box (box plus
+player), and in spirit Sliding Puzzle, where the whole board is the state. Beyond the chapter: Minimum Cost to Reach
+Destination in Time (LeetCode 1928).
+
+### 2. Keep every parent: the shortest-path DAG
+
+**When it shows up.** "Return all shortest sequences", or "count the shortest paths".
+
+**The intuition.** BFS normally keeps one parent per node, the first one to discover it, so it can rebuild one path.
+Every shortest path, though, steps from layer d to layer d+1 at each move; nothing else can be on a shortest path. So
+keep every parent that sits one layer up, and the shortest paths are exactly the routes through this layered DAG. The
+trap is the visited mark: if you delete a word the moment one node of layer d finds it, a sibling in layer d that also
+links to it never gets recorded as a parent. Expand the whole layer into a "next" map first, then retire all of its
+words together. Then backtrack
+from the target.
+
+```text
+  layer  0     1      2          3          4
+         hit - hot - dot ------ dog ------ cog
+                  \                       /
+                   - lot ------ log ------
+
+  parents:  hot{hit}  dot{hot}  lot{hot}
+            dog{dot}  log{lot}  cog{dog, log}  <- two parents
+  backtrack from cog: cog-dog-dot-hot-hit, cog-log-lot-hot-hit
+```
+
+**Where you'll use it.** Word Ladder II. Beyond the chapter: Number of Ways to Arrive at Destination (LeetCode 1976),
+the same DAG idea with Dijkstra and counts instead of lists.
+
+### 3. Replace a clique with a hub, and consume the hub once
+
+**When it shows up.** One rule connects whole groups to each other: every stop on a bus route, every index holding the
+same value, every word matching `h*t`, every number sharing a prime factor.
+
+**The intuition.** A group of m mutually connected nodes is m(m-1)/2 edges if you draw them all, and a BFS that walks
+them all is quadratic. Add one extra node for the group (the route, the value, the wildcard pattern, the prime) and join
+each member to it: m edges. Now a second idea: in BFS, the first time you reach any member, you reach every member at
+the same distance + 1. After that the hub is useless, so delete or mark it, and no later member walks the group again.
+Each hub is opened once, so the total work is the sum of group sizes. In union-find the same hub trick appears without
+the "once": union each number with its primes, and numbers sharing a prime land under one root.
+
+```text
+  clique (value 6 at indices 1, 3, 5, 7)   hub
+     1 ----- 3                   1   3   5   7
+     | \   / |                    \  |   |  /
+     |   X   |                     [ value 6 ]
+     | /   \ |                 4 edges, and after the first
+     5 ----- 7                 visit the bucket is cleared:
+  6 edges; m(m-1)/2 grows fast  bucket[6] = []
+```
+
+**Where you'll use it.** Word Ladder (wildcard buckets), Bus Routes (routes as nodes), Jump Game IV (value buckets
+cleared after use), Largest Component Size by Common Factor (primes as hubs in union-find).
+
+### 4. Topological order carries a DP
+
+**When it shows up.** Dependencies plus a number to optimise along them: earliest finish time, longest chain, count of
+ways, or an ordering that must hold at two levels at once.
+
+**The intuition.** A topological order is exactly the order in which a DP over a DAG can be filled: when Kahn pops a
+node, every predecessor has already been popped, so every value the node depends on is final. Each pop pushes its value
+along its out-edges (`start[v] = max(start[v], finish[u])`), and when a node's in-degree hits 0 its value is complete.
+That is how a "longest path", NP-hard in general graphs, becomes linear on a DAG. For two-level orderings (items inside
+groups), build two graphs: one between groups from cross-group edges, one between items from same-group edges, sort
+both, then lay the item order out group by group.
+
+```text
+  courses 1..5, time = [1,2,3,4,5]
+  edges 1->5  2->5  3->5  3->4  4->5
+
+     1 (t=1) -----------------------.
+     2 (t=2) ---------------------. |
+     3 (t=3) -------------------. | |
+        |                       v v v
+        +-----> 4 (t=4) -----> 5 (t=5)
+
+  node    start (max finish of prereqs)    finish
+  1 2 3   0                                1 2 3
+  4       3                                7
+  5       max(1, 2, 3, 7) = 7              12
+  Kahn pops 1 2 3 4 5; answer = max finish = 12
+```
+
+**Where you'll use it.** Parallel Courses III (finish times), Sort Items by Groups Respecting Dependencies (two-level
+sort), Alien Dictionary (building the edges is the hard part). Beyond the chapter: Longest Increasing Path in a Matrix
+(LeetCode 329), a DAG hiding in a grid.
+
+### 5. Union-find on a sorted sweep
+
+**When it shows up.** Many questions about connectivity under a threshold ("paths using only edges shorter than
+limit"), meetings that happen at timestamps, or a greedy that must take some edges before others.
+
+**The intuition.** Union-find can merge but never split. That sounds like a weakness, but it is perfect for any process
+in which the graph only grows. If you are given all the queries up front, sort them along the axis on which the graph
+grows (the weight limit), sort the edges the same way, and sweep: before answering a query, union every edge to the
+left of it. Each edge is unioned once in the whole run. When the graph has to forget (a meeting at time 5 must not
+connect people at time 8), process one time group at a time and, afterwards, reset the participants who did not end up
+connected to the source. The same "sort, then grow" shape is Kruskal, and running Kruskal again with one edge excluded or
+forced answers whether that edge is critical.
+
+```text
+  edges sorted by length:  0-1:2   1-2:4   2-0:8   1-0:16
+  queries sorted by limit: (0,1,<2)   (0,2,<5)
+
+  weight axis  0    2    4    5    8         16
+               |----e----e----|----e----------e
+                    ^ q0 asks here (nothing < 2 glued)
+                              ^ q1 (0-1, 1-2 glued)
+
+  q0: find(0) != find(1)          -> false
+  q1: union 0-1, union 1-2;
+      find(0) == find(2)          -> true
+```
+
+**Where you'll use it.** Checking Existence of Edge Length Limited Paths (offline queries), Find All People With Secret
+(time groups with resets), Number of Islands II (online growth), Remove Max Number of Edges (two union-finds, shared
+edges first), Find Critical and Pseudo-Critical Edges (Kruskal with an edge excluded or forced). Beyond the chapter:
+Number of Good Paths (LeetCode 2421).
+
+### 6. Change the cost, keep the frontier
+
+**When it shows up.** The path's cost is not a plain sum of unit steps: some moves are free and some cost 1; the cost of
+a path is its highest cell; or you need distances *into* one target from every node.
+
+**The intuition.** Dijkstra needs only one thing: when you extend a path, its cost never goes down. Sum of non-negative
+weights satisfies that, and so does `max(cost so far, next cell)`, so a bottleneck path is Dijkstra with `+` replaced by
+`max`. If the weights are only 0 and 1, the heap is overkill: a deque stays sorted if free moves go to the front and
+paid moves to the back. And if you need distance from every node to one target, reverse every edge: a column of the
+distance matrix becomes a row, which one Dijkstra computes. With rows from two sources and the reversed row into the
+destination, a "meeting node" problem is a minimum over x of three table lookups.
+
+```text
+  relax rule          container      problem
+  d + w               min-heap       Network Delay Time
+  max(d, h[cell])     min-heap       Swim in Rising Water
+  d + 0 or d + 1      deque          Valid Path, Box Pushing
+
+  swim on      0 6 2      pops in order of path height:
+               1 8 3      0, 1, 5, 6, then 2 3 4 all at 6
+               5 7 4      answer 6 (path 0 6 2 3 4)
+
+  meeting node: src1=0, src2=1, dest=5 (example graph)
+    x   : 0  1  2  3  4  5
+    d1  : 0  3  2  5  7  6    Dijkstra from src1
+    d2  : 3  0  5  8  5  6    Dijkstra from src2
+    dd  : 6  6  6  3  1  0    Dijkstra from dest, reversed
+    sum : 9  9 13 16 13 12    answer = min = 9
+```
+
+**Where you'll use it.** Minimum Cost to Make at Least One Valid Path (0-1 BFS on arrows), Minimum Moves to Move a Box
+(0-1 BFS over states), Swim in Rising Water (bottleneck), Minimum Weighted Subgraph With the Required Paths (two
+forward runs and one reversed). Beyond the chapter: Path With Minimum Effort (LeetCode 1631).
+
+### 7. Decide a node on the way back: post-order DFS
+
+**When it shows up.** "Use every edge exactly once" (Euler path), or "which edges are single points of failure"
+(bridges).
+
+**The intuition.** Some facts about a node are only known once everything below it has been explored. In Hierholzer's
+algorithm you walk edges greedily, deleting each as you use it, and append a node to the route only when it has no
+unused edges left. A greedy walk can wander into a dead end too early, but the dead end is appended first, so after the
+final reversal it lands at the end of the route, where a dead end belongs. Tarjan's bridges have the same shape:
+`low[u]` is complete only after all of u's children return, so the bridge test runs on the way back.
+
+```text
+  tickets JFK->KUL  JFK->NRT  NRT->JFK  (smallest name first)
+
+  dfs(JFK) takes KUL           dfs(KUL): no edges, out=[KUL]
+  back at JFK, takes NRT
+  dfs(NRT) takes JFK           dfs(JFK): no edges left,
+                               out=[KUL, JFK]
+  NRT done                     out=[KUL, JFK, NRT]
+  JFK done                     out=[KUL, JFK, NRT, JFK]
+  reversed route: JFK NRT JFK KUL   (KUL, the dead end, last)
+```
+
+**Where you'll use it.** Reconstruct Itinerary (Hierholzer), Critical Connections in a Network (low-link). Beyond the
+chapter: Valid Arrangement of Pairs (LeetCode 2097).
+
 ## Signals in a problem statement
 
 - A **grid** of land/water, colours, walls; "connected 4-directionally" -> flood fill (DFS or BFS, either works).
@@ -489,48 +702,155 @@ so a recursive DFS over a 300 x 300 grid of land crashes; use an explicit stack 
 
 ## The journey ahead
 
-1. **Flood fill**: the bare traversal; recolouring is the visited set.
-2. **Number of islands**: scan plus flood; count how many floods you launch.
-3. **Max area of island**: each flood returns a size.
-4. **Number of enclaves**: flood from the border instead of from each cell.
-5. **Surrounded regions**: border flood with a temporary sentinel, then a rewrite sweep.
-6. **Pacific Atlantic water flow**: two border floods with a directed edge rule; intersect.
-7. **Rotting oranges**: multi-source BFS counted layer by layer.
-8. **0-1 matrix**: multi-source BFS writes distances.
-9. **Walls and gates**: the same wave, written in place.
-10. **Clone graph**: a real adjacency list and an old-to-new map.
-11. **Word ladder**: an implicit graph of words with wildcard buckets.
-12. **Word ladder II**: record a parents DAG during BFS, backtrack all shortest paths.
-13. **Sliding puzzle**: board configurations as nodes.
-14. **Bus routes**: choose routes, not stops, as nodes.
-15. **Jump game IV**: clique edges consumed once.
-16. **K-similar strings**: BFS with branching pruned to useful swaps.
-17. **Obstacle elimination**: a budget joins the state.
-18. **All keys**: a key bitmask joins the state.
-19. **Visiting all nodes**: a visited bitmask joins the state, multi-source start.
-20. **Box pushing**: free and paid moves, a first 0-1 BFS.
-21. **Town judge**: in-degree minus out-degree, no traversal.
-22. **Course schedule**: Kahn's algorithm detects cycles.
-23. **Course schedule II**: Kahn's pop order is the answer.
-24. **Alien dictionary**: build the edges yourself, then topo sort.
-25. **Parallel courses III**: DP along the topological order.
-26. **Sort items by groups**: topo sort at two levels.
-27. **Reconstruct itinerary**: every edge once, Hierholzer.
-28. **Connected components**: union-find counts merges.
-29. **Graph valid tree**: n-1 edges and no failed union.
-30. **Redundant connection**: the first failing union.
-31. **Redundant connection II**: directed, two parents versus a cycle.
-32. **Accounts merge**: union-find on string keys.
-33. **Number of islands II**: union-find online, one cell at a time.
-34. **Minimize malware spread**: component sizes and infected counts.
-35. **Common factor**: union through prime hub nodes.
-36. **People with secret**: union-find per timestamp with resets.
-37. **Limited paths**: offline queries over a growing union-find.
-38. **Removable edges**: two union-finds sharing edges.
-39. **Network delay time**: Dijkstra with a heap.
-40. **Valid path in a grid**: 0-1 BFS on arrows.
-41. **Swim in rising water**: bottleneck path with a heap.
-42. **Weighted subgraph**: three Dijkstras, one on the reversed graph.
-43. **Connect all points**: Prim's MST.
-44. **Critical MST edges**: Kruskal with an edge excluded or forced.
-45. **Critical connections**: Tarjan's bridges, the final boss.
+Each problem keeps most of the previous one and changes one thing: what a node is, what an edge is, what the
+traversal returns, or what a path costs.
+
+### Stage 1: flood a grid
+
+**Flood Fill.** The smallest traversal: one start pixel, one region. Recolouring *is* the visited set, which also
+explains the one trap: if the new colour equals the old, nothing gets marked and the walk never ends.
+
+**Number of Islands.** Now there are many regions and nobody says where they start. Scan every cell and launch a flood
+from each unvisited land cell; each launch sinks one whole island, so count the launches.
+
+**Max Area of Island.** Same scan, but each flood now returns how many cells it sank. The traversal produces a value
+instead of only a side effect.
+
+**Number of Enclaves.** Asking "can this cell reach the border?" once per cell repeats the same flood over and over.
+Turn it around: flood once from all border land together and count what stays dry. Asking from the target side is one
+of the chapter's most reusable moves.
+
+**Surrounded Regions.** The same border flood, but the board is rewritten in place, so the flood needs a temporary
+third mark. A final sweep flips unmarked `O`s to `X` and restores the marked ones.
+
+**Pacific Atlantic Water Flow.** Flooding downhill from each cell is expensive, so flood from each ocean, climbing
+uphill: the edge rule is reversed. Two floods, two visited sets, and the answer is their intersection.
+
+### Stage 2: waves of distance
+
+**Rotting Oranges.** Every rotten orange spreads at once, so one BFS per orange is wrong as well as slow. Seed them all
+at minute 0 and count layers: multi-source BFS.
+
+**01 Matrix.** BFS from each one-cell is quadratic. One wave from all zeros writes every cell's distance in a single
+pass; the traversal now fills a table.
+
+**Walls and Gates.** The same wave from the gates, with distances written into the grid itself. A cell is visited
+exactly when it is no longer infinity, so the grid is both visited set and answer.
+
+### Stage 3: graphs you build or imagine
+
+**Clone Graph.** The first real adjacency list, with cycles. The old-to-new map answers "have I copied this node yet?",
+so it is the visited set and also how a copied edge finds its far end.
+
+**Word Ladder.** Nobody gives you the edges: words differing by one letter are joined. Comparing all pairs is too slow,
+so bucket words by patterns like `h*t` and find neighbours through the buckets, the first hub (advanced pattern 3).
+
+**Word Ladder II.** Now return every shortest chain. One parent per word loses chains, and marking words too early
+loses parents within a layer; build a parents DAG a full layer at a time, then backtrack (advanced pattern 2).
+
+**Sliding Puzzle.** The node is a whole board written as a string, and an edge is one slide of the blank. Only 720
+boards exist, so plain BFS suffices; the leap is accepting that a configuration can be a node.
+
+**Bus Routes.** BFS over stops counts stops, but the question counts buses. Make routes the nodes, and one BFS step is
+one ride; choosing the node right is the whole problem.
+
+**Jump Game IV.** A value that appears m times creates m(m-1)/2 jump edges. Visit a value's whole bucket the first time
+any of its indices is reached, then clear it, and the BFS stays linear.
+
+**K-Similar Strings.** BFS over strings where an edge is a swap, with explosive branching. Only try swaps that fix the
+first mismatch; the lesson is why pruning the neighbour function this hard loses no shortest path.
+
+### Stage 4: the node is a state
+
+**Shortest Path in a Grid with Obstacles Elimination.** Reaching a cell with more walls left to break beats reaching it
+with fewer, so the node is `(row, col, eliminations left)` (advanced pattern 1). If k covers the Manhattan path, return
+its length at once.
+
+**Shortest Path to Get All Keys.** The extra is a key bitmask, and doors test it. The same cell is a different node on
+each key ring; the goal is any state with a full mask.
+
+**Shortest Path Visiting All Nodes.** The state is `(node, visited mask)` and the walk may start anywhere, so all n
+starts are seeded at distance 0. That is Stage 2's multi-source BFS over n times 2^n states, which is why n <= 12.
+
+**Minimum Moves to Move a Box to Their Target Location.** The state is box plus player, and only pushes count. Walks
+cost 0 and pushes cost 1, so a deque replaces the queue: the first 0-1 BFS.
+
+### Stage 5: direction and order
+
+**Find the Town Judge.** Directed edges, no traversal: the judge has in-degree minus out-degree equal to n-1. Degrees
+are the bookkeeping Kahn's algorithm runs on.
+
+**Course Schedule.** Repeatedly take a course with in-degree 0 and delete its out-edges. Courses that never reach 0 sit
+on a cycle, so the pop count is the answer.
+
+**Course Schedule II.** The same loop, recording the pop order. Kahn does not just say yes; it hands you the schedule.
+
+**Alien Dictionary.** You build the edges: the first differing letter of each adjacent word pair is one edge, then
+topo-sort the letters. The trap is a word before its own prefix (`abc` before `ab`), which makes the input invalid.
+
+**Parallel Courses III.** Courses take time and run in parallel, so the answer is the longest weighted path in the DAG.
+Carry finish times along Kahn's order (advanced pattern 4).
+
+**Sort Items by Groups Respecting Dependencies.** Groups must stay contiguous. Topo-sort the groups, topo-sort items
+within groups, and lay them out group by group, giving each ungrouped item a group of its own.
+
+**Reconstruct Itinerary.** Use every ticket once, smallest route first. A greedy walk can strand you; Hierholzer
+appends a node only when it has no unused edges, then reverses, so dead ends land last (advanced pattern 7).
+
+### Stage 6: union-find
+
+**Number of Connected Components in an Undirected Graph.** Easy with DFS, which makes it the right place to meet
+union-find: start at n components and subtract one per successful union.
+
+**Graph Valid Tree.** A tree has n-1 edges and no cycle, and a union that finds both ends under one root has just
+closed a loop. Union-find gets the cycle test for free.
+
+**Redundant Connection.** One extra edge made exactly one cycle. The edge that closed it is the first union that fails.
+
+**Redundant Connection II.** Directed edges add a second fault, a node with two parents, and the two faults can
+interact. One in-degree scan finds at most two candidates; one union-find pass with the later one left out decides.
+
+**Accounts Merge.** Accounts sharing an email are one person. Union through an email-to-first-account map, then group
+emails by root: union-find over string keys that must output groups.
+
+**Number of Islands II.** Land appears cell by cell and the count is wanted after each. Each new cell tries at most four
+unions, and every successful one merges two islands into one.
+
+**Minimize Malware Spread.** Removing an infected node saves its component only if it is that component's sole infected
+node. So keep component sizes and infected counts per root, and compare.
+
+**Largest Component Size by Common Factor.** Comparing all pairs is quadratic; union each number with its prime
+factors instead, so primes act as hubs inside union-find.
+
+**Find All People With Secret.** Links from a meeting that missed the secret must not leak into later meetings. Union
+one timestamp at a time, then reset everyone who met but did not join person 0: the first union-find that forgets.
+
+**Checking Existence of Edge Length Limited Paths.** Sort queries and edges by weight, sweep the limit upward, and grow
+one union-find as you go. The query order is now yours to choose (advanced pattern 5).
+
+**Remove Max Number of Edges to Keep Graph Fully Traversable.** Two players, two union-finds, shared edges first,
+because a shared edge does the work of two private ones. Every edge that merges nothing is removable.
+
+### Stage 7: weights, spanning trees and bridges
+
+**Network Delay Time.** Weighted edges mean BFS layers are no longer distances. A min-heap orders the frontier and stale
+entries are skipped on pop: Dijkstra.
+
+**Minimum Cost to Make at Least One Valid Path in a Grid.** Following a cell's arrow is free, any other move costs one.
+Box Pushing's 0-1 BFS, now on a plain grid.
+
+**Swim in Rising Water.** A path costs its highest cell, not its sum. Dijkstra still works with `max` in place of `+`,
+since extending a path never lowers its maximum (advanced pattern 6).
+
+**Minimum Weighted Subgraph With the Required Paths.** Two sources reach one destination and their paths may merge.
+Guess the merge node x and add three distances; two forward Dijkstras and one on the reversed graph fill all three
+tables.
+
+**Min Cost to Connect All Points.** Not a path but the cheapest way to connect everything: an MST. Every pair is an
+edge, so Prim's heap beats sorting n^2 edges for Kruskal.
+
+**Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree.** For each edge, run Kruskal once without it
+(heavier means critical) and once with it forced in (same weight means it can belong).
+
+**Critical Connections in a Network.** Removing each edge and re-testing is quadratic. One DFS with discovery times and
+low-links finds every bridge: the subtree below it has no back edge reaching above it.

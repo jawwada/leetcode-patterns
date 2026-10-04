@@ -1,5 +1,5 @@
 # Tries
-*8 problems · Reading time ~16 min*
+*8 problems · Reading time ~24 min*
 
 ## Why this chapter exists
 
@@ -163,6 +163,146 @@ Hold onto the falling-off image. In every hard problem in this chapter, "fell of
 
 For the rewritten problems, add a second image: a word can hang from the trie more than once, in different spellings — reversed (stream), or rotated into `suffix#word` (prefix-and-suffix). The trie does not care what the strings mean; you choose strings so that your question becomes "walk this prefix".
 
+## Advanced patterns
+
+The operations above are what a trie *is*. The Hard problems in this chapter are won by what you do *with* it: how you walk it, what you store in it, and which strings you choose to put in it. Seven ideas cover all of them. Each builds on the invariant (a node is a prefix; a node exists only if some stored string continues that way) and turns it into a sharper tool.
+
+### 1. The branching walk: a wildcard turns one path into a pruned DFS
+
+**When it shows up.** A query that is not one exact string but a family of strings: a `.` that matches any letter, a `?`, a set of allowed letters per position, or "words within one edit of this".
+
+**The intuition.** A plain walk follows one edge per character because the query names exactly one letter. A wildcard names many letters, so the walk becomes a depth-first search: at a `.`, send a scout down every child, and at a literal, follow one edge. The reason this is fast is that scouts die the moment their path leaves the trie. Compare it with expanding the pattern first: `...` over 26 letters names 17,576 strings, almost all of which are not prefixes of anything stored. The trie never generates those; it only generates the strings that are *still alive*, because the children of a node are exactly the letters some stored word continues with. The work is bounded by the number of trie nodes at depths reached, never by 26 to the power of the number of dots. Return as soon as any scout reaches a starred node at the end of the pattern, if the question is "does any word match?".
+
+```text
+ words bad dad mad cat     pattern "..t"
+ depth:   1      2      3
+ root -.-> b -.-> ba -t-> missing   scout dies
+      -.-> d -.-> da -t-> missing   scout dies
+      -.-> m -.-> ma -t-> missing   scout dies
+      -.-> c -.-> ca -t-> cat*      -> True
+ nodes visited: 10 (root + 9); strings "named": 26*26
+```
+
+**Where you'll use it.** Add and Search Words is exactly this. Beyond the chapter, the same branching walk powers "match with at most one mismatch" (Implement Magic Dictionary, LC 676), where the scout carries a budget of one wrong letter.
+
+### 2. The lockstep walk: a trie riding along a search, and shrinking as it wins
+
+**When it shows up.** A search over some other space (a grid, a graph, a sequence of choices) that spells strings as it goes, with *many* target words at once. Searching for each word separately repeats the same board paths once per word.
+
+**The intuition.** Carry a trie pointer alongside the search state, and advance both by the same letter. The invariant is that the trie node always equals the spelling of the current path. That makes the trie a pruning oracle for every word at once: if the next cell's letter is not a child of the current node, no word can be completed through that cell, so the search never steps there. Store the whole word at its terminal node so reaching it hands you the answer. Then add the move that separates a good solution from a time-limit-exceeded one: when a word is found, *remove* it (pop the marker), and on the way back up, delete any node left with no children and no marker. The trie shrinks as words are found, so later starts no longer pay for words already collected; the search gets cheaper the more it succeeds.
+
+```text
+ board         words oath pea eat rain
+  o a a n
+  e t a e      trie before         trie after "oath" found
+  i h k r       root                 root
+  i f l v       |-o-a-t-h[oath]      |-p-e-a[pea]
+                |-p-e-a[pea]         |-e-a-t[eat]
+                |-e-a-t[eat]         |-r-a-i-n[rain]
+                |-r-a-i-n[rain]
+ path for oath: (0,0)o (0,1)a (1,1)t (2,1)h; h, t, a, o
+ each left empty on the way back, so the o branch is deleted
+
+ after "eat" is found the e branch goes too: found [oath, eat]
+```
+
+**Where you'll use it.** Word Search II is built on it. The same lockstep idea appears in Word Squares (the trie rides along the rows) and in Stream of Characters (the trie rides along the stream, backwards). Beyond the chapter: Concatenated Words (LC 472) walks the trie along one word and restarts at the root every time a marker is hit.
+
+### 3. Forced-prefix backtracking: the trie as a candidate generator
+
+**When it shows up.** A backtracking search where earlier choices pin down the *start* of the next choice: word squares, crossword fills, building a sentence where the next word must begin with something already fixed.
+
+**The intuition.** In an ordinary backtracking problem you try every option at each level and test validity afterwards. Here the constraint is a prefix: after placing rows 0..k-1 of a word square, symmetry says row k must start with the letters already written in column k. So the question at each level is "which words start with this string?", and the trie answers it in one walk. Every word you try is consistent with everything placed so far, and if the walk falls off, the whole subtree of choices is dead before you enumerate any of it. The search never builds a partial answer that needs repair later. The trie is no longer a membership test at the end; it is the generator of the next level's branches.
+
+```text
+ words: area lead wall lady ball
+
+ rows placed      column k read down    row k must start with
+ w a l l          k=2: l, e        ->   "le"  -> lead
+ a r e a
+ l e a d          k=3: l, a, d     ->   "lad" -> lady
+ l a d y
+                  square found: wall area lead lady
+                  (and ball area lead lady)
+```
+
+**Where you'll use it.** Word Squares. The forced prefix is the trick; the payload in the next pattern is what makes "list the candidates" cheap.
+
+### 4. Payload on every node: make reaching the node *be* the answer
+
+**When it shows up.** The question is not "does something start with p?" but "*which* things, how many, or the best one": all words with this prefix, the largest index, the top 3 by frequency, how many words share this prefix.
+
+**The intuition.** Without help, answering "which words start with p" means walking to the node for p and then searching its whole subtree, which after a short prefix can be most of the trie. Instead, decide what summary of the subtree the query needs and write it on *every* node during insert, since you pass through every node of the word's path anyway. Insert costs stay O(L) plus the update, and every query becomes walk-then-read. The rule that makes it correct: the payload at the node for p must summarise exactly the stored strings that pass through p. So the update must happen on every node of the path, not only at the terminal, because queries stop mid-path. Choose the cheapest payload that answers the query: a count, a max index, a list of indices, a map of counts.
+
+```text
+ words app apple apt, payload = number of words through node
+
+ (root)
+   a  [3]
+   p  [3]
+  / \
+ p*  t* [1]          query "how many start with ap?"
+ [2]                 walk a,p -> read 3. No subtree DFS.
+  |
+  l  [1]
+  e* [1]
+```
+
+**Where you'll use it.** Word Squares (list of word indices at each node), Prefix and Suffix Search (largest index at each node; overwriting works because words go in by increasing index), and Autocomplete (a sentence-to-count map at each node). Beyond the chapter, Sum of Prefix Scores of Strings (LC 2416) is the count payload above, summed along each word's path.
+
+### 5. The reversed trie: turning "ends with" into "starts with"
+
+**When it shows up.** Questions about suffixes: "does the stream end with one of these words?", "which words end with this?", matching from the right.
+
+**The intuition.** A trie only answers questions that begin at the start of a string. But `s` ends with `w` exactly when `reverse(s)` starts with `reverse(w)`. So insert every word reversed and read the input backwards. On a stream this is especially clean: every match must end at the letter that just arrived, so every query starts fresh at the root with the newest letter and walks into the past. Two stops keep it cheap: stop at the first marker (some word just ended, answer True) and stop when you fall off (no word ends with what has been read). And since no trie path is longer than the longest word L, only the last L letters can ever be read: keep them in a bounded buffer.
+
+```text
+ words cd f kl   reversed trie: root -d-> d -c-> dc*
+                                root -f-> f*
+                                root -l-> l -k-> lk*
+ stream:  a b c d          query('d'):
+                ^ newest     root -d-> d -c-> dc*  -> True
+          <- walk backwards (never more than L = 2 letters)
+```
+
+**Where you'll use it.** Stream of Characters. Beyond the chapter: Short Encoding of Words (LC 820) inserts reversed words and counts leaves, because a word that is a suffix of another disappears inside its path.
+
+### 6. Combined keys: fold two conditions into one prefix
+
+**When it shows up.** A query with two anchors, typically "starts with p *and* ends with s", where neither a forward nor a reversed trie alone can check both.
+
+**The intuition.** The reflex from pattern 5, generalised: if the query does not have the shape "starts with", change what you store until it does. For each word, insert every `suffix + "#" + word`, including the empty suffix. Now the query `(p, s)` is the single prefix walk `s + "#" + p`: the part before `#` must equal `s` exactly (because `#` occurs once and never inside a word), so the word ends with `s`; and the part after starts with `p`, so the word starts with `p`. The separator is what stops the two halves bleeding into each other. Combine it with a payload (pattern 4) and the walk's last node holds the answer. The price is space: a word of length L produces L+1 keys of length up to 2L+1, so O(L^2) characters per word. That is fine when words are short (LeetCode 745 caps them at 7) and the queries are many.
+
+```text
+ keys for "apple" (index 0)   query f("ap", "le")
+   apple#apple                  walk "le#ap"
+    pple#apple                  root-l-e-#-a-p   reached:
+     ple#apple                                   payload 0
+      le#apple   <- matches
+       e#apple
+        #apple   <- empty suffix: f("ap","") = walk "#ap"
+```
+
+**Where you'll use it.** Prefix and Suffix Search. The alternative two-trie approach (a prefix trie and a suffix trie, each storing index lists, then intersecting) is worth knowing as a fallback when words are long.
+
+### 7. The persistent cursor: a walk that pauses between calls
+
+**When it shows up.** The query string arrives one character at a time across separate calls: autocomplete, type-ahead, a stream where the state must survive between keystrokes.
+
+**The intuition.** The node for `p + c` is child `c` of the node for `p`. So if you keep the node for what has been typed so far, the next keystroke costs one dict lookup, not a fresh walk from the root. The cursor is just the walk's `node` variable promoted to a field of the object. When a keystroke has no edge, the cursor goes dead (`None`) and stays dead until the query ends, because no stored string can start with the typed text however many letters follow. That is "falling off" made permanent. Two things must stay separate: the cursor (where you are in the trie) and the typed buffer (what was typed), because when the cursor is dead the trie cannot tell you what was typed, and the end-of-query update needs the full string. On the terminator, insert the buffer (updating payloads along its path) and reset both.
+
+```text
+ stored: hello:3 help:2 hi:2 hey:1
+
+ key  buffer  cursor          suggestions (top 3 at node)
+ h    "h"     node h          hello help hi
+ e    "he"    node he         hello help hey
+ z    "hez"   None (dead)     []
+ #    ""      root (reset)    [] ; "hez" inserted, count 1
+```
+
+**Where you'll use it.** Design Search Autocomplete System, together with a frequency-map payload (pattern 4). Beyond the chapter, Search Suggestions System (LC 1268) is the same cursor with a sorted list of at most 3 words stored at each node.
+
 ## Signals in a problem statement
 
 Point toward a trie:
@@ -224,11 +364,28 @@ Useful pieces: `defaultdict` gives a self-creating trie in one line (`T = lambda
 
 ## The journey ahead
 
-1. **Implement Trie** builds the structure, the end marker, and the walk. Everything later reuses these three things.
-2. **Replace Words** uses the walk as a tool rather than an API: one path checks a word against every root at once, and stopping at the first marker gives the shortest.
-3. **Add and Search Words** turns the walk into a DFS: a wildcard forks the search, and the trie prunes every fork that cannot match.
-4. **Word Search II** moves that DFS onto a grid. The trie becomes a guide that prunes board paths, and it shrinks as words are found so dead branches are never re-walked.
-5. **Word Squares** stores a payload in every node (the words passing through it), so a prefix question inside a backtracking search returns its candidates in one walk.
-6. **Prefix and Suffix Search** rewrites a two-sided question into a single prefix by inserting `suffix#word` keys, and stores the best index at every node.
-7. **Stream of Characters** turns suffix matching into prefix matching with a reversed trie, walked backwards over a buffer bounded by the longest word.
-8. **Autocomplete** closes the chapter by combining it all: a persistent cursor that steps one edge per keystroke, per-node frequency maps as payloads, a top-3 selection, and updates that flow down a whole path.
+The order follows one thread: the walk from root to node. First you build it, then you use it to stop early, then you let it branch, then you let it ride along another search, and finally you change what is stored so that questions which are not about prefixes become prefix walks.
+
+### Building the walk
+
+**Implement Trie.** The puzzle is small but sharp: why does `search("app")` need anything beyond "the path exists", and why do `search` and `startsWith` share all their code except one check at the end? Answering it gives you the three things every later problem reuses: nested dicts as nodes, the `"$"` end marker, and the walk that returns `None` when it falls off.
+
+**Replace Words.** The naive idea is to test each word against every root with `startswith`, which re-reads the same letters once per root. The new idea is to use the walk as a tool rather than an API: one walk down the word tests it against every root at once, and the first marker met on the way is automatically the shortest root. Stopping early, which was a side detail in Implement Trie, becomes the whole answer here.
+
+### Letting the walk branch
+
+**Add and Search Words.** The tension is the `.`: a walk can only follow one edge, and expanding the pattern into every possible string is hopeless. The answer is pattern 1, the branching walk: a DFS that forks at wildcards and loses each fork the moment it falls off. It is the first time the trie prunes a search instead of just answering a lookup, and that idea runs through the rest of the chapter.
+
+**Word Search II.** Searching the board once per word repeats the same paths thousands of times, so the question is how to look for all the words in one sweep. The DFS from the previous problem moves onto a grid and a trie pointer rides along each board path (pattern 2). The step that lifts it from correct to fast is making the trie shrink: pop each word when found and delete branches that empty out, so the search gets cheaper as it succeeds.
+
+### Storing answers in the nodes
+
+**Word Squares.** At first it looks like a brute-force search over all orderings of words. The observation that cracks it is that symmetry forces the first k letters of row k, so each level of the backtracking needs "all words with this prefix" (pattern 3). To make that query cheap, every node stores the indices of the words passing through it (pattern 4), the first time a node carries more than a marker.
+
+**Prefix and Suffix Search.** Two conditions at opposite ends of a word seem to need two structures and an intersection. The trick is to change the stored strings instead: insert `suffix#word` for every suffix, and the two-sided query becomes one prefix walk (pattern 6). The payload from Word Squares shrinks to a single number, the largest index, written on every node of every key.
+
+### Questions that arrive over time
+
+**Stream of Characters.** Letters arrive one at a time and the question is whether the stream now *ends* with some word. Tracking every position where a match might have started works but is fiddly. Reversing the words (pattern 5) makes every match start at the newest letter, so each query is a fresh walk backwards over a buffer no longer than the longest word.
+
+**Design Search Autocomplete System.** The finale combines nearly everything. A cursor that survives between keystrokes (pattern 7) makes each letter one dict step; a frequency map at every node (pattern 4) makes the ranking a top-3 pick instead of a subtree search; and the `#` terminator inserts the sentence along its whole path, creating nodes like Implement Trie did on day one. If you can build this one from a blank page, every problem before it is a special case.

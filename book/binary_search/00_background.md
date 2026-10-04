@@ -1,6 +1,6 @@
 # Binary Search
 
-*16 problems · Reading time ~16 min*
+*16 problems · Reading time ~24 min*
 
 ## Why this chapter exists
 
@@ -242,6 +242,182 @@ For the answer-search problems, the picture is a number line of values rather th
 at one cell is a whole simulation. For peaks, the picture is a landscape and P is "uphill to the right", and you always
 walk toward higher ground.
 
+## Advanced patterns
+
+The template above never changes. What changes in the harder problems is *what you search over* and *how you evaluate
+one probe*. The six ideas below are what the second half of this chapter leans on. Each one is a way of manufacturing a
+T...TF...F row where none is visible.
+
+### 1. Minimize the maximum, maximize the minimum
+
+**When it shows up.** The statement asks you to arrange things (cut an array into k pieces, place m balls, ship within
+d days) so that the worst piece is as good as possible: "the largest sum is as small as possible", "the smallest gap is as
+large as possible".
+
+**The intuition.** Optimizing over every arrangement is hopeless: there are exponentially many ways to cut an array. But
+if somebody hands you the answer and asks "can every gap be at least g?", a greedy pass decides it: put the first ball at
+the first stall, then each next ball at the first stall at least g away. Placing a ball as early as allowed never hurts
+later balls, so the greedy fits as many balls as any arrangement can. So stop optimizing and start *checking*. The
+direction of the row tells you which end you want. For "maximize the minimum gap", a bigger g is harder, so the row is
+T...T F...F and the answer is the last T. For "minimize the largest piece", a bigger cap is easier, so the row is
+F...F T...T and the answer is the first T. The answer is always a value some real arrangement reaches: at the flip,
+the greedy's tightest gap (or fullest piece) equals the guess exactly, otherwise the neighbouring guess would also work.
+
+```text
+stalls at 1 2 3 4 7, m = 3 balls, greedy check for gap g
+
+coord :  1  2  3  4  5  6  7
+stall :  *  *  *  *  .  .  *
+g = 3 :  B  .  .  B  .  .  B     3 balls placed  -> T
+g = 4 :  B  .  .  .  .  .  B     2 balls placed  -> F
+
+g      :  1  2  3  4  5  6
+balls  :  5  3  3  2  2  2
+fits?  :  T  T  T  F  F  F
+                ^ last T = 3, the largest minimum gap
+```
+
+**Where you'll use it.** Koko Eating Bananas, Magnetic Force Between Two Balls, Split Array Largest Sum. Beyond the
+chapter: Capacity To Ship Packages Within D Days (LeetCode 1011).
+
+### 2. A feasibility check that is a formula, not a simulation
+
+**When it shows up.** The check has no obvious left-to-right greedy, because resources can be moved around freely over
+time (batteries swapped between computers, workers that can switch tasks) and simulating schedules looks endless.
+
+**The intuition.** Find a counting bound that every schedule must obey, then prove the bound is also enough. Running n
+computers for t minutes needs `n * t` battery-minutes. A battery cannot sit in two computers in the same minute, so over
+t minutes it contributes at most `min(b, t)`, no matter how large b is. That clamp is the whole insight. The condition
+`sum(min(b, t)) >= n * t` is necessary, and a wrap-around packing shows it is sufficient, so the check is one line of
+arithmetic. The tempting shortcut `sum // n` ignores the clamp and is wrong whenever one battery is huge: it pretends a
+single battery can power two machines at once.
+
+```text
+n = 2 computers, batteries [10, 1, 1]
+tempting answer: sum // n = 12 // 2 = 6
+
+t   clamped min(b, t)   total   need n*t   can?
+1   1 + 1 + 1             3        2        T
+2   2 + 1 + 1             4        4        T
+3   3 + 1 + 1             5        6        F
+6   6 + 1 + 1             8       12        F
+                    last T = 2, not 6
+```
+
+**Where you'll use it.** Maximum Running Time of N Computers; the hours count in Koko Eating Bananas is the same kind of
+closed-form check. Beyond the chapter: Minimum Time to Complete Trips (LeetCode 2187).
+
+### 3. K-th smallest by counting
+
+**When it shows up.** "Find the k-th smallest" over a set far too large to list (all `m * n` cells of a multiplication
+table, all `n(n-1)/2` pairwise distances), but with enough structure to count quickly how many members are at most v.
+
+**The intuition.** You cannot ask "what value sits at rank k?" because the sorted list does not exist. Ask the reverse:
+"what rank does value v reach?" That is `count(v)`, the number of members `<= v`, and it never decreases as v grows. So
+`count(v) >= k` reads F...F T...T over v, and the first T is the k-th smallest. The search probes values that are not in
+the set at all, and that is fine: count only jumps at real members, so the first T always lands on one. The new work in
+each problem is the counting engine, a per-row formula `min(n, v // i)` for the table, a forward-only two-pointer sweep
+over a sorted array for distances. The cost is log(value range) times one count, and it does not depend on k at all,
+which is why this beats a heap that would pop k times.
+
+```text
+2 x 3 table        sorted bag: 1 2 2 3 4 6      k = 4
+  1  2  3
+  2  4  6
+
+v          :  1  2  3  4  5  6
+count(<=v) :  1  3  4  5  5  6    (5 is not in the table:
+>= 4 ?     :  F  F  T  T  T  T     a flat step)
+                    ^ first T = 3, the 4th smallest
+```
+
+**Where you'll use it.** Kth Smallest Number in Multiplication Table, Find K-th Smallest Pair Distance. Beyond the
+chapter: Kth Smallest Element in a Sorted Matrix (LeetCode 378).
+
+### 4. Real-valued answers: fix the guess, then subtract it
+
+**When it shows up.** The objective is a ratio or an average ("largest average of a subarray of length at least k"), and
+the answer is a real number accepted within a tolerance such as 1e-5.
+
+**The intuition.** Averages do not decompose: the best average of the left half and of the right half tell you little
+about the best average overall, so no scan-and-extend recurrence works. Fixing a guess x changes that. "Some subarray
+has average at least x" is the same as "some subarray of `(v - x)` values has sum at least 0", and sums are what prefix
+sums are built for: with `P` the prefix sums of the shifted values, you need `P[j] >= min(P[0..j-k])` for some j. The
+guess is monotone (reaching x means reaching anything smaller), so the row over the real line is T...T F...F. On reals
+there is no "next integer", so both updates go *to* mid (`lo = mid` on T, `hi = mid` on F) and the loop runs a fixed
+number of halvings rather than testing float equality.
+
+```text
+nums = [4, 0, 6], k = 2          true answer 10/3 = 3.33
+
+guess x = 3     shifted [1, -3, 3]
+  P   = 0   1   -2   1
+  j=3 : P3 = 1 >= min(P0, P1) = 0       -> T, lo = 3
+
+guess x = 3.5   shifted [0.5, -3.5, 2.5]
+  P   = 0   0.5   -3   -0.5
+  j=2 : -3   < min(P0)     = 0
+  j=3 : -0.5 < min(P0, P1) = 0          -> F, hi = 3.5
+```
+
+**Where you'll use it.** Maximum Average Subarray II. Beyond the chapter: Minimize Max Distance to Gas Station
+(LeetCode 774).
+
+### 5. Searching a cut across two arrays
+
+**When it shows up.** You need the median, or any k-th element, of the union of two sorted arrays, in logarithmic time,
+without merging them.
+
+**The intuition.** The lower half of the union is a prefix of A plus a prefix of B, because anything before a small
+element in its own sorted array is also small. If the lower half has `half` elements and i of them come from A, then
+`j = half - i` come from B, so the whole search is over one number, i. A cut is valid when the two cross comparisons
+hold: `A[i-1] <= B[j]` and `B[j-1] <= A[i]`. When the second fails you took too few from A and must move i right; when
+the first fails you took too many and must move i left. "Too many" is false and then true as i grows, so it is a
+monotone row again, with the valid cut sitting at the flip. Search the shorter array so j always stays inside B, and
+treat missing neighbours at the ends as `-inf` and `+inf`.
+
+```text
+A = [1, 3, 8]   B = [2, 4, 5, 9, 10]   half = 4
+
+i=1, j=3   A: 1 | 3 8          B[j-1] = 5 > A[i] = 3
+           B: 2 4 5 | 9 10     too few from A -> i up
+i=2, j=2   A: 1 3 | 8          3 <= 5 and 4 <= 8
+           B: 2 4 | 5 9 10     valid cut
+median = (max(3, 4) + min(8, 5)) / 2 = 4.5
+```
+
+**Where you'll use it.** Median of Two Sorted Arrays. Beyond the chapter: the k-th element of two sorted arrays, which is
+the same search with `half` replaced by k.
+
+### 6. Broken order: trust the clean half, or find the seam first
+
+**When it shows up.** The array was sorted and then damaged in one controlled way: rotated (one cliff) or shaped like a
+mountain (one summit). Often the statement adds a read budget or an O(log n) demand.
+
+**The intuition.** One cliff can sit in at most one half, so at every mid at least one of `[lo, mid]` and `[mid, hi]` is a
+clean sorted ramp, and `nums[lo] <= nums[mid]` tells you which. A range check like `nums[lo] <= target < nums[mid]` is
+only trustworthy on a clean ramp, so make it there: if the target is inside the clean range, go into that half,
+otherwise go into the other one, whatever it looks like. The other strategy is to find the seam first (the minimum of a
+rotated array, the summit of a mountain, each a first-F search) and then run ordinary sorted searches on each piece.
+That composition is how Find in Mountain Array fits in 100 reads: one summit search plus two slope searches, the left
+slope first so a hit there is automatically the smaller index. Duplicates are the one thing that breaks the clean-half
+test: when `nums[lo] == nums[mid] == nums[hi]` you cannot tell the halves apart and must shrink by one, which makes the
+worst case O(n).
+
+```text
+idx :  0  1  2  3  4  5  6        target = 6
+val :  4  5  6  7  0  1  2
+
+round 1: lo=0 mid=3 hi=6   4 <= 7: left [4..7] clean
+         4 <= 6 < 7, inside clean range    -> hi = 2
+round 2: lo=0 mid=1 hi=2   4 <= 5: left [4..5] clean
+         6 not in [4, 5)                   -> lo = 2
+round 3: lo=2 mid=2 hi=2   val[2] = 6      -> found 2
+```
+
+**Where you'll use it.** Find Minimum in Rotated Sorted Array, Search in Rotated Sorted Array, Find in Mountain Array.
+Beyond the chapter: Search in Rotated Sorted Array II (LeetCode 81), which adds duplicates.
+
 ## Signals in a problem statement
 
 - "sorted", "non-decreasing", "rotated sorted", "each row sorted and the first of each row exceeds the last of the
@@ -314,19 +490,81 @@ Python integers never overflow, so `(lo + hi) // 2` is safe. In Java or C++ writ
 
 ## The journey ahead
 
-1. **Binary Search**: the closed-interval exact lookup; the window halves and the target never leaves it.
-2. **Search Insert Position**: "where would it go" turns lookup into a boundary, the first F of `nums[i] < target`.
-3. **Find First and Last Position**: two boundaries, lower and upper bound, from one half-open template.
-4. **Search a 2D Matrix**: the candidates are virtual positions; `divmod` folds a flat index back into the grid.
-5. **Find Minimum in Rotated Sorted Array**: the predicate compares with the right end instead of a target.
-6. **Search in Rotated Sorted Array**: at every mid one half is a clean ramp; decide by testing that half.
-7. **Find Peak Element**: the predicate is a slope sign and is only locally monotone, but a peak stays in the window.
-8. **Find in Mountain Array**: compose three searches (peak, ascending, descending) under a call budget.
-9. **Koko Eating Bananas**: the first binary search on the answer; the candidates are speeds, P is a greedy count.
-10. **Magnetic Force Between Two Balls**: maximize a minimum, so the answer is the last T; greedy placement as the check.
-11. **Split Array Largest Sum**: minimize a maximum; the same greedy check counts pieces.
-12. **Maximum Running Time of N Computers**: the check is a clever capped sum instead of a simulation.
-13. **Kth Smallest Number in Multiplication Table**: binary search on a value, the check counts entries at most the guess.
-14. **Find K-th Smallest Pair Distance**: the same counting idea, the count done by two pointers on a sorted array.
-15. **Maximum Average Subarray II**: the answer is real; subtract the guess and test a prefix-sum condition.
-16. **Median of Two Sorted Arrays**: the candidates are cut positions in the shorter array, P compares across the cut.
+The order follows one thread: first learn to trust the template on plain sorted data, then keep the template and change
+what the row of T's and F's is made of, until in the last problem the candidates are not values at all but places to cut.
+
+### Warm-up: one sorted array
+
+**Binary Search.** The plain lookup: is the target in a sorted array, and where? It looks too easy to teach anything, but
+it is where you prove to yourself that the closed window `[lo, hi]` never loses the target and always shrinks. Every later
+problem quietly relies on that argument.
+
+**Search Insert Position.** Now the target may be missing, and you must say where it would go. The equality check stops
+being useful, and the question becomes a border: the first index where `nums[i] < target` turns false. The new idea is
+that the answer can be n, one past the end, which is why the half-open window starts with `hi = n`.
+
+**Find First and Last Position of Element in Sorted Array.** With duplicates, finding *a* copy is easy and finding the
+run is the trap: stepping outwards from a hit costs O(n) on an array of identical values. The new idea is that both ends
+of the run are borders, `lower(t)` and `lower(t + 1) - 1`, so one helper written once gives both.
+
+**Search a 2D Matrix.** A grid sorted row after row is secretly one sorted list. The new idea is that the candidates do
+not have to be stored in a list: a flat index `0 .. m*n - 1` is enough, and `divmod(mid, n)` folds it back into a cell.
+
+### Broken order: rotations and slopes
+
+**Find Minimum in Rotated Sorted Array.** The array is sorted except for one cliff, and you want the bottom of the cliff.
+There is no target to compare with, so what do you compare mid against? The right end: values above it belong to the
+high ramp. This is the first predicate that compares the array with itself.
+
+**Search in Rotated Sorted Array.** Same array, but now a target. The naive move, comparing the target with mid, fails
+because the array is not sorted across the cliff. The new idea is the clean-half test: at least one half is a sorted
+ramp, and only there can you trust a range check.
+
+**Find Peak Element.** No sortedness at all, and the predicate "is it rising to the right?" really does flip back and
+forth. Why can binary search still work? Because following an uphill slope must end at a peak before the wall, so each
+halving keeps some peak inside. The new idea is that you need an invariant that keeps *an* answer, not a globally
+monotone row.
+
+**Find in Mountain Array.** Now the array is hidden behind a `get` with a budget of 100 reads, and you need the smallest
+index of a target on a mountain. It combines the last two ideas: a summit search, then an ascending and a descending
+search. The new ideas are composing searches, searching in the order that gives the smaller index first, and caching
+reads to stay in budget.
+
+### Searching the answer
+
+**Koko Eating Bananas.** Nothing here is sorted, yet the answer, a speed, sits in a range where "fast enough" switches on
+once and stays on. This is the jump the whole chapter turns on: the candidates are values of the answer, and one probe
+is an O(n) count of hours.
+
+**Magnetic Force Between Two Balls.** "Maximize the minimum gap" sounds like it needs a search over placements. A guessed
+gap turns it into a greedy check, and the row now runs T...T F...F, so the answer is the *last* T. The new idea is
+handling the last-T direction without an infinite loop.
+
+**Split Array Largest Sum.** The mirror image: minimize the largest piece. The greedy check counts pieces under a cap,
+and the subtle point is phrasing it as "at most k pieces", which is monotone, instead of "exactly k", which is not. The
+range `[max(nums), sum(nums)]` has to be argued, not guessed.
+
+**Maximum Running Time of N Computers.** Here no greedy simulation is obvious, because batteries can be swapped any
+minute. The new idea is a check that is a formula: clamp each battery at t and compare the total with `n * t`, with a
+packing argument that proves the formula is enough.
+
+### Counting and continuous answers
+
+**Kth Smallest Number in Multiplication Table.** Up to `9 * 10^8` cells, so you cannot sort them. The new idea is to
+search over values and turn each guessed value into a rank with a per-row count; the first value whose count reaches k
+is the answer, even though many probed values are not in the table.
+
+**Find K-th Smallest Pair Distance.** The same value-to-rank search, but the set is all pairwise distances. The new piece
+is the counting engine: after sorting (allowed, because a distance does not care about order), a forward-only two-pointer
+sweep counts pairs within d in O(n).
+
+**Maximum Average Subarray II.** The answer is a real number and the objective is an average, which no scan can extend.
+The new idea is to subtract the guess from every element so "average at least x" becomes "some sum at least 0", decided
+by prefix minima, and to run the search on reals with a fixed number of halvings.
+
+### The Hard end: searching a cut
+
+**Median of Two Sorted Arrays.** The candidates are no longer values or positions but cut points: how many elements of
+the shorter array go into the lower half. Everything from the chapter meets here: a monotone failure test ("too many from
+A"), sentinels at the ends, choosing the shorter array to search, and an invariant that keeps the valid cut inside the
+window. It runs in O(log min(m, n)) without merging anything.

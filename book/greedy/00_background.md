@@ -1,6 +1,6 @@
 # Greedy
 
-*14 problems · Reading time ~16 min*
+*14 problems · Reading time ~22 min*
 
 ## Why this chapter exists
 
@@ -205,6 +205,212 @@ regret-free: no later element changes a frozen choice
 For sort-then-sweep problems, picture the same line, but now the items are bars you laid down in sorted order, and the
 exchange argument is literally sliding one bar into another's slot and checking that nothing collides.
 
+## Advanced patterns
+
+The basic material above gets you through the Mediums: carry a summary, extend a reach, sort and sweep. The Hard problems
+in this chapter ask for something more. You still make one decision at a time, but you have to know *what quantity* to
+make greedy about, and you have to be able to defend the choice in a sentence. The seven patterns below are the ones the
+Hard problems lean on. Each builds on the exchange argument and the reach invariant; none of them is a new data
+structure.
+
+### Greedy stays ahead
+
+**When it shows up.** You place things one at a time (points, pins, jumps, taps, arrows) and want the fewest, and the
+items can be sorted so that every later item ends no earlier than the current one.
+
+**The intuition.** The exchange argument rewrites OPT into greedy one swap at a time. "Stays ahead" is the same idea seen
+as a race: pick a measure of progress, and show by induction that after every step greedy's measure is at least OPT's.
+If greedy is never behind, it can never need more steps. The art is picking the measure. For covering problems it is
+"how far right the covered prefix reaches"; for pin placement it is "how far right my most recent pins sit", because when
+intervals are sorted by end, a pin further right lies inside every later interval that a pin further left lies inside,
+and possibly more. That dominance fact also tells you the rule: place each new pin as far right as the current interval
+allows, at its end. Ties need care, and the measure tells you how to break them (Set Intersection sorts equal ends by
+start descending so the narrower interval is handled first).
+
+```text
+value:       1   2   3   4   5
+[1,3]        [=======]                 sorted: end asc,
+[1,4]        [===========]                     start desc
+[3,5]                [=======]
+[2,5]            [===========]
+
+greedy pins:     *   *       *         {2, 3, 5}
+another OPT:     *   *   *             {2, 3, 4}
+
+after [3,5]: greedy's top two (3, 5) >= OPT's (3, 4)
+             greedy is ahead, so it never pays more: 3 pins
+```
+
+**Where you'll use it.** Set Intersection Size At Least Two (the measure is the two largest pins), Jump Game II and
+Minimum Number of Taps (after `k` jumps or taps, greedy's covered prefix is the longest possible). Beyond the chapter:
+Minimum Number of Arrows to Burst Balloons (LeetCode 452) is the one-pin version.
+
+### Frontier levels: BFS without a queue
+
+**When it shows up.** "Minimum number of steps / jumps / taps to get from 0 to `n`" on a line, where each position
+lets you advance to any point up to some limit.
+
+**The intuition.** Think of it as BFS: level `k` is every index reachable in exactly `k` jumps and no fewer. On a line,
+with "jump up to `nums[i]`", the set reachable within `k` jumps is a prefix `[0, end_k]`, so each BFS level is an
+*interval* `(end_{k-1}, end_k]`. You never need a queue. Scan `i` left to right, keep `farthest = max(i + nums[i])` over
+the current level, and when `i` reaches `cur_end` the level is complete: count a jump and set `cur_end = farthest`. If at
+that moment `farthest <= i`, the next level is empty and the goal is unreachable. Interval-covering problems reduce to
+this by bucketing: for each left end `l`, store the furthest right end of any interval starting there, and that array is
+a jump array, built in O(n) with no sort.
+
+```text
+nums = [2, 3, 1, 1, 4]
+index:     0    1    2    3    4
+           |----|----|----|----|
+level 0:  [0]                        cur_end = 0
+level 1:       [1 ...2]              from 0: farthest = 2
+level 2:                 [3 ...4]    from 1: farthest = 4
+                                     goal 4 in level 2: 2 jumps
+
+taps n=6, ranges=[1,2,0,1,0,2,0] bucketed by left end:
+left end l:   0  1  2  3  4  5  6
+reach[l]:     3  0  4  6  4  0  6    -> 2 taps (1 then 5)
+```
+
+**Where you'll use it.** Jump Game II (the pattern in its pure form) and Minimum Number of Taps to Open to Water a
+Garden (bucket taps into a reach array, then add the impossibility check). Beyond the chapter: Video Stitching (LeetCode
+1024) is the same reduction with clips instead of taps.
+
+### Reach over sums: patch with the hole
+
+**When it shows up.** "Every value in `[1, n]` must be formable as a sum of some elements", "fewest numbers to add",
+with a sorted input.
+
+**The intuition.** The Jump Game reach returns, but now it is a reach over subset sums: "every value in `[1, reach]` can
+be built, and `reach + 1` cannot yet". Adding a number `x <= reach + 1` glues the old bar to a copy shifted by `x`, so the
+bar becomes `[1, reach + x]` with no hole. If the next number is bigger than `reach + 1`, then `reach + 1` can never be
+built from the array, so something must be added; any useful patch must be at most `reach + 1`, and the biggest such
+patch, `reach + 1` itself, buys the longest bar: `[1, 2 * reach + 1]`. A longer bar is never worse in the future (it
+accepts every element a shorter one accepts), which is the monotonicity fact that makes the choice safe. Because each
+patch more than doubles the bar, the patch count is at most about `log2 n`.
+
+```text
+nums = [1, 5, 10], n = 20
+next x   test x <= reach+1   action      reach
+  -             -            start         0
+  1        1 <= 1   yes      take 1        1
+  5        5 <= 2   no       patch 2       3
+  5        5 <= 4   no       patch 4       7
+  5        5 <= 8   yes      take 5       12
+ 10       10 <= 13  yes      take 10      22 >= 20 done
+patches: 2
+```
+
+**Where you'll use it.** Patching Array. Beyond the chapter: Maximum Number of Consecutive Values You Can Make (LeetCode
+1798) is the same bar with no patches allowed.
+
+### Count the forced work: lower bounds that are achievable
+
+**When it shows up.** "Minimum number of operations" where one operation moves one unit to a neighbour, or raises a
+contiguous range by one, and the answer is a single number rather than a plan.
+
+**The intuition.** Simulating the operations is hopeless; counting what they *must* do is easy. Find a quantity that one
+operation can change by at most 1 and that has to change by a known total; that total is a lower bound. For range
+increments, look at differences between neighbours: one operation raises exactly one difference by 1, so the sum of the
+rises is a lower bound. For moving dresses between washing machines, look at a wall between machines: the prefix
+balance (surplus to the left of the wall) must cross it, at most one per move; and a machine with surplus `e` can only
+shed one per move. Then the second half: show the bound is achievable, usually by an explicit construction (stack bricks
+layer by layer; let every machine with a debt send one dress per move). Gas Station reads the same prefix-balance curve:
+the start is just after its lowest point, because every start inside a failed block fails no later than the block did.
+
+```text
+range increments, target = [3, 1, 1, 2]
+height 3   [#]                  rises: 3, -, -, +1
+height 2   [#]       [#]        answer = 3 + 1 = 4
+height 1   [#  #  #  #]         one stroke per brick row
+index       0  1  2  3
+
+washing machines [1, 0, 5], target 2 each
+machine:      1     0     5
+excess:      -1    -2    +3
+wall:            w0    w1
+balance:         -1    -3     3 dresses must cross w1
+bound = max(|-1|, |-3|, source +3) = 3 moves
+```
+
+**Where you'll use it.** Minimum Number of Increments on Subarrays to Form a Target Array, Super Washing Machines, and in
+a gentler form Gas Station. Beyond the chapter: Distribute Coins in Binary Tree (LeetCode 979) counts flow across every
+tree edge the same way.
+
+### Settle each direction separately, then combine with max
+
+**When it shows up.** Each element is constrained by both neighbours ("more than a neighbour with a higher rating"), and
+a single left-to-right pass keeps getting fixed up after the fact.
+
+**The intuition.** Split the constraints into two families: those that point left and those that point right. Each
+family is a set of chains running in one direction, so one pass in that direction settles it minimally: the value at `i`
+must be at least the length of the chain ending at `i`. That makes `L[i]` and `R[i]` lower bounds on *any* valid answer,
+so `max(L[i], R[i])` is a lower bound too. The remaining check is that taking the max at one element never breaks a rule
+at its neighbour, and it does not, because raising a value can only help the rule where that value is supposed to be the
+larger one. The answer is the upper envelope of two staircases.
+
+```text
+ratings:  1  2  5  4  3  1
+L  ->  :  1  2  3  1  1  1     rising run ending here
+R  <-  :  1  1  4  3  2  1     falling run starting here
+max    :  1  2  4  3  2  1     total 13
+                ^ the peak needs 4: its right slope wins
+```
+
+**Where you'll use it.** Candy. Beyond the chapter: Trapping Rain Water (LeetCode 42) combines a left-max pass and a
+right-max pass with `min` instead of `max`.
+
+### Run time backwards
+
+**When it shows up.** Operations overwrite earlier ones (stamps, paint, layers), so the forward question "which choice
+will survive?" needs foresight you do not have.
+
+**The intuition.** Forward, an early press can be hidden later, so you cannot tell whether it was a good idea. Backward,
+the *last* press is fully visible in the target: it is a window that matches the stamp exactly. Peel it, turn its letters
+into wildcards, and look again. Peeling only adds wildcards, and a wildcard matches anything, so every window that matched
+before still matches after. The set of options only grows, which means there is no order to regret, and greedy "peel any
+matching window" is safe. Reversing time turned a choice with hidden consequences into one with monotone, visible
+consequences.
+
+```text
+stamp "abc", target "ababc"
+backward:
+  a b a b c     window at 2 is "abc"  -> peel
+  a b ? ? ?     window at 0 is "ab?"  -> peel (? = any)
+  ? ? ? ? ?     all erased, peel order [2, 0]
+forward = reverse: press 0 -> "abc??", press 2 -> "ababc"
+```
+
+**Where you'll use it.** Stamping the Sequence. Beyond the chapter: Broken Calculator (LeetCode 991) is greedy only
+when you walk from the target back to the start.
+
+### Find the cycles under the swaps
+
+**When it shows up.** "Minimum number of swaps" to fix an arrangement where every item has exactly one right place or
+one right partner.
+
+**The intuition.** Draw a graph whose nodes are the things that must be fixed (couples) and whose edges are the slots
+(couches) joining them. Every node has degree exactly 2, so the graph is a set of disjoint cycles. A swap can raise the
+number of cycles by at most one, and the solved state has one cycle per couple, so you need at least `n - cycles` swaps.
+The greedy swap "bring this person's partner over" always splits one couple off its cycle, raising the count by exactly
+one, so it meets the bound no matter which couch you fix first. The greedy is not clever; the structure makes every
+reasonable move optimal. Union-find counts the cycles without tracing them.
+
+```text
+row:      [0 2 | 3 4 | 5 6 | 7 1]
+couples:   0 1   1 2   2 3   3 0      couple of p is p // 2
+couch:      A     B     C     D
+
+graph:   c0 ---A--- c1 ---B--- c2
+          |                     |
+          +---D--- c3 ---C------+
+
+1 cycle of 4 couples -> 4 - 1 = 3 swaps
+```
+
+**Where you'll use it.** Couples Holding Hands. Beyond the chapter: Minimum Number of Operations to Sort a Binary Tree by
+Level (LeetCode 2471) uses the same "swaps = length minus cycles" count on a permutation.
+
 ## Signals in a problem statement
 
 - "Maximum/minimum sum or product of a **contiguous** subarray" with one pass expected: running-state carry.
@@ -249,7 +455,7 @@ Prefix sums and the two-pass pattern:
 
 ```python
 from itertools import accumulate
-pref = list(accumulate(nums))          # pref[i] = sum(nums[:i+1])
+pref = list(accumulate(nums))  # pref[i] = sum(nums[:i+1])
 left = [1] * n
 for i in range(1, n):
     if r[i] > r[i - 1]:
@@ -280,17 +486,74 @@ for arr in product(range(4), repeat=5):
 
 ## The journey ahead
 
-1. **Maximum subarray**: the purest running-state carry; a negative prefix is dead weight, so drop it.
-2. **Maximum product subarray**: the carry must hold two numbers because a negative flips the order.
-3. **Jump game**: the reach invariant, where the reachable set is a prefix described by one integer.
-4. **Jump game II**: the reach becomes BFS levels, each one an interval, and we count levels.
-5. **Taps to water a garden**: turn intervals into jumps, then run Jump Game II with a failure case.
-6. **Gas station**: a running sum with restart, plus an argument that skips whole blocks of failed starts.
-7. **Partition labels**: each letter is a span; extend a required end and cut when the sweep catches it.
-8. **Candy**: constraints from two directions, each settled by its own greedy pass and combined with `max`.
-9. **Minimum operations to form an array**: count only the rises; a lower bound that is always achievable.
-10. **Super washing machines**: two lower bounds (flow across a boundary, surplus at one machine), take the larger.
-11. **Patching array**: a reach over subset sums; when a hole is forced, patch with the hole itself.
-12. **Set intersection size at least two**: sort by end and place points as far right as possible, twice.
-13. **Couples holding hands**: the greedy "fix the next couch" is optimal because the seating decomposes into cycles.
-14. **Stamping the sequence**: greedy fails forwards but works backwards, peeling off the last stamp first.
+The order runs from one-variable carries to problems where the greedy is the last, smallest step after you have found
+the real structure. Each problem reuses something from the one before it and adds one idea.
+
+### Warm-up: carry one running state
+
+**Maximum Subarray.** The naive version tries every start and end, O(n^2). The puzzle is what you can forget: a prefix
+whose sum is negative can only drag down anything that extends it, so you drop it and restart. This is the purest
+running-state carry, one number per index, and the place to learn the "start from `nums[0]`, not 0" discipline.
+
+**Maximum Product Subarray.** Copy Kadane, replace `+` with `*`, and a single negative number breaks it: the smallest
+product so far becomes the largest the moment you multiply by a negative. The new idea is that the carry must be wide
+enough to survive the worst case, so it holds two numbers, the max and the min ending here, updated together.
+
+### The reach: one integer describes a prefix
+
+**Jump Game.** It looks like a graph search over jumps, and a DFS would work, but the reachable set has no holes: it is
+always a prefix `[0, reach]`. That one observation shrinks the whole search to an integer and introduces the reach
+invariant the rest of the chapter keeps returning to.
+
+**Jump Game II.** Now count the fewest jumps. A greedy "jump as far as you can" fails; the honest way is BFS, and the
+surprise is that every BFS level is an interval of indices. The new idea is closing a level when the scan reaches its
+end, so BFS runs with two integers and no queue.
+
+**Minimum Number of Taps to Open to Water a Garden.** The input is a bag of intervals, which seems to demand a sort.
+Bucketing each tap by its left end turns the bag into a jump array, and the problem becomes Jump Game II with a new
+failure mode: a level that cannot get past its own end means part of the garden stays dry forever.
+
+### Sweeps with a budget or a span
+
+**Gas Station.** The brute force tries every start and drives around, O(n^2). The new idea is discarding starts in
+whole blocks: if the tank runs dry at station `i` starting from `s`, every start between `s` and `i` fails too, so the
+next candidate is `i + 1`. Paired with "total gas >= total cost", one pass with a running sum decides it.
+
+**Partition Labels.** Cut a string into as many pieces as possible with each letter in one piece. Each letter becomes a
+span from its first to last occurrence, and the sweep keeps a required end that grows whenever a letter inside the
+current piece reaches further. The cut happens exactly when the scan catches up with that end, the reach idea applied to
+overlapping spans.
+
+### Lower bounds you can prove, then reach
+
+**Candy.** Every child is constrained by both neighbours, and a single pass keeps having to go back and fix earlier
+children. The new idea is splitting the rules by direction: one pass settles the left rules, one settles the right, and
+the per-child `max` satisfies both without breaking either.
+
+**Minimum Number of Increments on Subarrays to Form a Target Array.** Simulating range increments looks expensive and
+ambiguous. Looking at differences between neighbours shows that one operation can create at most one unit of rise, so
+the answer is the first height plus the sum of rises. This is the first problem where the answer is a lower bound you
+prove first and then show is achievable.
+
+**Super Washing Machines.** The same lower-bound habit, with two bounds instead of one: the net dresses that must cross
+each wall (a prefix balance, as in Gas Station) and the surplus a single machine must shed one at a time. The puzzle is
+why the larger bound is always achievable, and the answer is that every tight bound makes progress on every move.
+
+### The Hard end: the structure under the greedy
+
+**Patching Array.** The reach from Jump Game returns, now over subset sums. When a gap is forced, which number should you
+add? The hole itself, `reach + 1`, because it is the largest patch that closes the gap and so buys the longest bar. The
+new idea is an exchange argument backed by monotonicity: a longer bar is never worse later.
+
+**Set Intersection Size At Least Two.** Pins must hit every interval twice. Sorting by end and placing pins as far right
+as possible is the classic one-pin greedy; the new difficulties are carrying the two largest pins as state, and a tie
+rule (start descending) without which the greedy double-counts. The proof is greedy stays ahead.
+
+**Couples Holding Hands.** A greedy "fix each couch by fetching the partner" looks too simple to be optimal, and a
+curious person asks whether the order of fixes matters. It does not, because the seating is a union of cycles and every
+greedy swap splits off exactly one couple. The new idea is that the proof lives in a graph you build, and union-find
+counts it.
+
+**Stamping the Sequence.** Forward, every stamp may be partly hidden by later ones, and no local rule can tell which
+press to make first. Backward, the last press is visible and peeling it only creates wildcards, so options never shrink.
+The chapter ends on its most general lesson: if a greedy needs foresight in one direction, try the other.

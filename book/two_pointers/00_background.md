@@ -1,5 +1,5 @@
 # Two Pointers
-*10 problems · Reading time ~14 min*
+*10 problems · Reading time ~22 min*
 
 ## Why this chapter exists
 
@@ -177,6 +177,142 @@ The first is the **pair grid with a staircase**. The brute force fills the whole
 
 The second is the **conveyor belt** for reader/writer problems: the reader is a scanner moving at constant speed, the writer is a stamping machine behind it, and the gap between them is scrap. The array to the left of the writer is the finished product, already in its final place.
 
+## Advanced patterns
+
+The basic geometries get you through the Easy and most Medium problems. The Hard end of the chapter, and the interview follow-ups that come after a Medium, need a sharper toolkit. Each pattern below is a reusable argument, not just a loop shape. Learn the argument and you can rebuild the loop on the spot.
+
+### 1. Discard the weaker side
+
+**When it shows up**: you choose a pair of positions, the score of a pair depends on the *smaller* (or weaker) of the two plus the distance between them, and the input is not sorted. "Two lines", "two walls", "maximise min(...) times width".
+
+**The intuition**: put the pointers at the two ends, so the width is as large as it will ever be. Now look at the weaker side, say the shorter wall at `L`. Every other pair that uses `L` has a partner strictly inside, so it is narrower, and its height is still capped by `h[L]` no matter how tall the partner is. So the current pair is the best pair `L` will ever be part of. You record it and delete `L`'s whole row of the pair grid. The stronger side gets no such guarantee (a taller partner might appear inside), so it must stay. On a tie, both rows are dead, and moving either pointer is safe. This is the "exchange" shape of proof: any pair you skip is dominated by one you already scored.
+
+```text
+ h:  [ 1 | 8 | 6 | 2 | 5 | 4 | 8 | 3 | 7 ]
+       L                               R
+ score(L, R) = min(1, 7) * 8 = 8
+ any (L, j) with j < R:
+     width  < 8
+     height <= h[L] = 1        -> score < 8
+ row of L is dead: record 8, then L += 1
+```
+
+**Where you'll use it**: Container With Most Water directly; Trapping Rain Water reuses the same "the shorter side is the one we can decide about" move. Beyond the chapter: Boats to Save People (LeetCode 881), where the heaviest person is the "weaker" side that must leave now.
+
+### 2. Settle a cell with a borrowed bound
+
+**When it shows up**: the answer is a sum over cells, and each cell's value depends on a quantity from **both** sides (the tallest bar to the left and to the right, the best price before and after). The obvious fix is two prefix arrays and O(n) space; the follow-up asks for O(1).
+
+**The intuition**: a cell's value usually needs only the *smaller* of its two side quantities. You do not need to know the exact right maximum to know it is at least the bar `R` currently stands on. So if the left running max is no larger than `h[R]`, the left side is provably the binding one, and the cell under `L` can be settled right now and forever. The rule "always move the pointer on the shorter bar" keeps that comparison true: every bar either pointer has passed is no taller than the taller of the two current bars. You are borrowing a lower bound from the far side instead of computing the far side's exact value.
+
+```text
+ h:  [ 3 | 0 | 2 | 0 | 4 | 1 | 2 ]
+           L           R
+ leftMax = 3 (bars 0..1)    h[R] = 4
+ true right max at L >= h[R] = 4 >= leftMax
+ water at L = leftMax - h[L] = 3 - 0 = 3   settled
+ (rightMax is only 2 here, and it does not matter)
+```
+
+**Where you'll use it**: Trapping Rain Water. Beyond the chapter, Trapping Rain Water II (LeetCode 407) keeps the idea "settle from the lowest boundary inward" but needs a min-heap, because a 2D boundary has no single "other end".
+
+### 3. k-sum reduction: fix one, two-pointer the rest
+
+**When it shows up**: "find all triplets (or quadruplets) that sum to a target", values may repeat, and the output must not contain duplicates.
+
+**The intuition**: sort once. Then fixing the smallest element of the triple (the anchor at `i`) turns the rest into Two Sum II on the suffix `i+1..n-1` with target `-nums[i]`, which is a single O(n) staircase walk. n anchors times O(n) gives O(n^2), against O(n^3) for all triples. Sorting buys a second gift: duplicates become neighbours, so deduplication is a local check instead of a set of tuples. Skip an anchor equal to the previous anchor (it would find exactly the same pairs), and after a hit move both pointers, then step `L` past clones of the value just used. The same reduction stacks: 4Sum fixes two anchors and costs O(n^3); k-sum fixes k-2.
+
+```text
+ index:     0    1    2    3    4    5
+ sorted: [ -4 | -1 | -1 |  0 |  1 |  2 ]
+ anchor i=1 (-1), pair target = 1
+ step 1:         i    L              R   -1 + 2 = 1  hit
+ step 2:         i         L    R        0 + 1 = 1  hit
+ anchor i=2 is -1 again: same suffix pairs -> skip
+ found: [-1,-1,2]  [-1,0,1]
+```
+
+**Where you'll use it**: 3Sum, built on Two Sum II. Beyond: 4Sum (LeetCode 18) and 3Sum Closest (LeetCode 16), where you track the best distance instead of stopping on equality.
+
+### 4. Three-way partition (Dutch national flag)
+
+**When it shows up**: only a few distinct key classes (three colours, "less than / equal to / greater than a pivot"), in place, one pass.
+
+**The intuition**: keep four regions with three pointers: zeros in `[0, lo)`, ones in `[lo, mid)`, unknown in `[mid, hi]`, twos in `(hi, n-1]`. Each step looks at `a[mid]`, the first unknown cell, and shrinks the unknown region by exactly one. A 0 is swapped to `lo`; what comes back is a 1 that `mid` has already seen (or the same cell), so both advance. A 2 is swapped to `hi`; what comes back is **unexamined**, so only `hi` moves and `mid` looks again. A 1 is already in place. The loop ends when the unknown region is empty: `mid > hi`.
+
+```text
+ regions after 3 steps on [2,0,2,1,1,0]:
+
+   [ 0 | 0 | 2 | 1 | 1 | 2 ]
+     \___/   \_________/ \_/
+     zeros    unknown    twos
+             ^       ^
+            lo      hi
+            mid
+ a[mid]=2: swap with a[hi], hi -= 1, mid stays
+```
+
+**Where you'll use it**: Sort Colors. Beyond: the 3-way partition inside quickselect (Kth Largest Element, LeetCode 215) that stops long runs of equal keys from causing O(n^2), and Wiggle Sort II (LeetCode 324).
+
+### 5. Writer with a look-back of k
+
+**When it shows up**: a sorted array, in place, "each value may appear at most k times", or more generally "keep x unless the last few kept items forbid it".
+
+**The intuition**: the writer's output prefix is itself sorted. So if the value k cells behind the writer equals the incoming `x`, then everything between those cells also equals `x`, which means `x` already appears k times in the output. One comparison replaces a counter. The crucial detail is that the look-back reads the **output** (`a[w - k]`), not the input: the output is the certified region, while the input around the reader may already have been overwritten. The first k values are always kept.
+
+```text
+ k = 2, input [1,1,1,2,2,3], reader at x = 2 (index 3)
+
+   [ 1 | 1 | 1 | 2 | 2 | 3 ]
+     ^       ^   ^
+   w - 2     w   reader
+ a[w-2] = 1 != 2 -> write: a[w] = 2, w += 1
+ (the third 1 was refused because a[w-2] was 1)
+```
+
+**Where you'll use it**: Remove Duplicates from Sorted Array II (k = 2); Move Zeroes uses the same writer with a simpler keep-test, "x is non-zero". Beyond: Remove Duplicates from Sorted Array (LeetCode 26) is k = 1.
+
+### 6. Two sequences, merge-like, often from the back
+
+**When it shows up**: two sorted runs must be combined, or one sequence must be matched against another in order. Sometimes the two runs are hidden inside one array, as in Squares of a Sorted Array, where the negatives form a run sorted by absolute value from the left and the positives one from the right.
+
+**The intuition**: each pointer marks the frontier of its own sequence, and each step consumes the better frontier element, so each element is touched once: O(n + m). When the output lives in the same buffer as an input, fill it **from the back** with the largest element first. The free space sits at the back, and the back writer can never overtake an unread element: the slots it writes are either empty or already consumed. In Squares the same trick appears because the largest square is guaranteed to be at one of the two ends, while the smallest could be anywhere in the middle.
+
+```text
+ merge [1,3,5,_,_,_] with [2,4,6], writing from the back
+
+   a: [ 1 | 3 | 5 | _ | 5 | 6 ]
+            ^       ^
+            i       k     (i = 1, k = 3)
+   b: [ 2 | 4 | 6 ]
+            ^
+            j             (j = 1)
+ a[i]=3 vs b[j]=4 -> a[k] = 4, j -= 1, k -= 1
+```
+
+(Here 6 and 5 have already been placed, and the 3 is the next `a` value to compare.)
+
+**Where you'll use it**: Squares of a Sorted Array (two hidden runs, filled from the back), and Wildcard Matching (one pointer on the text, one on the pattern). Beyond: Merge Sorted Array (LeetCode 88) and Is Subsequence (LeetCode 392).
+
+### 7. Greedy matching with one backtrack bookmark
+
+**When it shows up**: matching one sequence against another where some token can absorb a variable amount (`*` in a glob pattern), and the exhaustive answer would be a recursion tree or a 2D DP table.
+
+**The intuition**: match greedily with the star eating nothing at first. Remember only the **latest** star and the text position where its stretch currently ends (`match`). On a mismatch, do not reconsider every earlier choice; let the latest star eat one more character and retry the rest of the pattern from just after it. This is safe because the greedy reaches each star at the leftmost text position any matching could reach it, and from a leftmost position the latest star can imitate any other solution by eating more. Earlier stars are dominated, so the bookmark only ever moves right, and the whole recursion tree folds into two pointers plus one integer.
+
+```text
+ s = "abcab", p = "a*ab"          star = 1 (p[1])
+
+   s: [ a | b | c | a | b ]      p: [ a | * | a | b ]
+                ^                             ^
+                i = 2, match = 2              j = 2
+ p[2]='a' vs s[2]='c': mismatch
+ -> star eats one more: match = 3, i = 3, j = 2
+ then 'a'='a', 'b'='b': matched
+```
+
+**Where you'll use it**: Wildcard Matching. Beyond: the same "remember only the latest choice point" idea fails for Regular Expression Matching (LeetCode 10), because `a*` cannot imitate an arbitrary earlier star. Knowing when the dominance argument fails is as useful as knowing the pattern.
+
 ## Signals in a problem statement
 
 - "sorted array", "non-decreasing order": pairs can be pruned by comparing a sum or difference with a target.
@@ -233,13 +369,32 @@ Two Python details bite. `a = a[:k]` rebinds a local name and does not change th
 
 ## The journey ahead
 
-1. **Valid Palindrome** introduces converging pointers in their simplest form: compare mirror cells, skip junk, stop at the first mismatch.
-2. **Move Zeroes** introduces the reader/writer geometry and the idea that a swap can carry the discarded values along.
-3. **Squares of a Sorted Array** converges again, but now the pointers produce output, and the monotone property (largest absolute value is at an end) decides which side moves.
-4. **Remove Duplicates from Sorted Array II** adds the fast/slow look-back: the slow writer checks its own output two cells back instead of counting.
-5. **Sort Colors** uses three pointers: one reader and two writers growing from opposite ends, with four regions to keep straight.
-6. **Two Sum II** makes the pruning argument explicit: each comparison against the target deletes a row or column of the pair grid.
-7. **3Sum** wraps Two Sum II in an outer loop after sorting and shows how sorted order also makes deduplication a local check.
-8. **Container With Most Water** drops sorting and replaces it with a geometric monotone fact: the shorter wall can never be part of a better pair.
-9. **Trapping Rain Water** reuses that fact with running maxima, so each pointer step settles one cell's water permanently.
-10. **Wildcard Matching** closes the chapter with pointers on two strings and a single bookmark, justified by a dominance argument: the most recent `*` can do anything an earlier one could.
+The ten problems climb from "two indices and one comparison" to "two indices, one bookmark and a dominance proof". Each one keeps something from the problem before it and adds exactly one new idea.
+
+### Warm-up: one walk, one rule
+
+**Valid Palindrome.** The puzzle looks too easy to be one: compare a string with its reverse. The catch is that punctuation and case do not count, so building a cleaned copy costs O(n) extra space, and the interviewer will ask you to drop it. Two mirror pointers that skip junk on their own side do the comparison in place. This is the converging geometry at its simplest: every step settles one pair of mirror cells for good.
+
+**Move Zeroes.** Now the pointers walk the same way. The naive move is to delete each zero and append it, which shifts the tail every time and costs O(n^2). A reader that looks at everything and a writer that only advances on a kept value do it in one pass. The new idea is the region picture (kept, junk, unread), and the swap that carries the zeros backward instead of overwriting them.
+
+**Squares of a Sorted Array.** Squaring breaks the sorted order, because a large negative becomes a large square. Sorting again works but wastes the order you were given. The question to ask is where the largest square can be: only at one of the two ends. So the converging pointers return, but now they **produce output**, filling a result from the back. It is the first taste of the merge-from-the-back pattern.
+
+### Writers with memory
+
+**Remove Duplicates from Sorted Array II.** At most two copies of each value, in place. A counter of "how many of this value have I kept" works, but it is fiddly at value boundaries. The new idea is that the writer can ask its own output: if the cell two behind the writer already holds this value, a third copy is not allowed. The look-back into the certified region replaces the counter, and the same line handles any k.
+
+**Sort Colors.** Three values, one pass, no counting sort. One writer is no longer enough, so a second writer grows from the right end, and the reader sits between them. The puzzle is the asymmetry: after a swap with the left writer the reader advances, but after a swap with the right writer it must look again. That asymmetry is the whole Dutch flag invariant, with four regions kept straight by three pointers.
+
+### Pruning the pair grid
+
+**Two Sum II.** Sorted input, find the pair with a given sum. The brute force checks all n^2/2 pairs. The question is why moving one pointer per comparison never skips the answer, and the answer is the staircase picture: each comparison deletes a whole row or column of pairs. This is where the chapter's central argument is made explicit.
+
+**3Sum.** Triples instead of pairs, unsorted input, and no duplicate triples in the output. Fixing one element turns the rest into Two Sum II, so the new idea is the reduction: sort, anchor, run the staircase on the suffix. Sorting earns its keep twice, because duplicates become neighbours and the dedup becomes "skip if equal to the previous one".
+
+**Container With Most Water.** Same pair grid, but the input is **not** sorted, so the monotone fact must come from somewhere else. It comes from geometry: the shorter wall caps the height, and every other partner is closer, so the shorter wall's row is dead. The new idea is the discard-the-weaker-side proof, which needs no sorting at all.
+
+### The Hard end
+
+**Trapping Rain Water.** Instead of choosing one best pair, every cell holds water, and each cell's level depends on the tallest bars on **both** sides. Two prefix-max arrays give O(n) space; the challenge is O(1). The shorter-side argument from Container returns with a twist: the bar under the far pointer is a lower bound on the far side's maximum, which is enough to settle the near cell immediately.
+
+**Wildcard Matching.** Pointers on two different strings, and a `*` that can swallow any run of text. The natural solution is a recursion over how much each star eats, or a 2D DP table. The question a curious person asks is: when a match fails, which earlier choice do I really need to revisit? The answer is "only the latest star", and that dominance fact collapses the search into two pointers and one bookmark that only moves forward. It is the chapter's argument in its most general form.

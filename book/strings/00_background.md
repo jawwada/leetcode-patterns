@@ -1,5 +1,5 @@
 # Strings: Scanning, Parsing, Canonical Forms
-*17 problems · Reading time ~16 min*
+*17 problems · Reading time ~26 min*
 
 ## Why this chapter exists
 
@@ -199,6 +199,170 @@ A **rolling hash** treats a window as a number in base B. Sliding the window dro
 
 Equal windows always give equal hashes. Unequal windows may collide, so a hash hit is confirmed by comparing characters. Combined with binary search on the window length, this is Longest Duplicate Substring. These two tools are what the hard problems add on top of the scan-and-notebook picture: the notebook now remembers something about the string's relation to itself.
 
+## Advanced patterns
+
+The tape-and-notebook picture carries you through every Medium in this chapter. The Hard problems ask for more: a notebook that is provably small, an output assembled by arithmetic instead of trial and error, or a notebook that records how the string relates to itself. Seven patterns cover all of them. Each one is a way of answering the question "what is the least I must remember, and how do I update it in O(1) amortised?"
+
+### 1. Collapse the automaton into flags
+
+**When it shows up**: a validation or parsing problem with optional parts (sign, fraction, exponent, scheme, port) where the full state diagram has more than five or six states and you would be coding a table in an interview.
+
+**The intuition**: a state in a recogniser is just a name for "what kind of prefix have I read". Write the states down and describe each one by a few yes/no facts: have I seen a digit in the current part, have I seen a dot, have I seen an exponent. States with identical facts behave identically on every future character, so they merge. What remains is a handful of booleans plus one rule per character class saying which flags it requires, which it sets, and which it clears. The clearing is the subtle part: entering a new part of the grammar (the exponent) restarts the "digit seen" fact, because the new part needs its own digits. Acceptance at the end is a condition on the flags, not a list of accepting states.
+
+```text
+ "-1.5e+3"  flags D = digit in current part, P = dot, X = exp
+
+ char:   -    1    .    5    e    +    3
+ D:      0    1    1    1    0    0    1   e clears D
+ P:      0    0    1    1    1    1    1
+ X:      0    0    0    0    1    1    1
+                                         end: D = 1 -> valid
+
+ "1e":   D after 'e' = 0 at the end      -> invalid
+ rules:  '.'  needs not P and not X        sets P
+         'e'  needs D and not X            sets X, clears D
+         sign only at start or after 'e'
+```
+
+**Where you'll use it**: Valid Number is the full version; String to Integer (atoi) is the small version, where a single phase variable is already the collapsed form. Beyond the chapter: Validate IP Address (LeetCode 468) has the same "parts with their own rules" shape.
+
+### 2. Decompose positionally, then apply one stencil per chunk
+
+**When it shows up**: output that spells or formats a number or a structure whose rules repeat at every scale: number names, roman numerals, grouping digits with commas, durations like "2h 5m".
+
+**The intuition**: English names numbers in base 1000. Above the hundreds, every group of three digits is spoken the same way and then labelled with a scale word that depends only on its position. So the problem splits into two independent parts: a function that spells any number below 1000, and a loop that peels chunks off with `% 1000` and `// 1000`. All the irregularity of English (teens, "Twenty" not "Twoty") lives in two lookup tables inside the chunk function, and zero chunks simply say nothing. Once you see the repeat, the special cases stop being cases and become table entries. The only case the loop cannot produce is the number zero itself, which you handle before it starts.
+
+```text
+ 1234567 -> peel low to high with divmod by 1000
+
+      1   |   234    |   567       chunk values
+  Million | Thousand |  (none)     scale = position
+     |         |          |
+  "One"  "Two Hundred   "Five Hundred
+          Thirty Four"   Sixty Seven"
+
+ 1000010 ->   1 | 000 | 010    middle chunk is zero:
+              "One Million Ten"   no "Thousand" emitted
+```
+
+**Where you'll use it**: Integer to English Words. Beyond the chapter: Integer to Roman (LeetCode 12) is the same idea with a greedy table instead of chunks.
+
+### 3. Greedy packing, then distribute by divmod
+
+**When it shows up**: "fit as many as possible on each line, then pad to a fixed width", or any problem where k units must be spread over g slots "as evenly as possible" with a stated tie-break.
+
+**The intuition**: the problem has two halves that never talk to each other. Packing decides which items share a line, and it only needs a running width that counts one mandatory space before each added word. Distribution decides how the leftover columns are spread, and it does not change which words are on the line. "As even as possible" forces every gap to hold either `q` or `q + 1` spaces, because if two gaps differed by two you could move one space and be more even. Counting then gives `spaces = gaps * q + r` with `0 <= r < gaps`, which is exactly `divmod(spaces, gaps)`, and "extra to the left" says the first `r` gaps get the `+1`. One division replaces a loop that hands out spaces one at a time. The special lines (one word, last line) use a different rule and must be checked before the division, which would otherwise divide by zero.
+
+```text
+ maxWidth = 16
+
+ pack:  This(4) is(2) an(2) | example ...   4+1+2+1+2 = 10
+        adding example: 10 + 1 + 7 = 18 > 16 -> close line
+
+ line 1: letters = 8, spaces = 16 - 8 = 8, gaps = 2
+         divmod(8, 2)  = (4, 0) -> "This    is    an"
+ line 2: example of text, letters = 13, spaces = 3, gaps = 2
+         divmod(3, 2)  = (1, 1) -> gaps 2, 1
+                                 "example  of text"
+```
+
+**Where you'll use it**: Text Justification. The divmod half reappears in any "split n items into k nearly equal groups" question, such as Split Linked List in Parts (LeetCode 725).
+
+### 4. The border chain and its amortised fallback
+
+**When it shows up**: questions about prefixes that are also suffixes, periods ("is s a repetition of some block?"), or matching a pattern without re-reading text, all with n up to 10^5 so O(n^2) comparison is out.
+
+**The intuition**: the borders of a string are nested. Any border shorter than the longest one is a border of that longest border, so the full list of borders is a chain: `fail[n-1]`, then `fail[fail[n-1] - 1]`, and so on down to zero. When the next character fails to extend the current border, you do not restart; you step down the chain to the next shorter candidate and try again, because nothing between two links can be a border. The cost looks quadratic because of the inner loop, but follow `k`, the current border length, as one running quantity. It rises by at most one per character and falls by at least one per fallback, and it never goes below zero, so the total number of falls is bounded by the total number of rises: O(n) overall. That potential argument is worth memorising on its own; it is the same reason a monotonic stack is linear.
+
+```text
+ s = a a b a a a b        computing fail[5] (s[5] = 'a')
+
+ i:    0 1 2 3 4 5 6
+ s:    a a b a a a b
+ fail: 0 1 0 1 2 ? .
+
+ k = fail[4] = 2   compare s[5]='a' with s[2]='b'  no
+ k = fail[1] = 1   compare s[5]='a' with s[1]='a'  yes
+ fail[5] = k + 1 = 2
+
+ falls: i=2 (1 -> 0), i=5 (2 -> 1)    2 falls
+ rises: i=1, 3, 4, 5, 6                5 rises
+ falls can never outnumber rises -> O(n) total
+```
+
+**Where you'll use it**: Longest Happy Prefix is this table and nothing else; Shortest Palindrome builds it on a constructed string. Beyond the chapter: Repeated Substring Pattern (LeetCode 459) asks whether `n - fail[n-1]` divides `n`, and Find the Index of the First Occurrence in a String (LeetCode 28) is plain KMP.
+
+### 5. Glue two strings with a sentinel, then ask one question
+
+**When it shows up**: a question relating two strings (does `p` occur in `t`; how much of `s` is a palindrome from the left; which prefix of `a` is a suffix of `b`) that becomes a question about a single string once they are placed side by side.
+
+**The intuition**: the failure function only talks about one string, its prefixes and its suffixes. If you write `x + "#" + y`, then prefixes of the combined string are prefixes of `x`, and suffixes ending inside `y` are suffixes of a prefix of `y`. A border of a prefix of the glued string is therefore "a prefix of `x` that equals something ending at this point of `y`". The separator `#`, a character in neither string, guarantees that no border can straddle the junction, so no border is longer than `x`. Choose `x` and `y` to make that border mean what you need: `p + "#" + t` gives `fail == len(p)` exactly at match ends; `s + "#" + reverse(s)` gives the longest prefix of `s` that equals a suffix of its reverse, which is the longest palindromic prefix.
+
+```text
+ pattern search: p = "aba", t = "abababa"
+
+ g    = a b a # a b a b a b a
+ i    = 0 1 2 3 4 5 6 7 8 9 10
+ fail = 0 0 1 0 1 2 3 2 3 2 3
+                    ^   ^    ^  fail == 3 = len(p)
+ match starts in t = i - 2*len(p) = 0, 2, 4
+
+ palindromic prefix: s = "abab"
+ g = a b a b # b a b a   fail[-1] = 3 -> "aba"
+     [a b a]     [a b a]   keep 3, prepend reverse("b")
+```
+
+Without the separator, `s = "aaaa"` glued to its reverse gives `"aaaaaaaa"`, whose longest border is 7, longer than `s` and meaningless.
+
+**Where you'll use it**: Shortest Palindrome. Beyond the chapter: the same gluing with the Z-function instead of the failure function solves pattern counting, and LeetCode 28 can be done this way in one table.
+
+### 6. Split every word at every cut, look up the mirror
+
+**When it shows up**: pairs of items from a list whose combination must satisfy a symmetric property (palindrome, sums to a target, complements), where n^2 pairs are too many but each item is short.
+
+**The intuition**: instead of testing pairs, ask what the partner of a word must look like. If `w + x` is a palindrome and `w` is the longer word, then `w` starts with `reverse(x)` and what remains of `w` is itself a palindrome. So cut `w` at every position into `pre | suf`: if one side is a palindrome, the other side's reverse is the only possible partner, and a hash map from `reverse(word)` to index answers "does it exist" in O(1). The search space moves from pairs of words (n^2) to cuts of one word (n times L). It is the same move as Two Sum: fix one element, compute the one complement that would work, look it up. The guards are about the boundaries: no word pairs with itself, and the empty cut must be allowed on only one side so a full-reverse pair is counted once.
+
+```text
+ words: 0 abcd  1 dcba  2 lls  3 s  4 sssll
+ map: reverse(word) -> index   {dcba:0, abcd:1, sll:2,
+                                s:3, llsss:4}
+
+ w = "lls", cut j = 2:   pre = "ll" | suf = "s"
+     pre is a palindrome; is reverse(suf) = "s" a word? yes, 3
+     -> "s" + "lls" = "slls"          pair (3, 2)
+
+ w = "sssll", cut j = 2: pre = "ss" | suf = "sll"
+     pre palindrome; reverse("sll") = "lls" is word 2
+     -> "lls" + "sssll" = "llssssll"  pair (2, 4)
+```
+
+The full answer for this list is `(0,1) (1,0) (2,4) (3,2)`.
+
+**Where you'll use it**: Palindrome Pairs, which also reuses the palindrome checks from Longest Palindromic Substring and the canonical-key lookup from Group Shifted Strings. Beyond the chapter: Two Sum (LeetCode 1) is the numeric ancestor.
+
+### 7. Binary search the length, roll a hash across windows
+
+**When it shows up**: "longest substring that appears twice / in both strings / k times", with n around 10^4 to 10^5, where checking a single fixed length is easy but trying all lengths is too slow.
+
+**The intuition**: two facts, one for each loop you want to remove. First, the predicate "some substring of length L repeats" is monotone: chop the last character off both copies of a repeated string of length L and you have a repeated string of length L - 1. So the lengths look like T T T F F, and binary search finds the last T with O(log n) checks. Second, one check is a sliding window of fixed width, and a polynomial hash of the window can be updated in O(1) when it slides: multiply by the base, subtract the character that fell out times `B^L`, add the new one. A dictionary from hash to start positions finds a repeat in one pass. Equal windows always hash equal; a hash hit is only a candidate, so you confirm it with a direct comparison (or carry two independent hashes). Together: O(n log n) expected, where checking every pair of windows of every length would be cubic.
+
+```text
+ s = "banana", answer length L* = 3
+
+ lengths:  1  2  3  4  5          binary search
+ repeat?:  T  T  T  F  F          lo=1 hi=5 mid=3 T
+                    ^ L*          lo=4 hi=5 mid=4 F
+                                  hi=3 -> L* = 3
+
+ check(3), a=1..z=26, base 27:
+   [ban]ana   h = 1499    seen {1499: [0]}
+   b[ana]na   h = 1108    seen {.., 1108: [1]}
+   ba[nan]a   h = 10247
+   ban[ana]   h = 1108    hit! s[1:4] == s[3:6] = "ana"
+```
+
+**Where you'll use it**: Longest Duplicate Substring. Beyond the chapter: Maximum Length of Repeated Subarray (LeetCode 718) has the same shape across two arrays, and Repeated DNA Sequences (LeetCode 187) is a single fixed-length check.
+
 ## Signals in a problem statement
 
 - "anagram", "permutation of", "same letters", "rearrange" → counter, or sorted string as a key.
@@ -255,20 +419,50 @@ Two quirks are worth memorising. `str.split()` with no argument and `str.split("
 
 ## The journey ahead
 
-1. **Implement Split**: the baseline scan. One read index, one `start` marker, and the discipline of emitting the final piece. The string-as-tape picture starts here.
-2. **Valid Anagram**: the counter. Forget order, keep counts. It is the first canonical form, a histogram.
-3. **Reverse Words in a String**: two pointers on a mutable copy. It adds read/write compaction and the "reverse all, then reverse each" composition.
-4. **Compare Version Numbers**: two strings scanned in lockstep, with numbers parsed in place. An exhausted pointer reads as zero.
-5. **String to Integer (atoi)**: the first explicit state machine (SPACE → SIGN → DIGITS → STOP), plus overflow clamping during accumulation.
-6. **Valid Number**: the state machine grows into a grammar. Three flags replace the phase, and you must know exactly which transition resets which flag.
-7. **Simplify Path**: the stack arrives. `..` cancels the most recent surviving name.
-8. **Minimum Remove to Make Valid Parentheses**: the stack holds indices instead of values, so unmatched characters can be marked for deletion in one pass.
-9. **Zigzag Conversion**: back to scanning, with a row pointer that bounces between walls. It shows that you rarely need the 2-D picture you are given.
-10. **Group Shifted Strings**: the canonical key generalised from "sorted letters" to "gaps mod 26".
-11. **Integer to English Words**: parsing in reverse. Chunk by thousands, with one rule per chunk and lookup tables.
-12. **Text Justification**: the hard version of cut-and-reassemble. Greedy line packing, then divmod to spread spaces.
-13. **Longest Palindromic Substring**: the first self-comparison. Grow mirrors outward from 2n − 1 centres.
-14. **Longest Happy Prefix**: borders and the failure function, built incrementally with fallback.
-15. **Shortest Palindrome**: reuses the failure function on `s + "#" + reverse(s)` to find the longest palindromic prefix.
-16. **Palindrome Pairs**: combines palindromes with canonical lookup. Store reversed words in a map and try every cut of every word.
-17. **Longest Duplicate Substring**: rolling hash plus binary search on the answer length. The window is compared against every earlier window in O(1) each.
+The order follows the notebook. It starts with an index and a marker, then a histogram, then phases and flags, then a stack. After that the output has to be built to a specification, and in the last stage the notebook records how the string relates to itself. Each problem reuses the previous one's state and adds one thing.
+
+### Warm-up: one tape, one small notebook
+
+**Implement Split.** Cutting a string at a separator sounds like a one-liner until you ask what `"a,,b,"` should give and notice that the last piece never meets a separator. The problem teaches the baseline scan: a read index, a `start` marker, emit on every cut, and always emit once more after the loop. Every later scan in the chapter is this one with a richer notebook.
+
+**Valid Anagram.** Sorting both strings works, but it does more than the question asks: it puts the letters in order when you only need to know how many of each there are. The 26-cell counter forgets order on purpose, and that is the chapter's first canonical form: two strings are equivalent exactly when their histograms match.
+
+**Reverse Words in a String.** Splitting and joining is easy. Doing it in place on a character array, with runs of spaces to squeeze out, is the real puzzle. It adds a second pointer that writes behind the reader (compaction) and a composition trick: reverse the whole array, then reverse each word back, and the word order has flipped while each word reads correctly.
+
+**Compare Version Numbers.** Two tapes are read at once, and the fields are numbers, so `"1.01"` equals `"1.001"`, and `"1.0"` equals `"1"`. The new idea is lockstep scanning with integers parsed in place, plus the convention that an exhausted string keeps reading zeros. That convention removes the length special cases.
+
+### Parsers: phases, then flags
+
+**String to Integer (atoi).** The input is messy (spaces, a sign, digits, then garbage) and the output must be clamped to 32 bits. This is the first time the notebook holds a phase, so the scan is an explicit state machine, and overflow is caught during accumulation, before the number grows too large to clamp, rather than after.
+
+**Valid Number.** A dozen tricky inputs (`"4."`, `".5"`, `"1e"`, `"+.e1"`) make it feel like a pile of special cases. Drawing the automaton shows nine states, and describing each state by three facts collapses them into three flags. The skill being trained is knowing exactly which transition sets or clears which flag, which is advanced pattern 1.
+
+### Stacks: later cancels earlier
+
+**Simplify Path.** `..` undoes the most recent directory that survived, and `.` and empty segments do nothing. That "undo the latest" rule means the notebook is now a stack. The problem also reuses Implement Split, because you first cut the path on `/`, and its empty pieces are exactly the doubled slashes you have to ignore.
+
+**Minimum Remove to Make Valid Parentheses.** The stack now holds positions, not characters, so an unmatched `(` that is still on the stack at the end can be found and deleted. The puzzle is that a `)` can be judged immediately while a `(` can only be judged at the end. Marking positions and joining once avoids the shifting-index bug of deleting while you scan.
+
+### Reshaping and keys
+
+**Zigzag Conversion.** The problem invites you to build a 2-D grid and read it row by row. The point is that you never need it: a row pointer that bounces between the top and bottom walls, appending each character to its row's list, produces the same output in one pass with no empty cells.
+
+**Group Shifted Strings.** Grouping by sorted letters (the anagram key) fails here, because shifting changes every letter. What survives a shift is the sequence of gaps between consecutive letters, taken mod 26 so that `"az"` and `"ba"` agree. This generalises canonical forms: choose the key by asking what the equivalence rule cannot change.
+
+### Building output to a specification
+
+**Integer to English Words.** This one runs the other way: instead of reading structure out of a string, you write structure into one. It looks like a page of special cases (teens, tens, zeros in the middle) until you see that English repeats itself every three digits, which turns it into a chunk loop plus one stencil (advanced pattern 2).
+
+**Text Justification.** The first true Hard of the cut-and-reassemble family, and the place where off-by-one errors pile up. Greedy packing with a running width (counting the mandatory space) decides the lines, and `divmod` spreads the padding with extras on the left (advanced pattern 3). The real lesson is to keep the two halves separate and handle the one-word line and the last line before any division.
+
+### The string against itself
+
+**Longest Palindromic Substring.** A palindrome is a string equal to its own mirror, so this is the first problem where you compare a string with itself. The brute force checks every substring. The better idea is to grow mirrors outward from each of the 2n - 1 centres (letters and gaps), so each extension is one comparison and stops at the first mismatch.
+
+**Longest Happy Prefix.** Comparing every prefix with the matching suffix is quadratic. The failure function fills in every prefix's longest border in linear time by extending the previous border or falling back along the border chain. Here you meet KMP from zero, along with the amortised argument that makes the inner loop cheap (advanced pattern 4).
+
+**Shortest Palindrome.** Adding the fewest characters in front means finding the longest palindromic prefix, and checking each prefix from scratch is quadratic. The trick is to glue `s`, a separator and `reverse(s)` together so that the answer becomes one border length (advanced pattern 5). The failure function from the previous problem then does all the work.
+
+**Palindrome Pairs.** Testing all n^2 pairs of words is too slow when words are short and the list is long. Cutting each word at every position, checking which side is a palindrome, and looking up the reverse of the other side in a hash map replaces the pair search with a per-word search (advanced pattern 6). It combines the chapter's two threads: palindrome checks and canonical-key lookup.
+
+**Longest Duplicate Substring.** Every pair of substrings is too many, and even one length takes O(n^2) if you compare windows character by character. Monotonicity in the length allows a binary search, and a rolling hash compares each window in O(1) (advanced pattern 7). The notebook now holds a fingerprint of every window seen so far, which is as far as the scan-and-notebook idea goes in this chapter.
