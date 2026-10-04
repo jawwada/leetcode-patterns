@@ -260,7 +260,10 @@ function renderChapter(ch){
     <div class="overview">
       <a href="#${ch.topic}/background"><span class="k">0</span><span><div class="t">Background: ${esc(ch.title)} from zero</div><div class="w">What it is, what it costs, the invariant, how to picture it, the signals that point here.</div></span><span class="pill" style="color:var(--ink-soft)">~${mins(ch.background)} min</span></a>
       ${ch.sections.map((s,k)=>`<a href="#${s.slug}"><span class="k">${k+1}</span><span><div class="t">${esc(s.title)}</div><div class="w">${esc(s.why_here||'')}</div></span><span class="pill ${s.difficulty}">${s.difficulty}</span></a>`).join('')}
-    </div></div>`;
+    </div>
+    ${(ch.see_also||[]).length?`<h2 style="font-size:20px;margin:32px 0 6px">Also uses this chapter's ideas</h2><p class="muted" style="margin:0 0 12px;font-family:var(--display);font-size:14px">These problems live in other chapters but lean on what this one teaches.</p>
+    <div class="overview">${ch.see_also.map(s=>{const c=BOOK.chapters.find(x=>x.topic===s.topic);return `<a href="#${s.slug}"><span class="k">↗</span><span><div class="t">${esc(s.title)}</div><div class="w">${esc(s.why_here||'')}${c?` <span class="muted">(${esc(c.title)})</span>`:''}</div></span><span class="pill ${s.difficulty}">${s.difficulty}</span></a>`}).join('')}</div>`:''}
+    </div>`;
 }
 
 function renderItem(it){

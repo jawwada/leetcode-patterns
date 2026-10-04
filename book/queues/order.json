@@ -1,0 +1,18 @@
+{"topic": "queues", "title": "Queues and Deques", "order": [
+ {"slug": "implement_queue_using_stacks", "why_here": "FIFO built from two LIFO stacks: reverse each item exactly once, lazily, and learn amortised cost over an item's whole life."},
+ {"slug": "implement_stack_using_queues", "why_here": "The mirror image: a queue cannot reverse, only rotate, so each push turns the line until the newcomer is at the front."},
+ {"slug": "number_of_recent_calls", "why_here": "Time only moves forward, so expired pings leave from the front in arrival order and the queue is exactly the window."},
+ {"slug": "design_circular_queue", "why_here": "A queue in k fixed slots: move a head index instead of the data, wrap with % k, and keep a count to tell empty from full."},
+ {"slug": "design_circular_deque", "why_here": "The same ring with both ends movable: the front grows backwards by stepping head counter-clockwise before writing."},
+ {"slug": "dota2_senate", "why_here": "Two queues of turn times: the earlier front bans the other and rejoins as index + n, so rounds fit in one ordered line."}
+], "see_also": [
+ {"slug": "moving_average_from_data_stream", "why_here": "A fixed-size window queue with a running sum: append the new value, pop the oldest, adjust the sum."},
+ {"slug": "design_hit_counter", "why_here": "Number of Recent Calls with many hits per timestamp: a time-window queue of (time, count) buckets plus a running total."},
+ {"slug": "sliding_window_maximum", "why_here": "The monotonic deque: the front expires as the window slides, the back is popped when a newcomer dominates."},
+ {"slug": "shortest_subarray_with_sum_at_least_k", "why_here": "A monotonic deque over prefix sums: starts leave the front once used, and dominated starts leave the back."},
+ {"slug": "task_scheduler", "why_here": "A heap picks the next task while a FIFO cooldown queue holds used tasks stamped with the time they may run again."},
+ {"slug": "rotting_oranges", "why_here": "Multi-source BFS: every rotten orange starts in the queue, and each queue layer is one minute of spreading."},
+ {"slug": "zero_one_matrix", "why_here": "Multi-source BFS from all zeros at once: the queue's layers are the distances to the nearest zero."},
+ {"slug": "word_ladder", "why_here": "BFS over an implicit graph of words: the queue holds the current frontier, and the first time the target is reached is the shortest."},
+ {"slug": "minimum_cost_to_make_at_least_one_valid_path_in_a_grid", "why_here": "0-1 BFS: free moves go on the deque's front, cost-1 moves on its back, so the front is always the cheapest cell."}
+]}

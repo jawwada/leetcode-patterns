@@ -1,6 +1,6 @@
 # Heaps and Priority Queues
 
-*20 problems · Reading time ~25 min*
+*20 problems · Reading time ~23 min*
 
 ## Why this chapter exists
 
@@ -26,67 +26,13 @@ The twenty problems in this chapter fall into a handful of families:
 
 ## What it is
 
-A heap is one way to build a *priority queue*, and a priority queue is a twist on the plain queue. So start with the
-plain queue, because the word "queue" carries an expectation that the priority queue deliberately breaks.
-
-### The FIFO queue: first in, first out
-
-A queue is the line at a coffee shop: join at the back, get served from the front, so whoever waited longest goes next
-(FIFO, first in, first out). It has three operations: **enqueue** (join the back),
-**dequeue** (leave from the front), and **peek** (look at the front without removing it).
-
-```text
-            front                      back
-dequeue <-  [ A ][ B ][ C ][ D ]  <- enqueue E
-              ^
-             peek = A
-
-after dequeue (A leaves) and enqueue E:
-            [ B ][ C ][ D ][ E ]
-              ^ front         ^ back
-```
-
-All three should cost O(1): nobody in the middle moves. Queues appear wherever work is handled in arrival order:
-breadth-first search, buffers, and this chapter's "cooling down" items.
-
-**Why a Python list is a bad queue.** A list stores its items in one contiguous block, with item 0 at the start. Appending
-at the end is O(1). Removing item 0 is not: every remaining item shifts one slot left to close the gap.
-
-```text
-list.pop(0) on [A, B, C, D, E]
-
-before   idx: 0   1   2   3   4
-              A   B   C   D   E
-              ^ removed
-after    idx: 0   1   2   3
-              B   C   D   E      <- B, C, D, E each moved left
-cost: n - 1 moves, so O(n) per dequeue, O(n^2) to drain
-```
-
-Draining 100,000 items with `pop(0)` took about 0.6 s on a laptop; a deque took about 3 ms.
-
-### The deque: a queue open at both ends
-
-`collections.deque` (say "deck", for double-ended queue) stores items in a chain of fixed-size blocks and keeps a
-pointer to each end. Adding or removing at either end touches only an end block, so all four end operations are O(1):
-
-```text
-appendleft(x) ->  [ x ][ A ][ B ][ C ]  <- append(y)
-popleft()     <-                        -> pop()
-
-blocks in memory (simplified, block size 4):
- left ptr                                 right ptr
-   v                                         v
- [ _ _ x A ] <-> [ B C D E ] <-> [ F G _ _ ]
-```
-
-The price: indexing into the middle (`d[i]`) walks blocks, so it is O(n) in the worst case. A deque is the right
-queue whenever you only touch the ends. `queue.Queue` also exists, but it wraps a deque with locks for threads; in an
-interview, use `deque` directly.
+You met the FIFO queue and the deque in the "Queues and Deques" chapter: items leave in arrival order, so the
+oldest leaves first. A priority queue keeps that interface (push, pop, peek) but changes the rule: the most urgent item
+leaves first. A heap is the usual way to build one.
 
 ### The priority queue: the most urgent item leaves first
 
-Now change the rule. In a hospital emergency room, people are not seen in arrival order; the most urgent patient goes
+Picture a hospital emergency room: people are not seen in arrival order; the most urgent patient goes
 next, however recently they arrived. That is a **priority queue**: every item carries a priority, and dequeue always
 removes the item with the best priority (the smallest key, by convention). Its operations:
 
@@ -177,15 +123,10 @@ root-to-leaf path is sorted, and that is all. That weakness is exactly why it is
 
 ## Operations and what they cost
 
-First the queues from the previous section, then the heap itself.
+First the priority-queue baselines, then the heap itself.
 
 | Operation | Cost | Why |
 |---|---|---|
-| list `append` / `pop()` at the end | O(1) amortised | nothing else moves |
-| list `pop(0)` / `insert(0, x)` | O(n) | every other item shifts one slot |
-| deque `append` / `appendleft` | O(1) | only an end block changes |
-| deque `pop` / `popleft` | O(1) | only an end block changes |
-| deque `d[i]` in the middle | O(n) | walks the chain of blocks |
 | priority queue on an unsorted list: push / pop | O(1) / O(n) | append; scan for the min |
 | priority queue on a sorted list: push / pop | O(n) / O(1) | insert shifts items; min is at an end |
 | heap decrease-key (position known) | O(log n) | a smaller key only sifts up |
@@ -393,9 +334,9 @@ Lists; Design Twitter; Minimize Deviation in Array. Beyond: Find K Pairs with Sm
 not be used again for a fixed number of steps ("cooldown n", "no two adjacent equal", "at least k apart").
 
 **The intuition**: "most plentiful first" is a priority rule, so it wants a max-heap of counts. "Wait k steps" is an
-arrival-order rule (used first, usable first), which is FIFO, so it wants a deque. Combine them: pop the top count, use it, decrement, and park it at the back of the
-queue stamped with the time it becomes legal again. Each step, if the item at the front of the queue is ready, it goes
-back into the heap. A shared cooldown keeps the queue sorted by ready time for free, so no second heap is needed.
+arrival-order rule (used first, usable first), which is FIFO, so it wants a deque: the plain FIFO queue from the
+Queues chapter. Combine them: pop the top count, use it, decrement, and park it at the back of the queue
+stamped with the time it becomes legal again. Each step, if the item at the front of the queue is ready, it goes back into the heap. A shared cooldown keeps the queue sorted by ready time for free, so no second heap is needed.
 
 ```text
 tasks A A A B B C, cooldown n = 2  (count, ready-after time)
@@ -571,7 +512,6 @@ Building, combined operations, and lazy deletion:
 
 ```python
 heapq.heapify(nums)                # in place, O(n)
-q = deque(); q.append(x); q.popleft()  # FIFO queue, O(1)
 heapq.heappushpop(h, x)            # push then pop, one sift
 heapq.heapreplace(h, x)            # pop then push, one sift
 heapq.nlargest(k, nums)            # fine for one-off use
@@ -589,13 +529,12 @@ Helpers you will pair with heaps: `collections.Counter` for frequencies, `collec
 2. **Reading `heap[1]` as the second smallest.** Only `heap[0]` has meaning; pop to get the next one.
 3. **Tuples whose tie-break field is not comparable.** Insert a counter: `(priority, seq, obj)`.
 4. **Keeping a max-heap for "k largest".** The bouncer of the k largest is the smallest of them, so use a min-heap of size k.
-5. **Using a list as a FIFO queue.** `list.pop(0)` is O(n); use `deque.popleft()`.
-6. **Sorting with `heapq` inside a loop.** `heapify` once, then push and pop; calling `sorted` per step undoes the point.
-7. **Mutating an item that is already in the heap.** Its position is now wrong. Push a fresh entry and lazily skip the old.
-8. **Lazy deletion without cleaning the top before reading it.** Always pop dead items off the root before `h[0]`.
-9. **Negating strings by hand** (`-word` fails). Use a wrapper class or a key that is naturally a number.
-10. **Pushing all n items when only k matter.** That is O(n log n) and O(n) memory; cap the heap at k (and if you
-    did `heapify` everything, pop until `len(h) <= k`).
+5. **Sorting with `heapq` inside a loop.** `heapify` once, then push and pop; calling `sorted` per step undoes the point.
+6. **Mutating an item that is already in the heap.** Its position is now wrong. Push a fresh entry and lazily skip the old.
+7. **Lazy deletion without cleaning the top before reading it.** Always pop dead items off the root before `h[0]`.
+8. **Negating strings by hand** (`-word` fails). Use a wrapper class or a key that is naturally a number.
+9. **Pushing all n items when only k matter.** That is O(n log n) and O(n) memory; cap the heap at k (and if you
+   did `heapify` everything, pop until `len(h) <= k`).
 
 ## The journey ahead
 

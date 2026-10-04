@@ -17,7 +17,7 @@ SITE = os.path.join(ROOT, "site")
 
 # learning path: each chapter builds on the ones before it
 CHAPTERS = [
-    "arrays_hashing", "two_pointers", "sliding_window", "stack", "binary_search", "linked_list",
+    "arrays_hashing", "two_pointers", "sliding_window", "stack", "queues", "binary_search", "linked_list",
     "trees", "tries", "heap", "backtracking", "graphs", "intervals", "greedy",
     "bit_manipulation", "math_geometry", "strings", "design", "dynamic_programming",
 ]
@@ -99,7 +99,16 @@ def main() -> int:
                 "code": p["code"], "time": p["complexity"]["time"], "space": p["complexity"]["space"],
                 "brute_code": bf.get("code", ""), "brute_time": bf.get("time", ""), "brute_space": bf.get("space", ""),
             })
-        chapters.append({"topic": topic, "title": order.get("title", topic), "background": bg, "sections": sections})
+        see_also = []
+        for o in order.get("see_also", []):
+            p = problems.get(o["slug"])
+            if not p or p["topic"] == topic:
+                errors.append(f"book/{topic}/order.json: see_also slug {o['slug']} missing or in this chapter")
+                continue
+            see_also.append({"slug": o["slug"], "title": p["title"], "difficulty": p["difficulty"],
+                             "topic": p["topic"], "why_here": o.get("why_here", "")})
+        chapters.append({"topic": topic, "title": order.get("title", topic), "background": bg,
+                         "sections": sections, "see_also": see_also})
 
     if errors:
         print("\n".join(errors[:60]))

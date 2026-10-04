@@ -1,0 +1,288 @@
+[
+  {
+    "slug": "implement_queue_using_stacks",
+    "title": "Implement Queue using Stacks",
+    "leetcode": 232,
+    "difficulty": "Easy",
+    "topic": "queues",
+    "pattern": "Two stacks make a queue (lazy transfer)",
+    "file": "queues/implement_queue_using_stacks.py",
+    "problem": "Build a FIFO queue with push, pop, peek and empty using only stack operations (push to top, pop/peek from top, size, is-empty). Example: push(1); push(2); peek() -> 1; pop() -> 1; empty() -> False.",
+    "brute_force": {
+      "approach": "Keep one stack with the oldest element on top. To push x, pour the whole stack into a helper stack, push x, and pour everything back. The wasted work is moving the same elements back and forth on every push: their relative order never changes, yet every push touches all of them twice.",
+      "time": "O(n) per push, O(1) pop/peek",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    \"\"\"One stack with the oldest on top; every push pours everything out and back, O(n).\"\"\"\n\n    def __init__(self):\n        self.main = []\n\n    def push(self, x: int) -> None:\n        helper = []\n        while self.main:\n            helper.append(self.main.pop())\n        self.main.append(x)\n        while helper:\n            self.main.append(helper.pop())\n\n    def pop(self) -> int:\n        return self.main.pop()\n\n    def peek(self) -> int:\n        return self.main[-1]\n\n    def empty(self) -> bool:\n        return not self.main"
+    },
+    "optimization": "Pouring a stack into another reverses it, and reversing twice is a no-op, so the brute force undoes its own work on every push. Instead give two stacks fixed roles: inbox takes pushes (newest on top) and outbox serves pops (oldest on top). Pour inbox into outbox only when outbox is empty, and never pour back. Invariant: everything in outbox is older than everything in inbox, so outbox's top is always the queue's front. Each element is moved across exactly once, giving amortised O(1) per operation.",
+    "intuition": "One reversal turns LIFO into FIFO. Do that reversal once per element, as late as possible, and never undo it. The outbox is a pre-reversed batch of the oldest elements; new arrivals wait in the inbox until that batch runs out. A single pop can cost O(n) when it triggers a transfer, but that cost is prepaid by the n cheap pushes before it.",
+    "geometric": "Two vertical tubes side by side. Elements drop into the left tube; when the right tube is empty the whole left tube is tipped upside down into it, which puts the oldest element on top. Every element crosses the gap between the tubes exactly once in its life.",
+    "visual": "push 1, 2, 3          pop(): outbox empty -> pour once\n inbox   outbox          inbox   outbox\n | 3 |   |   |           |   |   | 1 | <- top = front\n | 2 |   |   |   ====>   |   |   | 2 |\n | 1 |   |   |           |   |   | 3 |\n +---+   +---+           +---+   +---+   pop -> 1\n\npush 4                pop(): outbox not empty, no pour\n | 4 |   | 2 |           | 4 |   |   |\n |   |   | 3 |           |   |   | 3 |   pop -> 2\n +---+   +---+           +---+   +---+\n4 waits in inbox until 3 is gone; each item crosses once",
+    "steps": [
+      "inbox = [], outbox = [].",
+      "push(x): inbox.append(x).",
+      "peek(): if outbox is empty, pop every item off inbox onto outbox; return outbox[-1].",
+      "pop(): call peek() to make sure outbox is filled, then return outbox.pop().",
+      "empty(): true only when both stacks are empty."
+    ],
+    "complexity": {
+      "time": "O(1) amortised per op",
+      "space": "O(n)",
+      "why": "Each element is pushed onto inbox once, moved to outbox once and popped once."
+    },
+    "pitfalls": [
+      "Transferring while outbox is non-empty, which buries older elements under newer ones.",
+      "Checking only one stack in empty().",
+      "Claiming worst-case O(1): a pop that triggers a transfer is O(n); the bound is amortised."
+    ],
+    "hints": [
+      "Pouring one stack into another reverses its order. What does that do to LIFO?",
+      "Use two stacks with fixed roles: one only receives pushes, one only serves pops.",
+      "Pop/peek from the out-stack; only when it is empty, move everything from the in-stack over. Never move back."
+    ],
+    "code": "class MyQueue:\n    def __init__(self):\n        self.inbox = []     # newest on top\n        self.outbox = []    # oldest on top\n\n    def push(self, x: int) -> None:\n        self.inbox.append(x)\n\n    def pop(self) -> int:\n        self.peek()\n        return self.outbox.pop()\n\n    def peek(self) -> int:\n        if not self.outbox:                 # transfer only when the outbox runs dry\n            while self.inbox:\n                self.outbox.append(self.inbox.pop())\n        return self.outbox[-1]\n\n    def empty(self) -> bool:\n        return not self.inbox and not self.outbox",
+    "related": [
+      "implement_stack_using_queues",
+      "min_stack",
+      "design_circular_queue"
+    ]
+  },
+  {
+    "slug": "implement_stack_using_queues",
+    "title": "Implement Stack using Queues",
+    "leetcode": 225,
+    "difficulty": "Easy",
+    "topic": "queues",
+    "pattern": "Rotate a queue to make a stack",
+    "file": "queues/implement_stack_using_queues.py",
+    "problem": "Build a LIFO stack with push, pop, top and empty using only queue operations (push to back, pop/peek from front, size, is-empty). Example: push(1); push(2); top() -> 2; pop() -> 2; empty() -> False.",
+    "brute_force": {
+      "approach": "Keep two queues. push appends to q1. pop and top move the first n-1 items of q1 into q2 to expose the newest one, then swap the queues (top puts the item back). The wasted work is reshuffling the whole queue on every read: calling top() twice in a row moves n-1 items twice just to find the same element.",
+      "time": "O(1) push, O(n) pop/top",
+      "space": "O(n)",
+      "code": "class BruteForce:\n    \"\"\"Two queues; every pop/top moves n-1 items across to reach the newest, O(n).\"\"\"\n\n    def __init__(self):\n        self.q1, self.q2 = deque(), deque()\n\n    def push(self, x: int) -> None:\n        self.q1.append(x)\n\n    def _drain(self) -> int:\n        while len(self.q1) > 1:\n            self.q2.append(self.q1.popleft())\n        last = self.q1.popleft()\n        self.q1, self.q2 = self.q2, self.q1\n        return last\n\n    def pop(self) -> int:\n        return self._drain()\n\n    def top(self) -> int:\n        last = self._drain()\n        self.q1.append(last)\n        return last\n\n    def empty(self) -> bool:\n        return not self.q1"
+    },
+    "optimization": "Reads happen at the front of a queue, so the cheapest layout keeps the newest element at the front at all times; then pop and top are O(1) and all the cost is paid once, at push time. Observation: after appending x, rotating the queue len-1 times (popleft then append) brings x to the front while keeping the older elements in newest-to-oldest order behind it. One deque is enough; the second queue in the brute force was only a parking lot for that rotation.",
+    "intuition": "A queue is a ring you can turn. After each push, turn the ring until the new element sits at the exit. The queue then always reads newest to oldest from front to back, which is exactly a stack read from top to bottom. Pushes become O(n), but reads, which usually dominate, become O(1).",
+    "geometric": "Picture a conveyor belt. The new item lands at the back; then each older item rides off the front and rejoins at the back, one after another, until the new item is at the front. The belt has rotated by n-1 positions and the older items kept their relative order.",
+    "visual": "q holds a stack with top on the LEFT: front [2, 1] back\n\npush(3):\n  append     front [ 2 | 1 | 3 ] back\n  rotate 1   front [ 1 | 3 | 2 ] back   2 -> back\n  rotate 2   front [ 3 | 2 | 1 ] back   1 -> back\n               ^\n               top (newest) at the exit; 2 rotations = n-1\n\npop()  -> popleft -> 3      front [ 2 | 1 ] back\ntop()  -> q[0]    -> 2      no movement at all",
+    "steps": [
+      "q = deque().",
+      "push(x): q.append(x).",
+      "Then repeat len(q) - 1 times: q.append(q.popleft()), so x reaches the front.",
+      "pop(): return q.popleft().  top(): return q[0].",
+      "empty(): return not q."
+    ],
+    "complexity": {
+      "time": "O(n) push, O(1) pop/top/empty",
+      "space": "O(n)",
+      "why": "Each push rotates past the n-1 older items; reads just touch the front."
+    },
+    "pitfalls": [
+      "Rotating n times instead of n-1, which puts x back at the end.",
+      "Using deque.pop() or q[-1], which are stack operations, not queue operations."
+    ],
+    "hints": [
+      "A queue only exposes its front. Where must the newest element be for top() to be cheap?",
+      "Pay at push time instead of at pop time.",
+      "Append x, then move the n-1 elements in front of it from the front to the back, one by one."
+    ],
+    "code": "class MyStack:\n    def __init__(self):\n        self.q = deque()\n\n    def push(self, x: int) -> None:\n        self.q.append(x)\n        for _ in range(len(self.q) - 1):    # rotate older items behind x\n            self.q.append(self.q.popleft())\n\n    def pop(self) -> int:\n        return self.q.popleft()\n\n    def top(self) -> int:\n        return self.q[0]\n\n    def empty(self) -> bool:\n        return not self.q",
+    "related": [
+      "implement_queue_using_stacks",
+      "min_stack",
+      "design_circular_deque"
+    ]
+  },
+  {
+    "slug": "design_circular_queue",
+    "title": "Design Circular Queue",
+    "leetcode": 622,
+    "difficulty": "Medium",
+    "topic": "queues",
+    "pattern": "Ring buffer (circular array with head and count)",
+    "file": "queues/design_circular_queue.py",
+    "problem": "Implement MyCircularQueue(k), a bounded FIFO of capacity k with enQueue(x) and deQueue() returning success, Front() and Rear() returning -1 when empty, isEmpty() and isFull(). Example: k = 3; enQueue 1, 2, 3 -> True; enQueue(4) -> False; Rear() -> 3; isFull() -> True; deQueue() -> True; enQueue(4) -> True; Rear() -> 4.",
+    "brute_force": {
+      "approach": "Keep a Python list: append to enqueue, pop(0) to dequeue, compare len to k for full. Correct, but pop(0) shifts every remaining element one slot left. The wasted work is physically moving k-1 values just to change which one counts as first.",
+      "time": "O(k) per deQueue, O(1) otherwise",
+      "space": "O(k)",
+      "code": "class BruteForce:\n    \"\"\"Python list; dequeue is pop(0), which shifts every remaining value, O(k).\"\"\"\n\n    def __init__(self, k: int):\n        self.k = k\n        self.items = []\n\n    def enQueue(self, value: int) -> bool:\n        if len(self.items) == self.k:\n            return False\n        self.items.append(value)\n        return True\n\n    def deQueue(self) -> bool:\n        if not self.items:\n            return False\n        self.items.pop(0)\n        return True\n\n    def Front(self) -> int:\n        return self.items[0] if self.items else -1\n\n    def Rear(self) -> int:\n        return self.items[-1] if self.items else -1\n\n    def isEmpty(self) -> bool:\n        return not self.items\n\n    def isFull(self) -> bool:\n        return len(self.items) == self.k"
+    },
+    "optimization": "The only thing a dequeue really changes is where the front is, so move an index instead of the data. Keep a fixed array of size k, a head index and a count; the tail slot is derived as (head + count) % k. enQueue writes at the tail slot and increments count; deQueue advances head = (head + 1) % k. The modulo lets both ends wrap from slot k-1 back to slot 0, so freed slots at the start are reused and nothing ever shifts. Storing count rather than a separate tail makes empty (count == 0) and full (count == k) unambiguous.",
+    "intuition": "Bend the array into a ring. The queue is an arc of count consecutive slots starting at head; enqueue extends the arc at its end, dequeue trims it at its start. The arc may cross the seam between slot k-1 and slot 0 and nobody notices, because every index goes through % k. With head and tail alone, head == tail means both empty and full; count removes that ambiguity.",
+    "geometric": "A clock face with k positions. The occupied arc runs clockwise from head for count steps. Both ends only ever move clockwise, chasing each other around the dial; full means the arc covers the whole dial, empty means it has length zero.",
+    "visual": "k = 4      slot:  0     1     2     3\nstart           [ .  |  .  |  7  |  8  ]  head=2 count=2\n                               H     R\nenQueue(9): slot (2 + 2) % 4 = 0   <- wraps the seam\n                [ 9  |  .  |  7  |  8  ]  head=2 count=3\n                  R           H\ndeQueue(): head = (2 + 1) % 4 = 3, 7 is just abandoned\n                [ 9  |  .  |  .  |  8  ]  head=3 count=2\n                  R                 H\nFront = buf[3] = 8    Rear = buf[(3+2-1)%4] = buf[0] = 9\nH = head (front), R = rear = (head + count - 1) % k",
+    "steps": [
+      "buf = [0] * k; head = 0; count = 0.",
+      "enQueue(x): if full return False; buf[(head + count) % k] = x; count += 1.",
+      "deQueue(): if empty return False; head = (head + 1) % k; count -= 1.",
+      "Front(): -1 if empty else buf[head].",
+      "Rear(): -1 if empty else buf[(head + count - 1) % k].",
+      "isEmpty(): count == 0.  isFull(): count == k."
+    ],
+    "complexity": {
+      "time": "O(1) per op",
+      "space": "O(k)",
+      "why": "Every operation is a bounds check plus constant index arithmetic; nothing is shifted."
+    },
+    "pitfalls": [
+      "Tracking only head and tail: head == tail is ambiguous (empty or full) unless you keep a count or waste one slot.",
+      "Computing Rear as tail - 1 without % k; Python's negative indexing hides the bug, other languages crash.",
+      "Forgetting to return -1 from Front/Rear on an empty queue."
+    ],
+    "hints": [
+      "Does a dequeue need to move any data, or just change which slot is called the front?",
+      "Fixed array plus a head index; let indices wrap with % k.",
+      "Store head and count; the tail slot is (head + count) % k and the rear is (head + count - 1) % k."
+    ],
+    "code": "class MyCircularQueue:\n    def __init__(self, k: int):\n        self.buf = [0] * k\n        self.head = 0\n        self.count = 0\n\n    def enQueue(self, value: int) -> bool:\n        if self.isFull():\n            return False\n        self.buf[(self.head + self.count) % len(self.buf)] = value\n        self.count += 1\n        return True\n\n    def deQueue(self) -> bool:\n        if self.isEmpty():\n            return False\n        self.head = (self.head + 1) % len(self.buf)\n        self.count -= 1\n        return True\n\n    def Front(self) -> int:\n        return -1 if self.isEmpty() else self.buf[self.head]\n\n    def Rear(self) -> int:\n        if self.isEmpty():\n            return -1\n        return self.buf[(self.head + self.count - 1) % len(self.buf)]\n\n    def isEmpty(self) -> bool:\n        return self.count == 0\n\n    def isFull(self) -> bool:\n        return self.count == len(self.buf)",
+    "related": [
+      "design_circular_deque",
+      "moving_average_from_data_stream",
+      "implement_queue_using_stacks"
+    ]
+  },
+  {
+    "slug": "design_circular_deque",
+    "title": "Design Circular Deque",
+    "leetcode": 641,
+    "difficulty": "Medium",
+    "topic": "queues",
+    "pattern": "Ring buffer (circular array with head and count)",
+    "file": "queues/design_circular_deque.py",
+    "problem": "Implement MyCircularDeque(k), a bounded double-ended queue of capacity k with insertFront, insertLast, deleteFront and deleteLast (each returns success), getFront and getRear (-1 when empty), isEmpty and isFull. Example: k = 3; insertLast(1), insertLast(2), insertFront(3) -> True; insertFront(4) -> False; getRear() -> 2; isFull() -> True; deleteLast() -> True; insertFront(4) -> True; getFront() -> 4.",
+    "brute_force": {
+      "approach": "Use a Python list: insert(0, x) and pop(0) for the front, append and pop() for the back. Correct, but every front operation shifts all stored values by one slot. The wasted work is moving the data when only the label of which slot is the front needs to change.",
+      "time": "O(k) per front insert/delete, O(1) otherwise",
+      "space": "O(k)",
+      "code": "class BruteForce:\n    \"\"\"Python list; front ops are insert(0)/pop(0), which shift every value, O(k).\"\"\"\n\n    def __init__(self, k: int):\n        self.k = k\n        self.items = []\n\n    def insertFront(self, value: int) -> bool:\n        if len(self.items) == self.k:\n            return False\n        self.items.insert(0, value)\n        return True\n\n    def insertLast(self, value: int) -> bool:\n        if len(self.items) == self.k:\n            return False\n        self.items.append(value)\n        return True\n\n    def deleteFront(self) -> bool:\n        if not self.items:\n            return False\n        self.items.pop(0)\n        return True\n\n    def deleteLast(self) -> bool:\n        if not self.items:\n            return False\n        self.items.pop()\n        return True\n\n    def getFront(self) -> int:\n        return self.items[0] if self.items else -1\n\n    def getRear(self) -> int:\n        return self.items[-1] if self.items else -1\n\n    def isEmpty(self) -> bool:\n        return not self.items\n\n    def isFull(self) -> bool:\n        return len(self.items) == self.k"
+    },
+    "optimization": "Same fix as the circular queue, now applied at both ends. Keep a fixed array, a head index and a count; the rear slot is (head + count - 1) % k. insertLast writes at (head + count) % k and deleteLast just decrements count. insertFront first moves head one step back, head = (head - 1) % k, then writes there; deleteFront moves head one step forward. Nothing shifts, each operation is two or three integer updates, and count keeps empty and full unambiguous.",
+    "intuition": "The deque is an arc on a ring. The front end grows or shrinks by moving head backward or forward; the back end grows or shrinks by changing count. Modulo arithmetic makes one slot before index 0 equal to index k-1, so the arc wraps freely in either direction. Deleting never clears a slot; it just stops counting it.",
+    "geometric": "A clock face with k positions and an arc of length count starting at head. insertFront pulls the arc's start one tick counter-clockwise; insertLast pushes its end one tick clockwise. Either end can cross the 0 / k-1 seam. Full means the arc has closed into a circle.",
+    "visual": "k = 4      slot:  0   1   2   3\nstart           [ 1 | 2 | . | . ]   head=0 count=2\n                  H   R\ninsertFront(5): head = (0 - 1) % 4 = 3, write slot 3\n                [ 1 | 2 | . | 5 ]   head=3 count=3\n                      R       H     order: 5, 1, 2\ninsertLast(6): slot (3 + 3) % 4 = 2\n                [ 1 | 2 | 6 | 5 ]   head=3 count=4 FULL\n                          R   H\ndeleteLast(): count = 3 (slot 2 is simply ignored)\ndeleteFront(): head = (3 + 1) % 4 = 0, count = 2\nH = head (front), R = (head + count - 1) % k (rear)",
+    "steps": [
+      "buf = [0] * k; head = 0; count = 0.",
+      "insertFront(x): if full return False; head = (head - 1) % k; buf[head] = x; count += 1.",
+      "insertLast(x): if full return False; buf[(head + count) % k] = x; count += 1.",
+      "deleteFront(): if empty return False; head = (head + 1) % k; count -= 1.",
+      "deleteLast(): if empty return False; count -= 1.",
+      "getFront(): buf[head]; getRear(): buf[(head + count - 1) % k]; both -1 when empty."
+    ],
+    "complexity": {
+      "time": "O(1) per op",
+      "space": "O(k)",
+      "why": "Each operation is a bounds check plus constant index arithmetic on a fixed array."
+    },
+    "pitfalls": [
+      "(head - 1) % k is safe in Python but negative in C++/Java; use (head - 1 + k) % k there.",
+      "Writing before moving head in insertFront, which overwrites the current front.",
+      "Using head == tail to decide empty vs full without a count."
+    ],
+    "hints": [
+      "Can both ends of the deque be represented by indices into a fixed array?",
+      "A ring buffer with head and count; the front moves head, the back changes count.",
+      "insertFront: head = (head - 1) % k then write; insertLast: write at (head + count) % k; rear is (head + count - 1) % k."
+    ],
+    "code": "class MyCircularDeque:\n    def __init__(self, k: int):\n        self.buf = [0] * k\n        self.head = 0\n        self.count = 0\n\n    def insertFront(self, value: int) -> bool:\n        if self.isFull():\n            return False\n        self.head = (self.head - 1) % len(self.buf)     # step back, then write\n        self.buf[self.head] = value\n        self.count += 1\n        return True\n\n    def insertLast(self, value: int) -> bool:\n        if self.isFull():\n            return False\n        self.buf[(self.head + self.count) % len(self.buf)] = value\n        self.count += 1\n        return True\n\n    def deleteFront(self) -> bool:\n        if self.isEmpty():\n            return False\n        self.head = (self.head + 1) % len(self.buf)\n        self.count -= 1\n        return True\n\n    def deleteLast(self) -> bool:\n        if self.isEmpty():\n            return False\n        self.count -= 1\n        return True\n\n    def getFront(self) -> int:\n        return -1 if self.isEmpty() else self.buf[self.head]\n\n    def getRear(self) -> int:\n        if self.isEmpty():\n            return -1\n        return self.buf[(self.head + self.count - 1) % len(self.buf)]\n\n    def isEmpty(self) -> bool:\n        return self.count == 0\n\n    def isFull(self) -> bool:\n        return self.count == len(self.buf)",
+    "related": [
+      "design_circular_queue",
+      "sliding_window_maximum",
+      "implement_stack_using_queues"
+    ]
+  },
+  {
+    "slug": "number_of_recent_calls",
+    "title": "Number of Recent Calls",
+    "leetcode": 933,
+    "difficulty": "Easy",
+    "topic": "queues",
+    "pattern": "Sliding time window with a deque",
+    "file": "queues/number_of_recent_calls.py",
+    "problem": "RecentCounter.ping(t) records a request at time t in milliseconds and returns how many requests fall in the inclusive window [t - 3000, t]. Each call uses a strictly larger t than the previous one. Example: ping(1) -> 1; ping(100) -> 2; ping(3001) -> 3; ping(3002) -> 3, because t = 1 is now older than 3002 - 3000 = 2.",
+    "brute_force": {
+      "approach": "Store every timestamp in a list and, on each ping, count how many are >= t - 3000. The wasted work: a timestamp that has fallen out of the window is re-examined on every later ping even though, with increasing t, it can never come back into range.",
+      "time": "O(n) per ping",
+      "space": "O(n) for the whole history",
+      "code": "class BruteForce:\n    \"\"\"Keep every timestamp; count the in-window ones on each ping, O(n).\"\"\"\n\n    def __init__(self):\n        self.times = []\n\n    def ping(self, t: int) -> int:\n        self.times.append(t)\n        return sum(1 for x in self.times if x >= t - 3000)"
+    },
+    "optimization": "Because t only grows, the window's left edge t - 3000 only moves right, so a timestamp that is too old now is too old forever. Old timestamps are also always at the front, since they arrived first. Keep a deque: append t at the back, then pop from the front while the front is < t - 3000; the answer is the deque's length. Each timestamp is appended once and popped at most once, so the total work over all pings is linear.",
+    "intuition": "Monotone time turns count-in-range into maintain-the-range. Expiry happens in arrival order, so the oldest element is always the next one to leave, which is exactly what a queue's front gives you. The deque never holds anything outside the current window, so its length is the answer.",
+    "geometric": "A number line of timestamps with a bracket 3000 ms wide whose right edge sits on the newest ping. Each ping slides the bracket right; dots that fall off its left edge are popped from the deque and never looked at again. The deque is precisely the set of dots inside the bracket.",
+    "visual": "time:  1   100           3001 3002\n       *    *              *    *\nping(3001): window [1, 3001]\n       [------------------]\n   deque: [ 1 | 100 | 3001 ]                -> 3\nping(3002): window [2, 3002]\n            [------------------]\n   append:  [ 1 | 100 | 3001 | 3002 ]\n   front 1 < 2  -> popleft\n   deque:   [ 100 | 3001 | 3002 ]           -> 3\n   front 100 >= 2 -> stop (rest are newer)",
+    "steps": [
+      "q = deque().",
+      "ping(t): q.append(t).",
+      "While q[0] < t - 3000: q.popleft().",
+      "Return len(q)."
+    ],
+    "complexity": {
+      "time": "O(1) amortised per ping",
+      "space": "O(W)",
+      "why": "Each timestamp is pushed once and popped once; W is the most pings inside any 3000 ms window."
+    },
+    "pitfalls": [
+      "The window is inclusive: evict only when q[0] < t - 3000, not <=.",
+      "Scanning the whole history instead of stopping at the first in-window timestamp."
+    ],
+    "hints": [
+      "Timestamps only increase. Once a ping is too old, can it ever count again?",
+      "Keep only the pings inside the window, oldest first, in a queue.",
+      "Append t; pop from the front while it is < t - 3000; return the queue length."
+    ],
+    "code": "class RecentCounter:\n    def __init__(self):\n        self.q = deque()\n\n    def ping(self, t: int) -> int:\n        self.q.append(t)\n        while self.q[0] < t - 3000:     # oldest first, so expiry is always at the front\n            self.q.popleft()\n        return len(self.q)",
+    "related": [
+      "design_hit_counter",
+      "moving_average_from_data_stream",
+      "logger_rate_limiter"
+    ]
+  },
+  {
+    "slug": "dota2_senate",
+    "title": "Dota2 Senate",
+    "leetcode": 649,
+    "difficulty": "Medium",
+    "topic": "queues",
+    "pattern": "Round-robin queues (re-enqueue with index + n)",
+    "file": "queues/dota2_senate.py",
+    "problem": "Senators 'R' (Radiant) and 'D' (Dire) sit in a string and act in order, round after round. On its turn a senator who is still in the game bans one opposing senator, who loses all future turns. When only one party remains it wins; return \"Radiant\" or \"Dire\". Example: \"RDD\" -> \"Dire\": R bans the first D, then the second D bans R.",
+    "brute_force": {
+      "approach": "Simulate literally with a banned[] array: for each live senator in turn order, scan forward circularly for the next live opponent and ban them, repeating rounds until a senator finds no opponent. Each ban costs an O(n) scan and there are up to n bans. The wasted work is the scan, which keeps re-walking banned senators and same-party senators to find the next opponent in turn order.",
+      "time": "O(n^2)",
+      "space": "O(n)",
+      "code": "def brute_force(senate: str) -> str:\n    n = len(senate)\n    banned = [False] * n\n    while True:\n        for i in range(n):\n            if banned[i]:\n                continue\n            j = (i + 1) % n                     # scan for the next live opponent\n            while j != i and (banned[j] or senate[j] == senate[i]):\n                j = (j + 1) % n\n            if j == i:                          # no opponent left\n                return \"Radiant\" if senate[i] == \"R\" else \"Dire\"\n            banned[j] = True"
+    },
+    "optimization": "Greedy first: the best ban is always the next opponent in turn order, because they would act soonest. Then notice the simulation only ever needs who acts next on each side, so keep two queues of turn indices, one per party, each in turn order. Compare the fronts: the smaller index acts first, bans the other front (popped and never re-added), and rejoins its own queue as index + n, meaning the same seat one round later. Adding n keeps both queues ordered by true turn time across rounds, and every comparison removes one senator, so there are at most n comparisons.",
+    "intuition": "The two queue fronts are the two senators about to act. Whoever is earlier wins the duel, eliminates the other front and goes to the back of its line for the next lap. Banned senators are simply never re-enqueued, so nothing ever scans past them. The party that runs out of senators first loses.",
+    "geometric": "Picture the senate as a timeline that repeats every n ticks, with each party's survivors laid out on it as a line. In each duel the earlier front jumps forward exactly n ticks to the same seat in the next lap, and the later front is erased. The lines shrink by one per duel until one is empty.",
+    "visual": "senate = R D D R      n = 4\nindex    0 1 2 3\n\nr = [0, 3]     d = [1, 2]\n0 vs 1: R0 first, bans D1   r = [3, 4]   d = [2]\n3 vs 2: D2 first, bans R3   r = [4]      d = [6]\n4 vs 6: R0 first, bans D2   r = [8]      d = []\nd empty -> \"Radiant\"\n\nlap 1: 0 1 2 3 | lap 2: 4 5 6 7\n       R D D R |        R . D .   (i + n = same seat)",
+    "steps": [
+      "n = len(senate); r = deque of indices of 'R', d = deque of indices of 'D'.",
+      "While both are non-empty: pop a from r and b from d.",
+      "If a < b, R acts first: r.append(a + n); otherwise d.append(b + n). The loser is not re-added.",
+      "Return \"Radiant\" if r is non-empty else \"Dire\"."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)",
+      "why": "Every loop iteration permanently removes one senator, and each iteration is O(1)."
+    },
+    "pitfalls": [
+      "Banning the first opponent in the string instead of the next one in turn order.",
+      "Re-enqueueing with i instead of i + n, which breaks the ordering across rounds.",
+      "Stopping after one pass over the string; it can take several rounds."
+    ],
+    "hints": [
+      "Whom should a senator ban to help their party most?",
+      "Only the next senator to act on each side matters; keep each party's turn order in a queue.",
+      "Compare queue fronts; the earlier one bans the other and rejoins its queue with index + n."
+    ],
+    "code": "class Solution:\n    def predictPartyVictory(self, senate: str) -> str:\n        n = len(senate)\n        r = deque(i for i, c in enumerate(senate) if c == \"R\")\n        d = deque(i for i, c in enumerate(senate) if c == \"D\")\n        while r and d:\n            a, b = r.popleft(), d.popleft()\n            if a < b:\n                r.append(a + n)     # R acts first, bans b, waits for next round\n            else:\n                d.append(b + n)\n        return \"Radiant\" if r else \"Dire\"",
+    "related": [
+      "task_scheduler",
+      "asteroid_collision",
+      "gas_station"
+    ]
+  }
+]
