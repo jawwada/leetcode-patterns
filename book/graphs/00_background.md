@@ -2,6 +2,61 @@
 
 *45 problems · Reading time ~25 min*
 
+## The chapter
+
+A graph is a set of nodes and the edges that connect them, explicit as an adjacency list or implicit in a grid, a word
+list or a board state. This chapter teaches depth-first and breadth-first traversal, multi-source and state-augmented
+BFS, topological order, union-find, shortest paths with Dijkstra and its 0-1 and bidirectional variants, minimum
+spanning trees, and bridges.
+
+Problems, in reading order:
+
+1. [Flood Fill](flood_fill.md) · Easy
+2. [Number of Islands](number_of_islands.md) · Medium
+3. [Max Area of Island](max_area_of_island.md) · Medium
+4. [Number of Enclaves](number_of_enclaves.md) · Medium
+5. [Surrounded Regions](surrounded_regions.md) · Medium
+6. [Pacific Atlantic Water Flow](pacific_atlantic_water_flow.md) · Medium
+7. [Rotting Oranges](rotting_oranges.md) · Medium
+8. [01 Matrix](zero_one_matrix.md) · Medium
+9. [Walls and Gates](walls_and_gates.md) · Medium
+10. [Clone Graph](clone_graph.md) · Medium
+11. [Word Ladder](word_ladder.md) · Hard
+12. [Word Ladder II](word_ladder_ii.md) · Hard
+13. [Sliding Puzzle](sliding_puzzle.md) · Hard
+14. [Bus Routes](bus_routes.md) · Hard
+15. [Jump Game IV](jump_game_iv.md) · Hard
+16. [K-Similar Strings](k_similar_strings.md) · Hard
+17. [Shortest Path in a Grid with Obstacles Elimination](shortest_path_in_a_grid_with_obstacles_elimination.md) · Hard
+18. [Shortest Path to Get All Keys](shortest_path_to_get_all_keys.md) · Hard
+19. [Shortest Path Visiting All Nodes](shortest_path_visiting_all_nodes.md) · Hard
+20. [Minimum Moves to Move a Box to Their Target Location](minimum_moves_to_move_a_box_to_their_target_location.md) · Hard
+21. [Find the Town Judge](find_the_town_judge.md) · Easy
+22. [Course Schedule](course_schedule.md) · Medium
+23. [Course Schedule II](course_schedule_ii.md) · Medium
+24. [Alien Dictionary](alien_dictionary.md) · Hard
+25. [Parallel Courses III](parallel_courses_iii.md) · Hard
+26. [Sort Items by Groups Respecting Dependencies](sort_items_by_groups_respecting_dependencies.md) · Hard
+27. [Reconstruct Itinerary](reconstruct_itinerary.md) · Hard
+28. [Number of Connected Components in an Undirected Graph](number_of_connected_components.md) · Medium
+29. [Graph Valid Tree](graph_valid_tree.md) · Medium
+30. [Redundant Connection](redundant_connection.md) · Medium
+31. [Redundant Connection II](redundant_connection_ii.md) · Hard
+32. [Accounts Merge](accounts_merge.md) · Medium
+33. [Number of Islands II](number_of_islands_ii.md) · Hard
+34. [Minimize Malware Spread](minimize_malware_spread.md) · Hard
+35. [Largest Component Size by Common Factor](largest_component_size_by_common_factor.md) · Hard
+36. [Find All People With Secret](find_all_people_with_secret.md) · Hard
+37. [Checking Existence of Edge Length Limited Paths](checking_existence_of_edge_length_limited_paths.md) · Hard
+38. [Remove Max Number of Edges to Keep Graph Fully Traversable](remove_max_number_of_edges_to_keep_graph_fully_traversable.md) · Hard
+39. [Network Delay Time](network_delay_time.md) · Medium
+40. [Minimum Cost to Make at Least One Valid Path in a Grid](minimum_cost_to_make_at_least_one_valid_path_in_a_grid.md) · Hard
+41. [Swim in Rising Water](swim_in_rising_water.md) · Hard
+42. [Minimum Weighted Subgraph With the Required Paths](minimum_weighted_subgraph_with_the_required_paths.md) · Hard
+43. [Min Cost to Connect All Points](min_cost_to_connect_all_points.md) · Medium
+44. [Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree](find_critical_and_pseudo_critical_edges_in_minimum_spanning_tree.md) · Hard
+45. [Critical Connections in a Network](critical_connections_in_a_network.md) · Hard
+
 ## Why this chapter exists
 
 A graph is the shape of any question about *things and the connections between them*. Cells of a map that touch, words

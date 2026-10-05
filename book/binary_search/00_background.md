@@ -2,6 +2,31 @@
 
 *16 problems · Reading time ~24 min*
 
+## The chapter
+
+Binary search finds the position where a yes/no answer flips, in logarithmic time, whenever every yes comes before
+every no. This chapter teaches the one loop that never goes off by one, then applies it to exact lookups, boundaries,
+rotated and mountain arrays, and finally to searching the answer space itself when the input is not sorted at all.
+
+Problems, in reading order:
+
+1. [Binary Search](binary_search.md) · Easy
+2. [Search Insert Position](search_insert_position.md) · Easy
+3. [Find First and Last Position of Element in Sorted Array](find_first_and_last_position.md) · Medium
+4. [Search a 2D Matrix](search_2d_matrix.md) · Medium
+5. [Find Minimum in Rotated Sorted Array](find_min_rotated_sorted_array.md) · Medium
+6. [Search in Rotated Sorted Array](search_rotated_sorted_array.md) · Medium
+7. [Find Peak Element](find_peak_element.md) · Medium
+8. [Find in Mountain Array](find_in_mountain_array.md) · Hard
+9. [Koko Eating Bananas](koko_eating_bananas.md) · Medium
+10. [Magnetic Force Between Two Balls](magnetic_force_between_two_balls.md) · Medium
+11. [Split Array Largest Sum](split_array_largest_sum.md) · Hard
+12. [Maximum Running Time of N Computers](maximum_running_time_of_n_computers.md) · Hard
+13. [Kth Smallest Number in Multiplication Table](kth_smallest_number_in_multiplication_table.md) · Hard
+14. [Find K-th Smallest Pair Distance](find_kth_smallest_pair_distance.md) · Hard
+15. [Maximum Average Subarray II](maximum_average_subarray_ii.md) · Hard
+16. [Median of Two Sorted Arrays](median_of_two_sorted_arrays.md) · Hard
+
 ## Why this chapter exists
 
 Binary search is usually introduced as "find a number in a sorted array". That is the smallest thing it does. The real

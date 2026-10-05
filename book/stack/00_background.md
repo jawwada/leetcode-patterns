@@ -2,6 +2,31 @@
 
 *16 problems · Reading time ~22 min*
 
+## The chapter
+
+A stack is a pile that gives back the most recently added item first. This chapter teaches the three jobs it does in
+interviews: matching openers with closers, evaluating expressions whose right-hand side has not arrived yet, and the
+monotonic stack, where each element waits for the first later element that beats it.
+
+Problems, in reading order:
+
+1. [Valid Parentheses](valid_parentheses.md) · Easy
+2. [Minimum Add to Make Parentheses Valid](minimum_add_to_make_parentheses_valid.md) · Medium
+3. [Min Stack](min_stack.md) · Medium
+4. [Evaluate Reverse Polish Notation](evaluate_reverse_polish_notation.md) · Medium
+5. [Decode String](decode_string.md) · Medium
+6. [Asteroid Collision](asteroid_collision.md) · Medium
+7. [Basic Calculator II](basic_calculator_ii.md) · Medium
+8. [Basic Calculator](basic_calculator.md) · Hard
+9. [Parsing a Boolean Expression](parsing_a_boolean_expression.md) · Hard
+10. [Daily Temperatures](daily_temperatures.md) · Medium
+11. [Next Greater Element II](next_greater_element_ii.md) · Medium
+12. [Car Fleet](car_fleet.md) · Medium
+13. [Longest Valid Parentheses](longest_valid_parentheses.md) · Hard
+14. [Largest Rectangle in Histogram](largest_rectangle_in_histogram.md) · Hard
+15. [Maximal Rectangle](maximal_rectangle.md) · Hard
+16. [Create Maximum Number](create_maximum_number.md) · Hard
+
 ## Why this chapter exists
 
 A stack answers one question better than anything else: "what is the most recent thing that is still unfinished?" That

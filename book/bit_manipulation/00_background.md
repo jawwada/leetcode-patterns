@@ -2,6 +2,24 @@
 
 *9 problems · Reading time ~24 min*
 
+## The chapter
+
+An integer is a row of 32 switches, and the and, or, xor and shift operators act on all of them at once. This chapter
+teaches counting and moving bits without strings, cancellation with xor, reading low bits to make greedy decisions,
+bitmasks as small sets, and a binary trie that walks a number bit by bit to maximise an xor.
+
+Problems, in reading order:
+
+1. [Number of 1 Bits](number_of_1_bits.md) · Easy
+2. [Counting Bits](counting_bits.md) · Easy
+3. [Reverse Bits](reverse_bits.md) · Easy
+4. [Single Number](single_number.md) · Easy
+5. [Missing Number](missing_number.md) · Easy
+6. [Integer Replacement](integer_replacement.md) · Medium
+7. [Number of Valid Words for Each Puzzle](number_of_valid_words_for_each_puzzle.md) · Hard
+8. [Find Longest Awesome Substring](find_longest_awesome_substring.md) · Hard
+9. [Maximum XOR With an Element From Array](maximum_xor_with_an_element_from_array.md) · Hard
+
 ## Why this chapter exists
 
 Most of the time you treat an integer as a quantity: you add it, compare it, sort it. This chapter treats an integer as a row of 32 tiny switches, each one on or off, and asks questions about the switches directly. Once you can see the switches, a family of problems that look like counting or searching problems collapse into a handful of one-line operations.

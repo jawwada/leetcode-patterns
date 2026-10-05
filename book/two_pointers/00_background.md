@@ -1,6 +1,25 @@
 # Two Pointers
 *10 problems · Reading time ~22 min*
 
+## The chapter
+
+Two indices that move through an array or string in a disciplined way, inward from both ends, or as a reader and a
+writer, or one per input. This chapter teaches the arguments that let a pointer move without ever needing to look
+back: sorted order, in-place partition invariants, and the shorter-side-loses rule for geometric problems.
+
+Problems, in reading order:
+
+1. [Valid Palindrome](valid_palindrome.md) · Easy
+2. [Move Zeroes](move_zeroes.md) · Easy
+3. [Squares of a Sorted Array](squares_of_a_sorted_array.md) · Easy
+4. [Remove Duplicates from Sorted Array II](remove_duplicates_from_sorted_array_ii.md) · Medium
+5. [Sort Colors](sort_colors.md) · Medium
+6. [Two Sum II - Input Array Is Sorted](two_sum_ii_input_array_is_sorted.md) · Medium
+7. [3Sum](three_sum.md) · Medium
+8. [Container With Most Water](container_with_most_water.md) · Medium
+9. [Trapping Rain Water](trapping_rain_water.md) · Hard
+10. [Wildcard Matching](wildcard_matching.md) · Hard
+
 ## Why this chapter exists
 
 Many array and string questions have an obvious answer that looks at every pair of positions: every left end with every right end, every reader with every writer, every candidate wall with every other wall. That is n(n-1)/2 pairs, and for n = 10^5 it is five billion of them. Two pointers is the observation that, in a surprising number of problems, a single comparison between two positions tells you that an entire row of those pairs is useless. You throw that row away and never look at it again. Do that n times and you have scanned the whole pair space in O(n).

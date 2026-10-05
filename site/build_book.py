@@ -28,7 +28,7 @@ PROBLEM_HEADINGS = [
     "Variations you will meet", "What to carry forward",
 ]
 BG_HEADINGS = [
-    "Why this chapter exists", "What it is", "Operations and what they cost", "The invariant",
+    "The chapter", "Why this chapter exists", "What it is", "Operations and what they cost", "The invariant",
     "How to picture it", "Advanced patterns", "Signals in a problem statement", "Python toolbox",
     "Mistakes people make", "The journey ahead",
 ]
@@ -38,15 +38,36 @@ def headings(md):
     return [m.group(1).strip() for m in re.finditer(r"^## (.+)$", md, re.M)]
 
 
-def split_statement(md):
-    """Return (markdown of the '## The problem' section body, md with that section removed).
+def split_statement(md, heading):
+    """Return (markdown body of the '## <heading>' section, md with that section removed).
 
     The statement lives in the .md so the file reads completely on GitHub; the page renders it in its own
     box under the title, so it is cut out of the prose body here."""
-    m = re.search(r"^## The problem\n([\s\S]*?)(?=^## )", md, re.M)
+    m = re.search(r"^## " + re.escape(heading) + r"\n([\s\S]*?)(?=^## )", md, re.M)
     if not m:
         return "", md
     return m.group(1).strip(), md[:m.start()] + md[m.end():]
+
+
+LIST_MARK = "Problems, in reading order:"
+
+
+def split_chapter_intro(md, path, order, problems, errors):
+    """The background's '## The chapter' section = description + a numbered list of the chapter's problems.
+    The page shows only the description (its chapter overview already lists the problems); the list is for
+    readers of the .md on GitHub, so check it matches order.json."""
+    body, rest = split_statement(md, "The chapter")
+    if not body:
+        errors.append(f"{path}: '## The chapter' section is empty")
+        return "", rest
+    desc, _, listing = body.partition(LIST_MARK)
+    got = re.findall(r"^\d+\. \[(.+?)\]\((.+?)\.md\) · (\w+)$", listing.strip(), re.M)
+    want = [(problems[o["slug"]]["title"], o["slug"], problems[o["slug"]]["difficulty"])
+            for o in order.get("order", []) if o["slug"] in problems]
+    if got != want:
+        errors.append(f"{path}: problem list under '{LIST_MARK}' does not match order.json; expected\n"
+                      + "\n".join(f"{i}. [{t}]({s}.md) · {d}" for i, (t, s, d) in enumerate(want, 1)))
+    return desc.strip(), rest
 
 
 def check_md(path, md, expected, errors):
@@ -85,6 +106,7 @@ def main() -> int:
             continue
         bg = open(bg_path).read()
         check_md(bg_path, bg, BG_HEADINGS, errors)
+        bg_intro, bg = split_chapter_intro(bg, bg_path, order, problems, errors)
 
         in_topic = {s for s, p in problems.items() if p["topic"] == topic}
         ordered = [o["slug"] for o in order.get("order", [])]
@@ -100,7 +122,7 @@ def main() -> int:
                 continue
             md = open(path).read()
             check_md(path, md, PROBLEM_HEADINGS, errors)
-            statement, md = split_statement(md)
+            statement, md = split_statement(md, "The problem")
             if not statement:
                 errors.append(f"{path}: '## The problem' section is empty")
             p = problems.get(slug)
@@ -121,7 +143,7 @@ def main() -> int:
                 continue
             see_also.append({"slug": o["slug"], "title": p["title"], "difficulty": p["difficulty"],
                              "topic": p["topic"], "why_here": o.get("why_here", "")})
-        chapters.append({"topic": topic, "title": order.get("title", topic), "background": bg,
+        chapters.append({"topic": topic, "title": order.get("title", topic), "background": bg, "intro": bg_intro,
                          "sections": sections, "see_also": see_also})
 
     if errors:

@@ -2,6 +2,21 @@
 
 *6 problems · Reading time ~24 min*
 
+## The chapter
+
+A queue serves the item that has waited longest; a deque lets you add and remove at both ends. This chapter teaches
+what first-in-first-out really promises, how to build one discipline from the other with an amortised argument, how to
+keep a queue in a fixed ring of slots, and how a queue models time windows and turn order.
+
+Problems, in reading order:
+
+1. [Implement Queue using Stacks](implement_queue_using_stacks.md) · Easy
+2. [Implement Stack using Queues](implement_stack_using_queues.md) · Easy
+3. [Number of Recent Calls](number_of_recent_calls.md) · Easy
+4. [Design Circular Queue](design_circular_queue.md) · Medium
+5. [Design Circular Deque](design_circular_deque.md) · Medium
+6. [Dota2 Senate](dota2_senate.md) · Medium
+
 ## Why this chapter exists
 
 A stack answers "what is the most recent unfinished thing?". A queue answers the opposite question: "who has been

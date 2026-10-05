@@ -1,6 +1,29 @@
 # Sliding Window
 *13 problems · Reading time ~22 min*
 
+## The chapter
+
+A window is a contiguous slice of a sequence described by two indices that only move forward. This chapter teaches how
+to grow and shrink that slice while maintaining a summary of its contents, so that questions about the longest,
+shortest, or every qualifying stretch run in linear time, and when the summary needs a monotonic deque or two heaps
+instead of a counter.
+
+Problems, in reading order:
+
+1. [Best Time to Buy and Sell Stock](best_time_to_buy_and_sell_stock.md) · Easy
+2. [Minimum Size Subarray Sum](minimum_size_subarray_sum.md) · Medium
+3. [Longest Substring Without Repeating Characters](longest_substring_without_repeating_characters.md) · Medium
+4. [Max Consecutive Ones III](max_consecutive_ones_iii.md) · Medium
+5. [Fruit Into Baskets](fruit_into_baskets.md) · Medium
+6. [Longest Repeating Character Replacement](longest_repeating_character_replacement.md) · Medium
+7. [Permutation in String](permutation_in_string.md) · Medium
+8. [Substring with Concatenation of All Words](substring_with_concatenation_of_all_words.md) · Hard
+9. [Minimum Window Substring](minimum_window_substring.md) · Hard
+10. [Subarrays with K Different Integers](subarrays_with_k_different_integers.md) · Hard
+11. [Sliding Window Maximum](sliding_window_maximum.md) · Hard
+12. [Shortest Subarray with Sum at Least K](shortest_subarray_with_sum_at_least_k.md) · Hard
+13. [Sliding Window Median](sliding_window_median.md) · Hard
+
 ## Why this chapter exists
 
 A large family of interview questions asks something about a *contiguous* piece of a sequence: the longest stretch with some property, the shortest stretch that reaches some total, every stretch of a fixed length, or how many stretches qualify. The naive answer is to try every start and every end, which is O(n^2) pieces and often O(n) work per piece. The sliding window is the observation that neighbouring pieces overlap almost completely, so you can move from one to the next by adding one element on the right and removing one on the left, never rebuilding from scratch.

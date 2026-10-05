@@ -2,6 +2,30 @@
 
 *15 problems · Reading time ~27 min*
 
+## The chapter
+
+Backtracking enumerates configurations by making a choice, recursing, and undoing the choice. This chapter teaches the
+one skeleton behind subsets, permutations, combinations, constrained strings, grid paths, piece placement and puzzle
+solving: name the choice, the constraint that prunes, and the undo.
+
+Problems, in reading order:
+
+1. [Subsets](subsets.md) · Medium
+2. [Subsets II](subsets_ii.md) · Medium
+3. [Permutations](permutations.md) · Medium
+4. [Combination Sum](combination_sum.md) · Medium
+5. [Combination Sum II](combination_sum_ii.md) · Medium
+6. [Letter Combinations of a Phone Number](letter_combinations_of_a_phone_number.md) · Medium
+7. [Generate Parentheses](generate_parentheses.md) · Medium
+8. [Word Search](word_search.md) · Medium
+9. [Unique Paths III](unique_paths_iii.md) · Hard
+10. [N-Queens](n_queens.md) · Hard
+11. [Sudoku Solver](sudoku_solver.md) · Hard
+12. [Remove Invalid Parentheses](remove_invalid_parentheses.md) · Hard
+13. [Expression Add Operators](expression_add_operators.md) · Hard
+14. [24 Game](twenty_four_game.md) · Hard
+15. [Robot Room Cleaner](robot_room_cleaner.md) · Hard
+
 ## Why this chapter exists
 
 Some questions do not ask for a number. They ask for every configuration that satisfies a rule ("list all subsets", "print every valid board"), or for one configuration that satisfies a tangle of rules ("fill this sudoku"). There is no formula for those answers. You have to build candidates one decision at a time and throw away a partial candidate the moment it cannot work. That is backtracking: a depth-first walk over a tree of decisions, with a pencil you can erase.

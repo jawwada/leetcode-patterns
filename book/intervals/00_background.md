@@ -1,6 +1,23 @@
 # Intervals and Sweep Lines
 *8 problems · Reading time ~25 min*
 
+## The chapter
+
+An interval is a start and an end on a line. This chapter teaches how sorting by start or by end makes merging,
+choosing and counting overlapping intervals a single sweep, and how a sweep line that walks several sorted streams at
+once answers questions about free time, query coverage and the area of a union of rectangles.
+
+Problems, in reading order:
+
+1. [Merge Intervals](merge_intervals.md) · Medium
+2. [Insert Interval](insert_interval.md) · Medium
+3. [Non-overlapping Intervals](non_overlapping_intervals.md) · Medium
+4. [Meeting Rooms II](meeting_rooms_ii.md) · Medium
+5. [Employee Free Time](employee_free_time.md) · Hard
+6. [Minimum Interval to Include Each Query](minimum_interval_to_include_each_query.md) · Hard
+7. [My Calendar III](my_calendar_iii.md) · Hard
+8. [Rectangle Area II](rectangle_area_ii.md) · Hard
+
 ## Why this chapter exists
 
 An interval is the simplest thing that has a length: a meeting from 9 to 10, a shift from 2 to 5, a booking from day 10 to day 40, a rectangle's shadow on the x-axis. Interval problems ask one of a small number of questions about a pile of these: what do they cover together, where do they collide, how many are stacked at the worst moment, and where are the holes. The questions look different on the page, but every one of them yields to the same two moves: put the intervals in order along the line, then walk the line once while carrying a tiny amount of state.

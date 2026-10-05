@@ -280,6 +280,7 @@ function renderItem(it){
       <div><div class="lab">Optimal · ${esc(it.time)} time · ${esc(it.space)} space · <code>${esc(it.file)}</code></div><pre><code class="language-python">${esc(it.code)}</code></pre></div>
       <div class="lab">Short form, hints and practice: <a href="https://jawwada.github.io/leetcode-patterns/site/index.html#${it.slug}" target="_blank" rel="noopener">Pattern Board › ${esc(it.title)}</a></div></div></details>` : '';
   main.innerHTML=`<article class="page"><div class="pagehead">${head}${tools(it.id)}</div>
+    ${it.kind==='bg' && it.ch.intro ? `<section class="statement" aria-label="Chapter summary"><div class="eyebrow">The chapter</div>${md2html(it.ch.intro)}</section>` : ''}
     ${it.kind==='sec' && it.problem ? `<section class="statement" aria-label="Problem statement"><div class="eyebrow">The problem</div>${it.statement?md2html(it.statement):`<p>${esc(it.problem)}</p>`}<div class="links"><a href="https://jawwada.github.io/leetcode-patterns/site/index.html#${it.slug}" target="_blank" rel="noopener">Open in Pattern Board ↗</a>${it.leetcode?`<a href="https://leetcode.com/problems/${it.slug.replace(/_/g,'-')}/" target="_blank" rel="noopener">Open on LeetCode ↗</a>`:''}</div></section>` : ''}
     <div class="prose">${md2html(it.md)}</div>${sol}
     <nav class="pager">${prev?`<a href="#${prev.id}"><span>Previous</span><span>${esc(prev.title)}</span></a>`:'<span></span>'}${next?`<a class="next" href="#${next.id}"><span>Next</span><span>${esc(next.title)}</span></a>`:'<span></span>'}</nav></article>`;

@@ -1,6 +1,33 @@
 # Strings: Scanning, Parsing, Canonical Forms
 *17 problems · Reading time ~26 min*
 
+## The chapter
+
+String problems are about walking a sequence once while remembering the right small thing. This chapter teaches
+cutting and reassembling pieces, canonical forms that make equal things compare equal, parsing with a phase or a few
+flags, matching with a stack, and the self-similarity tools: expanding palindromes, the KMP failure function, and
+rolling hashes.
+
+Problems, in reading order:
+
+1. [Implement String Split](implement_split.md) · Easy
+2. [Valid Anagram](valid_anagram.md) · Easy
+3. [Reverse Words in a String](reverse_words_in_a_string.md) · Medium
+4. [Compare Version Numbers](compare_version_numbers.md) · Medium
+5. [String to Integer (atoi)](string_to_integer_atoi.md) · Medium
+6. [Valid Number](valid_number.md) · Hard
+7. [Simplify Path](simplify_path.md) · Medium
+8. [Minimum Remove to Make Valid Parentheses](minimum_remove_to_make_valid_parentheses.md) · Medium
+9. [Zigzag Conversion](zigzag_conversion.md) · Medium
+10. [Group Shifted Strings](group_shifted_strings.md) · Medium
+11. [Integer to English Words](integer_to_english_words.md) · Hard
+12. [Text Justification](text_justification.md) · Hard
+13. [Longest Palindromic Substring](longest_palindromic_substring.md) · Medium
+14. [Longest Happy Prefix](longest_happy_prefix.md) · Hard
+15. [Shortest Palindrome](shortest_palindrome.md) · Hard
+16. [Palindrome Pairs](palindrome_pairs.md) · Hard
+17. [Longest Duplicate Substring](longest_duplicate_substring.md) · Hard
+
 ## Why this chapter exists
 
 Almost every interview has a string question, and almost none of them are really about strings. They are about walking a sequence once while remembering the right small thing. The string is just the most common sequence, and it comes with three traps of its own: it is immutable, its "characters" are code points rather than bytes, and the input format is usually fussier than it looks.

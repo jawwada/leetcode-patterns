@@ -2,6 +2,27 @@
 
 *12 problems · Reading time ~27 min*
 
+## The chapter
+
+A linked list is a chain of nodes where each node knows only the next one. This chapter teaches how to rewire, measure
+and reshape that chain in one pass with constant extra memory: dummy heads, the three-pointer reversal, two runners at
+a fixed gap, and the fast and slow runners that detect and locate a cycle.
+
+Problems, in reading order:
+
+1. [Reverse Linked List](reverse_linked_list.md) · Easy
+2. [Merge Two Sorted Lists](merge_two_sorted_lists.md) · Easy
+3. [Add Two Numbers](add_two_numbers.md) · Medium
+4. [Remove Nth Node From End of List](remove_nth_from_end.md) · Medium
+5. [Linked List Cycle](linked_list_cycle.md) · Easy
+6. [Linked List Cycle II](linked_list_cycle_ii.md) · Medium
+7. [Find the Duplicate Number](find_the_duplicate_number.md) · Medium
+8. [Intersection of Two Linked Lists](intersection_of_two_linked_lists.md) · Easy
+9. [Palindrome Linked List](palindrome_linked_list.md) · Easy
+10. [Reorder List](reorder_list.md) · Medium
+11. [Copy List with Random Pointer](copy_list_with_random_pointer.md) · Medium
+12. [Reverse Nodes in k-Group](reverse_nodes_in_k_group.md) · Hard
+
 ## Why this chapter exists
 
 Linked list problems are rarely about storing data. They are about moving arrows without dropping anything. Every

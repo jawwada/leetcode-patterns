@@ -2,6 +2,38 @@
 
 *22 problems · Reading time ~35 min*
 
+## The chapter
+
+Design problems hand you an API and ask every call to be fast in any order. This chapter teaches the habit of starting
+from the operations, asking what each one must know, and choosing the cheapest structure that knows it: windows over a
+stream, keyed state, two structures kept in sync, versioned state, lazy work, ordered sets of ranges, and building a
+tree or skip list from nodes.
+
+Problems, in reading order:
+
+1. [Moving Average from Data Stream](moving_average_from_data_stream.md) · Easy
+2. [Logger Rate Limiter](logger_rate_limiter.md) · Easy
+3. [Design Hit Counter](design_hit_counter.md) · Medium
+4. [Design HashMap](design_hashmap.md) · Easy
+5. [Insert Delete GetRandom O(1)](insert_delete_getrandom_o1.md) · Medium
+6. [Design Browser History](design_browser_history.md) · Medium
+7. [Design Underground System](design_underground_system.md) · Medium
+8. [Time Based Key-Value Store](time_based_key_value_store.md) · Medium
+9. [Snapshot Array](snapshot_array.md) · Medium
+10. [Design Bitset](design_bitset.md) · Medium
+11. [LRU Cache](lru_cache.md) · Medium
+12. [LFU Cache](lfu_cache.md) · Hard
+13. [All O`one Data Structure](all_oone_data_structure.md) · Hard
+14. [Maximum Frequency Stack](maximum_frequency_stack.md) · Hard
+15. [Dinner Plate Stacks](dinner_plate_stacks.md) · Hard
+16. [Data Stream as Disjoint Intervals](data_stream_as_disjoint_intervals.md) · Hard
+17. [Range Module](range_module.md) · Hard
+18. [Range Sum Query 2D - Mutable](range_sum_query_2d_mutable.md) · Hard
+19. [Online Majority Element In Subarray](online_majority_element_in_subarray.md) · Hard
+20. [Design Movie Rental System](design_movie_rental_system.md) · Hard
+21. [Design In-Memory File System](design_in_memory_file_system.md) · Hard
+22. [Design Skiplist](design_skiplist.md) · Hard
+
 ## Why this chapter exists
 
 Most interview problems hand you one input and ask for one answer. Design problems hand you a class with a few method names and say: "these calls will arrive in any order, thousands of times, make each one fast." There is no single answer to compute. There is a *state* you keep between calls, and every call either changes that state or reads from it. I call this the "implement a tracker" format, because what you are building is a small object that tracks something — a window of numbers, a set of keys, a history of pages, a cache — and answers questions about it on demand.

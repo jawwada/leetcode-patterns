@@ -2,6 +2,33 @@
 
 *17 problems · Reading time ~30 min*
 
+## The chapter
+
+Arrays are contiguous memory with O(1) indexing but O(n) search by value; hash maps and sets add O(1) average lookup
+by value. This chapter teaches you to answer questions about the past of a scan in constant time: which values you
+have seen, where, how often, and what they add up to. It ends with the tools for counting by value order, merge-sort
+counting and Fenwick trees.
+
+Problems, in reading order:
+
+1. [Two Sum](two_sum.md) · Easy
+2. [Contains Duplicate II](contains_duplicate_ii.md) · Easy
+3. [Majority Element](majority_element.md) · Easy
+4. [Max Consecutive Ones](max_consecutive_ones.md) · Easy
+5. [Valid Sudoku](valid_sudoku.md) · Medium
+6. [Group Anagrams](group_anagrams.md) · Medium
+7. [Top K Frequent Elements](top_k_frequent_elements.md) · Medium
+8. [Product of Array Except Self](product_of_array_except_self.md) · Medium
+9. [Longest Consecutive Sequence](longest_consecutive_sequence.md) · Medium
+10. [Subarray Sum Equals K](subarray_sum_equals_k.md) · Medium
+11. [Encode and Decode Strings](encode_and_decode_strings.md) · Medium
+12. [First Missing Positive](first_missing_positive.md) · Hard
+13. [Maximum Gap](maximum_gap.md) · Hard
+14. [Contains Duplicate III](contains_duplicate_iii.md) · Hard
+15. [Count of Smaller Numbers After Self](count_of_smaller_numbers_after_self.md) · Hard
+16. [Reverse Pairs](reverse_pairs.md) · Hard
+17. [Create Sorted Array through Instructions](create_sorted_array_through_instructions.md) · Hard
+
 ## Why this chapter exists
 
 Almost every array problem, stripped down, is a question about what you have already seen. "Is there an earlier number

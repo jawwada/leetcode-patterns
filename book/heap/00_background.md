@@ -2,6 +2,35 @@
 
 *20 problems · Reading time ~23 min*
 
+## The chapter
+
+A heap keeps a collection where the smallest (or largest) item is always available in O(log n) per change. This
+chapter teaches the patterns that need exactly that: keeping the k best, scheduling by count, merging k sorted
+streams, two heaps that hold a running median, unlock-then-pick sweeps, and shortest paths with Dijkstra's algorithm.
+
+Problems, in reading order:
+
+1. [Kth Largest Element in a Stream](kth_largest_element_in_a_stream.md) · Easy
+2. [Kth Largest Element in an Array](kth_largest_element_in_an_array.md) · Medium
+3. [K Closest Points to Origin](k_closest_points_to_origin.md) · Medium
+4. [Top K Frequent Words](top_k_frequent_words.md) · Medium
+5. [Task Scheduler](task_scheduler.md) · Medium
+6. [Reorganize String](reorganize_string.md) · Medium
+7. [Rearrange String k Distance Apart](rearrange_string_k_distance_apart.md) · Hard
+8. [Merge k Sorted Lists](merge_k_sorted_lists.md) · Hard
+9. [K-th Smallest Prime Fraction](kth_smallest_prime_fraction.md) · Hard
+10. [Smallest Range Covering Elements from K Lists](smallest_range_covering_elements_from_k_lists.md) · Hard
+11. [Design Twitter](design_twitter.md) · Medium
+12. [Find Median from Data Stream](find_median_from_data_stream.md) · Hard
+13. [IPO](ipo.md) · Hard
+14. [Minimum Number of Refueling Stops](minimum_number_of_refueling_stops.md) · Hard
+15. [Course Schedule III](course_schedule_iii.md) · Hard
+16. [Maximum Performance of a Team](maximum_performance_of_a_team.md) · Hard
+17. [Minimize Deviation in Array](minimize_deviation_in_array.md) · Hard
+18. [Meeting Rooms III](meeting_rooms_iii.md) · Hard
+19. [The Skyline Problem](the_skyline_problem.md) · Hard
+20. [Trapping Rain Water II](trapping_rain_water_ii.md) · Hard
+
 ## Why this chapter exists
 
 Many problems never need everything in order. They need one thing, over and over: "what is the smallest (or largest) item

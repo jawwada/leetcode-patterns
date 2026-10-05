@@ -2,6 +2,24 @@
 
 *8 problems · Reading time ~24 min*
 
+## The chapter
+
+Dynamic programming answers best, how-many and is-it-possible questions over an exponential space of choices when the
+choices so far can be summarised by a small state. This chapter, outside the interview brief and kept for
+completeness, teaches the one-dimensional recurrences, filling an amount with pieces, reachable-sum tables, and
+comparing or scanning sequences.
+
+Problems, in reading order:
+
+1. [Min Cost Climbing Stairs](min_cost_climbing_stairs.md) · Easy
+2. [House Robber](house_robber.md) · Medium
+3. [Decode Ways](decode_ways.md) · Medium
+4. [Coin Change](coin_change.md) · Medium
+5. [Partition Equal Subset Sum](partition_equal_subset_sum.md) · Medium
+6. [Target Sum](target_sum.md) · Medium
+7. [Longest Common Subsequence](longest_common_subsequence.md) · Medium
+8. [Longest Increasing Subsequence](longest_increasing_subsequence.md) · Medium
+
 ## Why this chapter exists
 
 A note before anything else: this chapter is carried over from your old repository, and it sits outside your interview brief, which explicitly excludes dynamic programming. It is here for completeness, so the book does not silently drop eight problems you once solved, and because the habit it teaches (name the state, then fill a table) sharpens your thinking about recursion, backtracking and greedy, all of which are in scope. If you are short on time, this is the chapter to skip.

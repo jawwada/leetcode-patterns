@@ -1,6 +1,23 @@
 # Tries
 *8 problems · Reading time ~24 min*
 
+## The chapter
+
+A trie stores a set of strings as a tree of characters, so every shared prefix is one shared path. This chapter
+teaches prefix lookups, wildcard matching down a forking walk, using a trie to prune a backtracking search, rewriting
+suffix questions as prefix questions, and storing payloads in nodes so that reaching a node is the answer.
+
+Problems, in reading order:
+
+1. [Implement Trie (Prefix Tree)](implement_trie_prefix_tree.md) · Medium
+2. [Replace Words](replace_words.md) · Medium
+3. [Design Add and Search Words Data Structure](design_add_and_search_words_data_structure.md) · Medium
+4. [Word Search II](word_search_ii.md) · Hard
+5. [Word Squares](word_squares.md) · Hard
+6. [Prefix and Suffix Search](prefix_and_suffix_search.md) · Hard
+7. [Stream of Characters](stream_of_characters.md) · Hard
+8. [Design Search Autocomplete System](design_search_autocomplete_system.md) · Hard
+
 ## Why this chapter exists
 
 Some questions are not about one string but about a whole dictionary of strings at once. "Is this word in the set?" a hash set answers fine. But "does any stored word start with these letters?", "which stored word is the shortest prefix of this one?", "which words could still be spelled if I extend this path by one more letter?" — a hash set cannot answer those without looking at every key. A trie can, and it answers them in time proportional to the length of the query, not the size of the dictionary.

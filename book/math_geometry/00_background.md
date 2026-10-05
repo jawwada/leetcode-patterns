@@ -2,6 +2,25 @@
 
 *10 problems · Reading time ~22 min*
 
+## The chapter
+
+These problems are solved by noticing a structure that is already in the data: a grid as a coordinate system, numbers
+as blocks counted by digit position, experiments as digits of a mixed-radix number, and points on an integer grid.
+This chapter teaches the formulas and the one rule of exact geometry: never let a float near a decision.
+
+Problems, in reading order:
+
+1. [Rotate Image](rotate_image.md) · Medium
+2. [Spiral Matrix](spiral_matrix.md) · Medium
+3. [Set Matrix Zeroes](set_matrix_zeroes.md) · Medium
+4. [Permutation Sequence](permutation_sequence.md) · Hard
+5. [K-th Smallest in Lexicographical Order](kth_smallest_in_lexicographical_order.md) · Hard
+6. [Number of Digit One](number_of_digit_one.md) · Hard
+7. [Poor Pigs](poor_pigs.md) · Hard
+8. [Max Points on a Line](max_points_on_a_line.md) · Hard
+9. [Perfect Rectangle](perfect_rectangle.md) · Hard
+10. [Erect the Fence](erect_the_fence.md) · Hard
+
 ## Why this chapter exists
 
 Most chapters in this book hand you a data structure and ask you to protect an invariant inside it. This chapter is different. The problems here are solved by *noticing a structure that is already in the input* — a coordinate system, a number system, a count, a geometric sign — and then reading the answer off that structure instead of simulating your way to it. The code is usually short. The thinking is not.

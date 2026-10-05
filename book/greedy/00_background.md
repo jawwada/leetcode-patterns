@@ -2,6 +2,30 @@
 
 *14 problems · Reading time ~22 min*
 
+## The chapter
+
+A greedy algorithm commits to the locally best choice at each step and never revisits it. This chapter teaches which
+greedy rules survive and how to argue why: running-state carries, reach and frontier arguments, intervals swept in
+order, constraints satisfied from both sides, and exchange arguments where any other plan can be rewritten into the
+greedy one without getting worse.
+
+Problems, in reading order:
+
+1. [Maximum Subarray](maximum_subarray.md) · Medium
+2. [Maximum Product Subarray](maximum_product_subarray.md) · Medium
+3. [Jump Game](jump_game.md) · Medium
+4. [Jump Game II](jump_game_ii.md) · Medium
+5. [Minimum Number of Taps to Open to Water a Garden](minimum_number_of_taps_to_open_to_water_a_garden.md) · Hard
+6. [Gas Station](gas_station.md) · Medium
+7. [Partition Labels](partition_labels.md) · Medium
+8. [Candy](candy.md) · Hard
+9. [Minimum Number of Increments on Subarrays to Form a Target Array](min_number_operations.md) · Hard
+10. [Super Washing Machines](super_washing_machines.md) · Hard
+11. [Patching Array](patching_array.md) · Hard
+12. [Set Intersection Size At Least Two](set_intersection_size_at_least_two.md) · Hard
+13. [Couples Holding Hands](couples_holding_hands.md) · Hard
+14. [Stamping The Sequence](stamping_the_sequence.md) · Hard
+
 ## Why this chapter exists
 
 Some optimisation problems look like they need a search over every possible plan, yet the best plan can be built one

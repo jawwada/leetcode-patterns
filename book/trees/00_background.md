@@ -2,6 +2,43 @@
 
 *28 problems · Reading time ~32 min*
 
+## The chapter
+
+A tree is a node with children, and the moment a node has two, loops give way to recursion. This chapter teaches how
+to write a function for a node by trusting it on the children: returning one value up, carrying state down, walking
+two trees in lockstep, sweeping by level with a queue, and exploiting the sorted order of a binary search tree.
+
+Problems, in reading order:
+
+1. [Maximum Depth of Binary Tree](maximum_depth_of_binary_tree.md) · Easy
+2. [Invert Binary Tree](invert_binary_tree.md) · Easy
+3. [Same Tree](same_tree.md) · Easy
+4. [Symmetric Tree](symmetric_tree.md) · Easy
+5. [Subtree of Another Tree](subtree_of_another_tree.md) · Easy
+6. [Balanced Binary Tree](balanced_binary_tree.md) · Easy
+7. [Diameter of Binary Tree](diameter_of_binary_tree.md) · Easy
+8. [Sum of Left Leaves](sum_of_left_leaves.md) · Easy
+9. [Path Sum](path_sum.md) · Easy
+10. [Path Sum II](path_sum_ii.md) · Medium
+11. [Count Good Nodes in Binary Tree](count_good_nodes_in_binary_tree.md) · Medium
+12. [Binary Tree Maximum Path Sum](binary_tree_maximum_path_sum.md) · Hard
+13. [Binary Tree Level Order Traversal](binary_tree_level_order_traversal.md) · Medium
+14. [Binary Tree Right Side View](binary_tree_right_side_view.md) · Medium
+15. [Cousins in Binary Tree](cousins_in_binary_tree.md) · Easy
+16. [Vertical Order Traversal of a Binary Tree](vertical_order_traversal_of_a_binary_tree.md) · Hard
+17. [Binary Tree Inorder Traversal](binary_tree_inorder_traversal.md) · Easy
+18. [Validate Binary Search Tree](validate_binary_search_tree.md) · Medium
+19. [Kth Smallest Element in a BST](kth_smallest_element_in_a_bst.md) · Medium
+20. [Lowest Common Ancestor of a BST](lowest_common_ancestor_of_a_bst.md) · Medium
+21. [Lowest Common Ancestor of a Binary Tree](lowest_common_ancestor_of_a_binary_tree.md) · Medium
+22. [Closest Binary Search Tree Value II](closest_binary_search_tree_value_ii.md) · Hard
+23. [Recover Binary Search Tree](recover_binary_search_tree.md) · Hard
+24. [Construct Binary Tree from Preorder and Inorder Traversal](construct_binary_tree_from_preorder_and_inorder_traversal.md) · Medium
+25. [Recover a Tree From Preorder Traversal](recover_a_tree_from_preorder_traversal.md) · Hard
+26. [Serialize and Deserialize Binary Tree](serialize_and_deserialize_binary_tree.md) · Hard
+27. [Serialize and Deserialize N-ary Tree](serialize_and_deserialize_n_ary_tree.md) · Hard
+28. [Binary Tree Cameras](binary_tree_cameras.md) · Hard
+
 ## Why this chapter exists
 
 A tree is the first data structure most people meet that is not a line. Arrays and linked lists have a "next"; a tree has
