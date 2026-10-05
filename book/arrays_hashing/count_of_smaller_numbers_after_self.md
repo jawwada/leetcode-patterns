@@ -1,6 +1,16 @@
 # Count of Smaller Numbers After Self
 *LeetCode 315 · Hard · Pattern: Merge sort counting · Reading time ~10 min*
 
+## The problem
+
+Given an integer array nums, return counts where counts[i] is the number of elements to the right of index i that are
+strictly smaller than nums[i].
+
+```text
+Example: nums = [5,2,6,1] -> [2,1,1,0]: right of 5 are 2 and 1,
+  right of 2 is 1, right of 6 is 1, right of 1 nothing.
+```
+
 ## What the problem is really asking
 
 For every position `i` in `nums`, count how many elements to its *right* are *strictly smaller* than `nums[i]`. Return those n counts as a list.

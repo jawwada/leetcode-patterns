@@ -2,6 +2,15 @@
 
 *LeetCode 572 · Easy · Pattern: Tree serialization + substring search · Reading time ~6 min*
 
+## The problem
+
+Return True if subRoot is identical in structure and values to some subtree of root (possibly root itself).
+
+```text
+Example: root=[3,4,5,1,2], subRoot=[4,1,2] -> True; adding a
+  child 0 under node 2 of root makes it False.
+```
+
 ## What the problem is really asking
 
 Given a big tree `root` and a small tree `subRoot`, is there a node in the big tree whose entire subtree is identical to

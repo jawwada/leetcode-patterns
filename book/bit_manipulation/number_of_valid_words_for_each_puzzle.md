@@ -2,6 +2,18 @@
 
 *LeetCode 1178 · Hard · Pattern: Bitmask counting + submask enumeration · Reading time ~10 min*
 
+## The problem
+
+A word is valid for a puzzle if it contains the puzzle's first letter and every letter of the word appears in the
+puzzle. Puzzles have exactly 7 distinct letters; there are up to 10^5 words and 10^4 puzzles. Return, for each puzzle,
+how many words are valid for it.
+
+```text
+Example: words = [aaaa, asas, able, ability, actt, actor,
+  access], puzzles = [aboveyz, abrodyz, abslute, absoryz,
+  actresz, gaswxyz] returns [1,1,3,2,4,0].
+```
+
 ## What the problem is really asking
 
 You get a list of words and a list of puzzles. Each puzzle is exactly 7 distinct letters. A word is valid for a puzzle when two things hold:

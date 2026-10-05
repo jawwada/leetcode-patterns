@@ -2,6 +2,17 @@
 
 *LeetCode 517 · Hard · Pattern: Prefix-sum flow bound · Reading time ~9 min*
 
+## The problem
+
+n washing machines in a row hold machines[i] dresses. In one move you may pick any number of machines and have each
+pass one dress to an adjacent machine simultaneously. Return the minimum number of moves to equalise all machines, or
+-1 if impossible.
+
+```text
+Example: [1,0,5] -> 3 ([1,0,5] -> [1,1,4] -> [2,1,3] ->
+  [2,2,2]). [0,3,0] -> 2. [0,2,0] -> -1.
+```
+
 ## What the problem is really asking
 
 Washing machines stand in a row, machine `i` holding `machines[i]` dresses. In one move you choose any set of machines, and each chosen machine passes exactly one dress to a neighbour (left or right), all at the same time. Find the minimum number of moves that leaves every machine with the same count, or -1 if that is impossible.

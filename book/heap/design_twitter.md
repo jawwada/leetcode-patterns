@@ -2,6 +2,16 @@
 
 *LeetCode 355 · Medium · Pattern: k-way merge with a heap (merge k sorted feeds) · Reading time ~8 min*
 
+## The problem
+
+Implement postTweet(userId, tweetId), follow(a, b), unfollow(a, b) and getNewsFeed(userId), which returns the 10 most
+recent tweet ids posted by the user or anyone they follow, newest first.
+
+```text
+Example: post(1,5); feed(1)=[5]; follow(1,2); post(2,6);
+  feed(1)=[6,5]; unfollow(1,2); feed(1)=[5].
+```
+
 ## What the problem is really asking
 
 Build a tiny social network with four operations. `postTweet(user, tweetId)` records a tweet. `follow(a, b)` and `unfollow(a, b)` edit who `a` follows. `getNewsFeed(user)` returns up to 10 tweet ids, newest first, drawn from the user's own tweets and the tweets of everyone they follow.

@@ -2,6 +2,17 @@
 
 *LeetCode 630 · Hard · Pattern: Sort by deadline + max-heap of taken durations (swap out the longest) · Reading time ~12 min*
 
+## The problem
+
+Course i takes duration[i] days and must be finished on or before lastDay[i]. You start on day 1 and take courses one
+at a time, back to back. Return the maximum number of courses you can complete.
+
+```text
+Example: [[100,200],[200,1300],[1000,1250],[2000,3200]] -> 3
+  (take 100, then 1000, then 200; 2000 cannot fit).
+  [[3,2],[4,3]] -> 0.
+```
+
 ## What the problem is really asking
 
 Each course is a pair `(duration, lastDay)`: it takes `duration` days of your full attention and must be *finished* on or before `lastDay`. You take courses one at a time, back to back, starting from day 0 (finishing a course of length 5 started at day 0 means finishing on day 5). Return the largest number of courses you can complete.

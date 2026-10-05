@@ -2,6 +2,16 @@
 
 *LeetCode 100 · Easy · Pattern: Simultaneous tree recursion · Reading time ~5 min*
 
+## The problem
+
+Given two binary trees p and q, return True if they are structurally identical and every corresponding node has the
+same value.
+
+```text
+Example: p=[1,2,3], q=[1,2,3] -> True; p=[1,2], q=[1,null,2] ->
+  False.
+```
+
 ## What the problem is really asking
 
 Given two trees p and q, say whether they are the same tree: the same shape, and the same value at every position. The

@@ -2,6 +2,16 @@
 
 *LeetCode 997 · Easy · Pattern: Degree counting (in-degree minus out-degree) · Reading time ~5 min*
 
+## The problem
+
+There are n people labelled 1..n, and trust[i] = [a, b] means a trusts b. The town judge trusts nobody and is trusted
+by everybody else. Return the judge's label, or -1 if there is none.
+
+```text
+Example: n=3, trust=[[1,3],[2,3]] -> 3; n=3,
+  trust=[[1,3],[2,3],[3,1]] -> -1 because 3 trusts 1.
+```
+
 ## What the problem is really asking
 
 People are labelled 1 to n. A pair `[a, b]` in `trust` says "a trusts b". The judge trusts nobody and is trusted by everybody else. Return the judge's label, or -1.

@@ -2,6 +2,16 @@
 
 *LeetCode 644 · Hard · Pattern: Binary search on the answer · Reading time ~11 min*
 
+## The problem
+
+Given an integer array nums and an integer k, find a contiguous subarray of length at least k with the maximum average
+and return that average; any answer within 1e-5 of the true value is accepted.
+
+```text
+Example: nums = [1,12,-5,-6,50,3], k = 4 returns 12.75, the
+  average of [12,-5,-6,50].
+```
+
 ## What the problem is really asking
 
 Among all contiguous subarrays whose length is **at least** `k`, find the largest average and return it (to within `1e-5`).

@@ -2,6 +2,16 @@
 
 *LeetCode 1552 · Medium · Pattern: Binary search on the answer · Reading time ~8 min*
 
+## The problem
+
+Baskets sit at distinct integer positions. Place m balls in m different baskets so that the minimum distance between
+any two balls is as large as possible, and return that distance.
+
+```text
+Example: position = [1,2,3,4,7], m = 3 -> 3 (balls at 1, 4 and
+  7).
+```
+
 ## What the problem is really asking
 
 There are baskets at distinct integer positions along a line. We drop `m` balls into `m` different baskets. Among all pairs of balls, look at the closest pair and call its distance the **minimum gap**. We want to place the balls so that this minimum gap is as large as possible, and return it.

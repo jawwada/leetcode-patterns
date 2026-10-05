@@ -2,6 +2,15 @@
 
 *LeetCode 198 · Medium · Pattern: 1-D DP over prefixes (Fibonacci-style) · Reading time ~6 min*
 
+## The problem
+
+Houses in a row hold nums[i] money, and you cannot rob two adjacent houses. Return the most money you can rob.
+
+```text
+Example: [1,2,3,1] -> 4 (houses 0 and 2); [2,7,9,3,1] -> 12
+  (houses 0, 2 and 4).
+```
+
 ## What the problem is really asking
 
 A row of houses, house `i` holding `nums[i]` money. You may rob any set of houses as long as no two chosen houses are next to each other (adjacent houses share an alarm). Return the most money you can take.

@@ -1,6 +1,17 @@
 # Clone Graph
 *LeetCode 133 · Medium · Pattern: Graph traversal with old->new node map · Reading time ~8 min*
 
+## The problem
+
+Given a reference to one node of a connected undirected graph, where each node has an integer val (1..n, unique) and a
+list of neighbors, return a deep copy of the whole graph.
+
+```text
+Example: the 4-cycle with adjacency [[2,4],[1,3],[2,4],[1,3]]
+  must come back as an identical graph made of brand-new Node
+  objects.
+```
+
 ## What the problem is really asking
 
 You are handed a pointer to one node of a connected, undirected graph. Each node has a value

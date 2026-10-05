@@ -2,6 +2,16 @@
 
 *LeetCode 46 · Medium · Pattern: Backtracking with a used-set · Reading time ~7 min*
 
+## The problem
+
+Given an array of distinct integers, return all possible orderings (permutations) of its elements, in any order.
+
+```text
+Example: [1,2,3] ->
+  [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]. Example:
+  [1] -> [[1]].
+```
+
 ## What the problem is really asking
 
 Given n distinct integers, list every way to arrange all of them in a row. Unlike subsets, every answer uses every element, and order now matters: `[1,2,3]` and `[2,1,3]` are different answers.

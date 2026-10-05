@@ -1,6 +1,15 @@
 # Trapping Rain Water
 *LeetCode 42 · Hard · Pattern: Converging two pointers with running maxima · Reading time ~11 min*
 
+## The problem
+
+Given an elevation map height[i] with bars of width 1, compute how much water it traps after raining. The water above
+bar i is min(maxLeft(i), maxRight(i)) - height[i] when that is positive.
+
+```text
+Example: height = [0,1,0,2,1,0,1,3,2,1,2,1] -> 6.
+```
+
 ## What the problem is really asking
 
 You get an elevation map: bar `i` has height `height[i]` and width 1. Rain falls and settles. How many unit squares of water are trapped between the bars?

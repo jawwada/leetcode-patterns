@@ -2,6 +2,16 @@
 
 *LeetCode 30 · Hard · Pattern: Fixed-size sliding window with counts · Reading time ~12 min*
 
+## The problem
+
+Given a string s and a list words of equal-length strings (duplicates allowed), return the start indices of every
+substring of s that is a concatenation of all the words in some order, each used exactly once.
+
+```text
+Example: s = "barfoothefoobarman", words = ["foo","bar"] -> [0,
+  9] ("barfoo" and "foobar").
+```
+
 ## What the problem is really asking
 
 You get a string `s` and a list `words`. Every word has the same length `L`, and the list may contain duplicates. Find every index where `s` contains all the words glued together, in any order, each used exactly as many times as it appears in the list, with nothing in between.

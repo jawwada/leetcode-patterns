@@ -2,6 +2,16 @@
 
 *LeetCode 862 · Hard · Pattern: Monotonic deque · Reading time ~12 min*
 
+## The problem
+
+Given an integer array nums whose values may be negative and an integer k, return the length of the shortest non-empty
+contiguous subarray with sum >= k, or -1 if there is none.
+
+```text
+Example: nums = [2,-1,2], k = 3 -> 3, because only the whole
+  array reaches 3. nums = [1,2], k = 4 -> -1.
+```
+
 ## What the problem is really asking
 
 Given an integer array `nums` and a target `k`, find the length of the shortest non-empty contiguous subarray whose sum is at least `k`. Return `-1` if none exists. The twist that makes it a Hard: **values may be negative**.

@@ -1,6 +1,18 @@
 # LFU Cache
 *LeetCode 460 · Hard · Pattern: Frequency buckets of ordered dicts + min-frequency pointer · Reading time ~12 min*
 
+## The problem
+
+Design a fixed-capacity cache with get(key) and put(key, value) in O(1). Each get or put of a key increments its use
+count. On overflow evict the key with the smallest use count, breaking ties by evicting the least recently used among
+them.
+
+```text
+Example: capacity 2; put(1,1), put(2,2), get(1) -> 1, put(3,3)
+  evicts 2 (count 1 < count 2), get(2) -> -1, put(4,4) evicts 1
+  (1 and 3 both have count 2; 1 is older).
+```
+
 ## What the problem is really asking
 
 Same contract as LRU Cache: fixed capacity, `get(key)` returns the value or -1, `put(key, value)` inserts or updates, both O(1). What changes is who gets evicted. Every `get` or `put` of a key increments that key's *use count*. When the cache is full and a new key arrives, evict the key with the **smallest use count**; if several keys tie on that count, evict the **least recently used** among them.

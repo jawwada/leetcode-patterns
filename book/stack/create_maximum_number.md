@@ -2,6 +2,17 @@
 
 *LeetCode 321 · Hard · Pattern: Monotonic stack + greedy merge · Reading time ~12 min*
 
+## The problem
+
+Given two digit arrays nums1 (length m) and nums2 (length n) and k <= m + n, form the largest k-digit number by taking
+digits from both arrays while preserving each array's relative order; return it as a digit list.
+
+```text
+Example: nums1 = [3,4,6,5], nums2 = [9,1,2,5,8,3], k = 5 ->
+  [9,8,6,5,3]; nums1 = [6,7], nums2 = [6,0,4], k = 5 ->
+  [6,7,6,0,4].
+```
+
 ## What the problem is really asking
 
 You have two arrays of digits, `nums1` (length `m`) and `nums2` (length `n`), and a target length `k <= m + n`. Pick `k` digits in total from the two arrays, keeping each array's digits in their original relative order, and interleave them however you like. Make the resulting `k`-digit number as large as possible. Return its digits.

@@ -2,6 +2,16 @@
 
 *LeetCode 134 · Medium · Pattern: Greedy running sum with restart · Reading time ~7 min*
 
+## The problem
+
+There are n gas stations on a circle; gas[i] is the fuel at station i and cost[i] the fuel needed to drive to station
+i + 1. Starting with an empty tank, return the unique starting index from which you can complete a full loop, or -1 if
+none exists.
+
+```text
+Example: gas = [1,2,3,4,5], cost = [3,4,5,1,2] returns 3.
+```
+
 ## What the problem is really asking
 
 Stations sit on a circular road. At station `i` you can fill up `gas[i]` units, and driving from station `i` to station

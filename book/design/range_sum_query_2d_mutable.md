@@ -2,6 +2,18 @@
 
 *LeetCode 308 · Hard · Pattern: 2D Fenwick tree (binary indexed tree) + inclusion-exclusion · Reading time ~14 min*
 
+## The problem
+
+Design NumMatrix(matrix) with update(row, col, val), which sets one cell, and sumRegion(row1, col1, row2, col2), which
+returns the sum of that inclusive rectangle. Updates and queries are interleaved, many of each.
+
+```text
+Example: matrix
+  [[3,0,1,4,2],[5,6,3,2,1],[1,2,0,1,5],[4,1,0,1,7],[1,0,3,0,5]]:
+  sumRegion(2,1,4,3) -> 8; update(3,2,2); sumRegion(2,1,4,3) ->
+  10.
+```
+
 ## What the problem is really asking
 
 You are handed a grid of integers. Two operations then interleave, many times each:

@@ -2,6 +2,18 @@
 
 *LeetCode 1203 · Hard · Pattern: Topological sort (Kahn's BFS) / cycle detection · Reading time ~11 min*
 
+## The problem
+
+There are n items; item i belongs to group[i], or to no group when group[i] = -1, with m groups in total.
+beforeItems[i] lists the items that must come before i. Return an ordering of all items in which items of the same
+group are adjacent and every before-constraint holds, or [] if none exists.
+
+```text
+Example: n=8, m=2, group=[-1,-1,1,0,0,1,0,-1],
+  beforeItems=[[],[6],[5],[6],[3,6],[],[],[]] ->
+  [6,3,4,1,5,2,0,7] (one valid answer).
+```
+
 ## What the problem is really asking
 
 There are n items. Item i belongs to group `group[i]`, one of m groups, or to no group if `group[i] == -1`. `beforeItems[i]` lists the items that must appear before item i. Produce one ordering of all n items such that

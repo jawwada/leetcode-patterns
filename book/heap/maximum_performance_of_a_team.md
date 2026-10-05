@@ -2,6 +2,16 @@
 
 *LeetCode 1383 · Hard · Pattern: Sort by the bottleneck (efficiency desc) + min-heap of the top-k other values · Reading time ~11 min*
 
+## The problem
+
+n engineers have speed[i] and efficiency[i]. Choose at most k of them; a team's performance is (sum of speeds) *
+(minimum efficiency). Return the maximum performance modulo 1e9+7.
+
+```text
+Example: speed=[2,10,3,1,5,8], efficiency=[5,4,3,9,7,2], k=2 ->
+  60 (engineers 1 and 4: speeds 10+5=15, min efficiency 4).
+```
+
 ## What the problem is really asking
 
 You have `n` engineers. Engineer `i` has a `speed` and an `efficiency`. Pick a team of *at most* `k` of them. The team's performance is `(sum of the team's speeds) × (smallest efficiency on the team)`. Return the best performance, modulo `10^9 + 7`.

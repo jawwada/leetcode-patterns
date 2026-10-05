@@ -1,6 +1,16 @@
 # Stream of Characters
 *LeetCode 1032 · Hard · Pattern: Reversed trie walked backwards over a bounded recent-history buffer · Reading time ~9 min*
 
+## The problem
+
+StreamChecker(words) is fed one character at a time through query(letter), which returns True when some word is a
+suffix of everything queried so far.
+
+```text
+Example: words=["cd","f","kl"] with the stream a..l returns True
+  exactly at d, f and l.
+```
+
 ## What the problem is really asking
 
 You are given a list of words at construction. Then letters arrive one at a time through `query(letter)`. After each letter, answer: does any word in the list match the *end* of everything received so far? In other words, is some word a suffix of the stream?

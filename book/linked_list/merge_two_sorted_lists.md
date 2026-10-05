@@ -2,6 +2,14 @@
 
 *LeetCode 21 · Easy · Pattern: Dummy head + two-pointer merge · Reading time ~6 min*
 
+## The problem
+
+Merge two sorted linked lists into one sorted list by splicing their nodes together and return its head.
+
+```text
+Example: 1->2->4 and 1->3->4 merge into 1->1->2->3->4->4.
+```
+
 ## What the problem is really asking
 
 You hold two chains, each already in ascending order. Produce one ascending chain that contains every node from both, by

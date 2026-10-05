@@ -1,6 +1,16 @@
 # Simplify Path
 *LeetCode 71 · Medium · Pattern: Stack simulation · Reading time ~7 min*
 
+## The problem
+
+Convert an absolute Unix path to canonical form: a single leading '/', no trailing '/', no '.' components, '..'
+resolved to the parent (a no-op at root) and consecutive slashes collapsed.
+
+```text
+Example: "/home//foo/" -> "/home/foo"; "/a/./b/../../c/" ->
+  "/c"; "/../" -> "/".
+```
+
 ## What the problem is really asking
 
 You are given an absolute Unix path and must return its canonical form: one leading `/`, components separated by single slashes, no trailing slash, no `.` components, and every `..` resolved by removing the directory before it. A `..` at the root does nothing. Runs of slashes collapse. The answer is a string, the shortest path that names the same directory.

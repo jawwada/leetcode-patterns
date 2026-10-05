@@ -2,6 +2,15 @@
 
 *LeetCode 394 · Medium · Pattern: Stack of nested contexts · Reading time ~7 min*
 
+## The problem
+
+Decode a string where k[encoded] means encoded repeated k times; brackets may nest and digits appear only as repeat
+counts.
+
+```text
+Example: "3[a]2[bc]" -> "aaabcbc"; "3[a2[c]]" -> "accaccacc".
+```
+
 ## What the problem is really asking
 
 A string is encoded with the rule `k[text]`, meaning "text repeated k times". Groups can sit side by side, `3[a]2[bc]`,

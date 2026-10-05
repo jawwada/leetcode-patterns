@@ -2,6 +2,16 @@
 
 *LeetCode 428 · Hard · Pattern: Preorder with child counts, consumed by a single cursor · Reading time ~9 min*
 
+## The problem
+
+Design Codec.serialize(root) -> str and Codec.deserialize(data) -> root for an N-ary tree in which each node has a
+value and a list of children. Any format works as long as deserialize(serialize(t)) rebuilds t.
+
+```text
+Example: 1 -> [3 -> [5, 6], 2, 4] must round-trip, and so must
+  the empty tree.
+```
+
 ## What the problem is really asking
 
 Same contract as the binary version: `serialize(root)` produces a string, and `deserialize(s)` rebuilds an identical tree. The difference is that each node now has a list of children of any length, which may be zero, one, or fifty. The empty tree must round-trip too.

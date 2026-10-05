@@ -2,6 +2,17 @@
 
 *LeetCode 352 · Hard · Pattern: Sorted disjoint intervals with bisect · Reading time ~11 min*
 
+## The problem
+
+Non-negative integers arrive one at a time. Implement SummaryRanges with addNum(value) and getIntervals(), which
+returns the values seen so far as a sorted list of disjoint closed intervals, with consecutive integers merged.
+
+```text
+Example: add 1 -> [[1,1]]; add 3 -> [[1,1],[3,3]]; add 7 ->
+  [[1,1],[3,3],[7,7]]; add 2 -> [[1,3],[7,7]]; add 6 ->
+  [[1,3],[6,7]].
+```
+
 ## What the problem is really asking
 
 Numbers arrive one at a time. Every so often someone asks: "describe everything you have seen so far, as compactly as

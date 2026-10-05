@@ -1,6 +1,16 @@
 # Jump Game IV
 *LeetCode 1345 · Hard · Pattern: BFS on implicit graph with value buckets consumed once · Reading time ~9 min*
 
+## The problem
+
+From index i of arr you may jump to i+1, i-1, or any j with arr[j] == arr[i]. Return the minimum number of jumps from
+index 0 to the last index.
+
+```text
+Example: arr=[100,-23,-23,404,100,23,23,23,3,404] -> 3 (0 -> 4
+  -> 3 -> 9).
+```
+
 ## What the problem is really asking
 
 You stand on index 0 of an integer array `arr`. In one jump you may move to `i - 1`, to

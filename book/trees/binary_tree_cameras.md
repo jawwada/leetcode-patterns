@@ -2,6 +2,16 @@
 
 *LeetCode 968 · Hard · Pattern: Greedy post-order with 3-state return · Reading time ~11 min*
 
+## The problem
+
+A camera on a node monitors that node, its parent and its children. Return the minimum number of cameras needed to
+monitor every node.
+
+```text
+Example: [0,0,null,0,0] returns 1, because one camera on the
+  middle node covers the root and both leaves.
+```
+
 ## What the problem is really asking
 
 You may install cameras on nodes of a binary tree. A camera watches its own node, its parent, and its children, so it covers distance one in every direction. Find the minimum number of cameras so that every node is watched.

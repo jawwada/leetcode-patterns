@@ -2,6 +2,14 @@
 
 *LeetCode 239 · Hard · Pattern: Monotonic deque · Reading time ~11 min*
 
+## The problem
+
+Given nums and a window size k, return the maximum of every contiguous window of size k from left to right.
+
+```text
+Example: nums = [1,3,-1,-3,5,3,6,7], k = 3 -> [3,3,5,5,6,7].
+```
+
 ## What the problem is really asking
 
 You have an array `nums` and a window width `k`. Slide a window of exactly `k` elements from the left end to the right end, one step at a time, and report the largest value in the window at every position. With `n` elements there are `n - k + 1` windows, so the answer is a list of that many numbers.

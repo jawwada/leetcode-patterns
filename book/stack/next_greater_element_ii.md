@@ -2,6 +2,16 @@
 
 *LeetCode 503 · Medium · Pattern: Monotonic stack · Reading time ~7 min*
 
+## The problem
+
+nums is circular: after the last element comes the first. For every index return the first strictly greater value
+found by walking forward (wrapping around), or -1 if none exists.
+
+```text
+Example: nums = [1,2,1] -> [2,-1,2]; nums = [1,2,3,4,3] ->
+  [2,3,4,-1,4].
+```
+
 ## What the problem is really asking
 
 For every position in an array, find the first value to its right that is strictly larger. The twist: the array is a circle. After the last element you continue at the first. If you go all the way around and nothing is larger, the answer is -1.

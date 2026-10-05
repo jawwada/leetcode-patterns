@@ -2,6 +2,16 @@
 
 *LeetCode 60 · Hard · Pattern: Factorial number system (direct ranking into blocks) · Reading time ~8 min*
 
+## The problem
+
+The permutations of the digits 1..n, listed in lexicographic order, are numbered 1..n!. Return the k-th one as a
+string (1 <= n <= 9).
+
+```text
+Example: n=3, k=3 -> "213" (order: 123, 132, 213, 231, 312,
+  321); n=4, k=9 -> "2314".
+```
+
 ## What the problem is really asking
 
 Take the digits `1..n` and list all `n!` of their orderings in dictionary order. Number them `1, 2, ..., n!`. Given `n` (at most 9) and `k`, return the `k`-th ordering as a string.

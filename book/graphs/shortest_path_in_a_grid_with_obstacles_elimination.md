@@ -1,6 +1,17 @@
 # Shortest Path in a Grid with Obstacles Elimination
 *LeetCode 1293 · Hard · Pattern: BFS over augmented states (position + bitmask/budget) · Reading time ~10 min*
 
+## The problem
+
+In a 0/1 grid you walk 4-directionally from (0,0) to (m-1,n-1) and may step onto at most k obstacle cells (1s),
+eliminating them. Return the minimum number of steps, or -1.
+
+```text
+Example: grid = [[0,0,0],[1,1,0],[0,0,0],[0,1,1],[0,0,0]], k = 1
+  -> 6, going right along the top and down the right edge
+  through the obstacle at (3,2).
+```
+
 ## What the problem is really asking
 
 A grid of 0s (open) and 1s (obstacles). You start at the top-left, want the bottom-right,

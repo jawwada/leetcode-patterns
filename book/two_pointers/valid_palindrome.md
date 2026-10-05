@@ -1,6 +1,16 @@
 # Valid Palindrome
 *LeetCode 125 · Easy · Pattern: Converging two pointers · Reading time ~5 min*
 
+## The problem
+
+A phrase is a palindrome if, after lowercasing and removing every non-alphanumeric character, it reads the same
+forwards and backwards. Return True if s is a palindrome.
+
+```text
+Example: "A man, a plan, a canal: Panama" -> True
+  ("amanaplanacanalpanama"); "race a car" -> False.
+```
+
 ## What the problem is really asking
 
 You get a string full of letters, digits, spaces and punctuation. Throw away everything that is not a letter or a digit, ignore upper versus lower case, and ask: does what is left read the same forwards and backwards? The answer is a single boolean.

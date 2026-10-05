@@ -2,6 +2,15 @@
 
 *LeetCode 54 · Medium · Pattern: Shrinking boundary traversal · Reading time ~6 min*
 
+## The problem
+
+Given an m x n matrix, return all its elements in clockwise spiral order starting at the top-left and moving right.
+
+```text
+Example: [[1,2,3],[4,5,6],[7,8,9]] -> [1, 2, 3, 6, 9, 8, 7, 4,
+  5].
+```
+
 ## What the problem is really asking
 
 You get an `m x n` grid, not necessarily square. Read every cell exactly once in clockwise spiral order: across the top row, down the right edge, back along the bottom, up the left edge, then repeat on the smaller rectangle inside, until nothing is left.

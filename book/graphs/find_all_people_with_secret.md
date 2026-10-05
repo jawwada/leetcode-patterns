@@ -1,6 +1,17 @@
 # Find All People With Secret
 *LeetCode 2092 · Hard · Pattern: Time-grouped union-find with reset of non-informed components · Reading time ~11 min*
 
+## The problem
+
+There are n people, 0..n-1. Person 0 tells a secret to firstPerson at time 0. meetings[i] = [x, y, t] means x and y
+meet at time t. If either of them knows the secret then, both do, and within the same time t the secret passes
+instantly along chains of meetings. Return everyone who knows the secret after all meetings.
+
+```text
+Example: n=6, meetings=[[1,2,5],[2,3,8],[1,5,10]], firstPerson=1
+  -> [0,1,2,3,5].
+```
+
 ## What the problem is really asking
 
 There are `n` people, numbered `0` to `n - 1`. Person `0` knows a secret and tells it to

@@ -1,6 +1,16 @@
 # Longest Repeating Character Replacement
 *LeetCode 424 · Medium · Pattern: Variable-size sliding window · Reading time ~8 min*
 
+## The problem
+
+Given an uppercase string s and an integer k, you may change at most k characters. Return the length of the longest
+substring that can be turned into a single repeated letter.
+
+```text
+Example: s = "AABABBA", k = 1 -> 4 (change one letter to get
+  "AAAA" or "BBBB").
+```
+
 ## What the problem is really asking
 
 You get a string of uppercase letters and a budget `k`. You may overwrite at most `k` characters with any letters you like. What is the longest substring you can make that consists of one letter repeated?

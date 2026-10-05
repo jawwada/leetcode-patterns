@@ -2,6 +2,15 @@
 
 *LeetCode 128 · Medium · Pattern: Hash set with sequence-start detection · Reading time ~6 min*
 
+## The problem
+
+Given an unsorted integer array, return the length of the longest run of consecutive integer values, in O(n) time.
+
+```text
+Example: nums = [100, 4, 200, 1, 3, 2] -> 4, from the run 1, 2,
+  3, 4.
+```
+
 ## What the problem is really asking
 
 Given an unsorted array of integers, find the length of the longest set of values that form an unbroken run of

@@ -2,6 +2,15 @@
 
 *LeetCode 199 · Medium · Pattern: DFS with depth (first-visit per level) · Reading time ~8 min*
 
+## The problem
+
+Standing to the right of a binary tree, return the values visible from top to bottom: the rightmost node of every
+level.
+
+```text
+Example: [1,2,3,null,5,null,4] -> [1,3,4]; [1,null,3] -> [1,3].
+```
+
 ## What the problem is really asking
 
 Stand to the right of the tree and look left. On each row you see exactly one node, the one furthest to the right on that row; everything else on the row is hidden behind it. Return those visible values from top to bottom. The answer is a list with one value per level, so its length is the height of the tree.

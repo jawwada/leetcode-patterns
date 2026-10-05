@@ -2,6 +2,15 @@
 
 *LeetCode 33 · Medium · Pattern: Binary search on a rotated sorted array · Reading time ~7 min*
 
+## The problem
+
+A sorted array of distinct integers was rotated at an unknown pivot. Return the index of target, or -1, in O(log n).
+
+```text
+Example: nums = [4,5,6,7,0,1,2], target = 0 returns 4; target =
+  3 returns -1.
+```
+
 ## What the problem is really asking
 
 The same rotated array as the previous problem: a sorted list of distinct values, cut at an unknown point with the two

@@ -1,6 +1,18 @@
 # Design Bitset
 *LeetCode 2166 · Medium · Pattern: Lazy global flip flag + maintained count · Reading time ~8 min*
 
+## The problem
+
+Implement Bitset(size) with all bits 0: fix(idx) sets a bit to 1, unfix(idx) sets it to 0, flip() inverts every bit,
+all() / one() report whether all / at least one bit is 1, count() returns the number of 1s and toString() returns the
+bits as a string. Everything except toString should be O(1).
+
+```text
+Example: Bitset(5); fix(3); fix(1); flip() -> '10101'; unfix(0)
+  -> '00101'; flip() -> '11010'; unfix(0) -> '01010'; count() ->
+  2.
+```
+
 ## What the problem is really asking
 
 Build a row of `size` bits, all zero, supporting:

@@ -1,6 +1,18 @@
 # Rotting Oranges
 *LeetCode 994 · Medium · Pattern: Multi-source BFS (level = distance) · Reading time ~8 min*
 
+## The problem
+
+In an m x n grid, 0 is empty, 1 is a fresh orange and 2 is a rotten orange. Every minute each rotten orange rots its
+4-neighbouring fresh oranges. Return the minimum number of minutes until no fresh orange remains, or -1 if that never
+happens.
+
+```text
+Example: [[2,1,1],[1,1,0],[0,1,1]] -> 4;
+  [[2,1,1],[0,1,1],[1,0,1]] -> -1 because the bottom-left orange
+  is isolated.
+```
+
 ## What the problem is really asking
 
 You have a grid of cells. Some are empty (`0`), some hold a fresh orange (`1`), some hold a

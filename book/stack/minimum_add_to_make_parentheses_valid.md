@@ -2,6 +2,15 @@
 
 *LeetCode 921 · Medium · Pattern: Balance counter (stack collapsed to a count) · Reading time ~6 min*
 
+## The problem
+
+s contains only '(' and ')'. In one move you may insert a single parenthesis anywhere. Return the minimum number of
+insertions that make s valid.
+
+```text
+Example: s = "())" -> 1; s = "(((" -> 3; s = "()))((" -> 4.
+```
+
 ## What the problem is really asking
 
 The string holds only `(` and `)`. You may insert parentheses anywhere, one per move. What is the fewest insertions that

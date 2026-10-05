@@ -1,6 +1,15 @@
 # Maximum Gap
 *LeetCode 164 · Hard · Pattern: Pigeonhole buckets · Reading time ~9 min*
 
+## The problem
+
+Given an unsorted integer array nums, return the maximum difference between two successive elements of its sorted
+form, using linear time and linear extra space; return 0 if there are fewer than two elements.
+
+```text
+Example: nums = [3,6,9,1] -> 3 (sorted 1,3,6,9 has gaps 2,3,3).
+```
+
 ## What the problem is really asking
 
 You get an unsorted array of non-negative integers. Imagine it sorted, and look at the differences between neighbours in that sorted order. Return the largest of those differences. Fewer than two numbers means there are no neighbours, so return 0. The budget is linear time and linear extra space.

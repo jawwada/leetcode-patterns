@@ -2,6 +2,17 @@
 
 *LeetCode 933 · Easy · Pattern: Sliding time window with a deque · Reading time ~6 min*
 
+## The problem
+
+RecentCounter.ping(t) records a request at time t in milliseconds and returns how many requests fall in the inclusive
+window [t - 3000, t]. Each call uses a strictly larger t than the previous one.
+
+```text
+Example: ping(1) -> 1; ping(100) -> 2; ping(3001) -> 3;
+  ping(3002) -> 3, because t = 1 is now older than 3002 - 3000 =
+  2.
+```
+
 ## What the problem is really asking
 
 A `RecentCounter` receives `ping(t)` calls, where `t` is a time in milliseconds and every call's `t` is strictly larger

@@ -1,6 +1,15 @@
 # 01 Matrix
 *LeetCode 542 · Medium · Pattern: Multi-source BFS (level = distance) · Reading time ~8 min*
 
+## The problem
+
+Given an m x n binary matrix, return a matrix where each cell holds the distance to the nearest 0, moving up, down,
+left or right. At least one 0 exists.
+
+```text
+Example: [[0,0,0],[0,1,0],[1,1,1]] -> [[0,0,0],[0,1,0],[1,2,1]].
+```
+
 ## What the problem is really asking
 
 You get a grid of zeros and ones. For every cell, write down how many up/down/left/right

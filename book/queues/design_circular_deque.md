@@ -2,6 +2,18 @@
 
 *LeetCode 641 · Medium · Pattern: Ring buffer (circular array with head and count) · Reading time ~8 min*
 
+## The problem
+
+Implement MyCircularDeque(k), a bounded double-ended queue of capacity k with insertFront, insertLast, deleteFront and
+deleteLast (each returns success), getFront and getRear (-1 when empty), isEmpty and isFull.
+
+```text
+Example: k = 3; insertLast(1), insertLast(2), insertFront(3) ->
+  True; insertFront(4) -> False; getRear() -> 2; isFull() ->
+  True; deleteLast() -> True; insertFront(4) -> True; getFront()
+  -> 4.
+```
+
 ## What the problem is really asking
 
 Build `MyCircularDeque(k)`: a double-ended queue of capacity `k` with `insertFront`, `insertLast`, `deleteFront` and

@@ -2,6 +2,14 @@
 
 *LeetCode 48 · Medium · Pattern: Transpose + reverse rows (in-place matrix rotation) · Reading time ~6 min*
 
+## The problem
+
+Rotate an n x n matrix by 90 degrees clockwise in place, without allocating a second matrix.
+
+```text
+Example: [[1,2,3],[4,5,6],[7,8,9]] -> [[7,4,1],[8,5,2],[9,6,3]].
+```
+
 ## What the problem is really asking
 
 You get an `n x n` grid of numbers. Turn it a quarter turn clockwise, like rotating a photo on your phone, and do it *in place*: the same list of lists must hold the rotated picture afterwards, and you are not allowed a second grid.

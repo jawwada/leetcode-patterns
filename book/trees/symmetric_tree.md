@@ -2,6 +2,15 @@
 
 *LeetCode 101 · Easy · Pattern: Simultaneous tree recursion · Reading time ~5 min*
 
+## The problem
+
+Return True if a binary tree is a mirror image of itself around its centre line.
+
+```text
+Example: [1,2,2,3,4,4,3] -> True; [1,2,2,null,3,null,3] ->
+  False.
+```
+
 ## What the problem is really asking
 
 Is the tree its own mirror image? Fold the drawing along the vertical line through the root: every node must land on a

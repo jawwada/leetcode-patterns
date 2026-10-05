@@ -1,6 +1,17 @@
 # Shortest Path to Get All Keys
 *LeetCode 864 · Hard · Pattern: BFS over augmented states (position + bitmask/budget) · Reading time ~10 min*
 
+## The problem
+
+A grid has '.' empty cells, '#' walls, '@' the start, lowercase keys and matching uppercase locks (at most 6 pairs).
+You walk 4-directionally, pick up keys automatically, and can pass a lock only while holding its key. Return the
+fewest moves to collect every key, or -1.
+
+```text
+Example: ["@.a..","###.#","b.A.B"] -> 8 (fetch a, go down the
+  gap, pass A, reach b); ["@Aa"] -> -1.
+```
+
 ## What the problem is really asking
 
 A grid contains `.` floor, `#` walls, one `@` start, some lowercase keys `a`..`f`, and the

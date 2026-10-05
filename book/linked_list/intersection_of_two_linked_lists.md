@@ -1,6 +1,16 @@
 # Intersection of Two Linked Lists
 *LeetCode 160 · Easy · Pattern: Length alignment, then lockstep walk · Reading time ~6 min*
 
+## The problem
+
+Given the heads of two singly linked lists that may merge into a shared tail, return the first node they have in
+common (by identity, not value), or None. The lists have no cycles and must not be modified.
+
+```text
+Example: A = 4->1->8->4->5 and B = 5->6->1->8->4->5 sharing the
+  tail 8->4->5 -> node 8.
+```
+
 ## What the problem is really asking
 
 Two singly linked lists may, at some node, start sharing the rest of their nodes. Return the first shared node, or None if they never meet. "Shared" means the *same node object*, not an equal value. You may not change the lists, and they have no cycles.

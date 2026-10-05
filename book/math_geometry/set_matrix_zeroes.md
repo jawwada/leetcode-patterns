@@ -2,6 +2,14 @@
 
 *LeetCode 73 · Medium · Pattern: In-place markers (reuse first row/column as flags) · Reading time ~7 min*
 
+## The problem
+
+Given an m x n matrix, if a cell is 0, set its entire row and column to 0, in place. Follow-up: use O(1) extra space.
+
+```text
+Example: [[1,1,1],[1,0,1],[1,1,1]] -> [[1,0,1],[0,0,0],[1,0,1]].
+```
+
 ## What the problem is really asking
 
 You get an `m x n` grid. Every cell that is `0` *in the original grid* condemns its whole row and its whole column: all of them must become `0`. Do it in place, and the follow-up asks for `O(1)` extra space.

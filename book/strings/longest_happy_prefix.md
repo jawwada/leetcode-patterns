@@ -2,6 +2,16 @@
 
 *LeetCode 1392 · Hard · Pattern: KMP failure function (longest border) · Reading time ~10 min*
 
+## The problem
+
+A happy prefix is a non-empty proper prefix of s that is also a suffix of s. Return the longest one, or "" if none
+exists.
+
+```text
+Example: "level" -> "l"; "ababab" -> "abab"; "leetcodeleet" ->
+  "leet"; "a" -> "".
+```
+
 ## What the problem is really asking
 
 A "happy prefix" of `s` is a non-empty prefix that is also a suffix, and that is not the whole string. Return the longest one, or `""` if none exists. `"level"` gives `"l"`. `"ababab"` gives `"abab"`, because the first four characters `abab` are also the last four; the two copies overlap in the middle, which is allowed.

@@ -2,6 +2,17 @@
 
 *LeetCode 440 · Hard · Pattern: Denary trie traversal with subtree skipping · Reading time ~9 min*
 
+## The problem
+
+Return the k-th smallest integer in [1, n] when the integers are ordered lexicographically as strings; n and k are up
+to 10^9.
+
+```text
+Example: n = 13, k = 2 returns 10, because the order is 1, 10,
+  11, 12, 13, 2, 3, 4, 5, 6, 7, 8, 9. Example: n = 1, k = 1
+  returns 1.
+```
+
 ## What the problem is really asking
 
 Write the integers `1..n` as strings and sort them like words in a dictionary. Return the `k`-th one. Both `n` and `k` go up to `10^9`.

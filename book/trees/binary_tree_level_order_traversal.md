@@ -2,6 +2,14 @@
 
 *LeetCode 102 · Medium · Pattern: BFS by level (queue snapshot) · Reading time ~8 min*
 
+## The problem
+
+Return the node values level by level, left to right, as a list of lists.
+
+```text
+Example: [3,9,20,null,null,15,7] -> [[3],[9,20],[15,7]].
+```
+
 ## What the problem is really asking
 
 Read the tree the way you read a page: top row first, left to right, then the next row. Return the rows as separate lists. The answer is a list of lists, one inner list per depth, and an empty tree gives an empty list.

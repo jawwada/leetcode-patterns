@@ -2,6 +2,15 @@
 
 *LeetCode 153 · Medium · Pattern: Binary search on a rotated sorted array · Reading time ~7 min*
 
+## The problem
+
+A sorted array of distinct integers was rotated between 1 and n times, e.g. [0,1,2,4,5,6,7] became [4,5,6,7,0,1,2].
+Return the minimum element in O(log n).
+
+```text
+Example: nums = [3,4,5,1,2] returns 1.
+```
+
 ## What the problem is really asking
 
 Someone took a sorted array of distinct numbers, cut it at an unknown point, and swapped the two pieces. `[0,1,2,4,5,6,7]`

@@ -1,6 +1,15 @@
 # Two Sum II - Input Array Is Sorted
 *LeetCode 167 · Medium · Pattern: Converging two pointers on sorted input · Reading time ~7 min*
 
+## The problem
+
+Given a 1-indexed array sorted in non-decreasing order and a target, return the 1-based indices [i, j] with i < j of
+the two numbers that sum to target. Exactly one solution exists and you must use O(1) extra space.
+
+```text
+Example: numbers = [2, 7, 11, 15], target = 9 -> [1, 2].
+```
+
 ## What the problem is really asking
 
 You get an array sorted in non-decreasing order and a target. Exactly one pair of positions `i < j` has `numbers[i] + numbers[j] == target`. Return those positions, **1-indexed**, using only O(1) extra space.

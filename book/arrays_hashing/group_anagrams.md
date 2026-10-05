@@ -2,6 +2,16 @@
 
 *LeetCode 49 · Medium · Pattern: Canonical key bucketing · Reading time ~6 min*
 
+## The problem
+
+Given a list of lowercase strings, group the anagrams together in any order. Two strings are anagrams if they contain
+the same letters with the same counts.
+
+```text
+Example: ["eat","tea","tan","ate","nat","bat"] ->
+  [["eat","tea","ate"],["tan","nat"],["bat"]].
+```
+
 ## What the problem is really asking
 
 You get a list of lowercase words. Put words that are anagrams of each other (same letters, same counts, any order) into

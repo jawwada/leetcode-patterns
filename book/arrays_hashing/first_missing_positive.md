@@ -1,6 +1,15 @@
 # First Missing Positive
 *LeetCode 41 · Hard · Pattern: Index as hash (in-place cyclic placement) · Reading time ~9 min*
 
+## The problem
+
+Given an unsorted integer array nums, return the smallest positive integer not present, in O(n) time and O(1)
+auxiliary space.
+
+```text
+Example: [3, 4, -1, 1] -> 2; [1, 2, 0] -> 3; [7, 8, 9] -> 1.
+```
+
 ## What the problem is really asking
 
 You get an unsorted array of integers, which may include negatives, zeros, duplicates and huge values. Return the smallest positive integer (1, 2, 3, ...) that does not appear in it. So far that is an easy problem. The catch is the budget: O(n) time and O(1) extra space. No sorting (that is O(n log n)), and no hash set (that is O(n) extra memory).

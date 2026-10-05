@@ -2,6 +2,15 @@
 
 *LeetCode 20 · Easy · Pattern: Stack matching · Reading time ~5 min*
 
+## The problem
+
+Given a string of the characters ()[]{} decide whether it is valid: every opener is closed by the same type of bracket
+and brackets close in nested order.
+
+```text
+Example: "()[]{}" -> True; "([)]" -> False; "{[]}" -> True.
+```
+
 ## What the problem is really asking
 
 You get a string made only of the six characters `( ) [ ] { }`. Decide whether it is well formed: every opener is

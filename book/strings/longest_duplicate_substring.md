@@ -2,6 +2,16 @@
 
 *LeetCode 1044 · Hard · Pattern: Binary search on the answer + rolling hash · Reading time ~11 min*
 
+## The problem
+
+Given a string s of lowercase letters, return any duplicated substring of maximum length, where a duplicated substring
+occurs two or more times and occurrences may overlap; return "" if there is none.
+
+```text
+Example: s = "banana" -> "ana" (at indices 1 and 3). s = "abcd"
+  -> "".
+```
+
 ## What the problem is really asking
 
 Given a string `s` of lowercase letters, return a longest substring that occurs at least twice. The two occurrences may overlap. If no substring repeats, return `""`.

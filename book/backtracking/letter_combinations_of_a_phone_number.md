@@ -2,6 +2,15 @@
 
 *LeetCode 17 · Medium · Pattern: Backtracking over a fixed-depth choice tree (Cartesian product) · Reading time ~6 min*
 
+## The problem
+
+Given a string of digits 2-9, return all letter strings the digits could represent on a phone keypad (2=abc, 3=def,
+..., 7=pqrs, 9=wxyz), in any order; empty input gives [].
+
+```text
+Example: "23" -> ["ad","ae","af","bd","be","bf","cd","ce","cf"].
+```
+
 ## What the problem is really asking
 
 Old phone keypads put three or four letters on each digit from 2 to 9. Given a string of digits, list every letter string you could have meant by pressing them: one letter per digit, in order.

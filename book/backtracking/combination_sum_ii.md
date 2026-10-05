@@ -2,6 +2,16 @@
 
 *LeetCode 40 · Medium · Pattern: Backtracking with sort + skip-duplicates-at-same-depth · Reading time ~7 min*
 
+## The problem
+
+Given candidates (which may repeat) and a target, return all unique combinations summing to target where each
+candidate index is used at most once.
+
+```text
+Example: candidates=[10,1,2,7,6,1,5], target=8 ->
+  [[1,1,6],[1,2,5],[1,7],[2,6]].
+```
+
 ## What the problem is really asking
 
 You get a list of positive numbers that may contain repeats, and a target. Find every distinct multiset of them that sums to the target, where each **position** in the list can be used at most once. If the list has three 2s, an answer may contain up to three 2s, never four. And `[1,2,2]` built from different 2s still counts as one answer.

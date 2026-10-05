@@ -2,6 +2,17 @@
 
 *LeetCode 502 · Hard · Pattern: Sort by threshold + max-heap of unlocked candidates · Reading time ~9 min*
 
+## The problem
+
+You have capital w and may run at most k projects. Project i needs capital[i] <= your current capital to start and
+pays profits[i], which is added to your capital when done. Pick at most k distinct projects one after another to
+maximise final capital.
+
+```text
+Example: k=2, w=0, profits=[1,2,3], capital=[0,1,1] -> 4
+  (project 0 lifts w to 1, then project 2 adds 3).
+```
+
 ## What the problem is really asking
 
 You start with capital `w`. There are `n` projects. Project `i` can only be started if your current capital is at least `capital[i]`, and finishing it adds `profits[i]` to your capital. Starting a project costs nothing, since the capital is a threshold and not a price. You may do at most `k` distinct projects, one after another. Maximise your final capital.

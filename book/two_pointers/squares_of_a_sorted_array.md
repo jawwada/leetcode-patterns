@@ -1,6 +1,15 @@
 # Squares of a Sorted Array
 *LeetCode 977 · Easy · Pattern: Two pointers merging from both ends · Reading time ~5 min*
 
+## The problem
+
+Given an integer array sorted in non-decreasing order (possibly with negatives), return the squares of each number in
+non-decreasing order, in O(n) time.
+
+```text
+Example: nums = [-4, -1, 0, 3, 10] -> [0, 1, 9, 16, 100].
+```
+
 ## What the problem is really asking
 
 You get an array already sorted in non-decreasing order, possibly with negatives. Square every element and return the squares, also sorted. The answer is a new array of length n, and the follow-up asks for O(n) time.

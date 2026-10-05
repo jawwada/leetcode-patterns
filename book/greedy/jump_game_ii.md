@@ -2,6 +2,14 @@
 
 *LeetCode 45 · Medium · Pattern: Greedy reach (furthest reachable index) · Reading time ~7 min*
 
+## The problem
+
+Same setup as Jump Game, but the last index is guaranteed reachable; return the minimum number of jumps to get there.
+
+```text
+Example: nums = [2,3,1,1,4] returns 2 (jump 0 -> 1 -> 4).
+```
+
 ## What the problem is really asking
 
 Same board as Jump Game: `nums[i]` is the longest jump allowed from index `i`. This time the last index is guaranteed to be

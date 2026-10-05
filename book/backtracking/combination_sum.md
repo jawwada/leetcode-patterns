@@ -2,6 +2,15 @@
 
 *LeetCode 39 · Medium · Pattern: Backtracking with start index and sum pruning · Reading time ~7 min*
 
+## The problem
+
+Given distinct positive candidates and a target, return all unique combinations (each candidate may be reused any
+number of times) that sum to target; order inside a combination does not matter.
+
+```text
+Example: candidates=[2,3,6,7], target=7 -> [[2,2,3],[7]].
+```
+
 ## What the problem is really asking
 
 You have a set of distinct positive numbers, the candidates, and a target. Find every multiset of candidates that adds up to the target. You may use a candidate as many times as you like. Order does not matter: `[2,2,3]` and `[3,2,2]` are the same answer and must appear once.

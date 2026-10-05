@@ -1,6 +1,16 @@
 # Minimum Remove to Make Valid Parentheses
 *LeetCode 1249 · Medium · Pattern: Stack matching · Reading time ~8 min*
 
+## The problem
+
+Given a string of lowercase letters and parentheses, remove the minimum number of parentheses so the result is valid,
+and return any such result.
+
+```text
+Example: "lee(t(c)o)de)" -> "lee(t(c)o)de"; "a)b(c)d" ->
+  "ab(c)d"; "))((" -> "".
+```
+
 ## What the problem is really asking
 
 The string has lowercase letters and the characters `(` and `)`. Delete as few parentheses as possible so that the rest is balanced: every `)` closes an earlier `(`, and every `(` is eventually closed. Letters stay. Return any one valid result. The answer is a string, a subsequence of the input that keeps every letter.

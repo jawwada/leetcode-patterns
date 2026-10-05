@@ -1,6 +1,18 @@
 # Time Based Key-Value Store
 *LeetCode 981 · Medium · Pattern: Sorted version list + binary search · Reading time ~8 min*
 
+## The problem
+
+Implement TimeMap: set(key, value, timestamp) stores a value for key at that time, and get(key, timestamp) returns the
+value whose timestamp is the largest one <= timestamp, or '' if none. All timestamps passed to set are strictly
+increasing.
+
+```text
+Example: set('foo','bar',1); get('foo',1) -> 'bar'; get('foo',3)
+  -> 'bar'; set('foo','bar2',4); get('foo',4) -> 'bar2';
+  get('foo',5) -> 'bar2'; get('foo',0) -> ''.
+```
+
 ## What the problem is really asking
 
 You are building a dictionary that never forgets. Every `set(key, value, timestamp)` does not overwrite the old value; it adds a new *version* of the key, stamped with a time. A `get(key, t)` asks: "what did this key hold at time `t`?" That means the value from the most recent `set` whose timestamp is at or before `t`. If the key had not been written yet at time `t`, the answer is the empty string.

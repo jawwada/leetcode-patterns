@@ -1,6 +1,16 @@
 # Max Consecutive Ones III
 *LeetCode 1004 · Medium · Pattern: Variable-size sliding window · Reading time ~7 min*
 
+## The problem
+
+Given a binary array nums and an integer k, you may flip at most k zeros to ones. Return the length of the longest run
+of consecutive ones achievable.
+
+```text
+Example: nums = [1,1,1,0,0,0,1,1,1,1,0], k = 2 -> 6 (flip the
+  zeros at indices 4 and 5).
+```
+
 ## What the problem is really asking
 
 You have an array of 0s and 1s and a budget `k`. You may turn at most `k` zeros into ones. After doing so, what is the longest run of consecutive ones you can have?

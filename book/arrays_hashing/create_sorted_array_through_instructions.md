@@ -1,6 +1,16 @@
 # Create Sorted Array through Instructions
 *LeetCode 1649 · Hard · Pattern: Fenwick tree over values (order-statistics counting) · Reading time ~11 min*
 
+## The problem
+
+Insert the numbers of instructions one by one into a sorted container. Inserting x costs min(number of elements
+already present that are < x, number that are > x). Return the total cost modulo 1e9+7.
+
+```text
+Example: [1,5,6,2] -> 0 + 0 + 0 + min(1, 2) = 1 (when 2 is
+  inserted, one value {1} is smaller and two {5,6} are larger).
+```
+
 ## What the problem is really asking
 
 You build a sorted container by inserting the numbers of `instructions` one at a time, in the given order. Inserting `x` has a cost: look at what is already in the container, count the elements strictly smaller than `x` and the elements strictly larger than `x`, and pay the smaller of the two counts. Equal elements are free: they count as neither. Return the total cost modulo 1e9+7.

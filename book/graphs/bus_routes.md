@@ -1,6 +1,17 @@
 # Bus Routes
 *LeetCode 815 · Hard · Pattern: BFS on implicit graph (stop -> routes index) · Reading time ~11 min*
 
+## The problem
+
+routes[i] lists the stops bus i cycles through. Starting at stop source (not on a bus), return the minimum number of
+buses needed to reach stop target, or -1.
+
+```text
+Example: routes = [[1,2,7],[3,6,7]], source = 1, target = 6 -> 2
+  (bus 0 to stop 7, then bus 1). If source == target the answer
+  is 0.
+```
+
 ## What the problem is really asking
 
 You are given a list of bus routes. `routes[i]` is the list of stops bus `i` loops through

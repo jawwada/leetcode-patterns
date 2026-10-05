@@ -2,6 +2,15 @@
 
 *LeetCode 155 · Medium · Pattern: Stack with auxiliary state · Reading time ~6 min*
 
+## The problem
+
+Design a stack supporting push, pop, top and getMin, each in O(1) time.
+
+```text
+Example: push(-2), push(0), push(-3); getMin() -> -3; pop();
+  top() -> 0; getMin() -> -2.
+```
+
 ## What the problem is really asking
 
 Build a stack with the usual `push`, `pop` and `top`, plus one extra question, `getMin`: what is the smallest value

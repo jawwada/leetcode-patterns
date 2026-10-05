@@ -1,6 +1,17 @@
 # Design Add and Search Words Data Structure
 *LeetCode 211 · Medium · Pattern: Trie with wildcard DFS · Reading time ~7 min*
 
+## The problem
+
+Design WordDictionary with addWord(word) and search(word), where the search pattern may contain '.' matching any
+single letter.
+
+```text
+Example: add bad, dad, mad; search("pad") -> False;
+  search("bad") -> True; search(".ad") -> True; search("b..") ->
+  True.
+```
+
 ## What the problem is really asking
 
 Design a word dictionary with `addWord(word)` and `search(pattern)`. The pattern is made of lowercase letters and dots, and a dot matches any single letter. `search` returns True if some added word has exactly the pattern's length and agrees with it at every non-dot position.

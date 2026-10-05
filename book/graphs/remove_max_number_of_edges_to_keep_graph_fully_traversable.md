@@ -1,6 +1,17 @@
 # Remove Max Number of Edges to Keep Graph Fully Traversable
 *LeetCode 1579 · Hard · Pattern: Union-Find (disjoint set union) · Reading time ~10 min*
 
+## The problem
+
+n nodes 1..n and edges [type, u, v]: type 1 only Alice can use, type 2 only Bob, type 3 both. Return the maximum
+number of edges that can be removed so that Alice and Bob can each still reach every node, or -1 if that is impossible
+even with all edges.
+
+```text
+Example: n=4,
+  edges=[[3,1,2],[3,2,3],[1,1,3],[1,2,4],[1,1,2],[2,3,4]] -> 2.
+```
+
 ## What the problem is really asking
 
 There are `n` nodes, `1` to `n`, and a list of undirected edges `[type, u, v]`. Alice can

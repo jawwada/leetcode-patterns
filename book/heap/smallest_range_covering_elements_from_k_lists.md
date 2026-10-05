@@ -2,6 +2,16 @@
 
 *LeetCode 632 · Hard · Pattern: K-way merge with a min-heap of list pointers (track the running max) · Reading time ~10 min*
 
+## The problem
+
+Given k sorted integer lists, find the smallest range [a, b] that contains at least one number from every list; [a, b]
+beats [c, d] if b - a < d - c, or if equal and a < c.
+
+```text
+Example: [[4,10,15,24,26],[0,9,12,20],[5,18,22,30]] -> [20,24]
+  (20 from list 2, 24 from list 1, 22 from list 3).
+```
+
 ## What the problem is really asking
 
 You get `k` sorted lists of integers. Find the narrowest interval `[a, b]` on the number line that contains at least one number from every list. If two intervals have the same width `b - a`, the one with the smaller `a` wins.

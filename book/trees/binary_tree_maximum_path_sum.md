@@ -2,6 +2,15 @@
 
 *LeetCode 124 · Hard · Pattern: Post-order height with side-channel answer · Reading time ~11 min*
 
+## The problem
+
+A path is any sequence of nodes connected by parent-child edges, each node used at most once; it need not pass through
+the root or end at a leaf. Return the maximum sum of node values over all non-empty paths.
+
+```text
+Example: [-10,9,20,null,null,15,7] -> 42 via 15 -> 20 -> 7.
+```
+
 ## What the problem is really asking
 
 A path here is any chain of nodes linked by parent-child edges, using each node at most once. It can start anywhere and end anywhere. It does not have to touch the root and does not have to reach a leaf. It must contain at least one node. Among all such paths, return the largest sum of values.

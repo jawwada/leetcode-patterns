@@ -2,6 +2,15 @@
 
 *LeetCode 169 · Easy · Pattern: Boyer-Moore voting · Reading time ~5 min*
 
+## The problem
+
+Given an array of size n, return the element that appears more than n / 2 times; a majority element always exists.
+Follow-up: O(n) time and O(1) space.
+
+```text
+Example: nums = [2, 2, 1, 1, 1, 2, 2] -> 2.
+```
+
 ## What the problem is really asking
 
 One value fills more than half of the array. Find it. The follow-up asks for O(n) time and O(1) extra space.

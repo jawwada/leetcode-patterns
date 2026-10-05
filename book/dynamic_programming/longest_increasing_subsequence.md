@@ -2,6 +2,16 @@
 
 *LeetCode 300 · Medium · Pattern: Patience sorting (tails array + binary search) · Reading time ~7 min*
 
+## The problem
+
+Given an integer array nums, return the length of the longest strictly increasing subsequence, where a subsequence
+keeps the original order but may skip elements.
+
+```text
+Example: [10,9,2,5,3,7,101,18] -> 4 (for instance 2, 3, 7, 101);
+  [7,7,7] -> 1.
+```
+
 ## What the problem is really asking
 
 Given an array, pick elements in their original order so that each picked element is strictly larger than the previous one. Return the most elements you can pick. Gaps are allowed; equal values do not count as increasing.

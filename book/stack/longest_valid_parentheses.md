@@ -2,6 +2,14 @@
 
 *LeetCode 32 · Hard · Pattern: Stack of indices with a barrier · Reading time ~10 min*
 
+## The problem
+
+Given a string of '(' and ')', return the length of the longest well-formed contiguous substring.
+
+```text
+Example: "(()" -> 2; ")()())" -> 4 ("()()"); "" -> 0.
+```
+
 ## What the problem is really asking
 
 You get a string of `(` and `)` only. Find the longest contiguous substring that is a well-formed bracket sequence, and return its length.

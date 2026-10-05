@@ -2,6 +2,16 @@
 
 *LeetCode 210 · Medium · Pattern: Topological sort (Kahn's BFS) / cycle detection · Reading time ~7 min*
 
+## The problem
+
+Same setup as Course Schedule: numCourses courses and prerequisites [a, b] meaning b before a. Return any ordering of
+all courses that respects every prerequisite, or an empty list if none exists.
+
+```text
+Example: numCourses=4, [[1,0],[2,0],[3,1],[3,2]] -> [0,1,2,3]
+  (or [0,2,1,3]).
+```
+
 ## What the problem is really asking
 
 Same catalogue as before: courses 0..n-1, and `[a, b]` means b must come before a. This time, do not just say whether it is possible. Hand back an actual order in which to take all the courses, or an empty list if a cycle makes it impossible.

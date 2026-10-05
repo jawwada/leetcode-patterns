@@ -2,6 +2,16 @@
 
 *LeetCode 98 · Medium · Pattern: DFS with (low, high) bounds · Reading time ~8 min*
 
+## The problem
+
+Return True if a binary tree is a valid BST: every node's value is strictly greater than all values in its left
+subtree and strictly less than all values in its right subtree.
+
+```text
+Example: [2,1,3] -> True; [5,1,4,null,null,3,6] -> False because
+  3 sits in the right subtree of 5.
+```
+
 ## What the problem is really asking
 
 A binary search tree (BST) promises one thing: for every node, **all** values in its left subtree are strictly smaller than it, and **all** values in its right subtree are strictly larger. Given a binary tree, return whether it keeps that promise.

@@ -1,6 +1,16 @@
 # Best Time to Buy and Sell Stock
 *LeetCode 121 · Easy · Pattern: Running minimum sweep · Reading time ~5 min*
 
+## The problem
+
+prices[i] is the price of a stock on day i. Choose one day to buy and a later day to sell so that profit is maximised;
+return 0 if no profitable trade exists.
+
+```text
+Example: prices = [7,1,5,3,6,4] -> 5 (buy at 1 on day 1, sell at
+  6 on day 4).
+```
+
 ## What the problem is really asking
 
 You are given a list of daily prices. You may buy once and sell once, and the sale must happen on a later day than the purchase. Return the largest profit you can make, or 0 if every possible trade loses money.

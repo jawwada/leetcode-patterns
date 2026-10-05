@@ -2,6 +2,16 @@
 
 *LeetCode 232 · Easy · Pattern: Two stacks make a queue (lazy transfer) · Reading time ~6 min*
 
+## The problem
+
+Build a FIFO queue with push, pop, peek and empty using only stack operations (push to top, pop/peek from top, size,
+is-empty).
+
+```text
+Example: push(1); push(2); peek() -> 1; pop() -> 1; empty() ->
+  False.
+```
+
 ## What the problem is really asking
 
 Build a first-in, first-out queue with `push(x)` (join the back), `pop()` (remove and return the front), `peek()` (read

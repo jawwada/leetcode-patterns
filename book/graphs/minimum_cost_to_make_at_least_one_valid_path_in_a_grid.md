@@ -1,6 +1,16 @@
 # Minimum Cost to Make at Least One Valid Path in a Grid
 *LeetCode 1368 · Hard · Pattern: 0-1 BFS (deque shortest path) · Reading time ~11 min*
 
+## The problem
+
+Each cell of an m x n grid holds an arrow: 1 right, 2 left, 3 down, 4 up. Following the arrow out of a cell is free;
+changing a cell's arrow costs 1, at most once per cell. Return the minimum cost so that a path from (0,0) following
+the arrows reaches (m-1,n-1).
+
+```text
+Example: [[1,1,1,1],[2,2,2,2],[1,1,1,1],[2,2,2,2]] -> 3.
+```
+
 ## What the problem is really asking
 
 Every cell of an `m x n` grid holds an arrow: `1` right, `2` left, `3` down, `4` up. You

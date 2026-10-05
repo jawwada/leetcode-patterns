@@ -2,6 +2,16 @@
 
 *LeetCode 786 · Hard · Pattern: k-way merge with a heap (merge k sorted feeds) · Reading time ~9 min*
 
+## The problem
+
+arr is sorted and contains 1 and distinct primes. Consider every fraction arr[i] / arr[j] with i < j and return the
+k-th smallest as [arr[i], arr[j]].
+
+```text
+Example: arr=[1,2,3,5], k=3 -> [2,5] (the fractions in order are
+  1/5, 1/3, 2/5, 1/2, 3/5, 2/3).
+```
+
 ## What the problem is really asking
 
 You get a sorted array `arr` that starts with 1 and then holds distinct primes, for example `[1, 2, 3, 5]`. Form every fraction `arr[i] / arr[j]` with `i < j`, so the numerator is always the smaller number and every fraction is below 1. Return the `k`-th smallest of these fractions as the pair `[numerator, denominator]`.

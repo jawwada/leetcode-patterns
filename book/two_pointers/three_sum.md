@@ -1,6 +1,16 @@
 # 3Sum
 *LeetCode 15 · Medium · Pattern: Sort + fixed element + converging two pointers · Reading time ~8 min*
 
+## The problem
+
+Given an integer array nums, return all unique triplets [a, b, c] with a + b + c == 0; the result must not contain
+duplicate triplets.
+
+```text
+Example: nums = [-1, 0, 1, 2, -1, -4] -> [[-1, -1, 2], [-1, 0,
+  1]].
+```
+
 ## What the problem is really asking
 
 Given an unsorted integer array, list every distinct triplet of values `[a, b, c]`, taken from three different positions, with `a + b + c == 0`. "Distinct" is about values: `[-1, 0, 1]` and `[0, -1, 1]` are the same triplet and must appear once, even if the array contains several `-1`s that could produce it.

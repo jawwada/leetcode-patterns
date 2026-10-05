@@ -1,6 +1,15 @@
 # Reverse Pairs
 *LeetCode 493 · Hard · Pattern: Merge sort counting · Reading time ~10 min*
 
+## The problem
+
+Given an integer array nums, count the reverse pairs: index pairs i < j with nums[i] > 2 * nums[j].
+
+```text
+Example: nums = [1,3,2,3,1] -> 2, the pairs (1,4) and (3,4)
+  where 3 > 2 * 1. nums = [2,4,3,5,1] -> 3.
+```
+
 ## What the problem is really asking
 
 Count the index pairs `i < j` where the earlier value is more than twice the later one: `nums[i] > 2 * nums[j]`. Return one number, the count.

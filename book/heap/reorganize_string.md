@@ -2,6 +2,15 @@
 
 *LeetCode 767 · Medium · Pattern: Greedy most-frequent-first with a max-heap · Reading time ~8 min*
 
+## The problem
+
+Rearrange the characters of s so that no two adjacent characters are equal; return any valid arrangement, or an empty
+string if impossible.
+
+```text
+Example: "aab" -> "aba". Example: "aaab" -> "".
+```
+
 ## What the problem is really asking
 
 Rearrange the letters of a string so that no two neighbours are equal. Return any arrangement that works, or the empty

@@ -1,6 +1,16 @@
 # Wildcard Matching
 *LeetCode 44 · Hard · Pattern: Greedy two pointers with last-star backtrack · Reading time ~12 min*
 
+## The problem
+
+Given a string s and a pattern p where '?' matches any single character and '*' matches any sequence of characters
+including the empty one, decide whether p matches all of s.
+
+```text
+Example: s = "adceb", p = "*a*b" -> True ("" a "dce" b). s =
+  "acdcb", p = "a*c?b" -> False.
+```
+
 ## What the problem is really asking
 
 You get a text `s` and a pattern `p`. In the pattern, `?` matches exactly one character of any kind, and `*` matches any sequence of characters, including the empty one. Every other pattern character matches only itself. Does the pattern match the **whole** text?

@@ -2,6 +2,16 @@
 
 *LeetCode 36 · Medium · Pattern: Hash set per row/column/box · Reading time ~6 min*
 
+## The problem
+
+Given a 9x9 board with digits '1'-'9' and '.' for empty cells, decide whether the filled cells are valid: no digit
+repeats in any row, any column, or any of the nine 3x3 boxes. Solvability is not required.
+
+```text
+Example: a board whose first row contains two '5's returns
+  False.
+```
+
 ## What the problem is really asking
 
 You get a 9x9 board, partly filled with digits `'1'` to `'9'` and `'.'` for blanks. Decide whether the filled cells

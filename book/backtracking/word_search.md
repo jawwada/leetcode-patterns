@@ -1,6 +1,16 @@
 # Word Search
 *LeetCode 79 · Medium · Pattern: Grid DFS backtracking with in-place visited marking · Reading time ~9 min*
 
+## The problem
+
+Given an m x n grid of letters and a word, return True if the word can be traced through horizontally or vertically
+adjacent cells, using each cell at most once.
+
+```text
+Example: board=[[A,B,C,E],[S,F,C,S],[A,D,E,E]], word="ABCCED" ->
+  True; word="ABCB" -> False because the B would be reused.
+```
+
 ## What the problem is really asking
 
 You get a rectangle of letters and a word. Put your finger on one cell, then slide it up, down,

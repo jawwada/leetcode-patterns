@@ -1,6 +1,17 @@
 # Expression Add Operators
 *LeetCode 282 · Hard · Pattern: Backtracking with running value + last operand · Reading time ~10 min*
 
+## The problem
+
+Given a digit string num and an integer target, insert '+', '-' or '*' between some of the digits (or nothing, to form
+multi-digit operands) so that the expression equals target. Return all such expressions. Operands may not have leading
+zeros.
+
+```text
+Example: num = "123", target = 6 -> ["1*2*3", "1+2+3"]; num =
+  "105", target = 5 -> ["1*0+5", "10-5"].
+```
+
 ## What the problem is really asking
 
 You get a string of digits and a target integer. Between any two neighbouring digits you may

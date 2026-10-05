@@ -2,6 +2,16 @@
 
 *LeetCode 1675 · Hard · Pattern: Max-heap of normalised values, repeatedly shrink the maximum · Reading time ~12 min*
 
+## The problem
+
+You may apply any number of operations to nums: halve an even element or double an odd element. The deviation is
+max(nums) - min(nums). Return the minimum deviation achievable.
+
+```text
+Example: [1,2,3,4] -> 1 (double 1, halve 4: [2,2,3,2]).
+  [4,1,5,20,3] -> 3. [2,10,8] -> 3.
+```
+
 ## What the problem is really asking
 
 You have an array of positive integers and two moves you may repeat as often as you like: halve an **even** number, or double an **odd** number. The deviation of the array is `max - min`. Make the deviation as small as possible and return it.

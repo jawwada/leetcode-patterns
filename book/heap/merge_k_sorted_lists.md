@@ -2,6 +2,15 @@
 
 *LeetCode 23 · Hard · Pattern: k-way merge with a heap (merge k sorted feeds) · Reading time ~9 min*
 
+## The problem
+
+Given an array of k linked lists, each sorted ascending, merge them into one sorted linked list and return its head.
+
+```text
+Example: [[1,4,5],[1,3,4],[2,6]] -> [1,1,2,3,4,4,5,6]. Example:
+  [] -> [] and [[]] -> [].
+```
+
 ## What the problem is really asking
 
 You are handed `k` singly linked lists, each already sorted ascending. Splice them into one sorted linked list and return its head. Some lists may be empty, and the array of lists may itself be empty.

@@ -1,6 +1,16 @@
 # Reverse Words in a String
 *LeetCode 151 · Medium · Pattern: In-place reverse, then reverse each word · Reading time ~8 min*
 
+## The problem
+
+Given a string with words separated by one or more spaces, possibly with leading or trailing spaces, return the words
+in reverse order joined by single spaces.
+
+```text
+Example: 'the sky is blue' -> 'blue is sky the'; '  hello world
+  ' -> 'world hello'; 'a good   example' -> 'example good a'.
+```
+
 ## What the problem is really asking
 
 You get a sentence in which words are separated by one or more spaces, possibly with spaces at the front and back. Return the words in reverse order, joined by exactly one space, with nothing at either end. The answer is a new string. The words themselves keep their spelling. Only their order flips, and the spacing is normalised.

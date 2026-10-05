@@ -1,6 +1,18 @@
 # Unique Paths III
 *LeetCode 980 · Hard · Pattern: Grid DFS backtracking with in-place visited marking · Reading time ~10 min*
 
+## The problem
+
+A grid holds exactly one start (1), one end (2), empty cells (0) and obstacles (-1). Count the 4-directional walks
+from start to end that visit every empty cell exactly once and never touch an obstacle or repeat a cell.
+
+```text
+Example: [[1,0,0,0],[0,0,0,0],[0,0,2,-1]] -> 2; [[0,1],[2,0]] ->
+  0, because whichever empty cell the start steps to first, its
+  only onward move is the end, leaving the other empty cell
+  unvisited.
+```
+
 ## What the problem is really asking
 
 A small grid holds one start cell (`1`), one end cell (`2`), empty cells (`0`) and walls

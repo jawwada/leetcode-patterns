@@ -2,6 +2,18 @@
 
 *LeetCode 587 · Hard · Pattern: Convex hull (monotone chain) · Reading time ~10 min*
 
+## The problem
+
+Given the coordinates of trees in a garden, fence the whole garden with the minimum length of rope and return every
+tree that lies on the fence, i.e. on the convex hull boundary including trees on an edge between two corners, in any
+order.
+
+```text
+Example: [[1,1],[2,2],[2,0],[2,4],[3,3],[4,2]] returns
+  [[1,1],[2,0],[4,2],[3,3],[2,4]] since (2,2) is strictly
+  inside. Example: [[1,2],[2,2],[4,2]] returns all three.
+```
+
 ## What the problem is really asking
 
 Trees stand at integer points in a garden (up to 3000 of them). Wrap the whole garden with the shortest possible rope. Return every tree that the rope touches — including trees that sit on a straight stretch of rope between two corners.

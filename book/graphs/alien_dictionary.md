@@ -2,6 +2,16 @@
 
 *LeetCode 269 · Hard · Pattern: Topological sort (Kahn's BFS) / cycle detection · Reading time ~10 min*
 
+## The problem
+
+Given a list of words sorted lexicographically according to an unknown alphabet, return a string of the unique letters
+in a valid alphabet order, or "" if the ordering is contradictory. Any valid order is accepted.
+
+```text
+Example: ["wrt","wrf","er","ett","rftt"] -> "wertf";
+  ["z","x","z"] -> "".
+```
+
 ## What the problem is really asking
 
 You are handed a dictionary from an alien language. The words are already sorted, but by an alphabet you do not know. Recover an alphabet consistent with that sorting: a string containing every letter that appears, each once, in an order that would make the list sorted. If the list contradicts itself, return `""`. Any valid alphabet is accepted.

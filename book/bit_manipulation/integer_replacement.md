@@ -2,6 +2,15 @@
 
 *LeetCode 397 · Medium · Pattern: Greedy on the low bits · Reading time ~8 min*
 
+## The problem
+
+Given a positive integer n, one step replaces an even n with n / 2 and an odd n with n + 1 or n - 1. Return the
+minimum number of steps to reach 1.
+
+```text
+Example: 8 -> 3 (8, 4, 2, 1); 7 -> 4 (7, 8, 4, 2, 1).
+```
+
 ## What the problem is really asking
 
 Start from a positive integer `n` and reach 1 with as few moves as possible. If `n` is even you must halve it. If `n` is odd you choose: add 1 or subtract 1. Return the minimum number of moves.

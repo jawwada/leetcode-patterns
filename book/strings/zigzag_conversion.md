@@ -2,6 +2,17 @@
 
 *LeetCode 6 · Medium · Pattern: Row buckets with a bouncing row pointer · Reading time ~7 min*
 
+## The problem
+
+Write the string s in a zigzag over numRows rows (down the first column, then diagonally up to row 0, then down again)
+and read it row by row.
+
+```text
+Example: 'PAYPALISHIRING' with 3 rows is laid out as P.A.H.N /
+  APLSIIG / Y.I.R and reads 'PAHNAPLSIIGYIR'; with 4 rows it
+  reads 'PINALSIGYAHRPI'.
+```
+
 ## What the problem is really asking
 
 You are given a string and a number of rows. Imagine writing the string on squared paper: go straight down the first column, then climb diagonally back up to the top row, then go down again, and so on, like a saw blade. When you are done, read the paper row by row, left to right, top row first. Return that reading.

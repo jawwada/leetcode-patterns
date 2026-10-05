@@ -2,6 +2,15 @@
 
 *LeetCode 5 · Medium · Pattern: Expand around center · Reading time ~7 min*
 
+## The problem
+
+Given a string s, return the longest substring that reads the same forwards and backwards; if several tie, any one is
+accepted.
+
+```text
+Example: 'babad' -> 'bab' (or 'aba'); 'cbbd' -> 'bb'.
+```
+
 ## What the problem is really asking
 
 Given a string `s`, find the longest contiguous piece of it that reads the same forwards and backwards. If several have the maximum length, any one is fine.

@@ -1,6 +1,15 @@
 # Number of Connected Components in an Undirected Graph
 *LeetCode 323 · Medium · Pattern: Union-Find (disjoint set union) · Reading time ~11 min*
 
+## The problem
+
+Given n nodes labelled 0..n-1 and a list of undirected edges, return the number of connected components.
+
+```text
+Example: n=5, edges=[[0,1],[1,2],[3,4]] -> 2; n=5,
+  edges=[[0,1],[1,2],[2,3],[3,4]] -> 1.
+```
+
 ## What the problem is really asking
 
 You get `n` nodes named `0..n-1` and a list of undirected edges. Count the groups: two nodes

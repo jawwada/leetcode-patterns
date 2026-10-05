@@ -2,6 +2,17 @@
 
 *LeetCode 1157 · Hard · Pattern: Value -> sorted positions + randomized sampling with bisect verification · Reading time ~11 min*
 
+## The problem
+
+Design MajorityChecker(arr) with query(left, right, threshold), which returns the element occurring at least threshold
+times in arr[left..right], or -1. threshold is always more than half the range length, so at most one answer exists.
+Many queries follow a single construction.
+
+```text
+Example: arr=[1,1,2,2,1,1]; query(0,5,4) -> 1, query(0,3,3) ->
+  -1, query(2,3,2) -> 2.
+```
+
 ## What the problem is really asking
 
 You get an array once. Then many queries arrive, each naming a subarray `arr[left..right]` and a threshold. Return the

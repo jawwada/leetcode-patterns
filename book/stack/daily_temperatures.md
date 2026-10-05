@@ -2,6 +2,14 @@
 
 *LeetCode 739 · Medium · Pattern: Monotonic stack · Reading time ~8 min*
 
+## The problem
+
+Given daily temperatures, return answer[i] = number of days until a strictly warmer temperature, or 0 if none comes.
+
+```text
+Example: [73,74,75,71,69,72,76,73] -> [1,1,4,2,1,1,0,0].
+```
+
 ## What the problem is really asking
 
 You get a list of daily temperatures. For each day, report how many days you must wait until a strictly warmer day. If no warmer day ever comes, report 0.

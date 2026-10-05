@@ -1,6 +1,17 @@
 # Compare Version Numbers
 *LeetCode 165 · Medium · Pattern: Two-pointer chunk parsing · Reading time ~7 min*
 
+## The problem
+
+Version strings are dot-separated revisions of digits such as '1.01', '1.001' or '1.0.0'. Compare two versions
+revision by revision as integers (leading zeros are ignored) and treat a missing revision as 0. Return -1 if version1
+< version2, 1 if greater, 0 if equal.
+
+```text
+Example: '1.01' vs '1.001' -> 0; '1.0' vs '1.0.0' -> 0; '0.1' vs
+  '1.1' -> -1.
+```
+
 ## What the problem is really asking
 
 A version string is a list of numbers ("revisions") joined by dots, like `1.01` or `7.5.2.4`. To compare two versions, compare their revisions left to right **as integers**, so leading zeros mean nothing and `01` equals `1`. A version that runs out of revisions is treated as if it continued with zeros, so `1.0` equals `1.0.0`. Return −1, 0 or 1.

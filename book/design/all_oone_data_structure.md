@@ -1,6 +1,16 @@
 # All O`one Data Structure
 *LeetCode 432 · Hard · Pattern: Hash map + doubly linked list of count buckets · Reading time ~12 min*
 
+## The problem
+
+Design AllOne with inc(key), dec(key) (the key exists; a count of 1 removes it), getMaxKey() and getMinKey() (any key
+with the max/min count, or "" when empty), all in O(1).
+
+```text
+Example: inc("hello") twice, inc("leet") -> getMaxKey() =
+  "hello", getMinKey() = "leet".
+```
+
 ## What the problem is really asking
 
 Keep a multiset of string keys with counts. `inc(key)` adds one to a key's count (creating it at 1 if new). `dec(key)` subtracts one (the key is guaranteed to exist; at count 0 it disappears). `getMaxKey()` returns any key with the largest count and `getMinKey()` any key with the smallest, or `""` if there are no keys. **All four in O(1).**

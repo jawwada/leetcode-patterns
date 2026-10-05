@@ -2,6 +2,15 @@
 
 *LeetCode 621 · Medium · Pattern: Max-heap + cooldown queue simulation · Reading time ~8 min*
 
+## The problem
+
+Given tasks as uppercase letters and a cooldown n, each unit of time the CPU runs one task or idles, and two identical
+tasks must be at least n units apart. Return the minimum total time to finish all tasks.
+
+```text
+Example: tasks=[A,A,A,B,B,B], n=2 -> 8 (A B idle A B idle A B).
+```
+
 ## What the problem is really asking
 
 A CPU runs one task per time unit, or sits idle. Tasks are letters, and two copies of the same letter must be separated by

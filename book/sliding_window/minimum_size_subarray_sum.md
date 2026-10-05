@@ -1,6 +1,15 @@
 # Minimum Size Subarray Sum
 *LeetCode 209 · Medium · Pattern: Variable-size sliding window · Reading time ~7 min*
 
+## The problem
+
+Given an array of positive integers nums and a target, return the minimal length of a contiguous subarray whose sum is
+>= target, or 0 if none exists.
+
+```text
+Example: target = 7, nums = [2,3,1,2,4,3] -> 2 ([4,3]).
+```
+
 ## What the problem is really asking
 
 You get an array of **positive** integers and a target. Find the shortest contiguous stretch whose sum is at least the target, and return its length. If even the whole array falls short, return 0.

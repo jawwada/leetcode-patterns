@@ -2,6 +2,16 @@
 
 *LeetCode 219 · Easy · Pattern: Hash map of last-seen index · Reading time ~5 min*
 
+## The problem
+
+Given an integer array nums and an integer k, return True if there are two distinct indices i and j with nums[i] ==
+nums[j] and |i - j| <= k.
+
+```text
+Example: nums = [1, 2, 3, 1], k = 3 -> True (indices 0 and 3);
+  nums = [1, 2, 3, 1, 2, 3], k = 2 -> False.
+```
+
 ## What the problem is really asking
 
 Is there a value that appears twice with the two copies at most `k` positions apart? Return True or False.

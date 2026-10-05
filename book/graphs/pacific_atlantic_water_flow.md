@@ -2,6 +2,18 @@
 
 *LeetCode 417 · Medium · Pattern: Multi-source reverse BFS/DFS from the boundary · Reading time ~8 min*
 
+## The problem
+
+An m x n height grid touches the Pacific along its top and left edges and the Atlantic along its bottom and right
+edges. Water flows from a cell to a 4-neighbour whose height is less than or equal to its own. Return every cell from
+which water can reach both oceans.
+
+```text
+Example: for the 5x5 grid
+  [[1,2,2,3,5],[3,2,3,4,4],[2,4,5,3,1],[6,7,1,4,5],[5,1,1,2,4]]
+  the answer is [[0,4],[1,3],[1,4],[2,2],[3,0],[3,1],[4,0]].
+```
+
 ## What the problem is really asking
 
 You get a grid of heights. The Pacific Ocean touches the top and left edges; the Atlantic touches the bottom and right

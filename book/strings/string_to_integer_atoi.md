@@ -1,6 +1,16 @@
 # String to Integer (atoi)
 *LeetCode 8 · Medium · Pattern: Single-pass state machine with early clamp · Reading time ~8 min*
 
+## The problem
+
+Convert a string to a 32-bit signed integer like C's atoi: skip leading spaces, read an optional '+' or '-', read
+digits until a non-digit, ignore the rest, and clamp to [-2^31, 2^31 - 1].
+
+```text
+Example: '   -042' -> -42; '4193 with words' -> 4193; 'words and
+  987' -> 0; '-91283472332' -> -2147483648.
+```
+
 ## What the problem is really asking
 
 Implement C's `atoi`. Skip leading spaces, accept at most one `+` or `-`, read as many digits as follow, and ignore everything after the first non-digit. If the value falls outside the 32-bit signed range [−2³¹, 2³¹ − 1], clamp it to the nearest end. If no digits were read, the answer is 0. The answer is a single integer.

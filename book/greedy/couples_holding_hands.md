@@ -2,6 +2,16 @@
 
 *LeetCode 765 · Hard · Pattern: Union-Find (disjoint set union) · Reading time ~9 min*
 
+## The problem
+
+2n people sit in a row; persons 2k and 2k+1 are a couple. A swap exchanges any two people. Return the minimum number
+of swaps so every couple sits side by side on a couch (seats 2i, 2i+1).
+
+```text
+Example: row = [0,2,1,3] -> 1 (swap seats 1 and 2). row =
+  [3,2,0,1] -> 0.
+```
+
 ## What the problem is really asking
 
 There are `2n` seats in a row, grouped into `n` couches: seats 0 and 1, seats 2 and 3, and so on. Person `2k` and person `2k + 1` are a couple. A swap exchanges any two people anywhere in the row. Find the fewest swaps after which every couple shares a couch.

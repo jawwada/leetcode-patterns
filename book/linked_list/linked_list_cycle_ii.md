@@ -2,6 +2,16 @@
 
 *LeetCode 142 · Medium · Pattern: Floyd's tortoise and hare (fast/slow pointers) · Reading time ~9 min*
 
+## The problem
+
+Given the head of a linked list, return the node where the cycle begins, or None if there is no cycle, without
+modifying the list and ideally in O(1) extra space.
+
+```text
+Example: 3 -> 2 -> 0 -> -4 -> (back to 2) returns the node
+  holding 2.
+```
+
 ## What the problem is really asking
 
 If following `next` from the head eventually loops, return the node where the loop begins: the first node you visit

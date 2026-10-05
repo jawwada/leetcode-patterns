@@ -1,6 +1,15 @@
 # Find the Duplicate Number
 *LeetCode 287 · Medium · Pattern: Floyd's tortoise and hare (fast/slow pointers) · Reading time ~9 min*
 
+## The problem
+
+nums has n + 1 integers, each in [1, n], and exactly one value repeats (possibly many times). Return it without
+modifying nums and with O(1) extra space.
+
+```text
+Example: nums = [1,3,4,2,2] -> 2; nums = [3,1,3,4,2] -> 3.
+```
+
 ## What the problem is really asking
 
 You get an array of n + 1 integers. Every value lies between 1 and n. Since there are n + 1 slots and only n possible values, at least one value must appear twice (pigeonhole). The problem promises exactly one value repeats, though it may repeat many times. Return that value.

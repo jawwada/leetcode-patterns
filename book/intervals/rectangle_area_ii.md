@@ -1,6 +1,16 @@
 # Rectangle Area II
 *LeetCode 850 · Hard · Pattern: Sweep line over sorted events · Reading time ~11 min*
 
+## The problem
+
+Given n axis-aligned rectangles [x1, y1, x2, y2] with coordinates up to 1e9, return the total area covered by their
+union modulo 1e9+7; overlapping regions count once.
+
+```text
+Example: [[0,0,2,2],[1,0,2,3],[1,0,3,1]] -> 6 (the 2x2 square
+  plus one cell above it and one cell to its right).
+```
+
 ## What the problem is really asking
 
 You get n axis-aligned rectangles `[x1, y1, x2, y2]` (bottom-left and top-right corners). Paint them all on the plane and report the total painted area. Where rectangles overlap, the paint counts once. Coordinates go up to 10^9, so return the area modulo 10^9 + 7.

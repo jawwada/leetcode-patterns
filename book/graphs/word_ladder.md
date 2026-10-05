@@ -1,6 +1,18 @@
 # Word Ladder
 *LeetCode 127 · Hard · Pattern: BFS on implicit graph (wildcard buckets) · Reading time ~11 min*
 
+## The problem
+
+Given beginWord, endWord and a wordList, a transformation changes exactly one letter and the result must be in
+wordList. Return the number of words in the shortest transformation sequence from beginWord to endWord, counting both
+ends, or 0 if none exists.
+
+```text
+Example: "hit" -> "cog" with
+  ["hot","dot","dog","lot","log","cog"] -> 5 via
+  hit->hot->dot->dog->cog.
+```
+
 ## What the problem is really asking
 
 You have a start word, an end word and a dictionary. A move changes exactly one letter, and

@@ -2,6 +2,15 @@
 
 *LeetCode 1526 · Hard · Pattern: Count only the rises (adjacent-difference greedy) · Reading time ~8 min*
 
+## The problem
+
+Start from an all-zero array. One operation picks any contiguous subarray and adds 1 to every element in it. Return
+the minimum number of operations needed to reach target.
+
+```text
+Example: target = [3,1,5,4,2,3,4,2] needs 9 operations.
+```
+
 ## What the problem is really asking
 
 You start with an array of zeros the same length as `target`. One operation chooses any contiguous stretch and adds 1 to every element in it. What is the fewest operations that turn the zeros into `target`?

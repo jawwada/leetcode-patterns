@@ -2,6 +2,17 @@
 
 *LeetCode 853 · Medium · Pattern: Monotonic stack · Reading time ~8 min*
 
+## The problem
+
+n cars drive toward target on a one-lane road; car i starts at position[i] with speed[i]. A faster car that catches a
+slower one slows down and travels with it as a fleet (counted as one). Return the number of fleets that reach the
+target.
+
+```text
+Example: target = 12, position = [10,8,0,5,3], speed =
+  [2,4,1,1,3] -> 3.
+```
+
 ## What the problem is really asking
 
 Cars sit on a one-lane road, all driving toward the same `target`. Car `i` starts at `position[i]` with constant `speed[i]`. Nobody can pass. If a faster car catches a slower one before (or exactly at) the target, it slows down and the two travel bumper to bumper from then on; they are one *fleet*. Count how many fleets arrive.

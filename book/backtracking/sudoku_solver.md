@@ -1,6 +1,16 @@
 # Sudoku Solver
 *LeetCode 37 · Hard · Pattern: Constraint backtracking with bitmasks (most-constrained cell first) · Reading time ~11 min*
 
+## The problem
+
+Fill a partially filled 9x9 board (digits '1'-'9', '.' for empty) in place so that every row, every column and every
+3x3 box contains each digit exactly once. The input has exactly one solution.
+
+```text
+Example: the classic board whose first row is "53..7...." is
+  completed so that row becomes "534678912".
+```
+
 ## What the problem is really asking
 
 Fill the empty cells of a 9 x 9 grid with digits 1 to 9 so that every row, every column and

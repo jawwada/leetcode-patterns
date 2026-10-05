@@ -2,6 +2,14 @@
 
 *LeetCode 485 · Easy · Pattern: Running counter with reset · Reading time ~4 min*
 
+## The problem
+
+Given a binary array nums, return the length of the longest run of consecutive 1s.
+
+```text
+Example: nums = [1,1,0,1,1,1] -> 3 (the last three 1s).
+```
+
 ## What the problem is really asking
 
 The array holds only 0s and 1s. Return the length of the longest unbroken run of 1s.

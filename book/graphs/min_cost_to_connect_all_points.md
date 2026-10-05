@@ -1,6 +1,16 @@
 # Min Cost to Connect All Points
 *LeetCode 1584 · Medium · Pattern: Minimum spanning tree (Prim's with heap) · Reading time ~9 min*
 
+## The problem
+
+Given n points on a plane, connecting two points costs their Manhattan distance |x1-x2| + |y1-y2|. Return the minimum
+total cost to connect all points so that there is a path between every pair, i.e. the weight of a minimum spanning
+tree of the complete graph.
+
+```text
+Example: [[0,0],[2,2],[3,10],[5,2],[7,0]] -> 20.
+```
+
 ## What the problem is really asking
 
 You get `n` points on a grid. Linking two points costs their Manhattan distance

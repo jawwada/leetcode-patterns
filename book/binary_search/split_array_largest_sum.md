@@ -2,6 +2,16 @@
 
 *LeetCode 410 · Hard · Pattern: Binary search on the answer · Reading time ~10 min*
 
+## The problem
+
+Split nums into k non-empty contiguous subarrays so that the largest subarray sum is as small as possible; return that
+minimised largest sum.
+
+```text
+Example: nums = [7,2,5,10,8], k = 2 -> 18 ([7,2,5] | [10,8]).
+  nums = [1,2,3,4,5], k = 2 -> 9 ([1,2,3] | [4,5]).
+```
+
 ## What the problem is really asking
 
 We have an array of non-negative integers and must cut it into exactly `k` contiguous, non-empty pieces. Each piece has a sum. Among the `k` sums one is the largest, and we want to choose the cuts so that this largest sum is as small as possible.

@@ -2,6 +2,17 @@
 
 *LeetCode 733 · Easy · Pattern: Grid flood fill (DFS/BFS) · Reading time ~5 min*
 
+## The problem
+
+Given an image as a grid of colours, a start pixel (sr, sc) and a new colour, recolour the start pixel and every pixel
+4-connected to it that has the start pixel's original colour.
+
+```text
+Example: image=[[1,1,1],[1,1,0],[1,0,1]], sr=1, sc=1, color=2 ->
+  [[2,2,2],[2,2,0],[2,0,1]]; the bottom-right 1 is not
+  connected, so it keeps its colour.
+```
+
 ## What the problem is really asking
 
 You get an image as a grid of colour numbers, a starting pixel `(sr, sc)` and a new colour. Do what the paint-bucket

@@ -2,6 +2,16 @@
 
 *LeetCode 236 · Medium · Pattern: Post-order "found below me" recursion · Reading time ~9 min*
 
+## The problem
+
+Given a binary tree (no ordering) and two nodes p and q that are both in it, return their lowest common ancestor; a
+node may be its own ancestor.
+
+```text
+Example: root=[3,5,1,6,2,0,8,null,null,7,4], p=5, q=1 -> 3; p=5,
+  q=4 -> 5.
+```
+
 ## What the problem is really asking
 
 Same question as the previous problem, with the ordering taken away. You get an ordinary binary tree and two nodes `p` and `q` that are both in it. Return the deepest node that has both in its subtree; a node counts as being in its own subtree.

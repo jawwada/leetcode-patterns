@@ -2,6 +2,16 @@
 
 *LeetCode 1707 · Hard · Pattern: Offline queries + binary trie (max XOR) · Reading time ~11 min*
 
+## The problem
+
+Given nums and queries [x_i, m_i], answer each query with the maximum of x_i XOR nums[j] over all j with nums[j] <=
+m_i, or -1 if no element is <= m_i. Values are below 10^9 and nums and queries each have up to 10^5 entries.
+
+```text
+Example: nums = [0,1,2,3,4], queries = [[3,1],[1,3],[5,6]]
+  returns [3,3,7] (3^0, 1^2, 5^2).
+```
+
 ## What the problem is really asking
 
 You get an array `nums` and a list of queries `[x, m]`. For each query, look only at the elements of `nums` that are at most `m`. Among those, find the one whose XOR with `x` is largest, and report that XOR. If no element is at most `m`, report -1. Answers go back in the original query order.

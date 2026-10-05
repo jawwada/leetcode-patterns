@@ -1,6 +1,15 @@
 # Merge Intervals
 *LeetCode 56 · Medium · Pattern: Sort by start, sweep and merge · Reading time ~7 min*
 
+## The problem
+
+Given a list of intervals [start, end], merge all overlapping intervals and return the non-overlapping intervals that
+cover the same points. Intervals that merely touch, like [1,4] and [4,5], count as overlapping.
+
+```text
+Example: [[1,3],[2,6],[8,10],[15,18]] -> [[1,6],[8,10],[15,18]].
+```
+
 ## What the problem is really asking
 
 You get a pile of closed intervals `[start, end]` in any order. Wherever two of them share at least one point, they are really one stretch of covered line, so glue them together. Return the smallest set of intervals that covers exactly the same points. Touching counts as sharing: `[1,4]` and `[4,5]` share the point 4 and become `[1,5]`.

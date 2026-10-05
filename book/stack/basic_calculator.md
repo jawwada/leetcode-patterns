@@ -2,6 +2,16 @@
 
 *LeetCode 224 · Hard · Pattern: Sign stack for parentheses · Reading time ~9 min*
 
+## The problem
+
+Evaluate a string containing non-negative integers, '+', '-', '(', ')' and spaces, including unary minus such as
+"-(2-3)". No eval().
+
+```text
+Example: "(1+(4+5+2)-3)+(6+8)" -> 23; " 2-1 + 2 " -> 3; "-(2-3)"
+  -> 1.
+```
+
 ## What the problem is really asking
 
 Evaluate a string containing non-negative integers, `+`, `-`, parentheses and spaces. There is no `*` or `/`. A minus may

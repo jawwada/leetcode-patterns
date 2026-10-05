@@ -2,6 +2,16 @@
 
 *LeetCode 692 · Medium · Pattern: Size-k heap (keep the k best) · Reading time ~7 min*
 
+## The problem
+
+Given a list of words and an integer k, return the k most frequent words sorted by frequency descending; words with
+equal frequency are sorted lexicographically ascending.
+
+```text
+Example: ["i","love","leetcode","i","love","coding"], k=2 ->
+  ["i","love"].
+```
+
 ## What the problem is really asking
 
 You get a list of words and a number k. Return the k most frequent words, ordered from most frequent to least. When two

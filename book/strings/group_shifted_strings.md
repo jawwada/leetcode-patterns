@@ -2,6 +2,17 @@
 
 *LeetCode 249 · Medium · Pattern: Canonical key hashing (shift-invariant signature) · Reading time ~7 min*
 
+## The problem
+
+A string is shifted by moving every letter forward by the same amount with wrap-around z -> a, so 'abc' -> 'bcd' ->
+... -> 'xyz' -> 'yza'. Given lowercase strings, group all strings that belong to the same shifting sequence; groups
+may be returned in any order.
+
+```text
+Example: ['abc','bcd','acef','xyz','az','ba','a','z'] ->
+  [['acef'], ['a','z'], ['az','ba'], ['abc','bcd','xyz']].
+```
+
 ## What the problem is really asking
 
 "Shifting" a lowercase string means moving every letter forward by the same amount, wrapping from `z` back to `a`. Shift `"abc"` by one and you get `"bcd"`; by 23 and you get `"xyz"`; by 24 and you get `"yza"`. Given a list of strings, put together every pair of strings where one can be shifted into the other. Return the groups in any order.

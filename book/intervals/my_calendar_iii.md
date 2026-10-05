@@ -1,6 +1,16 @@
 # My Calendar III
 *LeetCode 732 · Hard · Pattern: Difference array / prefix-sum sweep · Reading time ~9 min*
 
+## The problem
+
+Implement MyCalendarThree. book(startTime, endTime) adds the half-open event [start, end) and returns the largest k
+such that some instant is covered by k events after this booking. Events are never rejected.
+
+```text
+Example: book(10,20) -> 1; book(50,60) -> 1; book(10,40) -> 2;
+  book(5,15) -> 3; book(5,10) -> 3; book(25,55) -> 3.
+```
+
 ## What the problem is really asking
 
 You are building a calendar object. Each call `book(start, end)` adds a half-open event `[start, end)`. Nothing is ever rejected. After each booking, return the largest k such that some instant is covered by k events, which is the peak overlap of everything booked so far.

@@ -1,6 +1,18 @@
 # Dinner Plate Stacks
 *LeetCode 1172 · Hard · Pattern: List of stacks + min-heap of "has room" indices with lazy invalidation · Reading time ~12 min*
 
+## The problem
+
+There are infinitely many stacks in a row, each holding at most capacity plates. push(val) places the plate on the
+leftmost stack with room, pop() removes from the rightmost non-empty stack, and popAtStack(i) removes the top of stack
+i; both pops return -1 when there is nothing to remove.
+
+```text
+Example: capacity=2, push 1,2,3,4,5 -> [1,2][3,4][5];
+  popAtStack(0) -> 2; push(20) lands on stack 0 ->
+  [1,20][3,4][5]; pop() -> 5.
+```
+
 ## What the problem is really asking
 
 There is an infinite row of stacks, numbered 0, 1, 2, ... from the left, and each can hold at most `capacity` plates.

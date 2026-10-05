@@ -2,6 +2,16 @@
 
 *LeetCode 992 · Hard · Pattern: Exactly-K = atMost(K) - atMost(K-1) · Reading time ~11 min*
 
+## The problem
+
+Given an integer array nums and an integer k, count the contiguous subarrays whose number of distinct values is
+exactly k.
+
+```text
+Example: nums = [1,2,1,2,3], k = 2 -> 7: [1,2], [2,1], [1,2],
+  [2,3], [1,2,1], [2,1,2], [1,2,1,2].
+```
+
 ## What the problem is really asking
 
 Given an integer array `nums` and an integer `k`, count how many contiguous subarrays contain exactly `k` distinct values. Not the longest one, not the shortest one: *how many*. Two subarrays with the same contents at different positions count separately.

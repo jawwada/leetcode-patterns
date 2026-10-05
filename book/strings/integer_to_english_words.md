@@ -2,6 +2,17 @@
 
 *LeetCode 273 · Hard · Pattern: Chunk by thousands + lookup tables · Reading time ~9 min*
 
+## The problem
+
+Convert a non-negative integer below 2^31 to English words.
+
+```text
+Example: 1234567 -> "One Million Two Hundred Thirty Four
+  Thousand Five Hundred Sixty Seven"; 12345 -> "Twelve Thousand
+  Three Hundred Forty Five"; 0 -> "Zero"; 1000010 -> "One
+  Million Ten".
+```
+
 ## What the problem is really asking
 
 Given a non-negative integer below `2^31` (so at most about 2.1 billion), write it out in English words with each word capitalised and single spaces between words. `123` is `"One Hundred Twenty Three"`, `12345` is `"Twelve Thousand Three Hundred Forty Five"`, and `0` is `"Zero"`.

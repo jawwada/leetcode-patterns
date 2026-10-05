@@ -1,6 +1,15 @@
 # Longest Substring Without Repeating Characters
 *LeetCode 3 · Medium · Pattern: Variable-size sliding window · Reading time ~7 min*
 
+## The problem
+
+Given a string s, return the length of the longest substring whose characters are all distinct.
+
+```text
+Example: s = "abcabcbb" -> 3 ("abc"); s = "pwwkew" -> 3 ("wke");
+  s = "bbbbb" -> 1.
+```
+
 ## What the problem is really asking
 
 Given a string, find the longest contiguous piece in which no character appears twice, and return its length. "Substring" means contiguous; "pwke" inside "pwwkew" does not count because it skips a letter.

@@ -2,6 +2,16 @@
 
 *LeetCode 235 · Medium · Pattern: BST ordered descent · Reading time ~7 min*
 
+## The problem
+
+Given a binary search tree and two of its nodes p and q, return their lowest common ancestor: the deepest node that
+has both as descendants, where a node counts as its own descendant.
+
+```text
+Example: root=[6,2,8,0,4,7,9,null,null,3,5], p=2, q=8 -> 6; p=2,
+  q=4 -> 2.
+```
+
 ## What the problem is really asking
 
 You get a BST and two of its nodes, `p` and `q`. Return their **lowest common ancestor** (LCA): the deepest node that has both `p` and `q` in its subtree. A node counts as being in its own subtree, so if `p` is an ancestor of `q`, the answer is `p` itself.

@@ -2,6 +2,18 @@
 
 *LeetCode 332 · Hard · Pattern: Eulerian path (Hierholzer's DFS) · Reading time ~10 min*
 
+## The problem
+
+Given tickets [from, to] that all belong to one traveller starting at "JFK", reconstruct the itinerary that uses every
+ticket exactly once; if several exist, return the lexicographically smallest when read as one string. A valid
+itinerary is guaranteed.
+
+```text
+Example:
+  [["MUC","LHR"],["JFK","MUC"],["SFO","SJC"],["LHR","SFO"]] ->
+  ["JFK","MUC","LHR","SFO","SJC"].
+```
+
 ## What the problem is really asking
 
 You find a pile of used plane tickets, each `[from, to]`, all belonging to one traveller who started at `"JFK"`. Rebuild the trip: a sequence of airports that uses every ticket exactly once. Several trips may fit; return the one that is smallest when the airport names are compared in order (lexicographically). At least one valid trip is guaranteed.

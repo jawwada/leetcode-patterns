@@ -1,6 +1,17 @@
 # Redundant Connection II
 *LeetCode 685 · Hard · Pattern: Union-Find (disjoint set union) · Reading time ~13 min*
 
+## The problem
+
+A rooted tree on nodes 1..n, where every node except the root has exactly one parent, had one extra directed edge u ->
+v added, giving n edges. Return the edge whose removal restores a rooted tree; if several work, return the one that
+appears last in the input.
+
+```text
+Example: [[1,2],[1,3],[2,3]] -> [2,3];
+  [[1,2],[2,3],[3,4],[4,1],[1,5]] -> [4,1].
+```
+
 ## What the problem is really asking
 
 Start with a **rooted** tree on nodes `1..n`. Every edge points from a parent to a child.

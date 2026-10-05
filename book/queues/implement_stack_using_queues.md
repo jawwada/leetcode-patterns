@@ -2,6 +2,16 @@
 
 *LeetCode 225 · Easy · Pattern: Rotate a queue to make a stack · Reading time ~6 min*
 
+## The problem
+
+Build a LIFO stack with push, pop, top and empty using only queue operations (push to back, pop/peek from front, size,
+is-empty).
+
+```text
+Example: push(1); push(2); top() -> 2; pop() -> 2; empty() ->
+  False.
+```
+
 ## What the problem is really asking
 
 Build a last-in, first-out stack with `push(x)`, `pop()`, `top()` and `empty()`, using only queue operations: append to

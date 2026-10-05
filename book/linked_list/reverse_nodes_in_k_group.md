@@ -1,6 +1,16 @@
 # Reverse Nodes in k-Group
 *LeetCode 25 · Hard · Pattern: In-place pointer reversal · Reading time ~12 min*
 
+## The problem
+
+Reverse the nodes of a linked list k at a time and return the modified list; a final group with fewer than k nodes
+stays in original order. Only links may change.
+
+```text
+Example: 1->2->3->4->5 with k = 2 becomes 2->1->4->3->5; with k
+  = 3 becomes 3->2->1->4->5.
+```
+
 ## What the problem is really asking
 
 Cut the list into consecutive blocks of k nodes. Reverse each full block. If the last block has fewer than k nodes, leave it alone. Return the new head. You must change links, not values, and the follow-up asks for O(1) extra memory.

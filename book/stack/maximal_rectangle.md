@@ -2,6 +2,19 @@
 
 *LeetCode 85 · Hard · Pattern: Monotonic stack · Reading time ~11 min*
 
+## The problem
+
+Given an m x n binary matrix of '0'/'1' characters, return the area of the largest rectangle containing only '1's.
+
+```text
+Example:
+  [["1","0","1","0","0"],
+   ["1","0","1","1","1"],
+   ["1","1","1","1","1"],
+   ["1","0","0","1","0"]]
+  -> 6, the 2 x 3 block of 1s in rows 1-2, columns 2-4.
+```
+
 ## What the problem is really asking
 
 You get an `m x n` grid of `'0'` and `'1'` characters. Find the largest axis-aligned rectangle made only of `'1'` cells, and return its area.

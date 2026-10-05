@@ -1,6 +1,16 @@
 # Redundant Connection
 *LeetCode 684 · Medium · Pattern: Union-Find (disjoint set union) · Reading time ~9 min*
 
+## The problem
+
+A tree with n nodes labelled 1..n had one extra edge added, so the input has n edges. Return the edge that can be
+removed to make it a tree again; if several work, return the one that appears last in the input.
+
+```text
+Example: [[1,2],[1,3],[2,3]] -> [2,3];
+  [[1,2],[2,3],[3,4],[1,4],[1,5]] -> [1,4].
+```
+
 ## What the problem is really asking
 
 Someone had a tree on nodes `1..n` and added one extra undirected edge, so now there are `n`

@@ -1,6 +1,16 @@
 # Minimum Interval to Include Each Query
 *LeetCode 1851 · Hard · Pattern: Offline queries sorted + sweep by start + min-heap by size with lazy removal · Reading time ~10 min*
 
+## The problem
+
+Given intervals [left, right] and queries q, answer each query with the size (right - left + 1) of the smallest
+interval containing q, or -1 if none does. Answers must be returned in the original query order.
+
+```text
+Example: intervals=[[1,4],[2,4],[3,6],[4,4]], queries=[2,3,4,5]
+  -> [3,3,1,4].
+```
+
 ## What the problem is really asking
 
 You have n closed intervals `[left, right]` and m query points. For each query q, find the **shortest** interval that contains it (`left <= q <= right`) and report its size, `right - left + 1`, counting integer points. If no interval contains q, report -1. Answers go back in the **original** query order.

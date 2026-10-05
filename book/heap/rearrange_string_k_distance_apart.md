@@ -2,6 +2,17 @@
 
 *LeetCode 358 · Hard · Pattern: Greedy max-heap by remaining count + fixed-length cooldown queue · Reading time ~10 min*
 
+## The problem
+
+Rearrange string s so that identical characters are at least k positions apart. Return any valid rearrangement, or an
+empty string if none exists (k = 0 means no constraint).
+
+```text
+Example: s="aabbcc", k=3 -> "abcabc". s="aaabc", k=3 -> "".
+  s="aaadbbcc", k=2 -> "abacabcd" (one of several valid
+  answers).
+```
+
 ## What the problem is really asking
 
 You get a string `s` and a number `k`. Shuffle the letters so that any two copies of the same letter sit at least `k` positions apart, meaning that if `a` sits at index `i`, the next `a` can sit at index `i + k` at the earliest. Return any shuffle that works, or the empty string if none exists. When `k` is 0 or 1 there is no real constraint and `s` itself is a valid answer.

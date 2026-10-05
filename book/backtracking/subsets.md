@@ -2,6 +2,15 @@
 
 *LeetCode 78 · Medium · Pattern: Backtracking include/exclude decision tree · Reading time ~7 min*
 
+## The problem
+
+Given an array of distinct integers, return all possible subsets (the power set) in any order, with no duplicate
+subsets.
+
+```text
+Example: [1,2,3] -> [[],[1],[2],[1,2],[3],[1,3],[2,3],[1,2,3]].
+```
+
 ## What the problem is really asking
 
 You get a list of distinct integers. Return every possible selection of them: the empty selection, every single element, every pair, and so on up to the whole list. Order inside a subset does not matter, and no subset may appear twice.

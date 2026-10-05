@@ -2,6 +2,17 @@
 
 *LeetCode 622 · Medium · Pattern: Ring buffer (circular array with head and count) · Reading time ~8 min*
 
+## The problem
+
+Implement MyCircularQueue(k), a bounded FIFO of capacity k with enQueue(x) and deQueue() returning success, Front()
+and Rear() returning -1 when empty, isEmpty() and isFull().
+
+```text
+Example: k = 3; enQueue 1, 2, 3 -> True; enQueue(4) -> False;
+  Rear() -> 3; isFull() -> True; deQueue() -> True; enQueue(4)
+  -> True; Rear() -> 4.
+```
+
 ## What the problem is really asking
 
 Build `MyCircularQueue(k)`: a FIFO queue that can hold at most `k` values, with `enQueue(x)` and `deQueue()` returning

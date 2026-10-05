@@ -2,6 +2,16 @@
 
 *LeetCode 330 · Hard · Pattern: Greedy reach (furthest reachable index) · Reading time ~9 min*
 
+## The problem
+
+Given a sorted array nums and an integer n, add (patch) the minimum number of integers so that every value in [1, n]
+is the sum of some subset of the array; return that count.
+
+```text
+Example: nums = [1,3], n = 6 -> 1 (patch 2). nums = [1,5,10], n
+  = 20 -> 2 (patch 2 and 4).
+```
+
 ## What the problem is really asking
 
 You get a sorted array of positive integers `nums` and a target `n`. A value is "buildable" if it is the sum of some subset of the array. Add as few new integers ("patches") as possible so that every value from 1 to `n` is buildable.

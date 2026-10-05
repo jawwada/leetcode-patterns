@@ -1,6 +1,19 @@
 # Minimum Moves to Move a Box to Their Target Location
 *LeetCode 1263 · Hard · Pattern: 0-1 BFS (deque shortest path) · Reading time ~11 min*
 
+## The problem
+
+A grid holds walls '#', floor '.', the player 'S', a box 'B' and a target 'T'. The player walks 4-directionally for
+free; walking into the box pushes it one cell if the cell beyond is floor. Return the minimum number of pushes to get
+the box onto the target, or -1.
+
+```text
+Example: in
+  ["######","#T####","#..B.#","#.##.#","#...S#","######"] the
+  answer is 3 (push left twice, walk round below the box, push
+  up).
+```
+
 ## What the problem is really asking
 
 This is Sokoban with one box. The grid has walls `#`, floor `.`, the player `S`, the box

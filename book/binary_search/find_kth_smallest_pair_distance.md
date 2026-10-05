@@ -2,6 +2,16 @@
 
 *LeetCode 719 · Hard · Pattern: Binary search on the answer · Reading time ~10 min*
 
+## The problem
+
+The distance of a pair (i, j) with i < j is |nums[i] - nums[j]|. Return the k-th smallest distance among all n(n-1)/2
+pairs.
+
+```text
+Example: nums = [1,3,1], k = 1 returns 0 (distances 2, 0, 2;
+  sorted 0, 2, 2). Example: nums = [1,6,1], k = 3 returns 5.
+```
+
 ## What the problem is really asking
 
 Take every pair of positions `i < j` in the array and compute `|nums[i] - nums[j]|`. That gives `n(n-1)/2` distances. Sort them and return the `k`-th smallest.

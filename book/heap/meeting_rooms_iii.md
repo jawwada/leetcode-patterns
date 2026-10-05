@@ -2,6 +2,18 @@
 
 *LeetCode 2402 · Hard · Pattern: Two heaps (free rooms by id, busy rooms by end time) over a sorted sweep · Reading time ~11 min*
 
+## The problem
+
+There are n rooms numbered 0..n-1 and meetings [start, end) with distinct starts. Each meeting takes the
+lowest-numbered free room; if none is free it is delayed until the earliest room frees up (ties: lowest number),
+keeping its duration. Return the room that hosts the most meetings (lowest number on ties).
+
+```text
+Example: n=2, [[0,10],[1,5],[2,7],[3,4]] -> 0 (room 0 hosts
+  [0,10] and [10,11]; room 1 hosts [1,5] and the delayed
+  [5,10]).
+```
+
 ## What the problem is really asking
 
 There are `n` rooms, numbered `0` to `n - 1`, and a list of meetings `[start, end)` with distinct start times. Meetings are handed out by a strict rule:

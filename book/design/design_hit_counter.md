@@ -2,6 +2,17 @@
 
 *LeetCode 362 · Medium · Pattern: Sliding window queue with running sum · Reading time ~7 min*
 
+## The problem
+
+Implement HitCounter: hit(timestamp) records a hit and getHits(timestamp) returns the number of hits in the past 300
+seconds, i.e. with time t in (timestamp - 300, timestamp]. Timestamps arrive in non-decreasing order and several hits
+may share one timestamp.
+
+```text
+Example: hit(1), hit(2), hit(3), getHits(4) -> 3, hit(300),
+  getHits(300) -> 4, getHits(301) -> 3.
+```
+
 ## What the problem is really asking
 
 Two methods. `hit(timestamp)` records one event. `getHits(timestamp)` returns how many events happened in the last 300 seconds, meaning with hit time `ts` in the half-open window `(timestamp - 300, timestamp]`. Timestamps never go down, and many hits may share one timestamp.

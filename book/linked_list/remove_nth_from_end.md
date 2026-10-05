@@ -2,6 +2,14 @@
 
 *LeetCode 19 · Medium · Pattern: Two pointers with fixed gap · Reading time ~8 min*
 
+## The problem
+
+Remove the n-th node from the end of a singly linked list and return the head; n is always valid (1 <= n <= length).
+
+```text
+Example: 1->2->3->4->5 with n = 2 becomes 1->2->3->5.
+```
+
 ## What the problem is really asking
 
 Delete the node that sits n places from the end (n = 1 is the last node) and return the head of what is left. n is always

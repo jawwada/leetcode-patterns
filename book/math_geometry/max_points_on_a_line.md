@@ -2,6 +2,17 @@
 
 *LeetCode 149 · Hard · Pattern: Anchor point + slope as a reduced fraction · Reading time ~8 min*
 
+## The problem
+
+Given n distinct points on the plane (n <= 300, coordinates up to 10^4 in absolute value), return the maximum number
+of points that lie on one straight line.
+
+```text
+Example: [[1,1],[2,2],[3,3]] returns 3. Example:
+  [[1,1],[3,2],[5,3],[4,1],[2,3],[1,4]] returns 4, the line
+  through (1,4), (2,3), (3,2), (4,1).
+```
+
 ## What the problem is really asking
 
 You get up to 300 distinct points with integer coordinates (absolute value up to `10^4`). Find the largest number of them that sit on one straight line.

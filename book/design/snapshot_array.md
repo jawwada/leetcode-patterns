@@ -1,6 +1,16 @@
 # Snapshot Array
 *LeetCode 1146 · Medium · Pattern: Sorted version list + binary search · Reading time ~8 min*
 
+## The problem
+
+Implement SnapshotArray(length) of zeros with set(index, val), snap() -> snap_id (the number of snaps taken before
+this one), and get(index, snap_id) -> the value at index as of that snapshot.
+
+```text
+Example: SnapshotArray(3); set(0,5); snap() -> 0; set(0,6);
+  get(0,0) -> 5.
+```
+
 ## What the problem is really asking
 
 You hold an array of `length` zeros. You can `set(index, val)` like any array. At any moment you can call `snap()`, which freezes the current contents and hands you a ticket number: 0 for the first snapshot, 1 for the second, and so on. Later, `get(index, snap_id)` asks what that cell held at the moment ticket `snap_id` was issued.

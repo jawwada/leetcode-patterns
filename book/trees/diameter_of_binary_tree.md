@@ -2,6 +2,15 @@
 
 *LeetCode 543 · Easy · Pattern: Post-order height with side-channel answer · Reading time ~6 min*
 
+## The problem
+
+The diameter of a binary tree is the number of edges on the longest path between any two nodes; the path need not pass
+through the root.
+
+```text
+Example: [1,2,3,4,5] has diameter 3 (4 -> 2 -> 1 -> 3).
+```
+
 ## What the problem is really asking
 
 The diameter is the number of **edges** on the longest path between any two nodes. A path goes up from one node to some

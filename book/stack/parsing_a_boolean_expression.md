@@ -2,6 +2,15 @@
 
 *LeetCode 1106 · Hard · Pattern: Stack-based expression evaluation · Reading time ~9 min*
 
+## The problem
+
+Evaluate a boolean expression built from 't', 'f', !(expr), &(expr,expr,...) and |(expr,expr,...).
+
+```text
+Example: "&(|(f))" -> False; "|(f,f,f,t)" -> True; "!(&(f,t))"
+  -> True.
+```
+
 ## What the problem is really asking
 
 You get a string written in a tiny prefix language. The atoms are `t` and `f`. There are three operators, and each one is written in front of a parenthesised list of operands: `!(x)` negates one operand, `&(x,y,...)` is true when every operand is true, `|(x,y,...)` is true when at least one operand is true. Operands may themselves be whole expressions, nested as deep as you like. Return the boolean the whole string evaluates to.

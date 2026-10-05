@@ -2,6 +2,15 @@
 
 *LeetCode 227 · Medium · Pattern: Stack evaluation · Reading time ~7 min*
 
+## The problem
+
+Evaluate a string expression of non-negative integers, the operators + - * /, and spaces, with normal precedence and
+integer division truncating toward zero.
+
+```text
+Example: "3+2*2" -> 7; " 3/2 " -> 1; " 3+5 / 2 " -> 5.
+```
+
 ## What the problem is really asking
 
 Evaluate an ordinary infix expression made of non-negative integers, `+ - * /` and spaces, with the usual precedence:

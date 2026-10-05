@@ -1,6 +1,15 @@
 # Swim in Rising Water
 *LeetCode 778 · Hard · Pattern: Minimax path via min-heap (bottleneck Dijkstra) · Reading time ~11 min*
 
+## The problem
+
+An n x n grid holds distinct elevations 0..n*n-1. At time t the water level is t and you can move between 4-adjacent
+cells whose elevations are both <= t. Starting at (0,0), return the least t at which you can reach (n-1,n-1).
+
+```text
+Example: [[0,2],[1,3]] -> 3; the 5x5 LeetCode example -> 16.
+```
+
 ## What the problem is really asking
 
 An `n x n` grid holds distinct elevations `0 .. n*n-1`. Rain raises the water level by one

@@ -1,6 +1,16 @@
 # Container With Most Water
 *LeetCode 11 · Medium · Pattern: Converging two pointers, move the limiting side · Reading time ~8 min*
 
+## The problem
+
+Given heights of n vertical lines at x = 0..n-1, choose two lines that together with the x-axis form the container
+holding the most water; the area is min(h[i], h[j]) * (j - i). Return the maximum area.
+
+```text
+Example: height = [1, 8, 6, 2, 5, 4, 8, 3, 7] -> 49 (indices 1
+  and 8).
+```
+
 ## What the problem is really asking
 
 You have n vertical lines standing on the x-axis at positions 0 to n-1, with heights `height[i]`. Pick two of them; together with the axis they form a container. Water fills it up to the shorter line, so it holds `min(height[i], height[j]) * (j - i)`. Return the largest amount any pair can hold.

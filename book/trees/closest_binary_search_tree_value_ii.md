@@ -2,6 +2,15 @@
 
 *LeetCode 272 · Hard · Pattern: Two lazy inorder iterators (predecessor / successor stacks) · Reading time ~11 min*
 
+## The problem
+
+Given a BST, a float target and an integer k (at most the number of nodes), return the k values closest to target in
+any order.
+
+```text
+Example: root=[4,2,5,1,3], target=3.714286, k=2 returns [4,3].
+```
+
 ## What the problem is really asking
 
 You are given a binary search tree, a real-number `target` and an integer `k`. Return the `k` values in the tree that sit closest to `target` on the number line. Any order is fine, and `k` never exceeds the number of nodes.

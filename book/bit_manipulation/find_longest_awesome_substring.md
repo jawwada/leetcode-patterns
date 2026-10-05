@@ -2,6 +2,17 @@
 
 *LeetCode 1542 · Hard · Pattern: Prefix parity mask + first-seen positions · Reading time ~10 min*
 
+## The problem
+
+A string of digits is awesome if some rearrangement of it is a palindrome, i.e. at most one digit occurs an odd number
+of times. Given a digit string s, return the length of its longest awesome substring (a single character always
+qualifies).
+
+```text
+Example: s = "3242415" returns 5 ("24241" rearranges to
+  "24142"). Example: s = "12345678" returns 1.
+```
+
 ## What the problem is really asking
 
 You get a string of digits. A substring is **awesome** if its characters can be rearranged into a palindrome. Return the length of the longest awesome substring. A single character always qualifies, so the answer is at least 1.

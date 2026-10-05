@@ -1,6 +1,25 @@
 # Minimum Weighted Subgraph With the Required Paths
 *LeetCode 2203 · Hard · Pattern: Dijkstra (min-heap shortest paths) · Reading time ~10 min*
 
+## The problem
+
+A weighted directed graph on n nodes is given as edges [u, v, w]. Return the minimum total weight of a subgraph in
+which both src1 and src2 can reach dest, or -1 if no such subgraph exists.
+
+```text
+Example: n=6,
+  edges=[[0,2,2],
+   [0,5,6],
+   [1,0,3],
+   [1,4,5],
+   [2,1,1],
+   [2,3,3],
+   [2,3,4],
+   [3,4,2],
+   [4,5,1]],
+  src1=0, src2=1, dest=5 -> 9.
+```
+
 ## What the problem is really asking
 
 You get a directed graph with non-negative edge weights, two start nodes `src1` and `src2`,

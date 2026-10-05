@@ -2,6 +2,18 @@
 
 *LeetCode 2050 · Hard · Pattern: Topological order + longest-path relaxation (Kahn) · Reading time ~10 min*
 
+## The problem
+
+There are n courses labelled 1..n. relations[i] = [prev, next] means prev must finish before next can start, and
+time[c-1] is how many months course c takes. Any number of courses can run in parallel once their prerequisites are
+done. Return the minimum number of months needed to finish every course.
+
+```text
+Example: n=3, relations=[[1,3],[2,3]], time=[3,2,5] -> 8
+  (courses 1 and 2 run together, and course 3 starts at month 3
+  and ends at month 8).
+```
+
 ## What the problem is really asking
 
 Courses are labelled 1..n. A relation `[prev, next]` means prev must be finished before next can start. Course c takes `time[c-1]` months. You may run any number of courses at once, as long as each one starts only after all its prerequisites have finished. What is the fewest months needed to finish everything?

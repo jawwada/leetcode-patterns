@@ -1,6 +1,16 @@
 # Remove Invalid Parentheses
 *LeetCode 301 · Hard · Pattern: Backtracking with counted removals and balance pruning · Reading time ~10 min*
 
+## The problem
+
+Remove the minimum number of parentheses so the string becomes valid and return every distinct result; letters are
+kept as-is.
+
+```text
+Example: "()())()" -> ["(())()", "()()()"]; "(a)())()" ->
+  ["(a())()", "(a)()()"]; ")(" -> [""].
+```
+
 ## What the problem is really asking
 
 You get a string of `(`, `)` and letters. Delete as **few** parentheses as possible so that

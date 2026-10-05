@@ -1,6 +1,16 @@
 # Fruit Into Baskets
 *LeetCode 904 · Medium · Pattern: Variable-size sliding window · Reading time ~7 min*
 
+## The problem
+
+fruits[i] is the type of the tree at position i. You have two baskets, each holding a single type in unlimited
+quantity. Starting anywhere and moving right, pick one fruit per tree until a tree's type fits neither basket. Return
+the maximum fruits picked, i.e. the longest subarray with at most 2 distinct values.
+
+```text
+Example: fruits = [1,2,3,2,2] -> 4 ([2,3,2,2]).
+```
+
 ## What the problem is really asking
 
 A row of trees, each bearing one type of fruit, given as `fruits[i]`. You have two baskets; each basket holds any amount of a *single* type. You pick a starting tree and walk right, taking one fruit from every tree, and you must stop as soon as a tree's type fits neither basket. How many fruits can you collect at most?

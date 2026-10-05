@@ -2,6 +2,15 @@
 
 *LeetCode 191 · Easy · Pattern: Clear lowest set bit (n & (n - 1)) · Reading time ~5 min*
 
+## The problem
+
+Given a 32-bit unsigned integer n, return the number of 1 bits in its binary representation (the Hamming weight).
+
+```text
+Example: 11 (0b1011) -> 3. Example: 128 (0b10000000) -> 1.
+  Example: 2^32 - 1 -> 32.
+```
+
 ## What the problem is really asking
 
 You get a 32-bit unsigned integer and must say how many of its 32 columns hold a 1. This count has a name, the Hamming weight or popcount. The answer is a single number between 0 and 32.

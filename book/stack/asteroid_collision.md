@@ -2,6 +2,15 @@
 
 *LeetCode 735 · Medium · Pattern: Stack simulation · Reading time ~6 min*
 
+## The problem
+
+Each asteroid has a size (absolute value) and direction (positive = right, negative = left); all move at the same
+speed. When two meet the smaller explodes (both if equal). Return the asteroids left after all collisions.
+
+```text
+Example: [5,10,-5] -> [5,10]; [8,-8] -> []; [10,2,-5] -> [10].
+```
+
 ## What the problem is really asking
 
 Asteroids sit in a row. Each number's absolute value is its size and its sign is its direction: positive moves right,

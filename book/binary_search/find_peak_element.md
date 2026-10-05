@@ -2,6 +2,15 @@
 
 *LeetCode 162 · Medium · Pattern: Binary search on a monotone predicate · Reading time ~7 min*
 
+## The problem
+
+A peak element is strictly greater than both neighbours; imagine nums[-1] = nums[n] = -inf and adjacent elements are
+never equal. Return the index of any peak in O(log n).
+
+```text
+Example: nums = [1,2,1,3,5,6,4] returns 1 or 5 (both are peaks).
+```
+
 ## What the problem is really asking
 
 An array where no two neighbours are equal. Pretend there is a value of minus infinity just outside each end. A *peak*

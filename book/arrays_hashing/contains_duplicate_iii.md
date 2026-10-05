@@ -1,6 +1,16 @@
 # Contains Duplicate III
 *LeetCode 220 · Hard · Pattern: Sliding window of value buckets · Reading time ~9 min*
 
+## The problem
+
+Given an integer array nums and integers indexDiff (k) and valueDiff (t), return True if there are two distinct
+indices i, j with |i - j| <= k and |nums[i] - nums[j]| <= t.
+
+```text
+Example: nums = [1,2,3,1], k = 3, t = 0 -> True (the two 1s are
+  3 apart). nums = [1,5,9,1,5,9], k = 2, t = 3 -> False.
+```
+
 ## What the problem is really asking
 
 You get an array `nums` and two limits: `indexDiff` (call it `k`) and `valueDiff` (call it `t`). Is there a pair of different positions that are close in *both* senses at once: at most `k` apart in index, and at most `t` apart in value? Return True or False.

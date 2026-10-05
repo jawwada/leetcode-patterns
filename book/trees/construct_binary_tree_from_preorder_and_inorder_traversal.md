@@ -2,6 +2,15 @@
 
 *LeetCode 105 · Medium · Pattern: Recursive tree construction with index map · Reading time ~8 min*
 
+## The problem
+
+Given the preorder and inorder traversals of a binary tree with unique values, rebuild the tree.
+
+```text
+Example: preorder=[3,9,20,15,7], inorder=[9,3,15,20,7] ->
+  [3,9,20,null,null,15,7].
+```
+
 ## What the problem is really asking
 
 You are given two lists describing the same binary tree. One is its preorder walk (node, then left subtree, then right subtree). The other is its inorder walk (left subtree, then node, then right subtree). All values are distinct. Rebuild the tree.

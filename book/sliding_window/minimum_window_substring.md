@@ -2,6 +2,15 @@
 
 *LeetCode 76 · Hard · Pattern: Variable-size sliding window · Reading time ~11 min*
 
+## The problem
+
+Given strings s and t, return the shortest substring of s that contains every character of t with multiplicity, or ""
+if none exists.
+
+```text
+Example: s = "ADOBECODEBANC", t = "ABC" -> "BANC".
+```
+
 ## What the problem is really asking
 
 Given a string `s` and a target `t`, find the shortest stretch of `s` that contains every character of `t`, counting repeats. If `t = "AABC"`, the stretch needs at least two `A`s, a `B` and a `C`. Extra characters are allowed. Order does not matter. If no stretch works, return the empty string.

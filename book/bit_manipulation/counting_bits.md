@@ -2,6 +2,14 @@
 
 *LeetCode 338 · Easy · Pattern: Reuse the count of i >> 1 · Reading time ~5 min*
 
+## The problem
+
+Given n, return an array ans of length n + 1 where ans[i] is the number of 1-bits in the binary form of i.
+
+```text
+Example: n = 5 -> [0,1,1,2,1,2] for 0, 1, 10, 11, 100, 101.
+```
+
 ## What the problem is really asking
 
 For every integer `i` from 0 to `n`, report how many 1-bits it has. The answer is a list of `n + 1` small numbers. The previous problem counted bits for one number. Here we count for a whole range, and the question becomes whether the counts can be built from each other instead of computed separately.

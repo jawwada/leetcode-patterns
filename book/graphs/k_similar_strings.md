@@ -1,6 +1,15 @@
 # K-Similar Strings
 *LeetCode 854 · Hard · Pattern: BFS over states with pruned branching (fix the first mismatch) · Reading time ~10 min*
 
+## The problem
+
+s1 and s2 are anagrams of each other (letters a-f, length <= 20). One move swaps two letters of s1. Return the minimum
+number of swaps that turns s1 into s2.
+
+```text
+Example: s1="abac", s2="baca" -> 2 (abac -> baac -> baca).
+```
+
 ## What the problem is really asking
 
 You get two strings `s1` and `s2` that are anagrams of each other: same letters, same

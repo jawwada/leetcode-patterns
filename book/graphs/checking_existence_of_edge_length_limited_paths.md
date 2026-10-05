@@ -1,6 +1,17 @@
 # Checking Existence of Edge Length Limited Paths
 *LeetCode 1697 · Hard · Pattern: Union-Find (disjoint set union) · Reading time ~10 min*
 
+## The problem
+
+An undirected graph on n nodes has weighted edgeList (parallel edges allowed) and queries [p, q, limit]. For each
+query answer whether a path from p to q exists using only edges of weight strictly less than limit; return the
+booleans in query order.
+
+```text
+Example: n=3, edgeList=[[0,1,2],[1,2,4],[2,0,8],[1,0,16]],
+  queries=[[0,1,2],[0,2,5]] -> [false, true].
+```
+
 ## What the problem is really asking
 
 You have an undirected graph on `n` nodes. Each edge has a length, and there may be

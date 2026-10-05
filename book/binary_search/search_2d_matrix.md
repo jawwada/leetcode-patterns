@@ -2,6 +2,16 @@
 
 *LeetCode 74 · Medium · Pattern: Binary search on a sorted array · Reading time ~6 min*
 
+## The problem
+
+An m x n matrix has every row sorted ascending and the first element of each row greater than the last element of the
+previous row. Return True if target is present.
+
+```text
+Example: matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]],
+  target = 3 returns True; target = 13 returns False.
+```
+
 ## What the problem is really asking
 
 You get an m x n grid of integers with two promises: each row is sorted left to right, and the first number of each row

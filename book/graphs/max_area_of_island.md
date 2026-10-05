@@ -2,6 +2,16 @@
 
 *LeetCode 695 · Medium · Pattern: Grid flood fill (DFS/BFS) · Reading time ~6 min*
 
+## The problem
+
+Given an m x n binary grid, an island is a maximal group of 1 cells connected 4-directionally. Return the area (cell
+count) of the largest island, or 0 if there is no land.
+
+```text
+Example: [[0,1,0],[1,1,0],[0,0,1]] -> 3, from the three
+  connected 1s in the top-left.
+```
+
 ## What the problem is really asking
 
 A binary grid again: `1` is land, `0` water, and land cells touching up, down, left or right form an island. The area

@@ -2,6 +2,17 @@
 
 *LeetCode 1020 · Medium · Pattern: Multi-source reverse BFS/DFS from the boundary · Reading time ~6 min*
 
+## The problem
+
+In an m x n grid, 1 is land and 0 is sea. A move goes to a 4-adjacent land cell or off the edge of the grid. Return
+the number of land cells from which you cannot walk off the grid.
+
+```text
+Example: [[0,0,0,0],[1,0,1,0],[0,1,1,0],[0,0,0,0]] -> 3; the
+  land at (1,0) is on the border, the other three cells are
+  enclosed.
+```
+
 ## What the problem is really asking
 
 In a grid of `1` (land) and `0` (sea), you may walk from a land cell to an adjacent land cell, or step off the edge of

@@ -2,6 +2,15 @@
 
 *LeetCode 230 · Medium · Pattern: Iterative in-order traversal with early stop · Reading time ~7 min*
 
+## The problem
+
+Given the root of a BST and an integer k, return the k-th smallest value (1-indexed).
+
+```text
+Example: [3,1,4,null,2], k=1 -> 1; [5,3,6,2,4,null,null,1], k=3
+  -> 3.
+```
+
 ## What the problem is really asking
 
 You get a valid BST and an integer `k` (1-indexed). Return the `k`-th smallest value in it.

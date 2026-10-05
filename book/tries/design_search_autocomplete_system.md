@@ -1,6 +1,18 @@
 # Design Search Autocomplete System
 *LeetCode 642 · Hard · Pattern: Trie with per-node frequency map + cursor that follows keystrokes · Reading time ~11 min*
 
+## The problem
+
+AutocompleteSystem(sentences, times) seeds a history in which sentences[i] was typed times[i] times. input(c) receives
+one character. If c is '#', the typed sentence is saved with +1 count and [] is returned. Otherwise it returns up to 3
+historical sentences that start with everything typed so far, ordered by count descending and then ASCII.
+
+```text
+Example: with history {"i love you":5, "island":3, "ironman":2,
+  "i love leetcode":2}, input('i') returns ["i love
+  you","island","i love leetcode"].
+```
+
 ## What the problem is really asking
 
 Build the search box of a website. It starts with a history: `sentences[i]` was typed `times[i]` times. Then the user types one character at a time through `input(c)`:

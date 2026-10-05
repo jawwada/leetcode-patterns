@@ -2,6 +2,15 @@
 
 *LeetCode 567 · Medium · Pattern: Fixed-size sliding window with counts · Reading time ~8 min*
 
+## The problem
+
+Return True if some permutation of s1 appears as a contiguous substring of s2.
+
+```text
+Example: s1 = "ab", s2 = "eidbaooo" -> True ("ba"); s1 = "ab",
+  s2 = "eidboaoo" -> False.
+```
+
 ## What the problem is really asking
 
 You get a short string `s1` and a longer string `s2`. The question is whether some rearrangement of `s1` appears in `s2` as one unbroken stretch of letters. "Rearrangement" is the important word. We do not care about the order of the letters inside the stretch, only about which letters are there and how many of each.

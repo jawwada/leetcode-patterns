@@ -2,6 +2,16 @@
 
 *LeetCode 35 · Easy · Pattern: Binary search for a boundary (lower / upper bound) · Reading time ~5 min*
 
+## The problem
+
+Given a sorted array of distinct integers and a target, return the index of target if present, otherwise the index
+where it would be inserted to keep the array sorted, in O(log n).
+
+```text
+Example: nums = [1,3,5,6], target = 5 -> 2; target = 2 -> 1;
+  target = 7 -> 4.
+```
+
 ## What the problem is really asking
 
 Sorted distinct integers and a target. If the target is present, return its index. If not, return the index where it

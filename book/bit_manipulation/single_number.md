@@ -2,6 +2,15 @@
 
 *LeetCode 136 · Easy · Pattern: XOR cancellation · Reading time ~5 min*
 
+## The problem
+
+Every element of a non-empty array appears exactly twice except one, which appears once; find that element in linear
+time using constant extra space.
+
+```text
+Example: [4,1,2,1,2] -> 4. Example: [2,2,1] -> 1.
+```
+
 ## What the problem is really asking
 
 Every value in the array appears exactly twice, except one value that appears once. Return that loner. The answer is one of the array's values. The difficulty is entirely in the constraints: linear time and constant extra space. A hash set would solve it in one pass, but a hash set grows with the input.

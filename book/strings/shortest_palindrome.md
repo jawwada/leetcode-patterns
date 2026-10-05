@@ -2,6 +2,16 @@
 
 *LeetCode 214 · Hard · Pattern: KMP failure function (longest border) · Reading time ~10 min*
 
+## The problem
+
+You may add characters only in front of s; return the shortest palindrome you can form.
+
+```text
+Example: "aacecaaa" -> "aaacecaaa" (prepend "a"); "abcd" ->
+  "dcbabcd" (prepend "dcb"). Equivalently: find the longest
+  palindromic prefix p of s and return reverse(s[len(p):]) + s.
+```
+
 ## What the problem is really asking
 
 You may add characters only to the front of `s`. Return the shortest palindrome you can make that way. `"abcd"` becomes `"dcbabcd"`. `"aacecaaa"` becomes `"aaacecaaa"`: one `a` in front is enough.

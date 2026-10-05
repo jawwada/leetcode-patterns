@@ -1,6 +1,15 @@
 # Sort Colors
 *LeetCode 75 · Medium · Pattern: Dutch national flag (three-way partition) · Reading time ~7 min*
 
+## The problem
+
+Given an array containing only 0s, 1s and 2s, sort it in place so all 0s come first, then 1s, then 2s, without the
+library sort. Aim for one pass with O(1) space.
+
+```text
+Example: nums = [2, 0, 2, 1, 1, 0] -> [0, 0, 1, 1, 2, 2].
+```
+
 ## What the problem is really asking
 
 The array holds only 0s, 1s and 2s (red, white, blue). Sort it in place, without the library sort, ideally in one pass with O(1) extra space. Nothing is returned.

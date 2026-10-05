@@ -2,6 +2,18 @@
 
 *LeetCode 715 · Hard · Pattern: Sorted disjoint intervals with bisect · Reading time ~12 min*
 
+## The problem
+
+Track half-open ranges [left, right) of numbers. addRange(l, r) marks the range tracked, removeRange(l, r) untracks
+it, and queryRange(l, r) returns True iff every point of [l, r) is currently tracked; the three operations interleave
+arbitrarily.
+
+```text
+Example: addRange(10,20); removeRange(14,16); queryRange(10,14)
+  -> True; queryRange(13,15) -> False; queryRange(16,17) ->
+  True.
+```
+
 ## What the problem is really asking
 
 You own a number line. Three operations arrive in any order:

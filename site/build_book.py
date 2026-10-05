@@ -23,7 +23,7 @@ CHAPTERS = [
 ]
 
 PROBLEM_HEADINGS = [
-    "What the problem is really asking", "Do it by hand first", "The first honest attempt",
+    "The problem", "What the problem is really asking", "Do it by hand first", "The first honest attempt",
     "The turning point", "Watch it work", "Why it is correct", "Cost",
     "Variations you will meet", "What to carry forward",
 ]
@@ -36,6 +36,17 @@ BG_HEADINGS = [
 
 def headings(md):
     return [m.group(1).strip() for m in re.finditer(r"^## (.+)$", md, re.M)]
+
+
+def split_statement(md):
+    """Return (markdown of the '## The problem' section body, md with that section removed).
+
+    The statement lives in the .md so the file reads completely on GitHub; the page renders it in its own
+    box under the title, so it is cut out of the prose body here."""
+    m = re.search(r"^## The problem\n([\s\S]*?)(?=^## )", md, re.M)
+    if not m:
+        return "", md
+    return m.group(1).strip(), md[:m.start()] + md[m.end():]
 
 
 def check_md(path, md, expected, errors):
@@ -89,13 +100,16 @@ def main() -> int:
                 continue
             md = open(path).read()
             check_md(path, md, PROBLEM_HEADINGS, errors)
+            statement, md = split_statement(md)
+            if not statement:
+                errors.append(f"{path}: '## The problem' section is empty")
             p = problems.get(slug)
             if not p:
                 continue
             bf = p.get("brute_force") or {}
             sections.append({
                 "slug": slug, "title": p["title"], "leetcode": p["leetcode"], "difficulty": p["difficulty"],
-                "pattern": p["pattern"], "file": p["file"], "problem": p["problem"], "why_here": o.get("why_here", ""), "md": md,
+                "pattern": p["pattern"], "file": p["file"], "problem": p["problem"], "statement": statement, "why_here": o.get("why_here", ""), "md": md,
                 "code": p["code"], "time": p["complexity"]["time"], "space": p["complexity"]["space"],
                 "brute_code": bf.get("code", ""), "brute_time": bf.get("time", ""), "brute_space": bf.get("space", ""),
             })

@@ -2,6 +2,15 @@
 
 *LeetCode 233 · Hard · Pattern: Digit counting by position (high / current / low split) · Reading time ~8 min*
 
+## The problem
+
+Count the total number of digit 1 appearing in all non-negative integers less than or equal to n, with n up to 2*10^9.
+
+```text
+Example: n = 13 returns 6, because 1, 10, 11, 12, 13 contain 1 +
+  1 + 2 + 1 + 1 ones. Example: n = 0 returns 0.
+```
+
 ## What the problem is really asking
 
 Write down every integer from `0` to `n`. Count how many times the character `1` appears in total. `n` goes up to about `2 * 10^9`.

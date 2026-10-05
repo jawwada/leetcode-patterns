@@ -1,6 +1,15 @@
 # Critical Connections in a Network
 *LeetCode 1192 · Hard · Pattern: Tarjan bridges (DFS low-link) · Reading time ~13 min*
 
+## The problem
+
+n servers 0..n-1 are joined by undirected connections forming a connected graph. A connection is critical if removing
+it disconnects some pair of servers. Return all critical connections in any order.
+
+```text
+Example: n=4, connections=[[0,1],[1,2],[2,0],[1,3]] -> [[1,3]].
+```
+
 ## What the problem is really asking
 
 `n` servers are joined by undirected cables, and the whole network is connected. A cable is

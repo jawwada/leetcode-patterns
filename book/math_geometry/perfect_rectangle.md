@@ -2,6 +2,18 @@
 
 *LeetCode 391 · Hard · Pattern: Corner parity + area invariant · Reading time ~9 min*
 
+## The problem
+
+Given n axis-aligned rectangles [x1, y1, x2, y2], return True iff together they form an exact cover of some rectangle:
+no gaps and no overlaps.
+
+```text
+Example: [[1,1,3,3],[3,1,4,2],[3,2,4,4],[1,3,2,4],[2,3,3,4]] ->
+  True (they tile the 3x3 square [1,1,4,4]);
+  [[1,1,2,3],[1,3,2,4],[3,1,4,2],[3,2,4,4]] -> False (gap in the
+  middle).
+```
+
 ## What the problem is really asking
 
 You get `n` axis-aligned rectangles, each as `[x1, y1, x2, y2]` (bottom-left and top-right corners), with `n` up to `2 * 10^4`. Return `True` iff together they tile one big rectangle *exactly*: no gaps, no overlaps.

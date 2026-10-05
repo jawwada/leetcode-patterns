@@ -2,6 +2,16 @@
 
 *LeetCode 34 · Medium · Pattern: Binary search for a boundary (lower / upper bound) · Reading time ~7 min*
 
+## The problem
+
+Given a non-decreasing array nums and a target, return [first, last] indices of target, or [-1, -1] if absent, in
+O(log n).
+
+```text
+Example: nums = [5,7,7,8,8,10], target = 8 returns [3, 4];
+  target = 6 returns [-1, -1].
+```
+
 ## What the problem is really asking
 
 The array is sorted but may contain repeats. Given a target, return the index of its first copy and the index of its

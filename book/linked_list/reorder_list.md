@@ -1,6 +1,15 @@
 # Reorder List
 *LeetCode 143 · Medium · Pattern: Find middle + reverse second half + interleave · Reading time ~8 min*
 
+## The problem
+
+Given L0 -> L1 -> ... -> Ln, reorder it in place to L0 -> Ln -> L1 -> Ln-1 -> L2 -> Ln-2 -> ..., changing only node
+links, not values.
+
+```text
+Example: 1->2->3->4->5 becomes 1->5->2->4->3.
+```
+
 ## What the problem is really asking
 
 Take a list L0 -> L1 -> ... -> Ln and rearrange its nodes into L0 -> Ln -> L1 -> Ln-1 -> L2 -> ... : first, last, second, second-to-last, and so on, alternating inward from both ends. You must move nodes by relinking, not by swapping values, and you return nothing; the list is changed in place.

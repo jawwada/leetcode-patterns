@@ -1,6 +1,16 @@
 # Employee Free Time
 *LeetCode 759 · Hard · Pattern: K-way merge of sorted interval lists with a min-heap, emitting gaps · Reading time ~10 min*
 
+## The problem
+
+schedule[i] is the sorted, non-overlapping list of working intervals of employee i. Return the finite intervals of
+positive length during which every employee is free, in sorted order.
+
+```text
+Example: [[[1,2],[5,6]],[[1,3]],[[4,10]]] -> [[3,4]].
+  [[[1,3],[6,7]],[[2,4]],[[2,5],[9,12]]] -> [[5,6],[7,9]].
+```
+
 ## What the problem is really asking
 
 There are k employees. Each one has a list of working intervals, already sorted by start and pairwise disjoint within that employee. You want the stretches of time when **nobody** is working, the common free time. Only finite stretches count (the time before the first shift and after the last one is unbounded, so ignore it), and only stretches of positive length count. If one person stops at 4 and another starts at 4, there is no gap.

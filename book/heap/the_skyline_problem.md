@@ -2,6 +2,17 @@
 
 *LeetCode 218 · Hard · Pattern: Sweep line over events + max-heap with lazy removal · Reading time ~12 min*
 
+## The problem
+
+Buildings are given as [left, right, height] rectangles on a shared ground line. Return the skyline as a list of key
+points [x, y] where the outline's height changes, sorted by x and ending with a point of height 0; consecutive points
+must not share a height.
+
+```text
+Example: [[2,9,10],[3,7,15],[5,12,12],[15,20,10],[19,24,8]] ->
+  [[2,10],[3,15],[7,12],[12,0],[15,10],[20,8],[24,0]].
+```
+
 ## What the problem is really asking
 
 Each building is a rectangle `[left, right, height]` standing on the ground. Look at the city from far away: you see one outline, the upper envelope of all the rectangles. Describe that outline as a list of **key points** `[x, y]`: the places where, walking left to right, the outline's height changes, and the new height there. The last key point always drops to height 0. Two consecutive key points may not share a height (no redundant points).

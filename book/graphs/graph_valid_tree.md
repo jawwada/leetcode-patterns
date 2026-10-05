@@ -1,6 +1,17 @@
 # Graph Valid Tree
 *LeetCode 261 · Medium · Pattern: Union-Find (disjoint set union) · Reading time ~9 min*
 
+## The problem
+
+Given n nodes labelled 0..n-1 and a list of undirected edges, return true iff the edges form a valid tree: the graph
+is connected and has no cycle.
+
+```text
+Example: n=5, [[0,1],[0,2],[0,3],[1,4]] -> true; n=5,
+  [[0,1],[1,2],[2,3],[1,3],[1,4]] -> false because 1-2-3-1 is a
+  cycle.
+```
+
 ## What the problem is really asking
 
 You get `n` nodes `0..n-1` and a list of undirected edges. Say yes if the edges form a tree.

@@ -2,6 +2,16 @@
 
 *LeetCode 295 · Hard · Pattern: Two heaps (balanced max-heap / min-heap) · Reading time ~10 min*
 
+## The problem
+
+Design a class with addNum(num) and findMedian(). findMedian returns the median of all numbers added so far: the
+middle value for an odd count, the mean of the two middle values for an even count.
+
+```text
+Example: add(1), add(2) -> findMedian()=1.5; add(3) ->
+  findMedian()=2.0.
+```
+
 ## What the problem is really asking
 
 Numbers arrive one at a time through `addNum`. At any moment, `findMedian` must return the median of everything seen so far: the middle value if the count is odd, the average of the two middle values if it is even. Calls can be interleaved freely, for example tens of thousands of adds with a median query after each one.

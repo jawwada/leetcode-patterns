@@ -1,6 +1,16 @@
 # Valid Anagram
 *LeetCode 242 · Easy · Pattern: Fixed-alphabet frequency count · Reading time ~5 min*
 
+## The problem
+
+Given two lowercase strings s and t, return True if t is an anagram of s: the same letters with the same
+multiplicities, in any order.
+
+```text
+Example: s = 'anagram', t = 'nagaram' -> True; s = 'rat', t =
+  'car' -> False.
+```
+
 ## What the problem is really asking
 
 Given two lowercase strings `s` and `t`, decide whether `t` is a rearrangement of `s`: the same letters, each used the same number of times, in any order. The answer is a single boolean. The interesting part is how much information you may throw away.

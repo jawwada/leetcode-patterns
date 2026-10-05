@@ -1,6 +1,14 @@
 # Palindrome Linked List
 *LeetCode 234 · Easy · Pattern: Find middle + reverse second half + interleave · Reading time ~6 min*
 
+## The problem
+
+Return True if a singly linked list reads the same forwards and backwards.
+
+```text
+Example: 1->2->2->1 returns True; 1->2 returns False.
+```
+
 ## What the problem is really asking
 
 Does the list read the same forwards and backwards? The answer is a single boolean. The follow-up asks for O(n) time and O(1) extra space, and that is what makes it interesting: a palindrome check compares the first element with the last, the second with the second-to-last, and so on, but a singly linked list can only be walked forward.

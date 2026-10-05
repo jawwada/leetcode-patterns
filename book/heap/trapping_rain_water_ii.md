@@ -2,6 +2,16 @@
 
 *LeetCode 407 · Hard · Pattern: Min-heap frontier expanding inward from the boundary (lowest wall first) · Reading time ~13 min*
 
+## The problem
+
+Given an m x n elevation map, return the volume of water trapped after raining. Water can only escape over the border,
+flowing through 4-directionally adjacent cells.
+
+```text
+Example: [[1,4,3,1,3,2],[3,2,1,3,2,4],[2,3,3,2,3,1]] -> 4 (the
+  middle row's 2, 1 and 2 fill up to height 3).
+```
+
 ## What the problem is really asking
 
 You get a grid of non-negative heights, an elevation map seen from above. It rains a lot. Water flows between cells that share an edge (up, down, left, right), and it can leave the map only by flowing over the outer border. How much water stays on the map?

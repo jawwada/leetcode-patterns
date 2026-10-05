@@ -2,6 +2,15 @@
 
 *LeetCode 84 · Hard · Pattern: Monotonic stack · Reading time ~11 min*
 
+## The problem
+
+Given bar heights of width 1, return the area of the largest rectangle that fits entirely inside the histogram.
+
+```text
+Example: heights = [2,1,5,6,2,3] -> 10 (height 5 spanning the
+  bars 5 and 6).
+```
+
 ## What the problem is really asking
 
 You get a row of bars, each one unit wide, with given heights. Find the largest axis-aligned rectangle that fits entirely inside the bars, and return its area.

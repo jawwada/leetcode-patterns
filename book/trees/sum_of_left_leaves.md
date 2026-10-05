@@ -2,6 +2,16 @@
 
 *LeetCode 404 · Easy · Pattern: DFS carrying path state · Reading time ~6 min*
 
+## The problem
+
+Given the root of a binary tree, return the sum of all left leaves: nodes with no children that are the left child of
+their parent. A single root node is not a left leaf.
+
+```text
+Example: [3,9,20,null,null,15,7] -> 24, because 9 and 15 are
+  left leaves while 7 is a right leaf.
+```
+
 ## What the problem is really asking
 
 Add up the values of the nodes that satisfy two conditions at once: the node has no children (it is a leaf), and it hangs off its parent's left pointer (it is a left child). The answer is a single integer. A tree that is only a root has no left leaves, because the root has no parent at all.

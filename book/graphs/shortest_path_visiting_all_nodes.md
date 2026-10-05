@@ -1,6 +1,15 @@
 # Shortest Path Visiting All Nodes
 *LeetCode 847 · Hard · Pattern: BFS over augmented states (position + bitmask/budget) · Reading time ~9 min*
 
+## The problem
+
+An undirected connected graph with n <= 12 nodes is given as adjacency lists. Return the length of the shortest walk
+that visits every node at least once; you may start anywhere and revisit nodes and edges.
+
+```text
+Example: [[1,2,3],[0],[0],[0]] -> 4 via 1-0-2-0-3.
+```
+
 ## What the problem is really asking
 
 You get an undirected, connected graph with n nodes (n <= 12) as adjacency lists. Find

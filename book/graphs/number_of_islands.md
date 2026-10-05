@@ -2,6 +2,17 @@
 
 *LeetCode 200 · Medium · Pattern: Grid flood fill (DFS/BFS) · Reading time ~7 min*
 
+## The problem
+
+Given an m x n grid of '1' (land) and '0' (water), count the islands, where an island is a maximal group of '1' cells
+connected horizontally or vertically.
+
+```text
+Example: [["1","1","0"],["0","1","0"],["0","0","1"]] has 2
+  islands: the L-shape in the top-left and the lone cell at the
+  bottom-right.
+```
+
 ## What the problem is really asking
 
 The grid is a map: `'1'` is land, `'0'` is water. Land cells that touch up, down, left or right belong to the same

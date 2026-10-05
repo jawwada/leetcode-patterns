@@ -1,6 +1,16 @@
 # 24 Game
 *LeetCode 679 · Hard · Pattern: Reduce-the-multiset backtracking (combine two values, recurse on the rest) · Reading time ~10 min*
 
+## The problem
+
+Given four cards with values 1..9, decide whether +, -, *, / (real division) and parentheses can be arranged so the
+expression equals 24. Every card is used exactly once and operators are binary.
+
+```text
+Example: [4,1,8,7] -> True because (8 - 4) * (7 - 1) = 24;
+  [1,2,1,2] -> False.
+```
+
 ## What the problem is really asking
 
 You hold four cards, each a number from 1 to 9. Using `+`, `-`, `*`, `/` (real division, not

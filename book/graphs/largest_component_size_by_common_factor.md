@@ -1,6 +1,16 @@
 # Largest Component Size by Common Factor
 *LeetCode 952 · Hard · Pattern: Union-Find (disjoint set union) · Reading time ~10 min*
 
+## The problem
+
+Given unique positive integers nums, build a graph with an edge between nums[i] and nums[j] whenever gcd(nums[i],
+nums[j]) > 1. Return the size of the largest connected component.
+
+```text
+Example: [4,6,15,35] -> 4 (4-6 via 2, 6-15 via 3, 15-35 via 5);
+  [20,50,9,63] -> 2.
+```
+
 ## What the problem is really asking
 
 You get a list of distinct positive integers. Imagine each number as a node, and draw an

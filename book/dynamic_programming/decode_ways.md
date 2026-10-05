@@ -2,6 +2,15 @@
 
 *LeetCode 91 · Medium · Pattern: 1-D DP over prefixes (Fibonacci-style) · Reading time ~6 min*
 
+## The problem
+
+Letters map to numbers 'A' -> "1" through 'Z' -> "26". Given a digit string s, return how many ways it can be decoded
+back into letters; a code with a leading zero such as "06" is invalid.
+
+```text
+Example: "226" -> 3 (2 2 6, 22 6, 2 26); "06" -> 0.
+```
+
 ## What the problem is really asking
 
 Letters were encoded as numbers, `A = 1` through `Z = 26`, and the numbers were glued together with no separators. Given the digit string, count how many letter strings could have produced it. A code may not have a leading zero: `"06"` is not 6, it is invalid.

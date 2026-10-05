@@ -2,6 +2,20 @@
 
 *LeetCode 1912 · Hard · Pattern: Heaps with lazy deletion by version stamp · Reading time ~13 min*
 
+## The problem
+
+There are n shops, and entries[i] = [shop, movie, price] means shop has one copy of movie at that price. search(movie)
+returns up to 5 shops with an unrented copy, cheapest first, ties broken by shop id. rent(shop, movie) and drop(shop,
+movie) rent and return that copy. report() returns up to 5 rented copies as [shop, movie], cheapest first, ties broken
+by shop then movie.
+
+```text
+Example: entries
+  [[0,1,5],[0,2,6],[0,3,7],[1,1,4],[1,2,7],[2,1,5]]: search(1)
+  -> [1,0,2]; rent(0,1); rent(1,2); report() -> [[0,1],[1,2]];
+  drop(1,2); search(2) -> [0,1].
+```
+
 ## What the problem is really asking
 
 A chain has n shops. Each entry `[shop, movie, price]` says that shop owns one copy of that movie, at that price. A copy

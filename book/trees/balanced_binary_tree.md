@@ -2,6 +2,16 @@
 
 *LeetCode 110 · Easy · Pattern: Post-order height with side-channel answer · Reading time ~5 min*
 
+## The problem
+
+A binary tree is height-balanced if at every node the heights of the left and right subtrees differ by at most 1.
+Return whether the tree is balanced.
+
+```text
+Example: [3,9,20,null,null,15,7] is balanced;
+  [1,2,2,3,3,null,null,4,4] is not.
+```
+
 ## What the problem is really asking
 
 A tree is height-balanced when, at **every** node, the heights of its left and right subtrees differ by at most 1.

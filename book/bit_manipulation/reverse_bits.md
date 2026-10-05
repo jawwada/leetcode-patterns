@@ -2,6 +2,16 @@
 
 *LeetCode 190 · Easy · Pattern: Bit-by-bit shift and accumulate · Reading time ~5 min*
 
+## The problem
+
+Reverse the bits of a 32-bit unsigned integer: bit 0 becomes bit 31, bit 1 becomes bit 30, and so on.
+
+```text
+Example: 43261596 (00000010100101000001111010011100) ->
+  964176192 (00111001011110000010100101000000). Example: 1 ->
+  2147483648.
+```
+
 ## What the problem is really asking
 
 Take a 32-bit unsigned integer and mirror its columns. Column 0 goes to column 31, column 1 goes to column 30, and so on. Return the integer that the mirrored pattern spells. The answer is another 32-bit integer.

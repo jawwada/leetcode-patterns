@@ -2,6 +2,14 @@
 
 *LeetCode 206 · Easy · Pattern: In-place pointer reversal · Reading time ~6 min*
 
+## The problem
+
+Given the head of a singly linked list, reverse it and return the new head.
+
+```text
+Example: 1 -> 2 -> 3 -> 4 -> 5 becomes 5 -> 4 -> 3 -> 2 -> 1.
+```
+
 ## What the problem is really asking
 
 You get the first node of a chain. Make the chain run the other way and hand back the node that is now first. The answer

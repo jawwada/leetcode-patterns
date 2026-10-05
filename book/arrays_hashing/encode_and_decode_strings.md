@@ -1,6 +1,16 @@
 # Encode and Decode Strings
 *LeetCode 271 · Medium · Pattern: Length-prefixed serialization · Reading time ~6 min*
 
+## The problem
+
+Design encode(list of strings) -> single string and decode(string) -> list, so that decode(encode(strs)) == strs for
+any strings, including empty strings and strings containing any character such as commas or '#'.
+
+```text
+Example: ["lint", "code", "love", "you"] ->
+  "4#lint4#code4#love3#you" -> back to the original list.
+```
+
 ## What the problem is really asking
 
 You must write two functions. `encode` squeezes a list of strings into one single string, and `decode` turns that string back into the exact same list. Exact means exact: the same number of strings, in the same order, with the same characters, and that includes empty strings and strings full of commas, `#` signs, digits, backslashes, or anything else. You may not assume any character is "safe".

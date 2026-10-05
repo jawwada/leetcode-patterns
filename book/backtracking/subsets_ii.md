@@ -2,6 +2,14 @@
 
 *LeetCode 90 · Medium · Pattern: Backtracking with sort + skip-duplicates-at-same-depth · Reading time ~7 min*
 
+## The problem
+
+Given an array that may contain duplicates, return all possible subsets with no duplicate subsets, in any order.
+
+```text
+Example: [1,2,2] -> [[],[1],[2],[1,2],[2,2],[1,2,2]].
+```
+
 ## What the problem is really asking
 
 Same as Subsets, with one change: the input may contain repeated values, and the output must not contain the same subset twice. "Same" means same multiset of values. With `[1,2,2]`, picking the first 2 or the second 2 gives the same subset `[2]`, and it must appear only once.

@@ -1,6 +1,17 @@
 # Number of Islands II
 *LeetCode 305 · Hard · Pattern: Union-Find (disjoint set union) · Reading time ~13 min*
 
+## The problem
+
+An m x n grid starts as all water. Each positions[i] = (r, c) turns that cell into land, one operation at a time;
+after each operation report the number of islands (4-directionally connected land groups). The same cell may be added
+twice, and the second add changes nothing.
+
+```text
+Example: m=3, n=3, positions=[[0,0],[0,1],[1,2],[2,1]] ->
+  [1,1,2,3].
+```
+
 ## What the problem is really asking
 
 You have an `m x n` board that starts as all water. You get a list of operations. Each one

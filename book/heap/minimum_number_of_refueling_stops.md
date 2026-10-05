@@ -2,6 +2,18 @@
 
 *LeetCode 871 · Hard · Pattern: Greedy with a max-heap of passed-but-unused options (refuel only when stuck) · Reading time ~12 min*
 
+## The problem
+
+A car starts with startFuel litres and must reach position target, using one litre per mile. stations[i] = [position,
+fuel] are sorted by position and lie before the target. Return the minimum number of refuelling stops, or -1 if the
+target is unreachable; the tank is unlimited.
+
+```text
+Example: target=100, startFuel=10,
+  stations=[[10,60],[20,30],[30,30],[60,40]] -> 2 (stop at 10
+  for 60 litres, then at 60 for 40).
+```
+
 ## What the problem is really asking
 
 A car drives along a straight road from mile 0 to mile `target`. It burns one litre per mile, starts with `startFuel` litres, and has a tank with no upper limit. Gas stations sit along the road, sorted by position, each offering a fixed amount of fuel that you take all at once if you stop there. You want the smallest number of stops that still gets you to the target, or `-1` if no set of stops does.

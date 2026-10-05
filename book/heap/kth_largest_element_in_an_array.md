@@ -2,6 +2,16 @@
 
 *LeetCode 215 · Medium · Pattern: Quickselect (partition, recurse one side) · Reading time ~8 min*
 
+## The problem
+
+Given an integer array nums and k, return the k-th largest element in sorted order (duplicates count), without fully
+sorting.
+
+```text
+Example: nums=[3,2,1,5,6,4], k=2 -> 5. Example:
+  nums=[3,2,3,1,2,4,5,5,6], k=4 -> 4.
+```
+
 ## What the problem is really asking
 
 You get an unsorted array and a number k. Return the value that would sit at position k (counting from the top, 1-based)

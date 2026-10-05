@@ -2,6 +2,16 @@
 
 *LeetCode 480 · Hard · Pattern: Two heaps with lazy deletion · Reading time ~13 min*
 
+## The problem
+
+Given an integer array nums and a window size k, return the median of every contiguous window of size k as it slides
+from left to right; for even k the median is the mean of the two middle values.
+
+```text
+Example: nums = [1,3,-1,-3,5,3,6,7], k = 3 -> [1, -1, -1, 3, 5,
+  6].
+```
+
 ## What the problem is really asking
 
 Slide a window of width `k` across `nums` and report the median of every window. For odd `k` the median is the middle value once the window is sorted; for even `k` it is the average of the two middle values, which can be a fraction.

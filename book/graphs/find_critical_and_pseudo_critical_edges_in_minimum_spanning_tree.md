@@ -1,6 +1,24 @@
 # Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree
 *LeetCode 1489 · Hard · Pattern: Kruskal MST (sorted edges + union-find) · Reading time ~12 min*
 
+## The problem
+
+A weighted undirected connected graph on n nodes has edges[i] = [u, v, w]. An edge is critical if deleting it raises
+the MST weight, and pseudo-critical if it appears in some MST but not all. Return [critical indices, pseudo-critical
+indices].
+
+```text
+Example: n=5,
+  edges=[[0,1,1],
+   [1,2,1],
+   [2,3,2],
+   [0,3,2],
+   [0,4,3],
+   [3,4,3],
+   [1,4,6]]
+  -> [[0,1],[2,3,4,5]].
+```
+
 ## What the problem is really asking
 
 A connected, undirected, weighted graph can have several minimum spanning trees when

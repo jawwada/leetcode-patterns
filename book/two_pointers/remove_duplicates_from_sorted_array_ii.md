@@ -1,6 +1,16 @@
 # Remove Duplicates from Sorted Array II
 *LeetCode 80 · Medium · Pattern: Slow/fast pointers with look-back · Reading time ~7 min*
 
+## The problem
+
+Given a sorted array, remove duplicates in place so each value appears at most twice while keeping relative order, and
+return the new length k; the first k slots must hold the result and extra space must be O(1).
+
+```text
+Example: nums = [1, 1, 1, 2, 2, 3] -> k = 5 with nums[:5] = [1,
+  1, 2, 2, 3].
+```
+
 ## What the problem is really asking
 
 You get a sorted array. Edit it in place so that every value appears at most twice, keep the order, and return the new length `k`. Only the first `k` cells are judged; whatever sits after them is ignored. Extra space must be O(1).

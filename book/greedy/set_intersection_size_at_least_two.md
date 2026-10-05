@@ -2,6 +2,16 @@
 
 *LeetCode 757 · Hard · Pattern: Greedy by earliest end (interval scheduling) · Reading time ~9 min*
 
+## The problem
+
+Given closed integer intervals [start, end], find the smallest set of integers S such that every interval contains at
+least two elements of S; return |S|.
+
+```text
+Example: [[1,3],[3,7],[8,9]] -> 5 (S = {2,3,4,8,9}).
+  [[1,3],[1,4],[2,5],[3,5]] -> 3 (S = {2,3,5}).
+```
+
 ## What the problem is really asking
 
 You get closed integer intervals `[start, end]`. Choose a set `S` of integers, as small as possible, such that every interval contains at least two members of `S`. Return `|S|`.

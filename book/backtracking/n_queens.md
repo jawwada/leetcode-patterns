@@ -1,6 +1,17 @@
 # N-Queens
 *LeetCode 51 · Hard · Pattern: Row-by-row backtracking with column/diagonal sets · Reading time ~10 min*
 
+## The problem
+
+Place n queens on an n x n board so that no two attack each other (same row, column or diagonal) and return every
+distinct board as a list of strings with Q for a queen and . for empty.
+
+```text
+Example: n=4 ->
+  [[".Q..","...Q","Q...","..Q."],["..Q.","Q...","...Q",".Q.."]].
+  Example: n=1 -> [["Q"]].
+```
+
 ## What the problem is really asking
 
 Put `n` queens on an `n x n` chessboard so that no two attack each other. A queen attacks

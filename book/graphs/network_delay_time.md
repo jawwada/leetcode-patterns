@@ -1,6 +1,16 @@
 # Network Delay Time
 *LeetCode 743 · Medium · Pattern: Dijkstra (min-heap shortest paths) · Reading time ~10 min*
 
+## The problem
+
+There are n nodes labelled 1..n and directed edges times[i] = (u, v, w) meaning a signal takes w time units to travel
+from u to v. A signal is sent from node k. Return the time at which every node has received it, or -1 if some node
+never does.
+
+```text
+Example: times=[[2,1,1],[2,3,1],[3,4,1]], n=4, k=2 -> 2.
+```
+
 ## What the problem is really asking
 
 There are `n` nodes, `1` to `n`, and directed edges `(u, v, w)`: a signal leaving `u`

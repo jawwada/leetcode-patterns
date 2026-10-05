@@ -2,6 +2,16 @@
 
 *LeetCode 703 · Easy · Pattern: Size-k heap (keep the k best) · Reading time ~6 min*
 
+## The problem
+
+Design a class initialised with k and a list of scores that then receives new scores one at a time via add(val); after
+every add return the k-th largest element seen so far, duplicates counted.
+
+```text
+Example: k=3, nums=[4,5,8,2]; add(3)->4, add(5)->5, add(10)->5,
+  add(9)->8, add(4)->8.
+```
+
 ## What the problem is really asking
 
 You are building a scoreboard. It starts with some scores and a number k. After that, scores arrive one at a time, and

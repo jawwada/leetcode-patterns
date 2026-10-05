@@ -2,6 +2,15 @@
 
 *LeetCode 22 · Medium · Pattern: Backtracking with validity-preserving constraints (open/close counts) · Reading time ~7 min*
 
+## The problem
+
+Given n pairs of parentheses, return all strings of n "(" and n ")" that are well-formed.
+
+```text
+Example: n=3 -> ["((()))","(()())","(())()","()(())","()()()"].
+  Example: n=1 -> ["()"].
+```
+
 ## What the problem is really asking
 
 Given n, list every string made of n opening and n closing parentheses that is well formed: every ")" closes an earlier unmatched "(", and nothing is left open at the end.

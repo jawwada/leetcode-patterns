@@ -2,6 +2,18 @@
 
 *LeetCode 1396 · Medium · Pattern: Two hash maps (in-flight state + aggregated statistics) · Reading time ~7 min*
 
+## The problem
+
+Implement UndergroundSystem: checkIn(id, station, t), checkOut(id, station, t), and getAverageTime(start, end) -> the
+mean travel time over all completed trips from start to end so far. A customer is checked in at most once at a time
+and every queried route has at least one trip.
+
+```text
+Example: 45 checks in at Leyton@3 and out at Waterloo@15, 27 in
+  at Leyton@10 and out at Waterloo@20 -> getAverageTime(Leyton,
+  Waterloo) = (12 + 10) / 2 = 11.0.
+```
+
 ## What the problem is really asking
 
 A metro system records passengers. `checkIn(id, station, t)` says passenger `id` entered at `station` at time `t`. `checkOut(id, station, t)` says they left at `station` at time `t`. `getAverageTime(start, end)` returns the mean travel time of all *completed* trips that went from `start` to `end` — direction matters, so A→B and B→A are different routes. A passenger is inside at most one journey at a time, and a queried route always has at least one completed trip.

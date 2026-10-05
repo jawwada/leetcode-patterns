@@ -2,6 +2,16 @@
 
 *LeetCode 494 · Medium · Pattern: Count ways per reachable sum · Reading time ~6 min*
 
+## The problem
+
+Put a '+' or '-' in front of every number in nums and evaluate the expression. Return how many sign assignments
+evaluate to target.
+
+```text
+Example: nums=[1,1,1,1,1], target=3 -> 5, since the single minus
+  sign can go on any of the five 1s.
+```
+
 ## What the problem is really asking
 
 Put a `+` or a `-` in front of every number, evaluate the expression, and count how many of the `2^n` sign assignments give exactly `target`. Different positions count as different assignments even when the numbers are equal, and `+0` and `-0` are two different assignments.

@@ -1,6 +1,14 @@
 # Move Zeroes
 *LeetCode 283 · Easy · Pattern: Read/write pointers (stable compaction) · Reading time ~5 min*
 
+## The problem
+
+Move all 0s in nums to the end in place, keeping the relative order of the non-zero elements; return nothing.
+
+```text
+Example: nums = [0,1,0,3,12] -> [1,3,12,0,0].
+```
+
 ## What the problem is really asking
 
 Push every zero to the end of the array, in place, while the non-zero values keep their original order. You return nothing; the array itself is the answer.

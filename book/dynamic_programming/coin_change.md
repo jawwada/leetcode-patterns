@@ -2,6 +2,16 @@
 
 *LeetCode 322 · Medium · Pattern: Unbounded knapsack (min coins per amount) · Reading time ~6 min*
 
+## The problem
+
+Given coin denominations with an unlimited supply of each and an amount, return the fewest coins that add up to the
+amount, or -1 if it cannot be made.
+
+```text
+Example: coins=[1,2,5], amount=11 -> 3 (5+5+1); coins=[2],
+  amount=3 -> -1; amount=0 -> 0.
+```
+
 ## What the problem is really asking
 
 You have coin denominations, as many of each as you like, and a target amount. Return the fewest coins that add up to exactly the amount, or -1 if no combination does. Amount 0 needs 0 coins.

@@ -2,6 +2,16 @@
 
 *LeetCode 746 · Easy · Pattern: 1-D DP over prefixes (Fibonacci-style) · Reading time ~5 min*
 
+## The problem
+
+cost[i] is the price of stepping on stair i; after paying you may climb one or two stairs, and you may start on stair
+0 or 1. Return the minimum cost to reach the top, one position past the last stair.
+
+```text
+Example: [10,15,20] -> 15 (start on stair 1, pay 15, jump two to
+  the top).
+```
+
 ## What the problem is really asking
 
 A staircase has a price tag on every step: `cost[i]` is what you pay to stand on step `i`. Once you have paid, you may climb one or two steps. You may begin on step 0 or step 1 for free. The "top" is the floor just past the last step. Find the cheapest total.

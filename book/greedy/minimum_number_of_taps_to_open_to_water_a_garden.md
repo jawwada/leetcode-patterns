@@ -2,6 +2,16 @@
 
 *LeetCode 1326 · Hard · Pattern: Greedy reach (furthest reachable index) · Reading time ~10 min*
 
+## The problem
+
+A garden is the segment [0, n]. Tap i (0 <= i <= n) waters [i - ranges[i], i + ranges[i]]. Return the minimum number
+of taps to open so the whole garden is watered, or -1 if impossible.
+
+```text
+Example: n = 5, ranges = [3,4,1,1,0,0] -> 1 (tap 1 waters [-3,
+  5]). n = 3, ranges = [0,0,0,0] -> -1.
+```
+
 ## What the problem is really asking
 
 A garden is the stretch of number line from 0 to `n`. There is a tap at every integer point `i` in `[0, n]`, and tap `i`

@@ -1,6 +1,16 @@
 # Copy List with Random Pointer
 *LeetCode 138 · Medium · Pattern: Interleaved clone (hash map original -> copy, embedded in the list) · Reading time ~9 min*
 
+## The problem
+
+Each node has val, next and random, where random points to any node in the list or None. Return a deep copy: new nodes
+whose next and random pointers point to new nodes with the same structure, leaving the original intact.
+
+```text
+Example: [[7,null],[13,0],[11,4],[10,2],[1,0]] as (val, random
+  index) returns an identical but fully independent list.
+```
+
 ## What the problem is really asking
 
 Each node has a value, a `next` pointer, and a `random` pointer that may point to any node in the list or to None. Build a deep copy: a brand-new set of nodes with the same values, where every copied `next` and `random` points to a *copied* node, never back into the original. The original must be left exactly as it was.

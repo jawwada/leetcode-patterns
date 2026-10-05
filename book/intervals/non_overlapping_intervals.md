@@ -1,6 +1,16 @@
 # Non-overlapping Intervals
 *LeetCode 435 · Medium · Pattern: Greedy by earliest end (interval scheduling) · Reading time ~7 min*
 
+## The problem
+
+Given intervals [start, end], return the minimum number of intervals to remove so that the remaining ones are pairwise
+non-overlapping. Touching intervals such as [1,2] and [2,3] do not overlap.
+
+```text
+Example: [[1,2],[2,3],[3,4],[1,3]] -> 1 (remove [1,3]);
+  [[1,2],[1,2],[1,2]] -> 2.
+```
+
 ## What the problem is really asking
 
 You have a pile of intervals. Delete as few as you can so that the survivors are pairwise non-overlapping. Here touching is allowed: `[1,2]` and `[2,3]` can both stay. Return the number deleted.

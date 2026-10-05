@@ -1,6 +1,19 @@
 # Word Ladder II
 *LeetCode 126 · Hard · Pattern: Layered BFS + parents DAG, then backtrack paths · Reading time ~12 min*
 
+## The problem
+
+Given beginWord, endWord and a wordList, each transformation changes one letter and must land on a word in the list.
+Return all shortest transformation sequences from beginWord to endWord (each including both ends), or [] if none
+exists.
+
+```text
+Example: "hit" -> "cog" with
+  ["hot","dot","dog","lot","log","cog"] gives
+  [["hit","hot","dot","dog","cog"],
+  ["hit","hot","lot","log","cog"]].
+```
+
 ## What the problem is really asking
 
 Same game as Word Ladder: change one letter at a time, every intermediate word must be in the

@@ -2,6 +2,15 @@
 
 *LeetCode 268 · Easy · Pattern: XOR cancellation · Reading time ~5 min*
 
+## The problem
+
+Given an array of n distinct numbers taken from the range [0, n], exactly one number of the range is missing; return
+it in O(n) time and O(1) extra space.
+
+```text
+Example: [3,0,1] -> 2. Example: [9,6,4,2,3,5,7,0,1] -> 8.
+```
+
 ## What the problem is really asking
 
 The array holds `n` distinct numbers drawn from the `n + 1` possible values `0, 1, ..., n`. Exactly one value is absent. Return it, in linear time and constant extra space. The answer is a single integer in `[0, n]`, and it may be `n` itself or `0`.

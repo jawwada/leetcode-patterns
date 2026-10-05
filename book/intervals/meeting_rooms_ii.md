@@ -1,6 +1,15 @@
 # Meeting Rooms II
 *LeetCode 253 · Medium · Pattern: Sort by start + min-heap of end times · Reading time ~8 min*
 
+## The problem
+
+Given meeting intervals [start, end), return the minimum number of conference rooms needed so that no two meetings in
+the same room overlap. A meeting may start at the exact moment another one ends.
+
+```text
+Example: [[0,30],[5,10],[15,20]] -> 2; [[7,10],[2,4]] -> 1.
+```
+
 ## What the problem is really asking
 
 Meetings are half-open intervals `[start, end)`. A meeting ending at 10 frees its room for one starting at 10. Every meeting must happen, and two meetings in the same room may not overlap. What is the fewest rooms that works?

@@ -1,6 +1,17 @@
 # Implement String Split
 *Custom warm-up (no LeetCode number) · Easy · Pattern: Linear scan with state · Reading time ~6 min*
 
+## The problem
+
+Implement split(s, sep) with the exact semantics of Python's str.split(sep) for a non-empty separator, without
+str.split or re: empty pieces between adjacent separators and at the ends are kept, and matches are non-overlapping
+left to right.
+
+```text
+Example: split("a,,b,", ",") -> ["a", "", "b", ""]; split("aaa",
+  "aa") -> ["", "a"]; split("", ",") -> [""].
+```
+
 ## What the problem is really asking
 
 Write `split(s, sep)` that behaves exactly like Python's `s.split(sep)` for a non-empty separator, without calling `split` or `re`. The answer is a list of strings. Adjacent separators produce an empty piece between them. A separator at either end produces an empty piece at that end. An empty input produces `[""]`, not `[]`. A multi-character separator matches left to right without overlapping, so `"aaa"` split on `"aa"` is `["", "a"]`.

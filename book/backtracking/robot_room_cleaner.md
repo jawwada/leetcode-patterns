@@ -1,6 +1,17 @@
 # Robot Room Cleaner
 *LeetCode 489 · Hard · Pattern: Blind DFS with relative coordinates and turn-around backtrack · Reading time ~11 min*
 
+## The problem
+
+A robot is in an unknown grid room with open and blocked cells. It exposes only move() -> bool (step forward if
+possible), turnLeft(), turnRight() and clean(). You know neither the map, your position nor your heading. Clean every
+cell reachable from the start.
+
+```text
+Example: in a 5x8 room starting at row 1, col 3 facing up, every
+  open cell connected to the start must end up cleaned.
+```
+
 ## What the problem is really asking
 
 A robot sits somewhere in a room made of grid cells, some open and some blocked. You cannot

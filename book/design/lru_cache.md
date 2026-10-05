@@ -1,6 +1,16 @@
 # LRU Cache
 *LeetCode 146 · Medium · Pattern: Hash map + doubly linked list · Reading time ~10 min*
 
+## The problem
+
+Design a fixed-capacity cache with get(key) -> value (or -1) and put(key, value), both in O(1) average time. When a
+put exceeds capacity, evict the least recently used key, i.e. the one whose last get or put is oldest.
+
+```text
+Example: capacity 2; put(1,1), put(2,2), get(1) -> 1, put(3,3)
+  evicts key 2, get(2) -> -1, get(3) -> 3.
+```
+
 ## What the problem is really asking
 
 Build a key-value store with a fixed capacity. `get(key)` returns the value or -1. `put(key, value)` inserts or updates. When an insert would exceed the capacity, throw out the *least recently used* key: the one whose last `get` or `put` happened longest ago. Both operations must be O(1).

@@ -1,6 +1,17 @@
 # Word Squares
 *LeetCode 425 · Hard · Pattern: Prefix trie + row-by-row backtracking · Reading time ~10 min*
 
+## The problem
+
+Given distinct words that all have length n, return every word square: n words (reuse allowed) such that the k-th row
+and the k-th column read the same word.
+
+```text
+Example: ["area","lead","wall","lady","ball"] returns
+  [["ball","area","lead","lady"],
+  ["wall","area","lead","lady"]].
+```
+
 ## What the problem is really asking
 
 You get a list of distinct words, all of the same length n. Build every n × n grid, one word per row, such that reading column k top to bottom gives the same word as row k. Words may be used more than once. Return all such squares.

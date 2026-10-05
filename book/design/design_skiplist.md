@@ -2,6 +2,17 @@
 
 *LeetCode 1206 · Hard · Pattern: Multi-level sorted linked list with randomised express lanes · Reading time ~14 min*
 
+## The problem
+
+Implement a Skiplist with search(target) -> bool, add(num) and erase(num) -> bool, which returns False if num is
+absent. Duplicates are allowed and erase removes one copy. All three should run in O(log n) expected time without any
+built-in ordered structure.
+
+```text
+Example: after add 1, 2, 3, search(0) is False; after add 4,
+  erase(1) is True and then search(1) is False.
+```
+
 ## What the problem is really asking
 
 Build a sorted multiset from scratch, without any library ordered structure, supporting:

@@ -1,6 +1,18 @@
 # Accounts Merge
 *LeetCode 721 · Medium · Pattern: Union-Find (disjoint set union) · Reading time ~10 min*
 
+## The problem
+
+accounts[i] = [name, email1, email2, ...]. Two accounts belong to the same person if they share at least one email;
+names can repeat across different people. Merge the accounts and return each person's [name, sorted emails...] in any
+order.
+
+```text
+Example:
+  [["John","a@m","b@m"],["John","b@m","c@m"],["Mary","d@m"]] ->
+  [["John","a@m","b@m","c@m"],["Mary","d@m"]].
+```
+
 ## What the problem is really asking
 
 Each account is a list `[name, email1, email2, ...]`. Two accounts belong to the same person

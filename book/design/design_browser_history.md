@@ -2,6 +2,19 @@
 
 *LeetCode 1472 · Medium · Pattern: Array with current pointer and logical end · Reading time ~7 min*
 
+## The problem
+
+Implement BrowserHistory(homepage): visit(url) opens url and clears all forward history; back(steps) moves back at
+most steps pages and returns the current url; forward(steps) moves forward at most steps pages, never past the newest
+page, and returns the current url.
+
+```text
+Example: home leetcode; visit google, facebook, youtube; back(1)
+  -> facebook; back(1) -> google; forward(1) -> facebook; visit
+  linkedin; forward(2) -> linkedin; back(2) -> google; back(7)
+  -> leetcode.
+```
+
 ## What the problem is really asking
 
 Model one browser tab. It starts on a homepage. `visit(url)` opens a new page *and throws away all forward history*. `back(steps)` moves back up to `steps` pages (stopping at the homepage) and returns the current URL. `forward(steps)` moves forward up to `steps` pages (stopping at the newest page still reachable) and returns the current URL.

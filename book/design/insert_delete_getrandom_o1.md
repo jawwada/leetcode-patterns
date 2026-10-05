@@ -2,6 +2,17 @@
 
 *LeetCode 380 · Medium · Pattern: Array + index map (swap-with-last delete) · Reading time ~7 min*
 
+## The problem
+
+Implement RandomizedSet with insert(val) -> bool (False if already present), remove(val) -> bool (False if absent) and
+getRandom() -> a uniformly random element, each in average O(1).
+
+```text
+Example: insert(1) True, remove(2) False, insert(2) True,
+  getRandom() in {1, 2}, remove(1) True, insert(2) False,
+  getRandom() == 2.
+```
+
 ## What the problem is really asking
 
 Build a set of integers with three operations, each O(1) on average:

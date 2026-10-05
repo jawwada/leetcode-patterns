@@ -2,6 +2,17 @@
 
 *LeetCode 1095 · Hard · Pattern: Binary search on a hidden array (peak, then two sorted halves) · Reading time ~10 min*
 
+## The problem
+
+A mountain array strictly increases to one peak and then strictly decreases. You can only access it through
+MountainArray.get(i) and MountainArray.length(), and at most 100 get calls are allowed. Return the minimum index whose
+value equals target, or -1.
+
+```text
+Example: arr = [1,2,3,4,5,3,1], target = 3 returns 2 (index 5
+  also holds 3, but 2 is smaller).
+```
+
 ## What the problem is really asking
 
 A mountain array climbs strictly to a single summit and then descends strictly. You cannot see it. You can ask for its

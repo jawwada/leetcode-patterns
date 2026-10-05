@@ -1,6 +1,20 @@
 # Walls and Gates
 *LeetCode 286 · Medium · Pattern: Multi-source BFS (level = distance) · Reading time ~8 min*
 
+## The problem
+
+Given an m x n grid where -1 is a wall, 0 is a gate and INF (2^31 - 1) is an empty room, fill every empty room with
+the distance to its nearest gate, leaving unreachable rooms as INF. Modify in place.
+
+```text
+Example:
+  [[INF,-1,0,INF],
+   [INF,INF,INF,-1],
+   [INF,-1,INF,-1],
+   [0,-1,INF,INF]]
+  becomes [[3,-1,0,1],[2,2,1,-1],[1,-1,2,-1],[0,-1,3,4]].
+```
+
 ## What the problem is really asking
 
 A floor plan is a grid. `-1` is a wall, `0` is a gate, and `INF` (the number `2^31 - 1`) is

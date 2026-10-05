@@ -2,6 +2,15 @@
 
 *LeetCode 1028 · Hard · Pattern: Stack of ancestors indexed by depth · Reading time ~10 min*
 
+## The problem
+
+A tree was serialised by preorder DFS: each node is written as D dashes followed by its value, where D is its depth
+(the root has none). A node with a single child always has it on the left. Rebuild the tree.
+
+```text
+Example: "1-2--3--4-5--6--7" gives [1,2,5,3,4,6,7].
+```
+
 ## What the problem is really asking
 
 A binary tree was written out by a preorder walk. Each node appears as some dashes followed by its value, and the number of dashes is the node's depth (the root has none). If a node has only one child, that child is always the left one. You get the string and must rebuild the tree.

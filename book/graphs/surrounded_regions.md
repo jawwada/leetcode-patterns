@@ -2,6 +2,21 @@
 
 *LeetCode 130 · Medium · Pattern: Multi-source reverse BFS/DFS from the boundary · Reading time ~6 min*
 
+## The problem
+
+Given an m x n board of 'X' and 'O', flip to 'X' every region of 'O' cells that is completely surrounded, i.e. that
+does not touch the border. Modify the board in place.
+
+```text
+Example:
+  [["X","X","X","X"],
+   ["X","O","O","X"],
+   ["X","X","O","X"],
+   ["X","O","X","X"]]
+  becomes all 'X' except the bottom-row 'O', which touches the
+  border and survives.
+```
+
 ## What the problem is really asking
 
 A board holds `'X'` and `'O'`. Groups of `'O'` connected up/down/left/right form regions. A region is **captured** if

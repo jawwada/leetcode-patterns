@@ -1,6 +1,15 @@
 # Replace Words
 *LeetCode 648 · Medium · Pattern: Trie (prefix tree) · Reading time ~6 min*
 
+## The problem
+
+Given a dictionary of roots and a sentence, replace every word that starts with a root by its shortest such root.
+
+```text
+Example: dictionary=[cat,bat,rat], sentence="the cattle was
+  rattled by the battery" -> "the cat was rat by the bat".
+```
+
 ## What the problem is really asking
 
 You get a dictionary of short "roots" and a sentence. Every word in the sentence that begins with some root must be replaced by that root; if several roots fit, use the shortest one. Words that begin with no root stay as they are. The answer is the rewritten sentence, one output word per input word.

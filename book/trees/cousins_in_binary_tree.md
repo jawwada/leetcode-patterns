@@ -2,6 +2,16 @@
 
 *LeetCode 993 · Easy · Pattern: DFS carrying path state · Reading time ~6 min*
 
+## The problem
+
+In a binary tree with unique values, two nodes are cousins if they are at the same depth but have different parents.
+Given values x and y, return whether their nodes are cousins.
+
+```text
+Example: root = [1,2,3,null,4,null,5], x = 5, y = 4 -> True;
+  root = [1,2,3,4], x = 4, y = 3 -> False.
+```
+
 ## What the problem is really asking
 
 All the values in the tree are distinct. You get two of them, `x` and `y`. Their nodes are *cousins* if they sit at the same depth but hang from different parents. Return `True` or `False`.

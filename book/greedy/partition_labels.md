@@ -2,6 +2,16 @@
 
 *LeetCode 763 · Medium · Pattern: Greedy interval merging by last occurrence · Reading time ~7 min*
 
+## The problem
+
+Partition string s into as many parts as possible so that each letter appears in at most one part, and return the part
+sizes in order.
+
+```text
+Example: s = "ababcbacadefegdehijhklij" returns [9,7,8] for
+  parts "ababcbaca", "defegde", "hijhklij".
+```
+
 ## What the problem is really asking
 
 Cut a string into consecutive pieces so that no letter appears in two different pieces, and make as many pieces as

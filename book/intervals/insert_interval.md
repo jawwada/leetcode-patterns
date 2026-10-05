@@ -1,6 +1,17 @@
 # Insert Interval
 *LeetCode 57 · Medium · Pattern: Sort by start, sweep and merge · Reading time ~7 min*
 
+## The problem
+
+intervals is sorted by start and pairwise non-overlapping. Insert newInterval, merging where necessary, and return the
+list still sorted and non-overlapping.
+
+```text
+Example: [[1,3],[6,9]] with new [2,5] -> [[1,5],[6,9]];
+  [[1,2],[3,5],[6,7],[8,10],[12,16]] with new [4,8] ->
+  [[1,2],[3,10],[12,16]].
+```
+
 ## What the problem is really asking
 
 You hold a list of closed intervals that is already clean. It is sorted by start and no two of its intervals touch or overlap, which is exactly what Merge Intervals produces. One new interval arrives. Put it in, fuse whatever it collides with, and hand back a list that is clean again.

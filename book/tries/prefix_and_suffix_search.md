@@ -1,6 +1,16 @@
 # Prefix and Suffix Search
 *LeetCode 745 · Hard · Pattern: Trie over "suffix#word" rotations, max index stored per node · Reading time ~10 min*
 
+## The problem
+
+WordFilter(words) is built once, and f(pref, suff) returns the largest index i such that words[i] starts with pref and
+ends with suff, or -1 if there is none.
+
+```text
+Example: words=["apple"] gives f("a","e") = 0 and f("b","") =
+  -1.
+```
+
 ## What the problem is really asking
 
 You are given a word list once, at construction. Then many queries arrive, each `f(pref, suff)`: return the largest index i such that `words[i]` starts with `pref` and ends with `suff`, or −1 if none does. Either string may be empty, and the prefix and suffix may overlap inside the word.

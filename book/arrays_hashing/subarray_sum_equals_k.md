@@ -1,6 +1,16 @@
 # Subarray Sum Equals K
 *LeetCode 560 · Medium · Pattern: Prefix sum + hash map of counts · Reading time ~7 min*
 
+## The problem
+
+Given an integer array nums (which may contain negatives and zeros) and an integer k, return the number of contiguous
+subarrays whose elements sum to k.
+
+```text
+Example: nums = [1, 1, 1], k = 2 -> 2 (the subarrays at indices
+  0..1 and 1..2).
+```
+
 ## What the problem is really asking
 
 You get an array of integers (positive, negative, zero, anything) and a target `k`. Count every contiguous stretch of the array whose elements add up to exactly `k`. You are not asked to find one, and not the longest one: you must count all of them. Two stretches are different if they cover different index ranges, even if they hold the same numbers.

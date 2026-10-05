@@ -1,6 +1,16 @@
 # Valid Number
 *LeetCode 65 · Hard · Pattern: Single-pass state machine with flags · Reading time ~11 min*
 
+## The problem
+
+Return True if the string is a valid number: an optional sign, then an integer or a decimal ("3.", ".5", "3.14"),
+optionally followed by 'e'/'E', an optional sign and an integer. No spaces, no inf/nan.
+
+```text
+Example: "2e10", "-.9" and "4." are valid; "e3" (no mantissa),
+  "99e2.5" (exponent must be an integer) and "." are not.
+```
+
 ## What the problem is really asking
 
 Decide whether a string is a well-formed number. The grammar is:

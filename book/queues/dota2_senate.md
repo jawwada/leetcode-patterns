@@ -2,6 +2,17 @@
 
 *LeetCode 649 · Medium · Pattern: Round-robin queues (re-enqueue with index + n) · Reading time ~9 min*
 
+## The problem
+
+Senators 'R' (Radiant) and 'D' (Dire) sit in a string and act in order, round after round. On its turn a senator who
+is still in the game bans one opposing senator, who loses all future turns. When only one party remains it wins;
+return "Radiant" or "Dire".
+
+```text
+Example: "RDD" -> "Dire": R bans the first D, then the second D
+  bans R.
+```
+
 ## What the problem is really asking
 
 A string like `"DDRRR"` lists senators in seat order, each from party R (Radiant) or D (Dire). They act one at a time in

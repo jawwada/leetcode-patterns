@@ -2,6 +2,17 @@
 
 *LeetCode 936 · Hard · Pattern: Reverse greedy (undo the last move first) · Reading time ~10 min*
 
+## The problem
+
+Starting from a string of len(target) '?' characters, repeatedly place stamp anywhere, overwriting the characters
+beneath it. Return any sequence of at most 10 * len(target) stamp positions that produces target, or [] if impossible.
+
+```text
+Example: stamp = 'abc', target = 'ababc' -> [0, 2] (stamp at 0
+  gives 'abc??', at 2 gives 'ababc'); [1, 0, 2] is also
+  accepted.
+```
+
 ## What the problem is really asking
 
 You have a rubber `stamp` (a short string) and a `target` string. You begin with a blank strip of `len(target)` cells, shown as `?`. One move presses the stamp fully inside the strip at some offset, overwriting whatever was under it. Return any sequence of offsets, at most `10 * len(target)` long, that turns the blank strip into `target`, or an empty list if it cannot be done.

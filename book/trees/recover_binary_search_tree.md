@@ -2,6 +2,16 @@
 
 *LeetCode 99 · Hard · Pattern: Inorder traversal with previous-node pointer · Reading time ~11 min*
 
+## The problem
+
+Exactly two nodes of a BST had their values swapped by mistake. Restore the tree without changing its structure, by
+swapping the two values back.
+
+```text
+Example: [3,1,4,null,null,2] becomes [2,1,4,null,null,3] because
+  2 and 3 were swapped.
+```
+
 ## What the problem is really asking
 
 Someone took a valid binary search tree and swapped the values of exactly two nodes. The shape is untouched, and only two labels changed places. Find those two nodes and swap their values back, in place.

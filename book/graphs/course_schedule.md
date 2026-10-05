@@ -2,6 +2,16 @@
 
 *LeetCode 207 · Medium · Pattern: Topological sort (Kahn's BFS) / cycle detection · Reading time ~8 min*
 
+## The problem
+
+There are numCourses courses labelled 0..n-1, and prerequisites [a, b] means course b must be taken before course a.
+Return true if it is possible to finish every course, i.e. the prerequisite graph has no directed cycle.
+
+```text
+Example: numCourses=2, [[1,0]] -> true; numCourses=2,
+  [[1,0],[0,1]] -> false.
+```
+
 ## What the problem is really asking
 
 There are `numCourses` courses labelled 0 to n-1. A pair `[a, b]` means "you must take b before a". Can you take every course?

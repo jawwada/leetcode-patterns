@@ -2,6 +2,15 @@
 
 *LeetCode 238 · Medium · Pattern: Prefix and suffix accumulation · Reading time ~6 min*
 
+## The problem
+
+Given an integer array nums, return answer where answer[i] is the product of all elements except nums[i], without
+using division and in O(n) time.
+
+```text
+Example: nums = [1, 2, 3, 4] -> [24, 12, 8, 6].
+```
+
 ## What the problem is really asking
 
 For each position `i`, output the product of every element except `nums[i]`. You may not use division, and you must run

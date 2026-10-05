@@ -2,6 +2,16 @@
 
 *LeetCode 2 · Medium · Pattern: Dummy head + carry · Reading time ~8 min*
 
+## The problem
+
+Two non-empty linked lists store non-negative integers with digits in reverse order (342 is 2 -> 4 -> 3). Return their
+sum as a linked list in the same format.
+
+```text
+Example: (2->4->3) + (5->6->4) = (7->0->8), since 342 + 465 =
+  807.
+```
+
 ## What the problem is really asking
 
 Two non-negative integers are stored as chains of digits, ones digit first. The number 942 is stored as `2 -> 4 -> 9`.

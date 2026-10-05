@@ -2,6 +2,16 @@
 
 *LeetCode 346 · Easy · Pattern: Sliding window queue with running sum · Reading time ~5 min*
 
+## The problem
+
+Implement MovingAverage(size) with next(val) -> the average of the last size values seen so far, or of all values
+while fewer than size have arrived.
+
+```text
+Example: size 3; next(1) -> 1.0; next(10) -> 5.5; next(3) ->
+  4.667; next(5) -> 6.0 (= (10 + 3 + 5) / 3).
+```
+
 ## What the problem is really asking
 
 You build an object that is told a window size once, then receives numbers one at a time through `next(val)`. After each number it must report the average of the most recent `size` numbers — or of all numbers so far, if fewer than `size` have arrived. The answer to each call is a single float, but the object answering it lives across many calls, so the real deliverable is the *state* it keeps.

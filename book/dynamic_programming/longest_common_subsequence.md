@@ -2,6 +2,15 @@
 
 *LeetCode 1143 · Medium · Pattern: 2-D DP over two prefixes · Reading time ~7 min*
 
+## The problem
+
+Given two strings text1 and text2, return the length of their longest common subsequence, a sequence of characters
+appearing in both in the same order but not necessarily contiguously.
+
+```text
+Example: "abcde" and "ace" -> 3 ("ace"); "abc" and "def" -> 0.
+```
+
 ## What the problem is really asking
 
 Given two strings, find the length of the longest sequence of characters that appears in both, in the same order, but not necessarily next to each other. Deleting characters from either string is allowed; reordering is not.

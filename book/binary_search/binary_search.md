@@ -2,6 +2,15 @@
 
 *LeetCode 704 · Easy · Pattern: Binary search on a sorted array · Reading time ~5 min*
 
+## The problem
+
+Given a sorted ascending array of distinct integers nums and a target, return the index of target or -1 if it is
+absent, in O(log n).
+
+```text
+Example: nums = [-1,0,3,5,9,12], target = 9 returns 4.
+```
+
 ## What the problem is really asking
 
 You get a sorted list of distinct integers and a target. Say where the target sits, or say -1 if it is not there. The

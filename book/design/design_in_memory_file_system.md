@@ -2,6 +2,18 @@
 
 *LeetCode 588 · Hard · Pattern: Trie of directories (path components as edges) · Reading time ~10 min*
 
+## The problem
+
+Implement FileSystem with: ls(path), which returns the sorted names inside a directory, or [filename] if path is a
+file; mkdir(path), which creates every missing directory; addContentToFile(path, content), which creates the file or
+appends to it; and readContentFromFile(path).
+
+```text
+Example: mkdir("/a/b/c"); addContentToFile("/a/b/c/d","hello");
+  ls("/") returns ["a"] and readContentFromFile("/a/b/c/d")
+  returns "hello".
+```
+
 ## What the problem is really asking
 
 Build a toy file system that lives in memory. Paths look like `/a/b/c`. Four operations:

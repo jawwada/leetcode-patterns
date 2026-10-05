@@ -2,6 +2,16 @@
 
 *LeetCode 973 · Medium · Pattern: Size-k heap (keep the k best) · Reading time ~7 min*
 
+## The problem
+
+Given points [[x, y], ...] on a plane and an integer k, return the k points closest to the origin by Euclidean
+distance, in any order.
+
+```text
+Example: points=[[1,3],[-2,2]], k=1 -> [[-2,2]] because 8 < 10.
+  Example: [[3,3],[5,-1],[-2,4]], k=2 -> [[3,3],[-2,4]].
+```
+
 ## What the problem is really asking
 
 You get n points on a plane and a number k. Return the k points nearest to (0, 0), in any order. Nearness is ordinary

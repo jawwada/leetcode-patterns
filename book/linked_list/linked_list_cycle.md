@@ -2,6 +2,16 @@
 
 *LeetCode 141 · Easy · Pattern: Floyd's tortoise and hare (fast/slow pointers) · Reading time ~6 min*
 
+## The problem
+
+Given the head of a singly linked list, return True if some node can be reached again by following next pointers (the
+list has a cycle), else False.
+
+```text
+Example: 3->2->0->-4 with -4.next = node 2 -> True; a single
+  node 1 -> None -> False.
+```
+
 ## What the problem is really asking
 
 Follow `next` from the head. Either you eventually reach `None`, or you never do because some node's arrow points back to

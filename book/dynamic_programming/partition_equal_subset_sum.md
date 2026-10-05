@@ -2,6 +2,15 @@
 
 *LeetCode 416 · Medium · Pattern: 0/1 knapsack reachability (bitset) · Reading time ~7 min*
 
+## The problem
+
+Given an array of positive integers, decide whether it can be split into two subsets with equal sums.
+
+```text
+Example: [1,5,11,5] -> true ([1,5,5] and [11]); [1,2,3,5] ->
+  false because the total 11 is odd.
+```
+
 ## What the problem is really asking
 
 Given positive integers, can you split them into two groups with equal sums? Every number goes into exactly one group.

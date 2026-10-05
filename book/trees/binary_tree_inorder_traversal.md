@@ -2,6 +2,15 @@
 
 *LeetCode 94 · Easy · Pattern: Iterative traversal with an explicit stack · Reading time ~7 min*
 
+## The problem
+
+Return the values of a binary tree in inorder: left subtree, then the node, then the right subtree. The follow-up asks
+for an iterative solution.
+
+```text
+Example: root = [1,null,2,3] -> [1,3,2].
+```
+
 ## What the problem is really asking
 
 Return the node values in **inorder**: everything in the left subtree, then the node itself, then everything in the right subtree, applied recursively. The follow-up asks you to do it without recursion.

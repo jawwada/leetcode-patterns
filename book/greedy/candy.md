@@ -2,6 +2,16 @@
 
 *LeetCode 135 · Hard · Pattern: Two-pass greedy (left-to-right, right-to-left) · Reading time ~9 min*
 
+## The problem
+
+Children stand in a line with ratings. Each child gets at least one candy, and a child rated higher than an immediate
+neighbour must get more candies than that neighbour. Return the minimum total number of candies.
+
+```text
+Example: ratings = [1,0,2] -> 5 (candies [2,1,2]). ratings =
+  [1,2,2] -> 4 (candies [1,2,1]).
+```
+
 ## What the problem is really asking
 
 Children stand in a line, each with a rating. You hand out candies under two rules. Everyone gets at least one. If a child is rated strictly higher than an immediate neighbour, that child must get strictly more candy than that neighbour. Minimise the total.

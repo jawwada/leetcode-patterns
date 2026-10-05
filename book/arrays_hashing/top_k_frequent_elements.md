@@ -2,6 +2,15 @@
 
 *LeetCode 347 · Medium · Pattern: Frequency count + bucket sort · Reading time ~6 min*
 
+## The problem
+
+Given an integer array nums and an integer k, return the k most frequent elements in any order; the answer is
+guaranteed to be unique.
+
+```text
+Example: nums = [1,1,1,2,2,3], k = 2 -> [1, 2].
+```
+
 ## What the problem is really asking
 
 Given an integer array and a number `k`, return the `k` values that occur most often, in any order. The answer is

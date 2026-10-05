@@ -2,6 +2,16 @@
 
 *LeetCode 875 · Medium · Pattern: Binary search on the answer · Reading time ~8 min*
 
+## The problem
+
+piles[i] bananas sit in pile i. Each hour Koko chooses a pile and eats up to k bananas from it; if the pile has fewer
+than k she finishes it and waits. Return the minimum integer speed k that lets her finish every pile within h hours.
+
+```text
+Example: piles = [3,6,7,11], h = 8 returns 4 (hours at k = 4: 1
+  + 2 + 2 + 3 = 8).
+```
+
 ## What the problem is really asking
 
 Koko has piles of bananas and a deadline of `h` hours. She picks a fixed eating speed `k`. Each hour she sits at one pile and eats up to `k` bananas from it. If the pile has fewer than `k` left she finishes it and wastes the rest of the hour; she never moves to a second pile in the same hour. We want the slowest speed that still clears every pile by the deadline.

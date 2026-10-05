@@ -2,6 +2,16 @@
 
 *LeetCode 706 · Easy · Pattern: Separate chaining with load-factor resizing · Reading time ~6 min*
 
+## The problem
+
+Implement MyHashMap without built-in hash tables: put(key, value), get(key) -> value or -1, remove(key). Keys and
+values are non-negative integers up to 10^6.
+
+```text
+Example: put(1,1), put(2,2), get(1) -> 1, get(3) -> -1,
+  put(2,1), get(2) -> 1, remove(2), get(2) -> -1.
+```
+
 ## What the problem is really asking
 
 Build `put(key, value)`, `get(key)` (returning -1 if absent) and `remove(key)` without using a built-in dict. Keys and values are non-negative integers. Every tracker so far leaned on a hash map; this problem makes you build one, so that "O(1) average" stops being a phrase and becomes something you can defend.

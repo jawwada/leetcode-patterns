@@ -2,6 +2,16 @@
 
 *LeetCode 297 · Hard · Pattern: Preorder with null sentinels · Reading time ~10 min*
 
+## The problem
+
+Design a Codec with serialize(root) -> str and deserialize(str) -> root such that deserialize(serialize(t)) reproduces
+t exactly; any format is allowed.
+
+```text
+Example: [1,2,3,null,null,4,5] -> "1,2,#,#,3,4,#,#,5,#,#" and
+  back.
+```
+
 ## What the problem is really asking
 
 Design two functions. `serialize(root)` turns a binary tree into a string, and `deserialize(s)` turns that string back into a tree identical to the original, with the same shape and the same values in the same places. You choose the format.

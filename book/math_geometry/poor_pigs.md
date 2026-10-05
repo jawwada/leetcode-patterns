@@ -2,6 +2,17 @@
 
 *LeetCode 458 · Hard · Pattern: Information counting (states per pig, mixed-radix labelling) · Reading time ~8 min*
 
+## The problem
+
+Of buckets buckets of liquid, exactly one is poisonous. A pig that drinks poison dies minutesToDie minutes later; you
+have minutesToTest minutes in total and can feed any pigs any buckets at once, wait, then repeat. Return the minimum
+number of pigs that guarantees identifying the poisoned bucket.
+
+```text
+Example: buckets=4, minutesToDie=15, minutesToTest=15 -> 2;
+  buckets=1000, 15, 60 -> 5.
+```
+
 ## What the problem is really asking
 
 There are `buckets` buckets of liquid and exactly one is poisoned. A pig that drinks poison dies exactly `minutesToDie` minutes later. You have `minutesToTest` minutes in total. In each round you may let any pig drink from any set of buckets (mixing is allowed), then wait `minutesToDie` minutes to see who dies. What is the fewest pigs that *guarantees* identifying the poisoned bucket?

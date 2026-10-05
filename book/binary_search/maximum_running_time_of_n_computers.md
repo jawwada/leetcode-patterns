@@ -2,6 +2,18 @@
 
 *LeetCode 2141 · Hard · Pattern: Binary search on the answer · Reading time ~10 min*
 
+## The problem
+
+You have n computers and batteries[i] minutes of charge in battery i. A computer runs on one battery at a time;
+batteries can be swapped at any integer minute, any number of times, but charge is never pooled or recharged. Return
+the maximum number of minutes all n computers can run simultaneously.
+
+```text
+Example: n = 2, batteries = [3,3,3] returns 4 (minutes 1-2: A,B;
+  minute 3: A,C; minute 4: B,C). Example: n = 2, batteries =
+  [1,1,1,1] returns 2.
+```
+
 ## What the problem is really asking
 
 There are `n` computers and a pile of batteries, where `batteries[i]` is how many minutes of charge battery `i` holds. A computer runs on one battery at a time. At any whole minute we may pull batteries out and swap them between computers as often as we like, but a battery can power only one computer at any given moment, and charge never moves from one battery to another. We want the longest time for which **all `n` computers run simultaneously**.

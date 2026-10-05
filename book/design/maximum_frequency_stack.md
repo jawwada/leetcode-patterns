@@ -1,6 +1,16 @@
 # Maximum Frequency Stack
 *LeetCode 895 · Hard · Pattern: Frequency buckets as stacks + max pointer · Reading time ~11 min*
 
+## The problem
+
+Design FreqStack with push(val) and pop(): pop removes and returns the most frequent element; on a tie, the one pushed
+most recently among the tied values.
+
+```text
+Example: push 5,7,5,7,4,5 then pop -> 5 (frequency 3), pop -> 7
+  (5 and 7 tie at 2, 7 is more recent), pop -> 5, pop -> 4.
+```
+
 ## What the problem is really asking
 
 Design a stack-like container with `push(val)` and `pop()`, where `pop` does not remove the top. It removes the **most frequent** value currently in the container; if several values tie for the highest frequency, it removes the one among them that was **pushed most recently**. Frequencies count copies currently present, so popping a value lowers its frequency.

@@ -1,6 +1,16 @@
 # Word Search II
 *LeetCode 212 · Hard · Pattern: Trie-guided grid backtracking · Reading time ~10 min*
 
+## The problem
+
+Given an m x n board of letters and a list of words, return every word that can be spelled by a path of horizontally
+or vertically adjacent cells without reusing a cell.
+
+```text
+Example: board [[o,a,a,n],[e,t,a,e],[i,h,k,r],[i,f,l,v]], words
+  [oath,pea,eat,rain] -> [eat, oath].
+```
+
 ## What the problem is really asking
 
 You have an m × n board of letters and a list of words. A word is "on the board" if you can spell it by starting on some cell and repeatedly stepping up, down, left or right, never stepping on the same cell twice within one word. Return every listed word that is on the board.

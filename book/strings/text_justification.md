@@ -2,6 +2,19 @@
 
 *LeetCode 68 · Hard · Pattern: Greedy line packing · Reading time ~9 min*
 
+## The problem
+
+Pack words greedily into lines of exactly maxWidth characters. Fully justify each line with extra spaces spread as
+evenly as possible (leftover spaces go to the leftmost gaps); the last line, and any line with a single word, is
+left-justified and padded.
+
+```text
+Example: words =
+  ["This","is","an","example","of","text","justification."],
+  maxWidth = 16 -> ["This    is    an", "example  of text",
+  "justification.  "].
+```
+
 ## What the problem is really asking
 
 You are given a list of words and a line width `maxWidth`. Lay the words out the way a newspaper column does: every output line is exactly `maxWidth` characters long. Put as many words on each line as fit (greedily, line by line). Then stretch each line to full width by inserting spaces between words, spreading them as evenly as possible; when they cannot be spread evenly, the gaps on the left get one more space than the gaps on the right. Two exceptions: the last line, and any line holding a single word, are left-justified, meaning one space between words and the remaining spaces padded at the end.

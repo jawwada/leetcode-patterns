@@ -1,6 +1,16 @@
 # Sliding Puzzle
 *LeetCode 773 · Hard · Pattern: BFS on implicit graph (board-state strings) · Reading time ~11 min*
 
+## The problem
+
+A 2x3 board holds tiles 1..5 and one blank 0. A move swaps the blank with a 4-directionally adjacent tile. Return the
+minimum number of moves to reach [[1,2,3],[4,5,0]], or -1 if it is unsolvable.
+
+```text
+Example: [[1,2,3],[4,0,5]] -> 1; [[4,1,2],[5,0,3]] -> 5;
+  [[1,2,3],[5,4,0]] -> -1.
+```
+
 ## What the problem is really asking
 
 A 2-by-3 tray holds tiles `1` to `5` and one empty slot, written `0`. A move slides a tile that

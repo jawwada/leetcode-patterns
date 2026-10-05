@@ -2,6 +2,16 @@
 
 *LeetCode 150 · Medium · Pattern: Stack evaluation · Reading time ~6 min*
 
+## The problem
+
+Evaluate an arithmetic expression given in postfix (RPN) as a list of tokens: integers and the operators + - * /.
+Division truncates toward zero and the expression is always valid.
+
+```text
+Example: ["2","1","+","3","*"] -> (2+1)*3 = 9;
+  ["4","13","5","/","+"] -> 4 + 13/5 = 6.
+```
+
 ## What the problem is really asking
 
 You get an arithmetic expression as a list of tokens written in postfix order: operands come first, the operator comes

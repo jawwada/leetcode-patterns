@@ -1,6 +1,17 @@
 # Implement Trie (Prefix Tree)
 *LeetCode 208 · Medium · Pattern: Trie (prefix tree) · Reading time ~7 min*
 
+## The problem
+
+Design a Trie with insert(word), search(word) (is this exact word stored?) and startsWith(prefix) (does any stored
+word begin with prefix?).
+
+```text
+Example: insert("apple"); search("apple") -> True; search("app")
+  -> False; startsWith("app") -> True; insert("app");
+  search("app") -> True.
+```
+
 ## What the problem is really asking
 
 Build a container of words with three operations: `insert(word)` adds a word, `search(word)` asks "was exactly this word inserted?", and `startsWith(prefix)` asks "was any word inserted that begins with these letters?". The answer to each query is a boolean; the real deliverable is the data structure.

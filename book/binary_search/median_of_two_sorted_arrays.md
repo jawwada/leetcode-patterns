@@ -2,6 +2,16 @@
 
 *LeetCode 4 · Hard · Pattern: Binary search on a partition · Reading time ~12 min*
 
+## The problem
+
+Given two sorted arrays nums1 (size m) and nums2 (size n), return the median of their combined sorted order in O(log(m
++ n)).
+
+```text
+Example: nums1 = [1,3], nums2 = [2] returns 2.0; nums1 = [1,2],
+  nums2 = [3,4] returns 2.5.
+```
+
 ## What the problem is really asking
 
 We are given two sorted arrays, `nums1` of length `m` and `nums2` of length `n`. We want the median of all `m + n` numbers together: the middle one if the total is odd, or the average of the two middle ones if it is even. The required time is O(log(m + n)), which rules out merging.

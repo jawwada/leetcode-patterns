@@ -2,6 +2,17 @@
 
 *LeetCode 987 · Hard · Pattern: DFS with (column, row) coordinates, then group-sort · Reading time ~11 min*
 
+## The problem
+
+The root is at (row 0, col 0); a left child sits at (row+1, col-1) and a right child at (row+1, col+1). Report the
+nodes column by column from left to right. Within a column, order by row, and break ties at the same (row, col) by
+value.
+
+```text
+Example: [1,2,3,4,5,6,7] returns [[4],[2],[1,5,6],[3],[7]],
+  since 5 and 6 share (2,0).
+```
+
 ## What the problem is really asking
 
 Lay the tree on graph paper. The root sits at `(row 0, col 0)`. Every left child is one row down and one column left, `(row+1, col-1)`; every right child is one row down and one column right, `(row+1, col+1)`. Now read the paper column by column from left to right, and inside each column read top to bottom. If two nodes land on the *same grid point*, read the smaller value first.

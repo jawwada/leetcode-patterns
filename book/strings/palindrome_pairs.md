@@ -2,6 +2,16 @@
 
 *LeetCode 336 · Hard · Pattern: Hash map of reversed words + palindrome split · Reading time ~10 min*
 
+## The problem
+
+Given distinct words, return all index pairs (i, j), i != j, such that words[i] + words[j] is a palindrome.
+
+```text
+Example: ["abcd","dcba","lls","s","sssll"] ->
+  [[0,1],[1,0],[3,2],[2,4]] ("abcddcba", "dcbaabcd", "slls",
+  "llssssll"); ["a",""] -> [[0,1],[1,0]].
+```
+
 ## What the problem is really asking
 
 You get a list of distinct words. Return every ordered pair of indices `(i, j)`, `i != j`, such that gluing `words[i]` in front of `words[j]` gives a palindrome. Order matters: `"abcd" + "dcba"` and `"dcba" + "abcd"` are both palindromes and count as two pairs.

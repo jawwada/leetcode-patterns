@@ -2,6 +2,15 @@
 
 *LeetCode 104 · Easy · Pattern: Tree recursion (post-order) · Reading time ~5 min*
 
+## The problem
+
+Return the number of nodes on the longest root-to-leaf path of a binary tree.
+
+```text
+Example: [3,9,20,null,null,15,7] has depth 3 (3 -> 20 -> 15); an
+  empty tree has depth 0.
+```
+
 ## What the problem is really asking
 
 Count the nodes on the longest path that starts at the root and ends at a leaf. The answer is one integer. It is not

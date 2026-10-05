@@ -2,6 +2,16 @@
 
 *LeetCode 1448 · Medium · Pattern: DFS carrying path state · Reading time ~7 min*
 
+## The problem
+
+A node is good if no node on the path from the root to it has a value greater than it (the root is always good). Count
+the good nodes.
+
+```text
+Example: [3,1,4,3,null,1,5] -> 4 (the root 3, the 4, the 5, and
+  the deeper 3).
+```
+
 ## What the problem is really asking
 
 Walk from the root down to some node X. If nothing you stepped on along the way is strictly bigger than X, then X is "good". Count how many nodes are good. The root is always good, since the path to it contains only itself. The answer is one integer between 1 and n.

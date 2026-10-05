@@ -2,6 +2,15 @@
 
 *LeetCode 53 · Medium · Pattern: Greedy running sum (Kadane) · Reading time ~7 min*
 
+## The problem
+
+Given an integer array nums, return the largest sum of any contiguous non-empty subarray.
+
+```text
+Example: nums = [-2,1,-3,4,-1,2,1,-5,4] returns 6, from the
+  subarray [4,-1,2,1].
+```
+
 ## What the problem is really asking
 
 You get a list of integers, some negative. Pick one unbroken stretch of it (at least one element long) so that the sum of

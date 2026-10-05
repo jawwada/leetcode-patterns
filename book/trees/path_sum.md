@@ -2,6 +2,16 @@
 
 *LeetCode 112 · Easy · Pattern: DFS carrying path state · Reading time ~6 min*
 
+## The problem
+
+Given a binary tree and targetSum, return True if some root-to-leaf path has node values summing to targetSum; a leaf
+has no children and an empty tree has no paths.
+
+```text
+Example: root = [5,4,8,11,null,13,4,7,2,null,null,null,1],
+  targetSum = 22 -> True via 5 -> 4 -> 11 -> 2.
+```
+
 ## What the problem is really asking
 
 Is there a way to walk from the root straight down to a leaf so that the values you step on add up to `targetSum`? The answer is a yes or no. The path must start at the root and must end at a leaf, a node with no children. Stopping halfway at an internal node whose running total happens to match does not count, and an empty tree has no paths at all, even when the target is 0.

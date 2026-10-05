@@ -2,6 +2,16 @@
 
 *LeetCode 1 · Easy · Pattern: Hash map complement lookup · Reading time ~5 min*
 
+## The problem
+
+Given an integer array nums and an integer target, return the indices of the two numbers that add up to target.
+Exactly one answer exists and you may not use the same element twice.
+
+```text
+Example: nums = [2, 7, 11, 15], target = 9 returns [0, 1]
+  because 2 + 7 = 9.
+```
+
 ## What the problem is really asking
 
 You get an unsorted list of integers and a target. Exactly two of the numbers add up to the target; return their

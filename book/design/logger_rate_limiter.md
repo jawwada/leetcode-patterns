@@ -2,6 +2,17 @@
 
 *LeetCode 359 · Easy · Pattern: Hash map of next-allowed timestamps · Reading time ~5 min*
 
+## The problem
+
+Implement Logger.shouldPrintMessage(timestamp, message) -> bool: a message may be printed only if the same message was
+not printed in the previous 10 seconds (printed at t means it is next allowed at t + 10). Timestamps arrive in
+non-decreasing order.
+
+```text
+Example: (1,'foo') True, (2,'bar') True, (3,'foo') False,
+  (8,'bar') False, (10,'foo') False, (11,'foo') True.
+```
+
 ## What the problem is really asking
 
 Messages arrive with timestamps in non-decreasing order. For each one, `shouldPrintMessage(timestamp, message)` answers yes or no: yes if this exact message has not been *printed* in the last 10 seconds. A message printed at time t blocks its copies at t+1 through t+9 and is allowed again at t+10. Each answer is a boolean; the object answering keeps state across calls.

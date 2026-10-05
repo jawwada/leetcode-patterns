@@ -2,6 +2,16 @@
 
 *LeetCode 55 · Medium · Pattern: Greedy reach (furthest reachable index) · Reading time ~6 min*
 
+## The problem
+
+You start at index 0 and nums[i] is the maximum jump length from i. Return True if you can reach the last index.
+
+```text
+Example: nums = [2,3,1,1,4] returns True; nums = [3,2,1,0,4]
+  returns False because every path lands on index 3, which has
+  jump 0.
+```
+
 ## What the problem is really asking
 
 You stand on index 0 of an array. The number on each square is the longest jump you may take from it; you may also take

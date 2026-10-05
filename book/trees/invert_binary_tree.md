@@ -2,6 +2,15 @@
 
 *LeetCode 226 · Easy · Pattern: Tree recursion (post-order) · Reading time ~5 min*
 
+## The problem
+
+Given the root of a binary tree, mirror it so that every node's left and right children are swapped, all the way down,
+and return the root.
+
+```text
+Example: [4,2,7,1,3,6,9] becomes [4,7,2,9,6,3,1].
+```
+
 ## What the problem is really asking
 
 Turn the tree into its mirror image: what was on the left of every node is now on the right, at every level, all the way

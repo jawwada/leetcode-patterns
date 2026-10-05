@@ -2,6 +2,16 @@
 
 *LeetCode 152 · Medium · Pattern: Running max & min carry (Kadane variant) · Reading time ~7 min*
 
+## The problem
+
+Given an integer array nums (values may be negative or zero), return the largest product of any non-empty contiguous
+subarray.
+
+```text
+Example: nums = [2,3,-2,4] -> 6 (subarray [2,3]); nums =
+  [-2,0,-1] -> 0.
+```
+
 ## What the problem is really asking
 
 Same shape as Maximum Subarray, with multiplication instead of addition: choose one unbroken, non-empty stretch of the

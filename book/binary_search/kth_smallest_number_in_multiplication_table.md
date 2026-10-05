@@ -2,6 +2,17 @@
 
 *LeetCode 668 · Hard · Pattern: Binary search on the answer · Reading time ~10 min*
 
+## The problem
+
+An m x n multiplication table has table[i][j] = i * j with 1-indexed i and j. Return the k-th smallest value in the
+table, 1 <= k <= m*n.
+
+```text
+Example: m = 3, n = 3, k = 5 returns 3 (table 1 2 3 / 2 4 6 / 3
+  6 9; sorted 1,2,2,3,3,4,6,6,9). Example: m = 2, n = 3, k = 6
+  returns 6.
+```
+
 ## What the problem is really asking
 
 Picture the `m x n` multiplication table from primary school, where cell `(i, j)` holds `i · j` with rows and columns numbered from 1. Pour every cell's value into one bag, duplicates included, sort the bag, and read off the `k`-th value.

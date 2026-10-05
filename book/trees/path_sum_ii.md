@@ -2,6 +2,16 @@
 
 *LeetCode 113 · Medium · Pattern: DFS backtracking with a shared path list · Reading time ~8 min*
 
+## The problem
+
+Given a binary tree and targetSum, return every root-to-leaf path, as a list of node values, whose values sum to
+targetSum.
+
+```text
+Example: root = [5,4,8,11,null,13,4,7,2,null,null,5,1],
+  targetSum = 22 -> [[5,4,11,2],[5,8,4,5]].
+```
+
 ## What the problem is really asking
 
 Same rules as Path Sum: a path starts at the root, ends at a leaf, and its values must add up to `targetSum`. The difference is the answer. Instead of a yes or no, return every matching path, each written as the list of values from root to leaf. The answer is a list of lists, and it can be empty.
