@@ -13,6 +13,10 @@
 
 Both sites are single self-contained HTML files (served by GitHub Pages; also open fine locally). Reading progress is saved in your browser.
 
+## Practice bank (traced scripts + debugging drills)
+
+[`practice/`](practice/README.md) holds 50 representative LeetCode problems (medium to medium-hard, no DP) and 81 fundamentals exercises across 14 areas (stacks, monotonic stacks, heaps, linked lists, backtracking, sorting, trees, searches, graphs incl. Kruskal/Prim/Dijkstra, strings, tries, matrices, math, bits). Every script prints a step-by-step trace of its key operations, carries a brute force and an optimal solution with tests, and ships hand-authored bug variants that the build verifies the tests catch. Each problem has a README with intuition and a drawn walkthrough. `python3 practice/build_bank.py` validates everything and builds `practice/bank.json`, which feeds the debug mode of the DSA Drill artifact.
+
 ## Layout
 
 ```
