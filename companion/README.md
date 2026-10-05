@@ -8,7 +8,7 @@ sort, union find, Kruskal, Prim, Dijkstra, heaps, tries, KMP ...) in the same st
 
 ## Fundamentals
 
-### Sorting
+### Arrays and Hashing
 
 - [Insertion Sort](fundamentals/sorting/01_insertion_sort.py) · take the next element, shift larger prefix elements one slot right, fill the gap
 - [Merge Sort](fundamentals/sorting/02_merge_sort.py) · split in half, sort each half recursively, merge two sorted runs, left wins ties
@@ -17,33 +17,22 @@ sort, union find, Kruskal, Prim, Dijkstra, heaps, tries, KMP ...) in the same st
 - [Counting Sort and Bucket Sort](fundamentals/sorting/05_counting_and_bucket_sort.py) · count by value, emit each value count times, bucket by int(x * n), sort buckets
 - [Python Sort Keys and Stability](fundamentals/sorting/06_python_sort_keys_and_stability.py) · tuple key, negate a field to flip it, two stable passes with the minor key first
 
-### Searching: binary search, BFS, DFS
+### Stacks
+
+- [Array Stack and Queue via Two Stacks](fundamentals/stacks/01_array_stack_and_queue_via_two_stacks.py) · push, pop, peek, drain inbox into outbox only when outbox is empty
+- [Asteroid Collision](fundamentals/stacks/05_asteroid_collision.py) · push right-movers, fight the top while top > 0 and current < 0, pop the loser
+- [Next Greater Element](fundamentals/monotonic_stacks/01_next_greater_element.py) · pop while top < current, record answer for popped, push current
+- [Previous Smaller Element](fundamentals/monotonic_stacks/02_previous_smaller_element.py) · pop while top >= current, answer is the survivor under the current, push current
+- [Online Stock Span](fundamentals/monotonic_stacks/03_online_stock_span.py) · pop while top price <= today, add the popped span to today's, push (price, span)
+- [Sum of Subarray Minimums](fundamentals/monotonic_stacks/04_sum_of_subarray_minimums.py) · pop while top >= current (or at the sentinel), count the popped index's subarrays
+- [Remove K Digits](fundamentals/monotonic_stacks/05_remove_k_digits.py) · pop while top > digit and k remains, push digit, cut the end, strip leading zeros
+
+### Binary Search
 
 - [Binary Search Variants](fundamentals/searches/01_binary_search_variants.py) · mid = (lo + hi) // 2, keep the half that can hold the answer, lower/upper bound
 - [Capacity To Ship Packages Within D Days](fundamentals/searches/02_binary_search_on_answer.py) · monotone can_ship(cap), search [max, sum], hi = mid if feasible else lo = mid + 1
-- [Shortest Path in a 0/1 Grid](fundamentals/searches/03_bfs_grid_shortest_path.py) · queue of cells, mark visited when enqueued, four directions with a bounds check
-- [Graph DFS, Recursive and Iterative](fundamentals/searches/04_dfs_recursive_and_iterative.py) · visited set, recurse into unvisited neighbours, stack with neighbours reversed
-- [Connected Components](fundamentals/searches/05_connected_components.py) · adjacency list from edges (both directions), BFS from every unvisited node, count
-- [01 Matrix](fundamentals/searches/06_multi_source_bfs_01_matrix.py) · enqueue every source first (distance 0), layer-by-layer BFS, mark when enqueued
 
-### Graph algorithms
-
-- [Adjacency List, BFS and DFS](fundamentals/graphs/01_adjacency_list_bfs_dfs.py) · build adjacency list, BFS with a queue and a visited set, DFS with a stack
-- [Topological Sort: Kahn and DFS](fundamentals/graphs/02_topological_sort_kahn_and_dfs.py) · count indegrees, queue of indegree-0 nodes, decrement on removal, cycle by count
-- [Union-Find (Disjoint Set Union)](fundamentals/graphs/03_union_find.py) · find with path compression, union by size, connected query, component count
-- [Kruskal's Minimum Spanning Tree](fundamentals/graphs/04_kruskal_mst.py) · sort edges by weight, union-find accept/reject, stop at n-1 edges
-- [Prim's Minimum Spanning Tree](fundamentals/graphs/05_prim_mst.py) · heap of (weight, node, parent), skip a popped node already in the tree, push edges
-- [Dijkstra's Shortest Paths](fundamentals/graphs/06_dijkstra.py) · heap of (dist, node), skip stale entries, relax out-edges, final when popped
-
-### Trees and BSTs
-
-- [Tree Traversals, Recursive and Iterative](fundamentals/trees/01_traversals_recursive_and_iterative.py) · visit before/between/after the children, push right then left, push-left-then-pop
-- [Level Order and Height](fundamentals/trees/02_bfs_level_order_and_height.py) · range(len(queue)) drains one level, popleft, push children, levels count as height
-- [BST Insert, Search, Delete](fundamentals/trees/03_bst_insert_search_delete.py) · descend by comparison, attach a leaf, splice out a 0/1-child node, successor swap
-- [Balanced Binary Tree](fundamentals/trees/04_balanced_and_depth.py) · post-order height, pass -1 upward as soon as a subtree fails, abs(left - right) > 1
-- [Serialize and Deserialize Binary Tree](fundamentals/trees/06_serialize_and_deserialize.py) · preorder emit, '#' for None, consume tokens from one queue, build left then right
-
-### Linked lists
+### Linked Lists
 
 - [Build, Print, Insert, Delete](fundamentals/linked_lists/01_build_print_insert_delete.py) · walk index steps from a dummy, splice a node in, unlink the first node with val
 - [Reverse a Linked List, Iterative and Recursive](fundamentals/linked_lists/02_reverse_iterative_and_recursive.py) · save next before you cut, point cur back to prev, advance both, hang head behind
@@ -51,20 +40,20 @@ sort, union find, Kruskal, Prim, Dijkstra, heaps, tries, KMP ...) in the same st
 - [Detect a Cycle with Floyd's Tortoise and Hare](fundamentals/linked_lists/04_detect_cycle_floyd.py) · slow and fast meet inside the cycle, reset one pointer to head, step both by one
 - [Reverse Nodes in k-Group](fundamentals/linked_lists/07_reverse_nodes_in_k_group.py) · probe k ahead, reverse one group with the next group as prev, re-hook, advance
 
-### Stacks and queues
+### Trees
 
-- [Array Stack and Queue via Two Stacks](fundamentals/stacks/01_array_stack_and_queue_via_two_stacks.py) · push, pop, peek, drain inbox into outbox only when outbox is empty
-- [Asteroid Collision](fundamentals/stacks/05_asteroid_collision.py) · push right-movers, fight the top while top > 0 and current < 0, pop the loser
+- [Tree Traversals, Recursive and Iterative](fundamentals/trees/01_traversals_recursive_and_iterative.py) · visit before/between/after the children, push right then left, push-left-then-pop
+- [Level Order and Height](fundamentals/trees/02_bfs_level_order_and_height.py) · range(len(queue)) drains one level, popleft, push children, levels count as height
+- [BST Insert, Search, Delete](fundamentals/trees/03_bst_insert_search_delete.py) · descend by comparison, attach a leaf, splice out a 0/1-child node, successor swap
+- [Balanced Binary Tree](fundamentals/trees/04_balanced_and_depth.py) · post-order height, pass -1 upward as soon as a subtree fails, abs(left - right) > 1
+- [Serialize and Deserialize Binary Tree](fundamentals/trees/06_serialize_and_deserialize.py) · preorder emit, '#' for None, consume tokens from one queue, build left then right
 
-### Monotonic stacks
+### Tries
 
-- [Next Greater Element](fundamentals/monotonic_stacks/01_next_greater_element.py) · pop while top < current, record answer for popped, push current
-- [Previous Smaller Element](fundamentals/monotonic_stacks/02_previous_smaller_element.py) · pop while top >= current, answer is the survivor under the current, push current
-- [Online Stock Span](fundamentals/monotonic_stacks/03_online_stock_span.py) · pop while top price <= today, add the popped span to today's, push (price, span)
-- [Sum of Subarray Minimums](fundamentals/monotonic_stacks/04_sum_of_subarray_minimums.py) · pop while top >= current (or at the sentinel), count the popped index's subarrays
-- [Remove K Digits](fundamentals/monotonic_stacks/05_remove_k_digits.py) · pop while top > digit and k remains, push digit, cut the end, strip leading zeros
+- [Trie: Delete a Word with Pruning](fundamentals/tries/02_trie_delete.py) · path down, clear end flag, prune empty non-end nodes upward, stop at a shared node
+- [Autocomplete: Collect Words with a Prefix](fundamentals/tries/03_autocomplete_collect_words_with_prefix.py) · walk to the prefix node, DFS below in sorted child order, emit at each end flag
 
-### Heaps
+### Heaps and Priority Queues
 
 - [Heapify by Hand](fundamentals/heaps/01_heapify_by_hand.py) · sift down from last parent to root, pick the smaller child, swap while child < node
 - [Heap Push and Pop by Hand](fundamentals/heaps/02_push_and_pop_by_hand.py) · push: append, float up via (i-1)//2; pop: last to root, sink to the smaller child
@@ -72,18 +61,26 @@ sort, union find, Kruskal, Prim, Dijkstra, heaps, tries, KMP ...) in the same st
 - [Max-Heap by Negation and Tuples](fundamentals/heaps/04_max_heap_by_negation_and_tuples.py) · push (-priority, arrival, payload), pop and un-negate, arrival breaks ties
 - [Merge K Sorted Arrays](fundamentals/heaps/06_merge_k_sorted_arrays.py) · seed heap with each head (value, array, index), pop the min, push that array's next
 
-### Tries
-
-- [Trie: Delete a Word with Pruning](fundamentals/tries/02_trie_delete.py) · path down, clear end flag, prune empty non-end nodes upward, stop at a shared node
-- [Autocomplete: Collect Words with a Prefix](fundamentals/tries/03_autocomplete_collect_words_with_prefix.py) · walk to the prefix node, DFS below in sorted child order, emit at each end flag
-
 ### Backtracking
 
 - [Subsets With Duplicates](fundamentals/backtracking/02_subsets_with_duplicates.py) · sort, skip nums[i] == nums[i-1] when i > start, choose, recurse from i+1, unchoose
 - [Combinations n Choose k](fundamentals/backtracking/03_combinations_n_choose_k.py) · choose i, recurse from i + 1, prune when numbers left < open slots, unchoose
 - [Permutations With Duplicates](fundamentals/backtracking/06_permutations_with_duplicates.py) · sort, skip nums[i] == nums[i-1] unless used[i-1], mark, choose, unmark, unchoose
 
-### Bits
+### Graphs
+
+- [Shortest Path in a 0/1 Grid](fundamentals/searches/03_bfs_grid_shortest_path.py) · queue of cells, mark visited when enqueued, four directions with a bounds check
+- [Graph DFS, Recursive and Iterative](fundamentals/searches/04_dfs_recursive_and_iterative.py) · visited set, recurse into unvisited neighbours, stack with neighbours reversed
+- [Connected Components](fundamentals/searches/05_connected_components.py) · adjacency list from edges (both directions), BFS from every unvisited node, count
+- [01 Matrix](fundamentals/searches/06_multi_source_bfs_01_matrix.py) · enqueue every source first (distance 0), layer-by-layer BFS, mark when enqueued
+- [Adjacency List, BFS and DFS](fundamentals/graphs/01_adjacency_list_bfs_dfs.py) · build adjacency list, BFS with a queue and a visited set, DFS with a stack
+- [Topological Sort: Kahn and DFS](fundamentals/graphs/02_topological_sort_kahn_and_dfs.py) · count indegrees, queue of indegree-0 nodes, decrement on removal, cycle by count
+- [Union-Find (Disjoint Set Union)](fundamentals/graphs/03_union_find.py) · find with path compression, union by size, connected query, component count
+- [Kruskal's Minimum Spanning Tree](fundamentals/graphs/04_kruskal_mst.py) · sort edges by weight, union-find accept/reject, stop at n-1 edges
+- [Prim's Minimum Spanning Tree](fundamentals/graphs/05_prim_mst.py) · heap of (weight, node, parent), skip a popped node already in the tree, push edges
+- [Dijkstra's Shortest Paths](fundamentals/graphs/06_dijkstra.py) · heap of (dist, node), skip stale entries, relax out-edges, final when popped
+
+### Bit Manipulation
 
 - [Get, Set, Clear and Toggle a Bit](fundamentals/bits/01_get_set_clear_toggle_bits.py) · mask = 1 << i, n | mask sets, n & ~mask clears, n ^ mask toggles, n >> i & 1 reads
 - [Count Set Bits and the Lowest Set Bit](fundamentals/bits/02_count_bits_and_lowest_set_bit.py) · n & (n-1) drops lowest set bit, n & -n isolates it, power of two iff that leaves 0
@@ -91,7 +88,7 @@ sort, union find, Kruskal, Prim, Dijkstra, heaps, tries, KMP ...) in the same st
 - [Bitmask Subset Enumeration](fundamentals/bits/04_bitmask_subset_enumeration.py) · masks 0..2^n-1 = subsets, mask >> i & 1 tests item i, (sub-1) & mask = next submask
 - [Reverse Bits and Shifts](fundamentals/bits/05_reverse_bits_and_shifts.py) · bit = n & 1, result = result << 1 | bit, n >>= 1, & 0xFFFFFFFF makes >> logical
 
-### Math
+### Math and Geometry
 
 - [GCD and LCM with Euclid's Algorithm](fundamentals/math/01_gcd_lcm_euclid.py) · (a, b) -> (b, a % b) until b == 0, lcm = |a| // gcd * |b|
 - [Primes: Trial Division and the Sieve of Eratosthenes](fundamentals/math/02_primes_sieve_and_primality.py) · trial divide while d * d <= n, cross off multiples of p from p * p, keep survivors
@@ -99,14 +96,11 @@ sort, union find, Kruskal, Prim, Dijkstra, heaps, tries, KMP ...) in the same st
 - [Reverse Integer and Palindrome Number](fundamentals/math/04_digits_reverse_integer_and_palindrome_number.py) · digit = n % 10 and n //= 10, rev = rev * 10 + digit, 32-bit check, reverse half
 - [Base Conversion and Excel Column Titles](fundamentals/math/05_base_conversion_and_excel_columns.py) · n % b and n // b peel the lowest digit, Horner n = n * b + digit, n - 1 for A..Z
 - [Random Pick and Reservoir Sampling](fundamentals/math/06_random_pick_and_reservoir_sampling.py) · keep the first k, item i replaces slot j = randrange(i + 1) when j < k, k = 1 pick
-
-### Matrices
-
 - [Search a 2D Matrix II](fundamentals/matrices/04_search_2d_matrix_staircase.py) · start at the top-right corner, move left when too big, move down when too small
 - [Game of Life In Place](fundamentals/matrices/05_game_of_life_in_place.py) · count 8 neighbors with & 1, store the next state in bit 1, decode with >> 1
 - [Matrix Traversal Patterns](fundamentals/matrices/06_matrix_traversal_patterns.py) · row-major and column-major walks, anti-diagonals by r + c, 4/8 direction vectors
 
-### Strings
+### Strings: Scanning, Parsing, Canonical Forms
 
 - [Two Pointer Palindromes and Reverse Words](fundamentals/strings/02_two_pointer_palindromes_and_reverse_words.py) · lo/hi pointers skipping non-alphanumerics, compare lowercase, reverse a range
 - [KMP Prefix Function](fundamentals/strings/03_kmp_prefix_function.py) · build the failure table, fall back with fail[k - 1] on a mismatch, extend on match

@@ -16,15 +16,17 @@ SITE = os.path.join(ROOT, "site")
 BOOK = os.path.join(ROOT, "book")
 BASICS = os.path.join(ROOT, "practice", "basics")
 BG_SECTIONS = ["What it is", "Operations and what they cost", "The invariant", "Python toolbox", "Mistakes people make"]
-AREA_TITLES = {"sorting": "Sorting", "searches": "Searching: binary search, BFS, DFS", "graphs": "Graph algorithms",
-               "trees": "Trees and BSTs", "linked_lists": "Linked lists", "stacks": "Stacks and queues",
-               "monotonic_stacks": "Monotonic stacks", "heaps": "Heaps", "tries": "Tries", "backtracking": "Backtracking",
-               "bits": "Bits", "math": "Math", "matrices": "Matrices", "strings": "Strings"}
-# which fundamentals areas a chapter page points to
-CHAPTER_AREAS = {"arrays_hashing": ["sorting"], "two_pointers": ["strings"], "stack": ["stacks", "monotonic_stacks"],
-                 "queues": ["stacks"], "binary_search": ["searches"], "linked_list": ["linked_lists"], "trees": ["trees"],
-                 "tries": ["tries"], "heap": ["heaps"], "backtracking": ["backtracking"], "graphs": ["graphs", "searches"],
-                 "bit_manipulation": ["bits"], "math_geometry": ["math", "matrices"], "strings": ["strings"]}
+# fundamentals area (companion/fundamentals/<area>) -> the book chapter whose Fundamentals page lists it
+AREA_CHAPTER = {"sorting": "arrays_hashing", "graphs": "graphs", "trees": "trees", "linked_lists": "linked_list",
+                "stacks": "stack", "monotonic_stacks": "stack", "heaps": "heap", "tries": "tries",
+                "backtracking": "backtracking", "bits": "bit_manipulation", "math": "math_geometry",
+                "matrices": "math_geometry", "strings": "strings", "searches": None}  # searches: split by file name
+
+
+def area_chapter(area, name):
+    if area == "searches":
+        return "binary_search" if "binary_search" in name else "graphs"
+    return AREA_CHAPTER[area]
 
 
 def md_sections(md):
@@ -46,9 +48,11 @@ def build_page(check_file):
     for f in glob.glob(os.path.join(SITE, "companion", "pseudo", "*.json")):
         pseudo.update(json.load(open(f)))
     errors, chapters, problems = [], [], {}
-    fundamentals = []
+    fund_text = {}
+    for f in glob.glob(os.path.join(SITE, "companion", "fund_text_*.json")):
+        fund_text.update(json.load(open(f)))
+    items_by_chapter = {t: [] for t in SELECTION}
     for area, names in FUNDAMENTALS.items():
-        items = []
         for name in names:
             path = os.path.join(CODE, "fundamentals", area, name + ".py")
             if not os.path.exists(path):
@@ -59,12 +63,16 @@ def build_page(check_file):
                 e = check_file(path)
             except Bad as ex:
                 errors.append(f"{os.path.relpath(path, ROOT)}: {ex}"); continue
-            ps = pseudo.get(f"{area}/{name}")
+            key = f"{area}/{name}"
+            ps = pseudo.get(key)
             if not ps and not partial:
-                errors.append(f"fundamentals {area}/{name}: no pseudocode"); continue
-            items.append({"id": f"fund-{area}-{name}", "name": name, "area": area, "title": e["title"], "key_ops": e["key_ops"],
-                          "statement": e["statement"], "py": e["py"], "pseudo": (ps or {}).get("algorithm")})
-        fundamentals.append({"area": area, "id": "fund-" + area, "title": AREA_TITLES.get(area, area), "items": items})
+                errors.append(f"fundamentals {key}: no pseudocode"); continue
+            if key not in fund_text and not partial:
+                errors.append(f"fundamentals {key}: no explanation paragraph in site/companion/fund_text_*.json"); continue
+            items_by_chapter[area_chapter(area, name)].append({
+                "id": f"fund-{area}-{name}", "name": name, "area": area, "title": e["title"], "key_ops": e["key_ops"],
+                "statement": e["statement"], "text": fund_text.get(key, ""), "py": e["py"], "pseudo": (ps or {}).get("algorithm")})
+    fundamentals = []
     for topic, slugs in SELECTION.items():
         order = json.load(open(os.path.join(BOOK, topic, "order.json")))
         why = {o["slug"]: o.get("why_here", "") for o in order.get("order", [])}
@@ -94,8 +102,9 @@ def build_page(check_file):
                         "py": e["opt_py"], "pseudo": ps["optimal"]},
             }
             kept.append(slug)
-        chapters.append({"topic": topic, "title": CHAPTER_TITLES[topic], "intro": intro, "background": background,
-                         "areas": [a for a in CHAPTER_AREAS.get(topic, []) if a in FUNDAMENTALS], "problems": kept})
+        chapters.append({"topic": topic, "title": CHAPTER_TITLES[topic], "intro": intro, "problems": kept})
+        fundamentals.append({"id": "fund-" + topic, "topic": topic, "title": CHAPTER_TITLES[topic], "intro": intro,
+                             "background": background, "items": items_by_chapter[topic]})
     if errors:
         print("\n".join(errors[:80]))
         if len(errors) > 80:
@@ -124,10 +133,12 @@ def write_readme(chapters, problems, fundamentals):
              "sort, union find, Kruskal, Prim, Dijkstra, heaps, tries, KMP ...) in the same style, one algorithm per file.", "",
              "## Fundamentals", ""]
     for f in fundamentals:
+        if not f["items"]:
+            continue
         lines.append(f"### {f['title']}")
         lines.append("")
         for it in f["items"]:
-            lines.append(f"- [{it['title']}](fundamentals/{f['area']}/{it['name']}.py) · {it['key_ops']}")
+            lines.append(f"- [{it['title']}](fundamentals/{it['area']}/{it['name']}.py) · {it['key_ops']}")
         lines.append("")
     lines += ["## Problems", ""]
     for c in chapters:
