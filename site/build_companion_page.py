@@ -41,11 +41,12 @@ def md_sections(md):
 
 
 def build_page(check_file):
-    from build_companion import Bad, CODE, SELECTION, CHAPTER_TITLES, FUNDAMENTALS
+    from build_companion import Bad, CODE, SELECTION, CHAPTER_TITLES, FUNDAMENTALS, CFG
     partial = "--partial" in sys.argv
+    bg_sections = CFG["bg"]
     problems_json = {p["slug"]: p for p in json.load(open(os.path.join(SITE, "problems.json")))}
     pseudo = {}
-    for f in glob.glob(os.path.join(SITE, "companion", "pseudo", "*.json")):
+    for f in glob.glob(os.path.join(SITE, "companion", CFG["pseudo"], "*.json")):
         pseudo.update(json.load(open(f)))
     errors, chapters, problems = [], [], {}
     fund_text = {}
@@ -78,12 +79,14 @@ def build_page(check_file):
         why = {o["slug"]: o.get("why_here", "") for o in order.get("order", [])}
         bg = md_sections(open(os.path.join(BOOK, topic, "00_background.md")).read())
         intro = bg.get("The chapter", "").split("Problems, in reading order:")[0].strip()
-        background = [{"title": s, "md": bg[s]} for s in BG_SECTIONS if s in bg]
+        background = [{"title": s, "md": bg[s]} for s in bg_sections if s in bg]
         kept = []
         for slug in slugs:
             path = os.path.join(CODE, topic, slug + ".py")
             if not os.path.exists(path):
-                errors.append(f"missing {os.path.relpath(path, ROOT)}"); continue
+                if not partial:
+                    errors.append(f"missing {os.path.relpath(path, ROOT)}")
+                continue
             try:
                 e = check_file(path)
             except Bad as ex:
@@ -110,33 +113,39 @@ def build_page(check_file):
         if len(errors) > 80:
             print(f"... {len(errors) - 80} more")
         return 1
-    data = {"chapters": chapters, "problems": problems, "fundamentals": fundamentals}
-    template = open(os.path.join(SITE, "companion_template.html")).read()
+    data = {"chapters": chapters, "problems": problems, "fundamentals": fundamentals,
+            "edition": {"title": CFG["title"], "fund_label": CFG["fund_label"], "lede": CFG["lede"]}}
+    template = open(os.path.join(SITE, "companion_template.html")).read().replace("__TITLE__", CFG["title"])
     fragment = template.replace("__DATA__", json.dumps(data).replace("</", "<\\/"))
-    open(os.path.join(SITE, "companion.html"), "w").write(fragment)
+    out = CFG["out"]
+    open(os.path.join(SITE, out + ".html"), "w").write(fragment)
     full = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
             + fragment + "\n</html>\n")
-    open(os.path.join(SITE, "companion_index.html"), "w").write(full)
+    open(os.path.join(SITE, out + "_index.html"), "w").write(full)
     # the website build: a folder Vercel (or any static host) can serve as-is; Python comes from the Pyodide CDN
-    dist = os.path.join(SITE, "companion_site")
+    dist = os.path.join(SITE, out + "_site")
     os.makedirs(dist, exist_ok=True)
     open(os.path.join(dist, "index.html"), "w").write(full)
     open(os.path.join(dist, "pyworker.js"), "w").write(open(os.path.join(SITE, "companion", "pyworker.js")).read())
     write_readme(chapters, problems, fundamentals)
     nb = sum(len(f["items"]) for f in fundamentals)
-    print(f"built companion: {len(chapters)} chapters, {len(problems)} problems, {nb} fundamentals -> site/companion_index.html ({len(full) // 1024} KB)")
+    print(f"built {out}: {len(chapters)} chapters, {len(problems)} problems, {nb} fundamentals -> site/{out}_index.html ({len(full) // 1024} KB)")
     return 0
 
 
 def write_readme(chapters, problems, fundamentals):
-    lines = ["# Brute to Optimal: code files", "",
+    from build_companion import CFG, CODE
+    lines = [f"# {CFG['title']}: code files", "",
              "One runnable file per problem, in the book's reading order. Each file has a brute force and the optimal",
              "solution written in plain Python, and two demos at the bottom that print the same answers. Run a file with",
              "`python3 companion/<chapter>/<problem>.py`, change the inputs, run again. Format: `site/companion/SPEC.md`.",
              "`fundamentals/` holds the data structure operations and classic algorithms (sorting, BFS/DFS, topological",
              "sort, union find, Kruskal, Prim, Dijkstra, heaps, tries, KMP ...) in the same style, one algorithm per file.", "",
-             "## Fundamentals", ""]
+             "## Fundamentals", ""] if fundamentals and any(f["items"] for f in fundamentals) else ["# " + CFG["title"] + ": code files", "",
+             "One runnable file per problem, in the book's reading order. Each file has a brute force and the optimal",
+             "solution written in plain Python, and two demos at the bottom that print the same answers. Run a file with",
+             f"`python3 {CFG['code']}/<chapter>/<problem>.py`, change the inputs, run again. Format: `site/companion/SPEC.md`.", ""]
     for f in fundamentals:
         if not f["items"]:
             continue
@@ -145,7 +154,8 @@ def write_readme(chapters, problems, fundamentals):
         for it in f["items"]:
             lines.append(f"- [{it['title']}](fundamentals/{it['area']}/{it['name']}.py) · {it['key_ops']}")
         lines.append("")
-    lines += ["## Problems", ""]
+    if any(f["items"] for f in fundamentals):
+        lines += ["## Problems", ""]
     for c in chapters:
         lines.append(f"### {c['title']}")
         lines.append("")
@@ -153,4 +163,4 @@ def write_readme(chapters, problems, fundamentals):
             p = problems[s]
             lines.append(f"{k}. [{p['title']}]({c['topic']}/{s}.py) · LC {p['leetcode']} · {p['difficulty']} · {p['pattern']}")
         lines.append("")
-    open(os.path.join(ROOT, "companion", "README.md"), "w").write("\n".join(lines))
+    open(os.path.join(CODE, "README.md"), "w").write("\n".join(lines))

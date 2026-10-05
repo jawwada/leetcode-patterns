@@ -1,0 +1,163 @@
+{
+ "arrays_hashing": [
+  "first_missing_positive",
+  "maximum_gap",
+  "contains_duplicate_iii",
+  "count_of_smaller_numbers_after_self",
+  "reverse_pairs",
+  "create_sorted_array_through_instructions"
+ ],
+ "two_pointers": [
+  "trapping_rain_water",
+  "wildcard_matching"
+ ],
+ "sliding_window": [
+  "substring_with_concatenation_of_all_words",
+  "minimum_window_substring",
+  "subarrays_with_k_different_integers",
+  "sliding_window_maximum",
+  "shortest_subarray_with_sum_at_least_k",
+  "sliding_window_median"
+ ],
+ "stack": [
+  "basic_calculator",
+  "parsing_a_boolean_expression",
+  "longest_valid_parentheses",
+  "largest_rectangle_in_histogram",
+  "maximal_rectangle",
+  "create_maximum_number"
+ ],
+ "binary_search": [
+  "find_in_mountain_array",
+  "split_array_largest_sum",
+  "maximum_running_time_of_n_computers",
+  "kth_smallest_number_in_multiplication_table",
+  "find_kth_smallest_pair_distance",
+  "maximum_average_subarray_ii",
+  "median_of_two_sorted_arrays"
+ ],
+ "linked_list": [
+  "reverse_nodes_in_k_group"
+ ],
+ "trees": [
+  "binary_tree_maximum_path_sum",
+  "vertical_order_traversal_of_a_binary_tree",
+  "closest_binary_search_tree_value_ii",
+  "recover_binary_search_tree",
+  "recover_a_tree_from_preorder_traversal",
+  "serialize_and_deserialize_binary_tree",
+  "serialize_and_deserialize_n_ary_tree",
+  "binary_tree_cameras"
+ ],
+ "tries": [
+  "word_search_ii",
+  "word_squares",
+  "prefix_and_suffix_search",
+  "stream_of_characters",
+  "design_search_autocomplete_system"
+ ],
+ "heap": [
+  "rearrange_string_k_distance_apart",
+  "merge_k_sorted_lists",
+  "kth_smallest_prime_fraction",
+  "smallest_range_covering_elements_from_k_lists",
+  "find_median_from_data_stream",
+  "ipo",
+  "minimum_number_of_refueling_stops",
+  "course_schedule_iii",
+  "maximum_performance_of_a_team",
+  "minimize_deviation_in_array",
+  "meeting_rooms_iii",
+  "the_skyline_problem",
+  "trapping_rain_water_ii"
+ ],
+ "backtracking": [
+  "unique_paths_iii",
+  "n_queens",
+  "sudoku_solver",
+  "remove_invalid_parentheses",
+  "expression_add_operators",
+  "twenty_four_game",
+  "robot_room_cleaner"
+ ],
+ "graphs": [
+  "word_ladder",
+  "word_ladder_ii",
+  "sliding_puzzle",
+  "bus_routes",
+  "jump_game_iv",
+  "k_similar_strings",
+  "shortest_path_in_a_grid_with_obstacles_elimination",
+  "shortest_path_to_get_all_keys",
+  "shortest_path_visiting_all_nodes",
+  "minimum_moves_to_move_a_box_to_their_target_location",
+  "alien_dictionary",
+  "parallel_courses_iii",
+  "sort_items_by_groups_respecting_dependencies",
+  "reconstruct_itinerary",
+  "redundant_connection_ii",
+  "number_of_islands_ii",
+  "minimize_malware_spread",
+  "largest_component_size_by_common_factor",
+  "find_all_people_with_secret",
+  "checking_existence_of_edge_length_limited_paths",
+  "remove_max_number_of_edges_to_keep_graph_fully_traversable",
+  "minimum_cost_to_make_at_least_one_valid_path_in_a_grid",
+  "swim_in_rising_water",
+  "minimum_weighted_subgraph_with_the_required_paths",
+  "find_critical_and_pseudo_critical_edges_in_minimum_spanning_tree",
+  "critical_connections_in_a_network"
+ ],
+ "intervals": [
+  "employee_free_time",
+  "minimum_interval_to_include_each_query",
+  "my_calendar_iii",
+  "rectangle_area_ii"
+ ],
+ "greedy": [
+  "minimum_number_of_taps_to_open_to_water_a_garden",
+  "candy",
+  "min_number_operations",
+  "super_washing_machines",
+  "patching_array",
+  "set_intersection_size_at_least_two",
+  "couples_holding_hands",
+  "stamping_the_sequence"
+ ],
+ "bit_manipulation": [
+  "number_of_valid_words_for_each_puzzle",
+  "find_longest_awesome_substring",
+  "maximum_xor_with_an_element_from_array"
+ ],
+ "math_geometry": [
+  "permutation_sequence",
+  "kth_smallest_in_lexicographical_order",
+  "number_of_digit_one",
+  "poor_pigs",
+  "max_points_on_a_line",
+  "perfect_rectangle",
+  "erect_the_fence"
+ ],
+ "strings": [
+  "valid_number",
+  "integer_to_english_words",
+  "text_justification",
+  "longest_happy_prefix",
+  "shortest_palindrome",
+  "palindrome_pairs",
+  "longest_duplicate_substring"
+ ],
+ "design": [
+  "lfu_cache",
+  "all_oone_data_structure",
+  "maximum_frequency_stack",
+  "dinner_plate_stacks",
+  "data_stream_as_disjoint_intervals",
+  "range_module",
+  "range_sum_query_2d_mutable",
+  "online_majority_element_in_subarray",
+  "design_movie_rental_system",
+  "design_in_memory_file_system",
+  "design_skiplist"
+ ]
+}

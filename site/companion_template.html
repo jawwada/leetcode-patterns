@@ -1,4 +1,4 @@
-<title>Brute to Optimal</title>
+<title>__TITLE__</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
 /* Layout: the book's companion. Same paper, same faces: a chapter list on the left, one reading column, and
@@ -180,7 +180,7 @@ code,pre,textarea{font-family:var(--mono)}
 <div class="app">
   <aside class="toc" id="toc">
     <div class="toc-head">
-      <h1><a href="#home">Brute to Optimal</a></h1>
+      <h1><a href="#home">__TITLE__</a></h1>
       <div class="sub" id="subtitle"></div>
       <input id="search" type="search" placeholder="Find a problem" aria-label="Find a problem" autocomplete="off">
       <div class="pystatus" id="pystatus"><span class="d"></span><span id="pytext">Python runtime loads when you open a problem</span></div>
@@ -199,6 +199,7 @@ code,pre,textarea{font-family:var(--mono)}
 'use strict';
 const DATA = JSON.parse(document.getElementById('data').textContent);
 const CH = DATA.chapters, P = DATA.problems, FUND = DATA.fundamentals || [];
+const ED = DATA.edition || {title: 'Brute to Optimal', fund_label: 'Fundamentals', lede: ''};
 const byArea = Object.fromEntries(FUND.map(f => [f.id, f]));
 const FITEMS = {}; FUND.forEach(f => f.items.forEach(it => { FITEMS[it.id] = it; }));
 const forder = FUND.flatMap(f => f.items.map(it => it.id));
@@ -344,7 +345,7 @@ function renderChapter(topic){
   const ch = byTopic[topic];
   page.innerHTML = `
     <header class="pagehead"><div class="crumbs"><a href="#home">Chapters</a><span>›</span><span>Problems</span><span>›</span><span>${esc(ch.title)}</span></div>
-      <h1>${esc(ch.title)}</h1><div class="meta"><span>${ch.problems.length} problems</span><span>·</span><a href="#fund-${topic}">Background and fundamentals</a></div></header>
+      <h1>${esc(ch.title)}</h1><div class="meta"><span>${ch.problems.length} problems</span><span>·</span><a href="#fund-${topic}">${esc(ED.fund_label)}</a></div></header>
     <div class="prose"><p class="lede">${esc(ch.intro)}</p><h2>Problems, in reading order</h2></div>
     <div class="overview">${ch.problems.map((s, k) => `<a href="#${s}"><span class="k">${String(k + 1).padStart(2, '0')}</span><span><div class="t">${esc(P[s].title)}</div><div class="w">${esc(P[s].why_here || P[s].pattern)}</div></span><span class="pill ${P[s].difficulty}">${P[s].difficulty}</span></a>`).join('')}</div>`;
 }
@@ -354,7 +355,7 @@ function renderFundChapter(id){
   const items = f.items.length ? `<div class="prose"><h2>Algorithms to have at your fingertips</h2></div>
     <div class="overview">${f.items.map((it, k) => `<a href="#${it.id}"><span class="k">${String(k + 1).padStart(2, '0')}</span><span><div class="t">${esc(it.title)}</div><div class="w">${esc(it.key_ops)}</div></span></a>`).join('')}</div>` : '';
   page.innerHTML = `
-    <header class="pagehead"><div class="crumbs"><a href="#home">Chapters</a><span>›</span><span>Fundamentals</span><span>›</span><span>${esc(f.title)}</span></div>
+    <header class="pagehead"><div class="crumbs"><a href="#home">Chapters</a><span>›</span><span>${esc(ED.fund_label)}</span><span>›</span><span>${esc(f.title)}</span></div>
       <h1>${esc(f.title)}</h1><div class="meta">${f.items.length ? `<span>${f.items.length} algorithms</span><span>·</span>` : ''}<a href="#${f.topic}">${byTopic[f.topic].problems.length} problems</a></div></header>
     <div class="prose"><p class="lede">${esc(f.intro)}</p></div>
     <div class="prose"><h2>Background</h2></div>${bg}
@@ -366,7 +367,7 @@ function renderFund(id){
   const i = forder.indexOf(id), prev = forder[i - 1], next = forder[i + 1];
   page.innerHTML = `
     <header class="pagehead">
-      <div class="crumbs"><a href="#home">Chapters</a><span>›</span><span>Fundamentals</span><span>›</span><a href="#${f.id}">${esc(f.title)}</a></div>
+      <div class="crumbs"><a href="#home">Chapters</a><span>›</span><span>${esc(ED.fund_label)}</span><span>›</span><a href="#${f.id}">${esc(f.title)}</a></div>
       <h1>${esc(it.title)}</h1>
       <div class="meta"><span class="pill">Fundamentals</span><span>${esc(it.key_ops)}</span>
         <label class="donebox"><input type="checkbox" id="done-${id}" ${done.has(id) ? 'checked' : ''}> know it cold</label></div>
@@ -387,10 +388,10 @@ function renderFund(id){
 }
 function renderHome(){
   const total = order.length, nd = order.filter(s => done.has(s)).length;
-  page.innerHTML = `<div class="home"><h1>Brute to Optimal</h1>
-    <p class="lede">Every problem in two sections, the brute force and the optimal solution, each as a short paragraph, runnable Python and pseudocode. The fundamentals pages carry each chapter's background and the classic algorithms to know by heart. Edit the inputs, run, compare.</p>
-    <p class="muted" style="font-family:var(--display);font-size:14px">${nd} of ${total} problems and ${forder.filter(s => done.has(s)).length} of ${forder.length} fundamentals marked done on this device.</p>
-    <h2 style="font-size:22px;margin:0 0 10px">Fundamentals: background and core algorithms</h2>
+  page.innerHTML = `<div class="home"><h1>${esc(ED.title)}</h1>
+    <p class="lede">${esc(ED.lede)}</p>
+    <p class="muted" style="font-family:var(--display);font-size:14px">${nd} of ${total} problems${forder.length ? ' and ' + forder.filter(s => done.has(s)).length + ' of ' + forder.length + ' fundamentals' : ''} marked done on this device.</p>
+    <h2 style="font-size:22px;margin:0 0 10px">${esc(ED.fund_label)}: background per chapter</h2>
     <div class="chapters" style="margin-bottom:28px">${FUND.map(f => { const d = f.items.filter(it => done.has(it.id)).length; return `<a href="#${f.id}"><h3>${esc(f.title)}</h3><span class="s">${f.items.length ? f.items.length + ' algorithms · ' : ''}background</span><div class="bar"><div style="width:${f.items.length ? 100 * d / f.items.length : 0}%"></div></div></a>`; }).join('')}</div>
     <h2 style="font-size:22px;margin:0 0 10px">Problems by chapter</h2>
     <div class="chapters">${CH.map(c => { const d = c.problems.filter(s => done.has(s)).length; return `<a href="#${c.topic}"><h3>${esc(c.title)}</h3><span class="s">${c.problems.length} problems</span><div class="bar"><div style="width:${c.problems.length ? 100 * d / c.problems.length : 0}%"></div></div></a>`; }).join('')}</div></div>`;
@@ -416,8 +417,8 @@ function renderNav(){
       <button type="button"><span>${esc(c.title)}</span><span class="n">${c.problems.filter(s => done.has(s)).length}/${c.problems.length}</span></button>
       <div class="secs">${items.map(s => `<a href="#${s}" class="${cur === s ? 'on' : ''} ${done.has(s) ? 'done' : ''}"><span class="d ${P[s].difficulty}"></span>${esc(P[s].title)}</a>`).join('')}</div></div>`;
   }).join('');
-  $('#nav').innerHTML = `<div class="eyebrow" style="padding:10px 10px 4px">Fundamentals</div>` + fundNav + `<div class="eyebrow" style="padding:16px 10px 4px">Problems</div>` + probNav;
-  $('#subtitle').textContent = `${order.length} problems · ${forder.length} fundamentals · companion to Intuition Journey`;
+  $('#nav').innerHTML = `<div class="eyebrow" style="padding:10px 10px 4px">${esc(ED.fund_label)}</div>` + fundNav + `<div class="eyebrow" style="padding:16px 10px 4px">Problems</div>` + probNav;
+  $('#subtitle').textContent = `${order.length} problems · ${forder.length ? forder.length + ' fundamentals · ' : ''}companion to Intuition Journey`;
 }
 $('#nav').addEventListener('click', e => {
   const btn = e.target.closest('.ch > button'); if (!btn) return;

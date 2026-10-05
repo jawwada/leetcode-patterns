@@ -1,0 +1,54 @@
+{
+ "rearrange_string_k_distance_apart": {
+  "brute": "if k <= 1: return s\ncounts = dict letter -> count, out = []\nplace():   (backtracking, one slot at a time)\n    if size of out == size of s: return true\n    recent = set of the last k - 1 letters placed\n    for each letter ch in sorted order:\n        if counts[ch] > 0 and ch not in recent:\n            counts[ch] = counts[ch] - 1, append ch to out\n            if place(): return true\n            undo: pop ch from out, counts[ch] = counts[ch] + 1\n    return false\nreturn out joined if place() succeeds else \"\"",
+  "optimal": "if k <= 1: return s\ncounts = dict letter -> count\nheap = max-heap of (count, letter)\ncooldown = queue of (count, letter) waiting out k slots, out = []\nrepeat n times:\n    if heap is empty: return \"\"   (every letter is still cooling down: impossible)\n    pop the most frequent (count, ch), append ch to out\n    append (count - 1, ch) to the back of cooldown\n    if size of cooldown == k:\n        pop the front; if it still has copies left push it back onto the heap\nreturn out joined"
+ },
+ "merge_k_sorted_lists": {
+  "brute": "values = []\nfor each list head:\n    walk the list appending every value to values\nsort values   (ignores that each list is already sorted)\nbuild and return a new linked list from values",
+  "optimal": "heads = the current front node of each list\nheap = min-heap of (value, list index) for every non-empty head\ndummy = new node, tail = dummy\nwhile heap is not empty:\n    pop the smallest (value, i)   (the globally smallest remaining node)\n    node = heads[i], tail.next = node, tail = node\n    heads[i] = node.next\n    if heads[i] exists: push (heads[i].value, i)\nreturn dummy.next"
+ },
+ "kth_smallest_prime_fraction": {
+  "brute": "fractions = []\nfor each i, for each j after i:\n    append (arr[i] / arr[j], arr[i], arr[j]) to fractions\nsort fractions by value   (sorts fractions that can never be among the first k)\nreturn [numerator, denominator] of fractions[k - 1]",
+  "optimal": "heap = min-heap of (arr[i] / arr[n - 1], i, n - 1) for each i < n - 1   (each row's smallest)\nrepeat k - 1 times:\n    pop the smallest (value, i, j)\n    if j - 1 > i: push (arr[i] / arr[j - 1], i, j - 1)   (row i's next fraction)\n(value, i, j) = top of heap\nreturn [arr[i], arr[j]]"
+ },
+ "smallest_range_covering_elements_from_k_lists": {
+  "brute": "covers(low, high): true if every list has a value in [low, high]\nvalues = sorted distinct values across all lists\nbest = none\nfor each a in values (range start):\n    for each b from a onward (range end):\n        if covers(values[a], values[b]):   (the first covering end is the best for this start)\n            if best is none or values[b] - values[a] < width of best: best = [values[a], values[b]]\n            break\nreturn best",
+  "optimal": "heap = min-heap of (value, list index, position) with the first element of each list\ncurrent_max = largest of those first elements\nbest = [top of heap, current_max]\nrepeat forever:\n    pop the smallest (value, i, j)   (the low end of the range)\n    if current_max - value < width of best: best = [value, current_max]\n    if j + 1 == size of list i: return best   (list i is exhausted: no later range covers it)\n    next_value = lists[i][j + 1]\n    push (next_value, i, j + 1)\n    current_max = max(current_max, next_value)"
+ },
+ "find_median_from_data_stream": {
+  "brute": "init:\n    nums = []\nadd_num(num):\n    append num to nums\nfind_median:\n    ordered = sorted nums, n = size of ordered   (re-sorts everything on every query)\n    if n is odd: return ordered[n / 2]\n    return (ordered[n / 2 - 1] + ordered[n / 2]) / 2",
+  "optimal": "init:\n    small = max-heap (lower half), large = min-heap (upper half)\nadd_num(num):\n    push num into small\n    move the largest of small into large   (keeps every small <= every large)\n    if size of large > size of small: move the smallest of large back into small\nfind_median:\n    if size of small > size of large: return the top of small\n    return (top of small + top of large) / 2"
+ },
+ "ipo": {
+  "brute": "done = array of false values\nrepeat k times:\n    best = -1\n    for each project j:\n        if done[j] or capital[j] > w: skip it\n        if best < 0 or profits[j] > profits[best]: best = j\n    if best < 0: break   (nothing affordable now, and w will not grow)\n    done[best] = true\n    w = w + profits[best]\nreturn w",
+  "optimal": "projects = (capital, profit) pairs sorted by capital\nunlocked = max-heap of profits, i = 0\nrepeat k times:\n    while i < n and projects[i].capital <= w:   (w only grows, so i only moves right)\n        push projects[i].profit, i = i + 1\n    if unlocked is empty: break\n    w = w + pop the largest profit\nreturn w"
+ },
+ "minimum_number_of_refueling_stops": {
+  "brute": "best = -1\nfor each subset of stations:\n    fuel = start_fuel, stops = 0, arrived = true\n    for each station i in the subset, in order:\n        if fuel < position of station i: arrived = false, break   (ran dry before it)\n        fuel = fuel + gas of station i, stops = stops + 1\n    if arrived and fuel >= target:\n        if best < 0 or stops < best: best = stops\nreturn best",
+  "optimal": "passed = max-heap of gas amounts at stations driven past\nfuel = start_fuel, stops = 0\nfor each (position, gas) in stations followed by (target, 0):\n    while fuel < position:   (cannot reach it yet: refuel retroactively at the best station passed)\n        if passed is empty: return -1\n        fuel = fuel + pop the largest gas\n        stops = stops + 1\n    push gas\nreturn stops"
+ },
+ "course_schedule_iii": {
+  "brute": "ordered = (deadline, duration) pairs sorted by deadline\nbest = 0\nfor each subset of the courses:\n    time = 0, count = 0, feasible = true\n    for each course i in the subset, in deadline order:\n        time = time + duration of i, count = count + 1\n        if time > deadline of i: feasible = false, break\n    if feasible: best = max(best, count)\nreturn best",
+  "optimal": "ordered = (deadline, duration) pairs sorted by deadline\ntaken = max-heap of durations\ntime = 0\nfor each (deadline, duration) in ordered:\n    push duration, time = time + duration\n    if time > deadline:\n        longest = pop the largest duration   (drop the longest course: frees the most time)\n        time = time - longest\nreturn size of taken"
+ },
+ "maximum_performance_of_a_team": {
+  "brute": "best = 0\nfor each size from 1 to k:\n    for each team of that size:\n        total_speed = sum of the team's speeds\n        min_efficiency = smallest efficiency in the team\n        best = max(best, total_speed * min_efficiency)\nreturn best mod 1e9 + 7",
+  "optimal": "engineers = (efficiency, speed) pairs sorted by efficiency descending\nfastest = min-heap of speeds, total_speed = 0, best = 0\nfor each (efficiency, speed) in engineers:\n    push speed, total_speed = total_speed + speed\n    if size of fastest > k: total_speed = total_speed - pop the smallest speed\n    best = max(best, total_speed * efficiency)   (this engineer is the team's bottleneck)\nreturn best mod 1e9 + 7"
+ },
+ "minimize_deviation_in_array": {
+  "brute": "ladder(x): odd x -> [x, 2x]; even x -> x, x / 2, x / 4, ... down to its odd core\nladders = ladder(x) for each x in nums\nbest = none\nfor each choice of one rung per ladder:\n    deviation = max of choice - min of choice\n    if best is none or deviation < best: best = deviation\nreturn best",
+  "optimal": "heap = max-heap of each number, doubled once if odd   (the top of every ladder)\nlow = smallest value in the heap\nbest = none\nrepeat forever:\n    high = pop the top of heap\n    if best is none or high - low < best: best = high - low\n    if high is odd: return best   (the maximum can no longer shrink)\n    push high / 2\n    low = min(low, high / 2)"
+ },
+ "meeting_rooms_iii": {
+  "brute": "sort meetings by start\nfree_at = array of n zeros, count = array of n zeros\nfor each (start, end):\n    room = lowest-numbered room with free_at[room] <= start, or -1\n    if room < 0:\n        room = the room with the smallest free_at (ties: lowest number)\n        end = free_at[room] + (end - start)   (delayed meeting keeps its duration)\n    free_at[room] = end\n    count[room] = count[room] + 1\nreturn the index of the largest count",
+  "optimal": "sort meetings by start\nfree = min-heap of room numbers 0..n - 1\nbusy = min-heap of (end time, room), count = array of n zeros\nfor each (start, end):\n    while busy is not empty and the earliest end <= start: move that room to free\n    if free is not empty: room = pop the lowest room number\n    else:\n        (earliest_end, room) = pop the earliest finishing room   (ties: lowest number)\n        end = earliest_end + (end - start)\n    push (end, room) into busy\n    count[room] = count[room] + 1\nreturn the index of the largest count"
+ },
+ "the_skyline_problem": {
+  "brute": "tallest_at(x): the tallest height among buildings with left <= x < right, or 0\nedges = sorted distinct left and right values\nout = [], previous = 0\nfor each x in edges:   (the outline can only change at an edge)\n    height = tallest_at(x)\n    if height != previous:\n        append [x, height] to out\n        previous = height\nreturn out",
+  "optimal": "events = (left, -height, right) per building plus (right, 0, 0) end markers, sorted\nlive = max-heap of (height, right) seeded with (0, infinity)\nout = [], previous = 0\nfor each event (x, neg_height, right):\n    while the tallest live building has right <= x: pop it   (lazy removal)\n    if this is a start event: push (height, right)\n    tallest = height at the top of live\n    if tallest != previous:\n        append [x, tallest] to out\n        previous = tallest\nreturn out"
+ },
+ "trapping_rain_water_ii": {
+  "brute": "level[r][c] = height on the border, infinity inside   (water level over each cell)\nchanged = true\nwhile changed:\n    changed = false\n    for each inner cell (r, c):\n        lowest_neighbour = min level among the 4 neighbours\n        new_level = max(height_map[r][c], lowest_neighbour)\n        if new_level < level[r][c]: level[r][c] = new_level, changed = true\nreturn sum of level[r][c] - height_map[r][c] over all cells",
+  "optimal": "seen = grid of false, frontier = min-heap of (level, r, c)\nfor each border cell: mark seen, push (height, r, c)\nwater = 0\nwhile frontier is not empty:\n    pop the lowest (level, r, c)   (water leaks out over the lowest wall first)\n    for each 4-neighbour (nr, nc) inside the grid and not seen:\n        mark seen\n        height = height_map[nr][nc]\n        water = water + max(0, level - height)\n        push (max(level, height), nr, nc)\nreturn water"
+ }
+}

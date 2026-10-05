@@ -1,0 +1,46 @@
+{
+ "find_in_mountain_array": {
+  "brute": "for each index i from 0 to length - 1:\n    if get(i) == target: return i   (one get per index: too many calls)\nreturn -1",
+  "optimal": "fetch(i): get(i) through a cache dict, so no index is fetched twice\nfind_peak:\n    left = 0, right = length - 1\n    while left < right:\n        mid = (left + right) / 2\n        if fetch(mid) < fetch(mid + 1): left = mid + 1, else: right = mid   (still climbing?)\n    return left\nsearch_slope(target, left, right, ascending):\n    while left <= right:\n        mid = (left + right) / 2, value = fetch(mid)\n        if value == target: return mid\n        go_right = (value < target) if ascending, else (value > target); move left or right\n    return -1\npeak = find_peak; search the rising slope [0, peak] first, then the falling slope [peak + 1, n - 1]"
+ },
+ "split_array_largest_sum": {
+  "brute": "best_split(start, pieces):\n    if pieces == 1: return sum of nums[start..]   (the last piece takes what is left)\n    best = +inf, piece_sum = 0\n    for each end from start while enough elements remain for the other pieces:\n        piece_sum += nums[end]\n        rest = best_split(end + 1, pieces - 1)\n        best = min(best, max(piece_sum, rest))\n    return best\nreturn best_split(0, k)",
+  "optimal": "pieces_needed(cap):\n    count = 1, current = 0\n    for each value in nums:\n        if current + value > cap: count += 1, current = 0   (start a new piece)\n        current += value\n    return count\nleft = max of nums, right = sum of nums\nwhile left < right:\n    mid = (left + right) / 2\n    if pieces_needed(mid) <= k: right = mid   (cap mid works, try smaller)\n    else: left = mid + 1\nreturn left"
+ },
+ "maximum_running_time_of_n_computers": {
+  "brute": "remaining = copy of batteries, minutes = 0\nloop:\n    sort remaining largest first\n    if fewer than n batteries or remaining[n - 1] == 0: return minutes\n    for each i in 0..n-1: remaining[i] -= 1   (the n fullest each power one computer)\n    minutes += 1",
+  "optimal": "can_run(minutes):\n    usable = sum over batteries of min(charge, minutes)   (a battery powers one computer at a time)\n    return usable >= n * minutes\nleft = 0, right = sum of batteries / n\nwhile left < right:\n    mid = (left + right + 1) / 2   (round up: we keep the last feasible value)\n    if can_run(mid): left = mid\n    else: right = mid - 1\nreturn left"
+ },
+ "kth_smallest_number_in_multiplication_table": {
+  "brute": "products = empty list\nfor each row in 1..m:\n    for each col in 1..n: append row * col to products\nsort products\nreturn products[k - 1]",
+  "optimal": "if m > n: swap m and n\ncount_at_most(value):\n    count = 0\n    for each row in 1..m: count += min(n, value / row)   (entries of row that are <= value)\n    return count\nleft = 1, right = m * n\nwhile left < right:\n    mid = (left + right) / 2\n    if count_at_most(mid) >= k: right = mid\n    else: left = mid + 1\nreturn left"
+ },
+ "find_kth_smallest_pair_distance": {
+  "brute": "distances = empty list\nfor each pair i < j:\n    append |nums[i] - nums[j]| to distances\nsort distances\nreturn distances[k - 1]",
+  "optimal": "count_pairs_within(limit):   (nums is sorted)\n    count = 0, left = 0\n    for each right from 0 to n - 1:\n        while nums[right] - nums[left] > limit: left += 1\n        count += right - left   (every index in [left, right) pairs with right)\n    return count\nsort nums\nleft = 0, right = nums[n - 1] - nums[0]\nwhile left < right:\n    mid = (left + right) / 2\n    if count_pairs_within(mid) >= k: right = mid\n    else: left = mid + 1\nreturn left"
+ },
+ "maximum_average_subarray_ii": {
+  "brute": "best = -inf\nfor each start:\n    total = 0\n    for each end from start to n - 1:\n        total += nums[end], length = end - start + 1\n        if length >= k: best = max(best, total / length)\nreturn best",
+  "optimal": "has_average_at_least(x):\n    prefix = running sums of (value - x), starting at 0\n    smallest_before = 0\n    for each end from k to n:\n        smallest_before = min(smallest_before, prefix[end - k])\n        if prefix[end] - smallest_before >= 0: return true   (length >= k, average >= x)\n    return false\nleft = min of nums, right = max of nums\nwhile right - left > 1e-6:\n    mid = (left + right) / 2\n    if has_average_at_least(mid): left = mid\n    else: right = mid\nreturn left"
+ },
+ "median_of_two_sorted_arrays": {
+  "brute": "merged = sort(nums1 + nums2)\nsize = length of merged\nif size is odd: return merged[size / 2]\nreturn (merged[size / 2 - 1] + merged[size / 2]) / 2",
+  "optimal": "value_at(arr, i) = arr[i], or -inf before the start, +inf past the end\nshorter, longer = the two arrays with the shorter first\ntotal = m + n, half = (total + 1) / 2\nleft = 0, right = length of shorter\nwhile left <= right:\n    i = (left + right) / 2, j = half - i   (i from shorter and j from longer form the left half)\n    shorter_left = value_at(shorter, i - 1), shorter_right = value_at(shorter, i)\n    longer_left = value_at(longer, j - 1), longer_right = value_at(longer, j)\n    if shorter_left > longer_right: right = i - 1   (took too many from shorter)\n    else if longer_left > shorter_right: left = i + 1\n    else if total is odd: return max(shorter_left, longer_left)\n    else: return (max(shorter_left, longer_left) + min(shorter_right, longer_right)) / 2"
+ },
+ "employee_free_time": {
+  "brute": "nobody_works(gap_start, gap_end): no shift has start < gap_end and end > gap_start\nall_shifts = every shift of every employee\ngaps = empty list\nfor each shift first, for each shift second:\n    gap_start = end of first, gap_end = start of second\n    if gap_start < gap_end and nobody_works(gap_start, gap_end):   (a real, empty gap)\n        add [gap_start, gap_end] to gaps if not already there\nsort gaps\nreturn gaps",
+  "optimal": "heap = min-heap of (start, employee, position 0) over each employee's first shift   (k-way merge)\nfree = empty list\nbusy_until = none   (furthest end of busy time seen so far)\nwhile the heap is not empty:\n    pop (start, employee, position); end = that shift's end\n    if busy_until exists and start > busy_until: append [busy_until, start] to free\n    busy_until = max(busy_until, end)\n    if employee has a shift at position + 1: push (its start, employee, position + 1)\nreturn free"
+ },
+ "minimum_interval_to_include_each_query": {
+  "brute": "answers = empty list\nfor each query q:\n    best = -1\n    for each (left, right) in intervals:\n        if left <= q <= right:\n            size = right - left + 1\n            if best == -1 or size < best: best = size\n    append best to answers\nreturn answers",
+  "optimal": "sort intervals by left edge\norder = (query value, original position) for every query, sorted\nanswers = -1 for every query, candidates = empty min-heap of (size, right), next_interval = 0\nfor each (q, position) in order:\n    while next_interval < count and intervals[next_interval].left <= q:\n        push (right - left + 1, right) of that interval, next_interval += 1   (it has started)\n    while candidates is not empty and the top's right < q:\n        pop the top   (ended before q: drop it lazily)\n    if candidates is not empty: answers[position] = size of the top\nreturn answers"
+ },
+ "my_calendar_iii": {
+  "brute": "init:\n    events = empty list\nbook(start, end):\n    append (start, end) to events\n    best = 0\n    for each (point, _) in events:\n        covering = count of events (s, e) with s <= point < e   (max overlap sits at a start)\n        best = max(best, covering)\n    return best",
+  "optimal": "init:\n    change = empty dict time -> net change in open events there\nbook(start, end):\n    change[start] += 1, change[end] -= 1\n    best = 0, open_events = 0\n    for each time in sorted keys of change:\n        open_events += change[time]   (running total = events open at this time)\n        best = max(best, open_events)\n    return best"
+ },
+ "rectangle_area_ii": {
+  "brute": "xs = sorted distinct x edges, ys = sorted distinct y edges   (coordinate compression)\npainted = grid of (count of xs - 1) x (count of ys - 1) cells, all false\nfor each rectangle (x1, y1, x2, y2):\n    for each cell column i from index of x1 up to index of x2:\n        for each cell row j from index of y1 up to index of y2:\n            painted[i][j] = true\narea = 0\nfor each cell (i, j):\n    if painted[i][j]: area += (xs[i + 1] - xs[i]) * (ys[j + 1] - ys[j])\nreturn area mod 1e9+7",
+  "optimal": "covered_length(intervals):   (length of the union of y-intervals)\n    total = 0, reach = none\n    for each (start, end) in intervals sorted by start:\n        if reach exists and start < reach: start = reach   (clip away the part already counted)\n        if end > start: total += end - start, reach = end\n    return total\nevents = (x1, enter, y1, y2) and (x2, leave, y1, y2) for each rectangle, sorted by x\nactive = empty list of y-intervals, area = 0, previous_x = x of the first event\nfor each (x, kind, y1, y2) in events:\n    area += (x - previous_x) * covered_length(active)   (the strip left of x uses the old set)\n    previous_x = x\n    if kind is enter: add (y1, y2) to active, else: remove (y1, y2) from active\nreturn area mod 1e9+7"
+ }
+}

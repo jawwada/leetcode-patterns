@@ -2,7 +2,7 @@
 """Build the Brute to Optimal companion from companion/<topic>/<slug>.py (format: site/companion/SPEC.md).
 
     python3 site/build_companion.py --check FILE...   # validate files (used by the writers)
-    python3 site/build_companion.py                   # validate everything, build site/companion.html
+    python3 site/build_companion.py [--edition hard]  # validate everything, build site/companion[_hard].html
                                                       # (publishable fragment) + site/companion_index.html
 
 Per file: split at the section markers; the brute tab = imports + helpers + brute force + its demo, the
@@ -18,11 +18,29 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE = os.path.join(ROOT, "site")
-CODE = os.path.join(ROOT, "companion")
 MARKERS = ["helpers", "brute force", "optimal", "try the brute force", "try the optimal"]
-SELECTION = json.load(open(os.path.join(SITE, "companion", "selection.json")))
-FUNDAMENTALS = json.load(open(os.path.join(SITE, "companion", "fundamentals.json")))
 FUND_MARKERS = ["helpers", "algorithm", "try it"]
+# two editions of the same page: the standard one (Easy/Medium + fundamentals) and the hard one
+EDITIONS = {
+    "standard": {"code": "companion", "selection": "selection.json", "fundamentals": "fundamentals.json", "pseudo": "pseudo",
+                 "out": "companion", "title": "Brute to Optimal", "fund_label": "Fundamentals",
+                 "lede": "Every problem in two sections, the brute force and the optimal solution, each as a short paragraph, runnable Python and pseudocode. The fundamentals pages carry each chapter's background and the classic algorithms to know by heart. Edit the inputs, run, compare.",
+                 "bg": ["What it is", "Operations and what they cost", "The invariant", "Python toolbox", "Mistakes people make"],
+                 "limits": (45, 60)},
+    "hard": {"code": "companion_hard", "selection": "selection_hard.json", "fundamentals": None, "pseudo": "pseudo_hard",
+             "out": "companion_hard", "title": "Brute to Optimal: Hard", "fund_label": "Advanced patterns",
+             "lede": "The hard problems of the book, each in two sections: the brute force and the optimal solution, as a short paragraph, runnable Python and pseudocode. The advanced-pattern pages carry each chapter's harder techniques and the signals that call for them. Edit the inputs, run, compare.",
+             "bg": ["Advanced patterns", "Signals in a problem statement", "Mistakes people make"],
+             "limits": (70, 100)},
+}
+EDITION = sys.argv[sys.argv.index("--edition") + 1] if "--edition" in sys.argv else "standard"
+CFG = EDITIONS[EDITION]
+CODE = os.path.join(ROOT, CFG["code"])
+SELECTION = json.load(open(os.path.join(SITE, "companion", CFG["selection"])))
+ALL_SELECTIONS = {}
+for _e in EDITIONS.values():
+    ALL_SELECTIONS[_e["code"]] = json.load(open(os.path.join(SITE, "companion", _e["selection"])))
+FUNDAMENTALS = json.load(open(os.path.join(SITE, "companion", CFG["fundamentals"]))) if CFG["fundamentals"] else {}
 CHAPTER_TITLES = {t: json.load(open(os.path.join(ROOT, "book", t, "order.json"))).get("title", t) for t in SELECTION}
 
 
@@ -139,8 +157,10 @@ def check_file(path):
     text = open(path).read()
     slug = os.path.splitext(os.path.basename(path))[0]
     topic = os.path.basename(os.path.dirname(path))
-    if slug not in SELECTION.get(topic, []):
-        raise Bad(f"{topic}/{slug} is not in site/companion/selection.json")
+    folder = os.path.basename(os.path.dirname(os.path.dirname(path)))   # companion or companion_hard
+    edition = next((e for e in EDITIONS.values() if e["code"] == folder), None)
+    if not edition or slug not in ALL_SELECTIONS.get(folder, {}).get(topic, []):
+        raise Bad(f"{folder}/{topic}/{slug} is not in the edition's selection file")
     if "\t" in text:
         raise Bad("tab character")
     head, secs = split(text)
@@ -169,8 +189,9 @@ def check_file(path):
     if rc != 0:
         raise Bad(f"whole file failed (rc={rc}): {err.strip().splitlines()[-1:]}")
     n = lambda s: len([l for l in s.split("\n") if l.strip()])
-    if n(secs["brute force"]) > 45 or n(secs["optimal"]) > 60:
-        raise Bad(f"too long: brute {n(secs['brute force'])} lines, optimal {n(secs['optimal'])} lines (max 45 / 60)")
+    lb, lo = edition["limits"]
+    if n(secs["brute force"]) > lb or n(secs["optimal"]) > lo:
+        raise Bad(f"too long: brute {n(secs['brute force'])} lines, optimal {n(secs['optimal'])} lines (max {lb} / {lo})")
     return {"slug": slug, "topic": topic, **meta, "brute_py": brute_py, "opt_py": opt_py, "expected": oo,
             "brute_code": secs["brute force"], "opt_code": secs["optimal"]}
 
