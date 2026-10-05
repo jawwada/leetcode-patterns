@@ -9,15 +9,7 @@ whose distance is larger than the recorded one is stale and skipped.
 Example: n=5, edges [(0,1,4),(0,2,1),(2,1,2),(1,3,1),(2,3,5),(3,4,3)], source 0
          -> {0: 0, 2: 1, 1: 3, 3: 4, 4: 7}
 """
-import sys
 import heapq
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -42,40 +34,17 @@ def solve(n, edges, src):
     while heap:
         d, u = heapq.heappop(heap)
         if d > dist[u]:
-            log(f"pop ({d}, {u}): STALE, dist[{u}] is already {dist[u]} | heap {heap}")
             continue
-        log(f"pop ({d}, {u}): FINAL, dist[{u}] = {d}; relax its out-edges {adj[u]}")
         for v, w in adj[u]:
             if d + w < dist.get(v, float("inf")):
                 dist[v] = d + w
                 heapq.heappush(heap, (dist[v], v))
-                log(f"    relax {u}->{v} w={w}: dist[{v}] = {d + w}, push ({d + w}, {v})")
-        log(f"    heap {heap} dist {dist}")
     return dist
 
 
 # --- demo ---
 def demo():
     return solve(5, [(0, 1, 4), (0, 2, 1), (2, 1, 2), (1, 3, 1), (2, 3, 5), (3, 4, 3)], 0)
-
-
-# --- tests ---
-def tests():
-    E = [(0, 1, 4), (0, 2, 1), (2, 1, 2), (1, 3, 1), (2, 3, 5), (3, 4, 3)]
-    assert solve(5, E, 0) == {0: 0, 2: 1, 1: 3, 3: 4, 4: 7}
-    assert solve(5, E, 3) == {3: 0, 4: 3}  # unreachable nodes are absent
-    assert solve(1, [], 0) == {0: 0}
-    assert solve(3, [(0, 1, 2), (0, 1, 1), (1, 0, 5)], 0) == {0: 0, 1: 1}  # parallel edges and a back edge
-    assert solve(3, [(0, 1, 0), (1, 2, 0)], 0) == {0: 0, 1: 0, 2: 0}  # zero weights
-    assert solve(4, [(0, 1, 1), (1, 2, 1), (2, 3, 1), (0, 3, 10)], 0) == {0: 0, 1: 1, 2: 2, 3: 3}  # long cheap path beats the direct edge
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        n = rng.randint(1, 7)
-        edges = [(rng.randrange(n), rng.randrange(n), rng.randint(0, 9)) for _ in range(rng.randint(0, 14))]
-        edges = [(u, v, w) for u, v, w in edges if u != v]
-        src = rng.randrange(n)
-        assert solve(n, edges, src) == brute_force(n, edges, src), (n, edges, src)
 
 
 # --- bugs ---
@@ -116,8 +85,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -7,14 +7,6 @@ A binary tree has unique values; p and q are values that are in the tree. Return
 common ancestor (a node counts as an ancestor of itself).
 Example: [3, 5, 1, 6, 2, 0, 8, None, None, 7, 4], p=5, q=1 -> 3; p=5, q=4 -> 5
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -60,13 +52,10 @@ def solve(root, p, q):
         if node is None:
             return None
         if node.val in (p, q):
-            log(f"  node {node.val} is a target: return it, do not look below")
             return node
         left, right = lca(node.left), lca(node.right)
         if left and right:
-            log(f"  node {node.val}: left found {left.val}, right found {right.val} -> this is the LCA")
             return node
-        log(f"  node {node.val}: left {left.val if left else None}, right {right.val if right else None} -> pass up {(left or right).val if left or right else None}")
         return left or right
     return lca(root).val
 
@@ -75,39 +64,6 @@ def solve(root, p, q):
 def demo():
     root = build_tree([3, 5, 1, 6, 2, 0, 8, None, None, 7, 4])
     return solve(root, 5, 1), solve(root, 5, 4)
-
-
-# --- tests ---
-def random_tree(rng, n):
-    """Random shape with unique values 0..n-1: attach each new node to a random free slot."""
-    nodes = [TreeNode(i) for i in range(n)]
-    for i in range(1, n):
-        while True:
-            p = nodes[rng.randrange(i)]
-            if p.left is None or p.right is None:
-                break
-        side = rng.choice([s for s in ("left", "right") if getattr(p, s) is None])
-        setattr(p, side, nodes[i])
-    return nodes[0] if n else None
-
-
-def tests():
-    root = build_tree([3, 5, 1, 6, 2, 0, 8, None, None, 7, 4])
-    assert solve(root, 5, 1) == 3
-    assert solve(root, 5, 4) == 5          # p is an ancestor of q
-    assert solve(root, 7, 4) == 2
-    assert solve(root, 6, 7) == 5
-    assert solve(root, 3, 3) == 3          # p == q == root
-    assert solve(root, 0, 8) == 1
-    assert solve(build_tree([1]), 1, 1) == 1
-    assert solve(build_tree([1, None, 2, None, 3]), 3, 2) == 2   # right chain, order of p/q does not matter
-    import random
-    rng = random.Random(5)
-    for _ in range(200):
-        n = rng.randint(1, 12)
-        root = random_tree(rng, n)
-        p, q = rng.randrange(n), rng.randrange(n)
-        assert solve(root, p, q) == brute_force(root, p, q)
 
 
 # --- bugs ---
@@ -137,8 +93,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

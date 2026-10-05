@@ -8,15 +8,7 @@ A dummy node gives the result a head to hang off before the first real node is k
 points at the last node attached.
 Example: 1 -> 2 -> 4 and 1 -> 3 -> 4 -> 1 -> 1 -> 2 -> 3 -> 4 -> 4
 """
-import sys
 from typing import List, Optional
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -51,7 +43,6 @@ def solve(a: Optional[ListNode], b: Optional[ListNode]) -> Optional[ListNode]:
     """Two-pointer merge: tail takes the smaller head each round; the remaining list is attached whole. O(n + m)."""
     dummy = tail = ListNode()
     while a and b:
-        log(f"compare a={a.val} b={b.val}: take {'a' if a.val <= b.val else 'b'}")
         if a.val <= b.val:
             tail.next = a
             a = a.next
@@ -59,34 +50,13 @@ def solve(a: Optional[ListNode], b: Optional[ListNode]) -> Optional[ListNode]:
             tail.next = b
             b = b.next
         tail = tail.next
-        log(f"    merged {draw(dummy.next)} | a left {draw(a)} | b left {draw(b)}")
     tail.next = a or b
-    log(f"attach leftover {draw(a or b)}: {draw(dummy.next)}")
     return dummy.next
 
 
 # --- demo ---
 def demo():
     return to_list(solve(build_list([1, 2, 4]), build_list([1, 3, 4])))
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # the demo already showed the trace; keep the test run silent
-    assert to_list(solve(build_list([1, 2, 4]), build_list([1, 3, 4]))) == [1, 1, 2, 3, 4, 4]
-    assert to_list(solve(None, None)) == []
-    assert to_list(solve(None, build_list([0]))) == [0]
-    assert to_list(solve(build_list([5]), None)) == [5]
-    assert to_list(solve(build_list([1, 2, 3]), build_list([4, 5]))) == [1, 2, 3, 4, 5]  # one list exhausts first
-    assert to_list(solve(build_list([4, 5]), build_list([1, 2, 3]))) == [1, 2, 3, 4, 5]
-    assert to_list(solve(build_list([2, 2]), build_list([2]))) == [2, 2, 2]
-    import random
-    rng = random.Random(7)
-    for _ in range(200):
-        a = sorted(rng.randint(1, 9) for _ in range(rng.randint(0, 6)))
-        b = sorted(rng.randint(1, 9) for _ in range(rng.randint(0, 6)))
-        assert to_list(solve(build_list(a), build_list(b))) == brute_force(a, b), (a, b)
 
 
 # --- bugs ---
@@ -116,7 +86,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

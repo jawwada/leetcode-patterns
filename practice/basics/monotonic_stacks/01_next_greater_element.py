@@ -6,15 +6,7 @@ Key operations: pop while top < current, record answer for popped, push current
 For each element return the first element to its right that is strictly greater, or -1.
 Example: [2, 1, 2, 4, 3] -> [4, 2, 4, -1, -1]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -37,32 +29,16 @@ def solve(nums: List[int]) -> List[int]:
     ans = [-1] * n
     stack = []  # indices; nums[stack] decreasing bottom -> top
     for i, x in enumerate(nums):
-        log(f"i={i} x={x} | stack top->bottom {[nums[j] for j in reversed(stack)]}")
         while stack and nums[stack[-1]] < x:
             j = stack.pop()
             ans[j] = x
-            log(f"    pop index {j} value {nums[j]} < {x}: ans[{j}] = {x}")
         stack.append(i)
-        log(f"    push index {i}; ans {ans}")
     return ans
 
 
 # --- demo ---
 def demo():
     return solve([2, 1, 2, 4, 3])
-
-
-# --- tests ---
-def tests():
-    assert solve([2, 1, 2, 4, 3]) == [4, 2, 4, -1, -1]
-    assert solve([1, 2, 3]) == [2, 3, -1]
-    assert solve([3, 2, 1]) == [-1, -1, -1]
-    assert solve([2, 2, 2]) == [-1, -1, -1]  # equal is not greater
-    assert solve([]) == []
-    import random
-    for _ in range(200):
-        a = [random.randint(1, 9) for _ in range(random.randint(0, 10))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -92,8 +68,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

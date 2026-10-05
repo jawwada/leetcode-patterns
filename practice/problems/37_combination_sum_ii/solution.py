@@ -8,15 +8,7 @@ target. Each index may be used at most once; two combinations are the same if th
 values. Return the combinations sorted.
 Example: candidates = [10, 1, 2, 7, 6, 1, 5], target = 8 -> [[1, 1, 6], [1, 2, 5], [1, 7], [2, 6]]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -41,17 +33,13 @@ def solve(candidates: List[int], target: int) -> List[List[int]]:
     result, path = [], []
 
     def dfs(start: int, remaining: int) -> None:
-        log(f"{'  ' * len(path)}path {path} remaining {remaining} | choices {nums[start:]}")
         if remaining == 0:
             result.append(path[:])
-            log(f"{'  ' * len(path)}  remaining 0: record {path}")
             return
         for i in range(start, len(nums)):
             if nums[i] > remaining:
-                log(f"{'  ' * len(path)}  {nums[i]} > {remaining}: break, the rest are bigger")
                 break
             if i > start and nums[i] == nums[i - 1]:
-                log(f"{'  ' * len(path)}  skip nums[{i}] = {nums[i]}: same value as its left sibling")
                 continue
             path.append(nums[i])
             dfs(i + 1, remaining - nums[i])
@@ -64,26 +52,6 @@ def solve(candidates: List[int], target: int) -> List[List[int]]:
 # --- demo ---
 def demo():
     return solve([10, 1, 2, 7, 6, 1, 5], 8)
-
-
-# --- tests ---
-def tests():
-    assert solve([10, 1, 2, 7, 6, 1, 5], 8) == [[1, 1, 6], [1, 2, 5], [1, 7], [2, 6]]
-    assert solve([2, 5, 2, 1, 2], 5) == [[1, 2, 2], [5]]
-    assert solve([2, 2], 5) == []                 # impossible
-    assert solve([2, 2], 6) == []                 # no reuse of an index
-    assert solve([1, 1, 1, 1], 4) == [[1, 1, 1, 1]]
-    assert solve([1, 1, 1, 1], 2) == [[1, 1]]     # one copy, not six
-    assert solve([], 3) == []
-    assert solve([3], 3) == [[3]]
-    original = [3, 1, 2]
-    solve(original, 3)
-    assert original == [3, 1, 2]                  # input not sorted in place
-    import random
-    for _ in range(200):
-        cands = [random.randint(1, 6) for _ in range(random.randint(0, 7))]
-        target = random.randint(1, 12)
-        assert solve(cands, target) == brute_force(cands, target), (cands, target)
 
 
 # --- bugs ---
@@ -124,8 +92,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

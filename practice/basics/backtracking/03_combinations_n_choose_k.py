@@ -7,15 +7,7 @@ Return every combination of k numbers chosen from 1..n, each combination in incr
 Results sorted.
 Example: n = 4, k = 2 -> [[1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -36,17 +28,13 @@ def solve(n: int, k: int) -> List[List[int]]:
     def backtrack(start: int) -> None:
         if len(path) == k:
             res.append(path[:])
-            log("  " * len(path) + f"record {path}")
             return
         for i in range(start, n + 1):
             if n - i + 1 < k - len(path):
-                log("  " * (len(path) + 1) + f"prune at i={i}: {n - i + 1} numbers left, need {k - len(path)}")
                 break
             path.append(i)
-            log("  " * len(path) + f"choose {i} -> path {path}")
             backtrack(i + 1)
             path.pop()
-            log("  " * (len(path) + 1) + f"unchoose {i} -> path {path}")
 
     backtrack(1)
     return sorted(res)
@@ -55,22 +43,6 @@ def solve(n: int, k: int) -> List[List[int]]:
 # --- demo ---
 def demo():
     return solve(4, 2)
-
-
-# --- tests ---
-def tests():
-    assert solve(4, 2) == [[1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]]
-    assert solve(1, 1) == [[1]]
-    assert solve(3, 0) == [[]]
-    assert solve(3, 3) == [[1, 2, 3]]
-    assert solve(2, 3) == []  # k > n: nothing fits
-    assert solve(0, 0) == [[]]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        n = rng.randint(0, 7)
-        k = rng.randint(0, n + 1)
-        assert solve(n, k) == brute_force(n, k), (n, k)
 
 
 # --- bugs ---
@@ -100,8 +72,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

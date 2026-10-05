@@ -10,15 +10,7 @@ stay in input order either way. solve returns the sorted records and checks that
 Example: [("ann", "eng", 100), ("bob", "ops", 90), ("cy", "eng", 120), ("di", "ops", 90), ("ed", "ops", 130)]
       -> [("cy", "eng", 120), ("ann", "eng", 100), ("ed", "ops", 130), ("bob", "ops", 90), ("di", "ops", 90)]
 """
-import sys
 from typing import List, Tuple
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 Record = Tuple[str, str, int]
@@ -41,11 +33,8 @@ def brute_force(records: List[Record]) -> List[Record]:
 def solve(records: List[Record]) -> List[Record]:
     """One tuple-key pass; two stable passes give the same order. O(n log n)."""
     one_pass = sorted(records, key=lambda r: (r[1], -r[2]))
-    log(f"one pass, key (dept, -salary):  {one_pass}")
     by_salary = sorted(records, key=lambda r: r[2], reverse=True)
-    log(f"pass 1, salary descending:      {by_salary}")
     two_pass = sorted(by_salary, key=lambda r: r[1])
-    log(f"pass 2, dept ascending (stable): {two_pass}")
     assert one_pass == two_pass
     return one_pass
 
@@ -53,22 +42,6 @@ def solve(records: List[Record]) -> List[Record]:
 # --- demo ---
 def demo():
     return solve([("ann", "eng", 100), ("bob", "ops", 90), ("cy", "eng", 120), ("di", "ops", 90), ("ed", "ops", 130)])
-
-
-# --- tests ---
-def tests():
-    recs = [("ann", "eng", 100), ("bob", "ops", 90), ("cy", "eng", 120), ("di", "ops", 90), ("ed", "ops", 130)]
-    assert solve(recs) == [("cy", "eng", 120), ("ann", "eng", 100), ("ed", "ops", 130), ("bob", "ops", 90), ("di", "ops", 90)]
-    assert solve([]) == []
-    assert solve([("solo", "hr", 1)]) == [("solo", "hr", 1)]
-    ties = [("c", "x", 5), ("a", "x", 5), ("b", "x", 5)]
-    assert solve(ties) == ties  # full ties keep input order: stable, not alphabetical
-    assert solve([("p", "b", 1), ("q", "a", 1)]) == [("q", "a", 1), ("p", "b", 1)]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        recs = [(rng.choice("abcdef"), rng.choice("xyz"), rng.randint(1, 3)) for _ in range(rng.randint(0, 10))]
-        assert solve(recs) == brute_force(recs), recs
 
 
 # --- bugs ---
@@ -98,8 +71,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

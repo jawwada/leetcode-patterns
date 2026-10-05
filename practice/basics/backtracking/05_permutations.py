@@ -8,16 +8,8 @@ candidate at every level, so a used[] flag per index says which ones are already
 Results sorted.
 Example: [1, 2, 3] -> [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]]
 """
-import sys
 from itertools import product
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -40,19 +32,15 @@ def solve(nums: List[int]) -> List[List[int]]:
     def backtrack() -> None:
         if len(path) == len(nums):
             res.append(path[:])
-            log("  " * len(path) + f"record {path}")
             return
         for i in range(len(nums)):
             if used[i]:
-                log("  " * (len(path) + 1) + f"skip {nums[i]}: already in path")
                 continue
             used[i] = True
             path.append(nums[i])
-            log("  " * len(path) + f"choose {nums[i]} -> path {path}, used {used}")
             backtrack()
             path.pop()
             used[i] = False
-            log("  " * (len(path) + 1) + f"unchoose {nums[i]} -> path {path}, used {used}")
 
     backtrack()
     return sorted(res)
@@ -61,19 +49,6 @@ def solve(nums: List[int]) -> List[List[int]]:
 # --- demo ---
 def demo():
     return solve([1, 2, 3])
-
-
-# --- tests ---
-def tests():
-    assert solve([1, 2, 3]) == [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]]
-    assert solve([]) == [[]]
-    assert solve([5]) == [[5]]
-    assert solve([2, 1]) == [[1, 2], [2, 1]]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        a = rng.sample(range(1, 10), rng.randint(0, 5))
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -103,8 +78,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

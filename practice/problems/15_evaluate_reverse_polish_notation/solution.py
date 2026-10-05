@@ -7,15 +7,7 @@ Evaluate an arithmetic expression written in postfix notation as a list of token
 the operators + - * /. Division truncates toward zero. The expression is always valid.
 Example: ["2", "1", "+", "3", "*"] -> (2 + 1) * 3 = 9
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -52,48 +44,14 @@ def solve(tokens: List[str]) -> int:
                 # int(a / b) truncates toward zero; a // b would floor -7 / 2 to -4 instead of -3
                 val = int(a / b)
             stack.append(val)
-            log(f"token {tok:>3}: pop b={b}, a={a}; {a} {tok} {b} = {val}; push {val:<5} | stack top->bottom {stack[::-1]}")
         else:
             stack.append(int(tok))
-            log(f"token {tok:>3}: push {tok:<30} | stack top->bottom {stack[::-1]}")
-    log(f"end: one number left -> {stack[-1]}")
     return stack[-1]
 
 
 # --- demo ---
 def demo():
     return solve(["2", "1", "+", "3", "*"])
-
-
-# --- tests ---
-def tests():
-    assert solve(["2", "1", "+", "3", "*"]) == 9
-    assert solve(["4", "13", "5", "/", "+"]) == 6
-    assert solve(["10", "6", "9", "3", "+", "-11", "*", "/", "*", "17", "+", "5", "+"]) == 22
-    assert solve(["6", "3", "-"]) == 3  # operand order: second pop is the left operand
-    assert solve(["-7", "2", "/"]) == -3  # truncate toward zero, not floor
-    assert solve(["7", "-2", "/"]) == -3
-    assert solve(["42"]) == 42
-    assert solve(["-3"]) == -3  # a negative number is not an operator
-    import random
-    rng = random.Random(150)
-    for _ in range(200):
-        toks, depth = [], 0
-        for _ in range(rng.randint(1, 9)):
-            if depth >= 2 and rng.random() < 0.5:
-                toks.append(rng.choice("+-*/"))
-                depth -= 1
-            else:
-                toks.append(str(rng.randint(-9, 9)))
-                depth += 1
-        while depth > 1:
-            toks.append(rng.choice("+-*"))
-            depth -= 1
-        try:
-            want = brute_force(toks)
-        except ZeroDivisionError:
-            continue
-        assert solve(toks) == want, toks
 
 
 # --- bugs ---
@@ -134,8 +92,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

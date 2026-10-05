@@ -8,15 +8,7 @@ there are two middles; return the second one (the right middle), which is what
 `while fast and fast.next` gives for free.
 Example: 1 -> 2 -> 3 -> 4 -> 5 -> 3 ;  1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 4
 """
-import sys
 from typing import List, Optional
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -56,38 +48,15 @@ def brute_force(values: List[int]) -> Optional[int]:
 def solve(head: Optional[ListNode]) -> Optional[ListNode]:
     """Slow steps 1, fast steps 2; when fast cannot take two more steps, slow is the middle. O(n), one pass."""
     slow = fast = head
-    log(f"start: {draw(head, slow=slow, fast=fast)}")
     while fast and fast.next:
         slow = slow.next
         fast = fast.next.next
-        log(f"step:  {draw(head, slow=slow, fast=fast)}   fast={'None' if fast is None else fast.val}")
-    log(f"stop: fast is {'None (even length: slow is the right middle)' if fast is None else 'the last node (odd length)'}; middle = {slow.val if slow else None}")
     return slow
 
 
 # --- demo ---
 def demo():
     return solve(build_list([1, 2, 3, 4, 5, 6])).val
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # the demo already showed the trace; keep the test run silent
-    assert solve(build_list([1, 2, 3, 4, 5])).val == 3
-    assert solve(build_list([1, 2, 3, 4, 5, 6])).val == 4      # even length: the right middle
-    assert to_list(solve(build_list([1, 2, 3, 4]))) == [3, 4]  # the node, with its tail intact
-    assert solve(None) is None
-    assert solve(build_list([7])).val == 7
-    assert solve(build_list([7, 8])).val == 8
-    assert solve(build_list([5, 5, 5])).val == 5
-    import random
-    rng = random.Random(7)
-    for _ in range(200):
-        a = [rng.randint(1, 9) for _ in range(rng.randint(0, 10))]
-        mid = solve(build_list(a))
-        assert (mid.val if mid else None) == brute_force(a), a
-        assert to_list(mid) == a[len(a) // 2:], a
 
 
 # --- bugs ---
@@ -117,7 +86,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

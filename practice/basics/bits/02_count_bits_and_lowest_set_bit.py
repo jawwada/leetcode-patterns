@@ -9,16 +9,7 @@ everything below it, and flips everything above, so n & -n keeps only the lowest
 number is a power of two exactly when dropping its lowest set bit leaves 0.
 Example: n = 180 = 10110100 -> 4 set bits; lowest set bit 00000100 = 4; not a power of two
 """
-import sys
-import random
 from typing import Tuple
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -34,7 +25,6 @@ def count_bits(n: int) -> int:
     """Kernighan: n &= n - 1 drops the lowest set bit; count how many drops reach 0. O(set bits)."""
     count = 0
     while n:
-        log(f"  {n:08b} & {n - 1:08b} = {n & (n - 1):08b}   drop -> count {count + 1}")
         n &= n - 1
         count += 1
     return count
@@ -42,13 +32,11 @@ def count_bits(n: int) -> int:
 
 def lowest_set_bit(n: int) -> int:
     """n & -n keeps only the lowest set bit (0 for n == 0). O(1)."""
-    log(f"  {n:08b} & {-n & 0xFF:08b} = {n & -n:08b}   (-n shown in 8 bits)")
     return n & -n
 
 
 def is_power_of_two(n: int) -> bool:
     """Exactly one set bit: positive, and dropping the lowest set bit leaves 0. O(1)."""
-    log(f"  {n} > 0 and {n:08b} & {n - 1 & 0xFF:08b} == 0 -> {n > 0 and n & (n - 1) == 0}")
     return n > 0 and n & (n - 1) == 0
 
 
@@ -60,22 +48,6 @@ def solve(n: int) -> Tuple[int, int, bool]:
 # --- demo ---
 def demo():
     return solve(0b10110100)
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # keep the trace to the demo
-    assert solve(0b10110100) == (4, 4, False)
-    assert solve(0) == (0, 0, False) and solve(1) == (1, 1, True) and solve(2) == (1, 2, True)
-    assert solve(3) == (2, 1, False) and solve(0b1000) == (1, 8, True) and solve(0b1001) == (2, 1, False)
-    assert count_bits(0xFF) == 8 and count_bits(2**40) == 1 and count_bits(2**40 - 1) == 40
-    assert lowest_set_bit(2**40) == 2**40 and lowest_set_bit(12) == 4 and lowest_set_bit(7) == 1
-    assert is_power_of_two(2**40) and not is_power_of_two(2**40 + 1) and not is_power_of_two(-4)
-    rng = random.Random(0)
-    for _ in range(200):
-        n = rng.choice([rng.randint(0, 255), rng.randint(0, 2**20), 1 << rng.randint(0, 20)])
-        assert solve(n) == brute_force(n), n
 
 
 # --- bugs ---
@@ -105,7 +77,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

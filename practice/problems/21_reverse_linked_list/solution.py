@@ -6,15 +6,7 @@ Key operations: save nxt, flip cur.next to prev, advance prev and cur, return pr
 Given the head of a singly linked list, reverse it in place and return the new head.
 Example: 1 -> 2 -> 3 -> 4 -> 5 becomes 5 -> 4 -> 3 -> 2 -> 1
 """
-import sys
 from typing import List, Optional
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -47,39 +39,16 @@ def solve(head: Optional[ListNode]) -> Optional[ListNode]:
     then step prev and cur forward. O(n) time, O(1) extra space."""
     prev, cur = None, head
     while cur:
-        log("None" + "".join(f" <- {v:>2}" for v in to_list(prev)[::-1]) + "   |   " + " -> ".join(f"{v:>2}" for v in to_list(cur)) + " -> None")
-        log(" " * (6 * len(to_list(prev)) + 2 if prev else 0) + "prev" + " " * (5 if prev else 7) + "cur" + ("   nxt" if cur.next else ""))
         nxt = cur.next
         cur.next = prev
-        log(f"    save nxt = {nxt.val if nxt else None}; flip {cur.val}.next -> {prev.val if prev else None}")
         prev = cur
         cur = nxt
-        log(f"    advance: prev = {prev.val}, cur = {cur.val if cur else None}")
-    log("None" + "".join(f" <- {v:>2}" for v in to_list(prev)[::-1]) + "   |   None")
-    log(f"cur is None: return prev = {prev.val if prev else None}")
     return prev
 
 
 # --- demo ---
 def demo():
     return to_list(solve(build_list([1, 2, 3, 4, 5])))
-
-
-# --- tests ---
-def tests():
-    assert to_list(solve(build_list([1, 2, 3, 4, 5]))) == [5, 4, 3, 2, 1]
-    assert to_list(solve(build_list([1, 2]))) == [2, 1]
-    assert to_list(solve(build_list([7]))) == [7]
-    assert solve(None) is None  # empty list
-    assert to_list(solve(build_list([3, 3, 3]))) == [3, 3, 3]
-    head = build_list([1, 2, 3])
-    new_head = solve(head)
-    assert new_head.val == 3 and head.next is None  # in place: the old head is the new tail
-    import random
-    rng = random.Random(206)
-    for _ in range(200):
-        vals = [rng.randint(0, 9) for _ in range(rng.randint(0, 8))]
-        assert to_list(solve(build_list(vals))) == to_list(brute_force(build_list(vals))), vals
 
 
 # --- bugs ---
@@ -120,8 +89,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

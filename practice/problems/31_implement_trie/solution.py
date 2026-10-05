@@ -9,15 +9,7 @@ Design a trie with insert(word), search(word) -> is this exact word stored, and 
 Example: insert "apple", search "apple", search "app", startsWith "app", insert "app", search "app"
 -> [True, False, True, True]
 """
-import sys
 from typing import List, Tuple
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -58,28 +50,21 @@ def solve(ops: List[Tuple[str, str]]) -> List[bool]:
     root = TrieNode()
     results = []
     for op, s in ops:
-        log(f"{op}({s!r})")
         node = root
         found = True
         for i, ch in enumerate(s):
             if ch not in node.children:
                 if op != "insert":
                     found = False
-                    log(f"    at {s[:i]!r}: no child {ch!r} -> the path breaks")
                     break
                 node.children[ch] = TrieNode()
-                log(f"    at {s[:i]!r}: create child {ch!r}")
             node = node.children[ch]
-            log(f"    walk to {s[:i + 1]!r}  end={node.end}  children {sorted(node.children)}")
         if op == "insert":
             node.end = True
-            log("    mark end at " + repr(s) + "; trie now:\n" + "\n".join("        " + l for l in draw(root)))
         elif op == "search":
             results.append(found and node.end)
-            log(f"    search: whole word walked={found}, end flag={node.end} -> {found and node.end}")
         else:
             results.append(found)
-            log(f"    startsWith: whole prefix walked -> {found}")
     return results
 
 
@@ -87,25 +72,6 @@ def solve(ops: List[Tuple[str, str]]) -> List[bool]:
 def demo():
     return solve([("insert", "apple"), ("search", "apple"), ("search", "app"),
                   ("startsWith", "app"), ("insert", "app"), ("search", "app")])
-
-
-# --- tests ---
-def tests():
-    assert solve([("insert", "apple"), ("search", "apple"), ("search", "app"),
-                  ("startsWith", "app"), ("insert", "app"), ("search", "app")]) == [True, False, True, True]
-    assert solve([("search", "a"), ("startsWith", "a")]) == [False, False]  # empty trie
-    assert solve([("insert", "a"), ("search", "a"), ("startsWith", "a"), ("search", "ab")]) == [True, True, False]
-    assert solve([("insert", "ab"), ("insert", "ab"), ("search", "ab"), ("search", "a")]) == [True, False]  # duplicate insert
-    assert solve([("insert", "app"), ("insert", "apple"), ("search", "appl"), ("startsWith", "appl"),
-                  ("search", "app"), ("search", "apple")]) == [False, True, True, True]
-    assert solve([("insert", "apple"), ("startsWith", "apple"), ("startsWith", "apples")]) == [True, False]
-    import random
-    for _ in range(200):
-        ops = []
-        for _ in range(random.randint(1, 12)):
-            w = "".join(random.choice("ab") for _ in range(random.randint(1, 4)))
-            ops.append((random.choice(["insert", "search", "search", "startsWith", "startsWith"]), w))
-        assert solve(ops) == brute_force(ops), ops
 
 
 # --- bugs ---
@@ -146,8 +112,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

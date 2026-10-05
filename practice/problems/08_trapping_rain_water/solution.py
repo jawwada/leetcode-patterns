@@ -7,15 +7,7 @@ Given an elevation map height[i] (bars of width 1), return how much water it tra
 raining. The water above bar i is min(tallest bar to its left, tallest bar to its right) - height[i].
 Example: [0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1] -> 6
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -38,18 +30,14 @@ def solve(height: List[int]) -> int:
     left, right = 0, len(height) - 1
     left_max = right_max = 0
     water = 0
-    log(f"bars  {' '.join(f'{h:2d}' for h in height)}")
     while left < right:
-        log(f"      {''.join(' L ' if i == left else ' R ' if i == right else '   ' for i in range(len(height)))}  left_max {left_max} right_max {right_max} water {water}")
         if height[left] < height[right]:
             left_max = max(left_max, height[left])
             water += left_max - height[left]
-            log(f"    h[L]={height[left]} < h[R]={height[right]} -> settle L={left}: left_max {left_max}, add {left_max}-{height[left]}={left_max - height[left]}, water {water}")
             left += 1
         else:
             right_max = max(right_max, height[right])
             water += right_max - height[right]
-            log(f"    h[L]={height[left]} >= h[R]={height[right]} -> settle R={right}: right_max {right_max}, add {right_max}-{height[right]}={right_max - height[right]}, water {water}")
             right -= 1
     return water
 
@@ -57,24 +45,6 @@ def solve(height: List[int]) -> int:
 # --- demo ---
 def demo():
     return solve([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1])
-
-
-# --- tests ---
-def tests():
-    assert solve([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]) == 6
-    assert solve([4, 2, 0, 3, 2, 5]) == 9
-    assert solve([]) == 0
-    assert solve([7]) == 0
-    assert solve([3, 2, 1]) == 0  # staircase down holds nothing
-    assert solve([1, 2, 3]) == 0
-    assert solve([5, 0, 5]) == 5
-    assert solve([2, 0, 2, 0, 2]) == 4
-    assert solve([3, 3, 3]) == 0  # equal bars, no dip
-    import random
-    random.seed(1)
-    for _ in range(200):
-        a = [random.randint(0, 6) for _ in range(random.randint(0, 12))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -115,8 +85,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

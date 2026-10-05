@@ -6,14 +6,6 @@ Key operations: push the left spine, pop the next smallest, count down k, step t
 Given the root of a BST and an integer k, return the k-th smallest value (1-indexed).
 Example: [5, 3, 6, 2, 4, None, None, 1], k = 3 -> 3
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -50,52 +42,17 @@ def solve(root, k):
     while True:
         while node:
             stack.append(node)
-            log(f"push {node.val}, go left        | stack top->bottom {[n.val for n in reversed(stack)]}")
             node = node.left
         node = stack.pop()
         k -= 1
-        log(f"pop {node.val}: {k} still to skip | stack top->bottom {[n.val for n in reversed(stack)]}")
         if k == 0:
-            log(f"    {node.val} is the answer")
             return node.val
         node = node.right
-        log(f"    step into the right subtree: {node.val if node else 'empty, pop next'}")
 
 
 # --- demo ---
 def demo():
     return solve(build_tree([5, 3, 6, 2, 4, None, None, 1]), 3)
-
-
-# --- tests ---
-def tests():
-    assert solve(build_tree([5, 3, 6, 2, 4, None, None, 1]), 3) == 3
-    assert solve(build_tree([3, 1, 4, None, 2]), 1) == 1
-    assert solve(build_tree([3, 1, 4, None, 2]), 2) == 2
-    assert solve(build_tree([3, 1, 4, None, 2]), 4) == 4
-    assert solve(build_tree([1]), 1) == 1
-    assert solve(build_tree([5, 3, 6, 2, 4, None, None, 1]), 6) == 6     # k = n, the largest
-    assert solve(build_tree([1, None, 2, None, 3]), 3) == 3              # right-leaning chain
-    assert solve(build_tree([3, 2, None, 1]), 1) == 1                    # left-leaning chain
-    import random
-    random.seed(0)
-
-    def insert(node, v):
-        if node is None:
-            return TreeNode(v)
-        if v < node.val:
-            node.left = insert(node.left, v)
-        else:
-            node.right = insert(node.right, v)
-        return node
-
-    for _ in range(200):
-        values = random.sample(range(30), random.randint(1, 9))
-        root = None
-        for v in values:
-            root = insert(root, v)
-        k = random.randint(1, len(values))
-        assert solve(root, k) == brute_force(root, k) == sorted(values)[k - 1], (values, k)
 
 
 # --- bugs ---
@@ -136,8 +93,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

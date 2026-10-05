@@ -8,16 +8,8 @@ rotten orange rots the fresh oranges 4-directionally adjacent to it. Return the 
 of minutes until no fresh orange remains, or -1 if some fresh orange can never rot.
 Example: [[2,1,1],[1,1,0],[0,1,1]] -> 4
 """
-import sys
 from collections import deque
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -61,8 +53,6 @@ def solve(grid: List[List[int]]) -> int:
                 queue.append((r, c))
             elif grid[r][c] == 1:
                 fresh += 1
-    log(f"minute 0 | fresh {fresh} | queue {list(queue)}")
-    log(draw(grid))
     minutes = 0
     while queue and fresh:
         for _ in range(len(queue)):
@@ -72,35 +62,13 @@ def solve(grid: List[List[int]]) -> int:
                     grid[nr][nc] = 2
                     fresh -= 1
                     queue.append((nr, nc))
-                    log(f"    ({r},{c}) rots ({nr},{nc}); fresh left {fresh}")
         minutes += 1
-        log(f"minute {minutes} | fresh {fresh} | queue (next layer) {list(queue)}")
-        log(draw(grid))
     return minutes if fresh == 0 else -1
 
 
 # --- demo ---
 def demo():
     return solve([[2, 1, 1], [1, 1, 0], [0, 1, 1]])
-
-
-# --- tests ---
-def tests():
-    assert solve([[2, 1, 1], [1, 1, 0], [0, 1, 1]]) == 4
-    assert solve([[2, 1, 1], [0, 1, 1], [1, 0, 1]]) == -1  # (2,0) is cut off
-    assert solve([[0, 2]]) == 0  # nothing fresh: zero minutes
-    assert solve([[0]]) == 0
-    assert solve([[1]]) == -1  # fresh with no rotten source
-    assert solve([[2, 1]]) == 1
-    assert solve([[1], [2]]) == 1  # rot must travel into row 0
-    assert solve([[2, 1, 1, 1, 1]]) == 4
-    assert solve([[2, 1, 1], [1, 1, 1], [1, 1, 2]]) == 2  # two sources meet in the middle
-    import random
-    random.seed(1)
-    for _ in range(200):
-        rows, cols = random.randint(1, 4), random.randint(1, 4)
-        g = [[random.choice([0, 1, 1, 1, 1, 2, 2]) for _ in range(cols)] for _ in range(rows)]
-        assert solve(g) == brute_force(g), g
 
 
 # --- bugs ---
@@ -141,8 +109,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

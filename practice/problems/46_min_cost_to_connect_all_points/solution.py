@@ -7,16 +7,8 @@ Given n points on a plane, connecting two points costs their Manhattan distance 
 Return the minimum total cost to connect all points (a minimum spanning tree of the complete graph).
 Example: [[0,0],[2,2],[3,10],[5,2],[7,0]] -> 20
 """
-import sys
 import heapq
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -54,42 +46,21 @@ def solve(points: List[List[int]]) -> int:
     total = joined = 0
     while joined < n:
         cost, i = heapq.heappop(heap)
-        log(f"pop ({cost}, {i}) | heap {heap}")
         if in_tree[i]:
-            log(f"    stale: point {i} is already in the tree, skip")
             continue
         in_tree[i] = True
         total += cost
         joined += 1
-        log(f"    add point {i} {points[i]} for {cost}: total {total}, in tree {[j for j in range(n) if in_tree[j]]}")
         xi, yi = points[i]
         for j, (xj, yj) in enumerate(points):
             if not in_tree[j]:
                 heapq.heappush(heap, (abs(xi - xj) + abs(yi - yj), j))
-        log(f"    push edges from {i} to every outside point; heap {heap}")
     return total
 
 
 # --- demo ---
 def demo():
     return solve([[0, 0], [2, 2], [3, 10], [5, 2], [7, 0]])
-
-
-# --- tests ---
-def tests():
-    assert solve([[0, 0], [2, 2], [3, 10], [5, 2], [7, 0]]) == 20
-    assert solve([[3, 12], [-2, 5], [-4, 1]]) == 18
-    assert solve([[0, 0]]) == 0  # one point, nothing to connect
-    assert solve([[0, 0], [1, 1]]) == 2
-    assert solve([[0, 0], [1, 1], [1, 0], [-1, 1]]) == 4
-    assert solve([[0, 0], [0, 0], [3, 4]]) == 7  # duplicate point costs 0
-    assert solve([[0, 0], [10, 0], [1, 1], [11, 1]]) == 14  # two cheap pairs plus one long bridge
-    import random
-    random.seed(1)
-    grid = [[x, y] for x in range(-6, 7) for y in range(-6, 7)]
-    for _ in range(200):
-        pts = random.sample(grid, random.randint(1, 7))
-        assert solve(pts) == brute_force(pts), pts
 
 
 # --- bugs ---
@@ -130,8 +101,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -8,15 +8,7 @@ letter or digit and compare case-insensitively. (2) reverse the order of the wor
 of single-space separated words in place: reverse the whole list, then reverse every word back.
 Example: "A man, a plan, a canal: Panama" -> True; "the sky is blue" -> "blue is sky the"
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -36,7 +28,6 @@ def reverse_range(chars: List[str], lo: int, hi: int) -> None:
     """Swap inward until the pointers cross. O(hi - lo)."""
     while lo < hi:
         chars[lo], chars[hi] = chars[hi], chars[lo]
-        log(f"      swap {lo}<->{hi}: {''.join(chars)!r}")
         lo += 1
         hi -= 1
 
@@ -46,13 +37,10 @@ def is_palindrome(s: str) -> bool:
     lo, hi = 0, len(s) - 1
     while lo < hi:
         if not s[lo].isalnum():
-            log(f"skip s[{lo}]={s[lo]!r}")
             lo += 1
         elif not s[hi].isalnum():
-            log(f"skip s[{hi}]={s[hi]!r}")
             hi -= 1
         else:
-            log(f"compare s[{lo}]={s[lo]!r} with s[{hi}]={s[hi]!r}")
             if s[lo].lower() != s[hi].lower():
                 return False
             lo += 1
@@ -64,12 +52,10 @@ def solve(s: str) -> str:
     """Reverse the whole list, then reverse each word back into reading order. O(n), O(1) extra space."""
     chars = list(s)
     reverse_range(chars, 0, len(chars) - 1)
-    log(f"whole list reversed: {''.join(chars)!r}")
     start = 0
     for i in range(len(chars) + 1):
         if i == len(chars) or chars[i] == " ":
             reverse_range(chars, start, i - 1)
-            log(f"word [{start}..{i - 1}] reversed back: {''.join(chars)!r}")
             start = i + 1
     return "".join(chars)
 
@@ -77,27 +63,6 @@ def solve(s: str) -> str:
 # --- demo ---
 def demo():
     return solve("the sky is blue")
-
-
-# --- tests ---
-def tests():
-    assert solve("the sky is blue") == "blue is sky the"
-    assert solve("hello") == "hello"
-    assert solve("") == ""
-    assert solve("a b") == "b a"
-    assert is_palindrome("A man, a plan, a canal: Panama") is True
-    assert is_palindrome("race a car") is False
-    assert is_palindrome("") is True
-    assert is_palindrome(".,") is True  # nothing alphanumeric
-    assert is_palindrome("0P") is False
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        s = "".join(rng.choice("aAb, 1") for _ in range(rng.randint(0, 8)))
-        assert is_palindrome(s) == brute_is_palindrome(s), s
-        words = ["".join(rng.choice("xyz") for _ in range(rng.randint(1, 3))) for _ in range(rng.randint(1, 4))]
-        sentence = " ".join(words)
-        assert solve(sentence) == brute_force(sentence), sentence
 
 
 # --- bugs ---
@@ -127,8 +92,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

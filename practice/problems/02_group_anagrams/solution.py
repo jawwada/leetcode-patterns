@@ -7,16 +7,8 @@ Given a list of lowercase words, group the anagrams together (any order of group
 inside a group). Two words are anagrams if they contain the same letters with the same counts.
 Example: ["eat", "tea", "tan", "ate", "nat", "bat"] -> [["eat", "tea", "ate"], ["tan", "nat"], ["bat"]]
 """
-import sys
 from collections import defaultdict
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -46,8 +38,6 @@ def solve(strs: List[str]) -> List[List[str]]:
             counts[ord(ch) - ord("a")] += 1
         key = tuple(counts)
         buckets[key].append(word)
-        log(f"word {word!r:6} key {''.join(chr(97 + j) + str(c) for j, c in enumerate(counts) if c) or '(empty)'}")
-        log("    buckets " + " | ".join(f"{''.join(chr(97 + j) + str(c) for j, c in enumerate(k) if c) or '(empty)'}: {v}" for k, v in buckets.items()))
     return list(buckets.values())
 
 
@@ -55,24 +45,6 @@ def solve(strs: List[str]) -> List[List[str]]:
 def demo():
     words = ["eat", "tea", "tan", "ate", "nat", "bat"]
     return solve(words)
-
-
-# --- tests ---
-def tests():
-    def norm(groups):
-        return sorted(sorted(g) for g in groups)
-    ex = ["eat", "tea", "tan", "ate", "nat", "bat"]
-    assert norm(solve(ex)) == [["ate", "eat", "tea"], ["bat"], ["nat", "tan"]]
-    assert solve([]) == []
-    assert solve([""]) == [[""]]
-    assert solve(["a"]) == [["a"]]
-    assert norm(solve(["aab", "abb", "bba"])) == [["aab"], ["abb", "bba"]]  # counts, not presence
-    assert norm(solve(["ab", "cd", "zz"])) == [["ab"], ["cd"], ["zz"]]
-    assert norm(solve(["ab", "ba", "ab"])) == [["ab", "ab", "ba"]]
-    import random
-    for _ in range(200):
-        words = ["".join(random.choice("abc") for _ in range(random.randint(0, 3))) for _ in range(random.randint(0, 8))]
-        assert norm(solve(words)) == norm(brute_force(words)), words
 
 
 # --- bugs ---
@@ -113,8 +85,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

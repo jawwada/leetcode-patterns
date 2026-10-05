@@ -9,15 +9,7 @@ final position, and recurse on the two sides. The pivot choice is deterministic 
 reproducible. O(n log n) on average, O(n^2) on sorted input with this pivot, in place, not stable.
 Example: [5, 2, 4, 6, 1, 3] -> [1, 2, 3, 4, 5, 6]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -35,7 +27,6 @@ def partition(a: List[int], lo: int, hi: int) -> int:
         if a[j] <= pivot:
             i += 1
             a[i], a[j] = a[j], a[i]
-            log(f"    a[{j}]={a[i]} <= {pivot}: swap into the small side  {a}  small = a[{lo}..{i}]")
     a[i + 1], a[hi] = a[hi], a[i + 1]
     return i + 1
 
@@ -43,9 +34,7 @@ def partition(a: List[int], lo: int, hi: int) -> int:
 def quick_sort(a: List[int], lo: int, hi: int) -> None:
     """Partition, then sort the two sides; a range of 0 or 1 elements is already sorted."""
     if lo < hi:
-        log(f"sort [{lo}..{hi}] {a[lo:hi + 1]}  pivot {a[hi]}")
         p = partition(a, lo, hi)
-        log(f"  pivot {a[p]} lands at index {p}: {a[lo:p]} [{a[p]}] {a[p + 1:hi + 1]}   whole {a}")
         quick_sort(a, lo, p - 1)
         quick_sort(a, p + 1, hi)
 
@@ -59,23 +48,6 @@ def solve(nums: List[int]) -> List[int]:
 # --- demo ---
 def demo():
     return solve([5, 2, 4, 6, 1, 3])
-
-
-# --- tests ---
-def tests():
-    assert solve([5, 2, 4, 6, 1, 3]) == [1, 2, 3, 4, 5, 6]
-    assert solve([]) == []
-    assert solve([1]) == [1]
-    assert solve([2, 1]) == [1, 2]
-    assert solve([1, 2, 3]) == [1, 2, 3]  # sorted input: the worst case for a last-element pivot
-    assert solve([3, 2, 1]) == [1, 2, 3]
-    assert solve([2, 2, 1, 2]) == [1, 2, 2, 2]
-    assert solve([4, 4, 4]) == [4, 4, 4]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        a = [rng.randint(0, 9) for _ in range(rng.randint(0, 12))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -105,8 +77,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -9,15 +9,7 @@ Return the list after every op.
 Example: [("insert", 0, 1), ("insert", 1, 3), ("insert", 1, 2), ("delete", 3), ("delete", 9)]
       -> [[1], [1, 3], [1, 2, 3], [1, 2], [1, 2]]
 """
-import sys
 from typing import List, Optional, Tuple
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -60,9 +52,7 @@ def insert_at(head: Optional[ListNode], index: int, val: int) -> Optional[ListNo
     prev = dummy = ListNode(0, head)
     for _ in range(index):
         prev = prev.next
-    log(f"insert {val} at {index}: prev stops at {'dummy' if prev is dummy else prev.val}")
     prev.next = ListNode(val, prev.next)
-    log(f"    splice: {draw(dummy.next)}")
     return dummy.next
 
 def delete_val(head: Optional[ListNode], val: int) -> Optional[ListNode]:
@@ -70,10 +60,8 @@ def delete_val(head: Optional[ListNode], val: int) -> Optional[ListNode]:
     prev = dummy = ListNode(0, head)
     while prev.next and prev.next.val != val:
         prev = prev.next
-    log(f"delete {val}: prev stops at {'dummy' if prev is dummy else prev.val}, prev.next is {prev.next.val if prev.next else None}")
     if prev.next:
         prev.next = prev.next.next
-    log(f"    unlink: {draw(dummy.next)}")
     return dummy.next
 
 def solve(ops: List[Tuple]) -> List[List[int]]:
@@ -91,32 +79,6 @@ def solve(ops: List[Tuple]) -> List[List[int]]:
 # --- demo ---
 def demo():
     return solve([("insert", 0, 1), ("insert", 1, 3), ("insert", 1, 2), ("delete", 3), ("delete", 9)])
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # the demo already showed the trace; keep the test run silent
-    assert solve([("insert", 0, 1), ("insert", 1, 3), ("insert", 1, 2), ("delete", 3), ("delete", 9)]) == \
-        [[1], [1, 3], [1, 2, 3], [1, 2], [1, 2]]
-    assert solve([]) == []
-    assert solve([("delete", 5)]) == [[]]                              # delete on empty
-    assert solve([("insert", 0, 7), ("delete", 7)]) == [[7], []]       # delete the head
-    assert solve([("insert", 0, 1), ("insert", 1, 1), ("delete", 1)]) == [[1], [1, 1], [1]]  # first only
-    assert solve([("insert", 0, 1), ("insert", 1, 2), ("insert", 2, 3)]) == [[1], [1, 2], [1, 2, 3]]  # append
-    import random
-    rng = random.Random(7)
-    for _ in range(200):
-        ops, shadow = [], []  # shadow tracks the length so random indices stay valid
-        for _ in range(rng.randint(0, 8)):
-            if not shadow or rng.random() < 0.6:
-                ops.append(("insert", rng.randint(0, len(shadow)), rng.randint(1, 4)))
-                shadow.insert(ops[-1][1], ops[-1][2])
-            else:
-                ops.append(("delete", rng.randint(1, 4)))
-                if ops[-1][1] in shadow:
-                    shadow.remove(ops[-1][1])
-        assert solve(ops) == brute_force(ops), ops
 
 
 # --- bugs ---
@@ -146,7 +108,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

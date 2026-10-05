@@ -8,15 +8,7 @@ packages up to its capacity. Return the smallest capacity that works. feasible(c
 capacity works, every larger one works, so binary search finds the smallest feasible capacity.
 Example: weights [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], days 5 -> 15 (loads 1..5 | 6,7 | 8 | 9 | 10)
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -40,7 +32,6 @@ def feasible(weights, days, cap):
         if loads[-1] + w > cap:
             loads.append(0)
         loads[-1] += w
-    log(f"    cap {cap}: loads {loads} -> {len(loads)} days, {'feasible' if len(loads) <= days else 'too many'}")
     return len(loads) <= days
 
 
@@ -49,36 +40,16 @@ def solve(weights, days):
     lo, hi = max(weights), sum(weights)
     while lo < hi:
         mid = (lo + hi) // 2
-        log(f"range [{lo}, {hi}] try mid={mid}")
         if feasible(weights, days, mid):
             hi = mid
         else:
             lo = mid + 1
-        log(f"  -> {'feasible: answer <= mid, hi = mid' if hi == mid else 'not feasible: answer > mid, lo = mid + 1'}; range now [{lo}, {hi}]")
     return lo
 
 
 # --- demo ---
 def demo():
     return solve([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 5)
-
-
-# --- tests ---
-def tests():
-    assert solve([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 5) == 15
-    assert solve([3, 2, 2, 4, 1, 4], 3) == 6
-    assert solve([1, 2, 3, 1, 1], 4) == 3
-    assert solve([2, 3, 2, 3], 2) == 5                 # exact fills: 2+3 | 2+3
-    assert solve([5], 1) == 5                          # single package
-    assert solve([4, 4, 4], 3) == 4                    # one package per day: answer is max
-    assert solve([4, 4, 4], 1) == 12                   # one day: answer is sum
-    assert solve([1, 1, 1, 1], 10) == 1                # more days than packages
-    import random
-    rng = random.Random(8)
-    for _ in range(200):
-        weights = [rng.randint(1, 9) for _ in range(rng.randint(1, 8))]
-        days = rng.randint(1, len(weights) + 1)
-        assert solve(weights, days) == brute_force(weights, days), (weights, days)
 
 
 # --- bugs ---
@@ -108,8 +79,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

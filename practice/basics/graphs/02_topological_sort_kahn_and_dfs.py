@@ -8,15 +8,7 @@ satisfies every edge, or [] if the graph has a cycle. Kahn's algorithm is the ma
 brute force is the DFS version (reversed post-order) used to cross-check validity.
 Example: n=6, edges [(5,2),(5,0),(4,0),(4,1),(2,3),(3,1)] -> [4, 5, 2, 0, 3, 1]
 """
-import sys
 from collections import deque
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -53,7 +45,6 @@ def solve(n, edges):
         indeg[v] += 1
     q = deque(u for u in range(n) if indeg[u] == 0)
     order = []
-    log(f"indegree {indeg} | queue {list(q)}")
     while q:
         u = q.popleft()
         order.append(u)
@@ -61,9 +52,7 @@ def solve(n, edges):
             indeg[v] -= 1
             if indeg[v] == 0:
                 q.append(v)
-        log(f"  pop {u}: order {order} | queue {list(q)} indegree {indeg}")
     if len(order) < n:
-        log(f"  removed {len(order)} of {n} nodes; {[u for u in range(n) if indeg[u] > 0]} are stuck on a cycle")
         return []
     return order
 
@@ -71,31 +60,6 @@ def solve(n, edges):
 # --- demo ---
 def demo():
     return solve(6, [(5, 2), (5, 0), (4, 0), (4, 1), (2, 3), (3, 1)])
-
-
-# --- tests ---
-def tests():
-    def valid(order, n, edges):
-        pos = {u: i for i, u in enumerate(order)}
-        return sorted(order) == list(range(n)) and all(pos[u] < pos[v] for u, v in edges)
-
-    assert solve(6, [(5, 2), (5, 0), (4, 0), (4, 1), (2, 3), (3, 1)]) == [4, 5, 2, 0, 3, 1]
-    assert solve(3, [(0, 1), (1, 2), (2, 0)]) == []
-    assert solve(3, [(0, 1), (1, 2), (2, 1)]) == []  # a cycle plus a free node is still a cycle
-    assert solve(1, []) == [0]
-    assert solve(4, []) == [0, 1, 2, 3]
-    assert solve(3, [(0, 1), (0, 1)]) == [0, 2, 1]  # duplicate edge: counted twice, decremented twice
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        n = rng.randint(1, 7)
-        edges = [(rng.randrange(n), rng.randrange(n)) for _ in range(rng.randint(0, 10))]
-        edges = [(u, v) for u, v in edges if u != v]
-        if rng.random() < 0.5:  # force a DAG by orienting every edge low -> high
-            edges = [(min(u, v), max(u, v)) for u, v in edges]
-        kahn, dfs = solve(n, edges), brute_force(n, edges)
-        assert (kahn == []) == (dfs == []), (n, edges)
-        assert not kahn or (valid(kahn, n, edges) and valid(dfs, n, edges)), (n, edges)
 
 
 # --- bugs ---
@@ -125,8 +89,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

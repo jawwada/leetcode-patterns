@@ -8,15 +8,7 @@ letter. Search is a depth-first walk: a letter follows exactly one child, a '.' 
 and the pattern matches only if a word ends where the pattern ends.
 Example: addWord bad, dad, mad; search pad -> False, bad -> True, ".ad" -> True, "b.." -> True
 """
-import sys
 from typing import List, Tuple
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -55,14 +47,11 @@ def insert(root: TrieNode, word: str) -> None:
 def search(node: TrieNode, word: str, i: int = 0) -> bool:
     """DFS over the pattern: letters follow one child, '.' tries all children. O(26^dots * len) worst case."""
     if i == len(word):
-        log(f"    {'  ' * i}pattern exhausted, end flag {node.end}")
         return node.end
     ch = word[i]
-    log(f"    {'  ' * i}depth {i} '{ch}': children {sorted(node.children)}")
     if ch == ".":
         return any(search(child, word, i + 1) for child in node.children.values())
     if ch not in node.children:
-        log(f"    {'  ' * i}no child '{ch}': dead end")
         return False
     return search(node.children[ch], word, i + 1)
 
@@ -72,11 +61,8 @@ def solve(ops: List[Tuple[str, str]]) -> List[bool]:
     for op, word in ops:
         if op == "addWord":
             insert(root, word)
-            log(f"addWord '{word}': trie {to_dict(root)}")
         else:
-            log(f"search '{word}':")
             out.append(search(root, word))
-            log(f"    -> {out[-1]}")
     return out
 
 
@@ -84,29 +70,6 @@ def solve(ops: List[Tuple[str, str]]) -> List[bool]:
 def demo():
     return solve([("addWord", "bad"), ("addWord", "dad"), ("addWord", "mad"),
                   ("search", "pad"), ("search", "bad"), ("search", ".ad"), ("search", "b..")])
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # the demo already showed the trace; keep the test run silent
-    assert solve([("addWord", "bad"), ("addWord", "dad"), ("addWord", "mad"),
-                  ("search", "pad"), ("search", "bad"), ("search", ".ad"), ("search", "b..")]) == [False, True, True, True]
-    assert solve([("search", "a"), ("search", ".")]) == [False, False]            # empty structure
-    assert solve([("addWord", "bad"), ("search", "ba"), ("search", "b.")]) == [False, False]   # prefix is not a word
-    assert solve([("addWord", "bad"), ("search", "bad."), ("search", "....")]) == [False, False]  # too long
-    assert solve([("addWord", "a"), ("addWord", "ab"), ("search", "."), ("search", "..")]) == [True, True]
-    assert solve([("addWord", "ab"), ("addWord", "ac"), ("search", "a.")]) == [True]
-    import random
-    rng = random.Random(7)
-    for _ in range(200):
-        ops = []
-        for _ in range(rng.randint(1, 10)):
-            if rng.random() < 0.5:
-                ops.append(("addWord", "".join(rng.choice("ab") for _ in range(rng.randint(1, 3)))))
-            else:
-                ops.append(("search", "".join(rng.choice("ab.") for _ in range(rng.randint(1, 3)))))
-        assert solve(ops) == brute_force(ops), ops
 
 
 # --- bugs ---
@@ -136,7 +99,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

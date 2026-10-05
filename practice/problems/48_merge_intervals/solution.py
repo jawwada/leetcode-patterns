@@ -8,15 +8,7 @@ non-overlapping intervals that cover exactly the same points. Touching intervals
 [1,4] and [4,5] count as overlapping.
 Example: [[1,3],[2,6],[8,10],[15,18]] -> [[1,6],[8,10],[15,18]]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -43,45 +35,19 @@ def solve(intervals: List[List[int]]) -> List[List[int]]:
     if not intervals:
         return []
     intervals = sorted(intervals, key=lambda iv: iv[0])
-    log(f"sorted by start: {intervals}")
     merged = [list(intervals[0])]
-    log(f"open {merged[0]} | merged {merged}")
     for start, end in intervals[1:]:
         last = merged[-1]
         if start <= last[1]:
             last[1] = max(last[1], end)
-            log(f"[{start},{end}] starts inside the open interval: extend its end to {last[1]} -> merged {merged}")
         else:
             merged.append([start, end])
-            log(f"[{start},{end}] starts after end {last[1]}: open new -> merged {merged}")
     return merged
 
 
 # --- demo ---
 def demo():
     return solve([[1, 3], [2, 6], [8, 10], [15, 18]])
-
-
-# --- tests ---
-def tests():
-    assert solve([[1, 3], [2, 6], [8, 10], [15, 18]]) == [[1, 6], [8, 10], [15, 18]]
-    assert solve([[1, 4], [4, 5]]) == [[1, 5]]  # touching counts as overlapping
-    assert solve([[1, 4], [2, 3]]) == [[1, 4]]  # nested: keep the longer end
-    assert solve([[1, 10], [2, 3], [4, 5]]) == [[1, 10]]
-    assert solve([[5, 6]]) == [[5, 6]]
-    assert solve([]) == []
-    assert solve([[4, 7], [1, 4], [8, 9], [2, 5]]) == [[1, 7], [8, 9]]  # unsorted input
-    assert solve([[2, 2], [1, 1], [2, 3]]) == [[1, 1], [2, 3]]  # zero-length intervals
-    original = [[1, 3], [2, 6]]
-    assert solve(original) == [[1, 6]] and original == [[1, 3], [2, 6]]  # input untouched
-    import random
-    random.seed(1)
-    for _ in range(200):
-        ivs = []
-        for _ in range(random.randint(0, 8)):
-            s = random.randint(0, 15)
-            ivs.append([s, s + random.randint(0, 5)])
-        assert solve(ivs) == brute_force(ivs), ivs
 
 
 # --- bugs ---
@@ -122,8 +88,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

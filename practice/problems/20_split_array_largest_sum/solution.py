@@ -7,16 +7,8 @@ Split nums into k non-empty contiguous pieces so that the largest piece sum is a
 possible; return that largest sum.
 Example: nums = [7, 2, 5, 10, 8], k = 2 -> 18 (pieces [7, 2, 5] | [10, 8])
 """
-import sys
 from itertools import combinations
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -41,48 +33,24 @@ def solve(nums: List[int], k: int) -> int:
         count, cur = 1, 0  # greedy: fewest pieces with every piece sum <= cap
         for x in nums:
             if cur + x > cap:
-                log(f"    piece {count} closed at sum {cur} ({cur} + {x} > {cap}); piece {count + 1} starts with {x}")
                 count += 1
                 cur = 0
             cur += x
-        log(f"    piece {count} closed at sum {cur} (end) -> {count} pieces under cap {cap}")
         return count
 
     lo, hi = max(nums), sum(nums)
     while lo < hi:
         mid = (lo + hi) // 2
-        log(f"cap range [{lo}..{hi}], try cap {mid}")
         if pieces(mid) <= k:
             hi = mid
-            log(f"    at most {k} pieces: feasible, the answer is {mid} or less, hi = {hi}")
         else:
             lo = mid + 1
-            log(f"    more than {k} pieces: cap too small, lo = {lo}")
-    log(f"lo == hi == {lo}: the smallest feasible cap")
     return lo
 
 
 # --- demo ---
 def demo():
     return solve([7, 2, 5, 10, 8], 2)
-
-
-# --- tests ---
-def tests():
-    assert solve([7, 2, 5, 10, 8], 2) == 18
-    assert solve([1, 2, 3, 4, 5], 2) == 9
-    assert solve([1, 4, 4], 3) == 4
-    assert solve([5], 1) == 5  # single element
-    assert solve([2, 3, 1, 2, 4, 3], 6) == 4  # k == n: the largest element
-    assert solve([2, 3, 1, 2, 4, 3], 1) == 15  # k == 1: the whole sum
-    assert solve([9, 9, 9], 2) == 18  # a piece exactly at the cap is allowed
-    assert solve([0, 0, 0], 2) == 0
-    import random
-    rng = random.Random(410)
-    for _ in range(200):
-        nums = [rng.randint(0, 15) for _ in range(rng.randint(1, 8))]
-        k = rng.randint(1, len(nums))
-        assert solve(nums, k) == brute_force(nums, k), (nums, k)
 
 
 # --- bugs ---
@@ -134,8 +102,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

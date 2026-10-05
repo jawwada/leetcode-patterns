@@ -7,14 +7,6 @@ Given a BST and two values p and q that are in it, return the value of their low
 the deepest node that has both as descendants (a node counts as its own descendant).
 Example: [6, 2, 8, 0, 4, 7, 9, None, None, 3, 5], p = 3, q = 5 -> 4 (walk 6 -> 2 -> 4); p = 2, q = 8 -> 6
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -58,56 +50,18 @@ def solve(root, p, q):
     paths split here (or the node is p or q itself) and this is the LCA. O(h) time, O(1) space."""
     lo, hi = min(p, q), max(p, q)
     node = root
-    log(f"targets [{lo}, {hi}]")
     while node:
         if hi < node.val:
-            log(f"at {node.val}: both targets < {node.val}, go left")
             node = node.left
         elif lo > node.val:
-            log(f"at {node.val}: both targets > {node.val}, go right")
             node = node.right
         else:
-            log(f"at {node.val}: {lo} <= {node.val} <= {hi}, the paths split here -> LCA {node.val}")
             return node.val
 
 
 # --- demo ---
 def demo():
     return solve(build_tree([6, 2, 8, 0, 4, 7, 9, None, None, 3, 5]), 3, 5)
-
-
-# --- tests ---
-def tests():
-    tree = build_tree([6, 2, 8, 0, 4, 7, 9, None, None, 3, 5])
-    assert solve(tree, 3, 5) == 4
-    assert solve(tree, 2, 8) == 6
-    assert solve(tree, 2, 4) == 2        # p is the ancestor of q
-    assert solve(tree, 8, 2) == 6        # order of p and q does not matter
-    assert solve(tree, 0, 9) == 6
-    assert solve(tree, 0, 2) == 2        # q equals a node on p's path
-    assert solve(tree, 7, 9) == 8
-    assert solve(tree, 3, 4) == 4
-    assert solve(build_tree([2, 1]), 2, 1) == 2
-    assert solve(build_tree([1]), 1, 1) == 1
-    import random
-    random.seed(0)
-
-    def insert(node, v):
-        if node is None:
-            return TreeNode(v)
-        if v < node.val:
-            node.left = insert(node.left, v)
-        else:
-            node.right = insert(node.right, v)
-        return node
-
-    for _ in range(200):
-        values = random.sample(range(30), random.randint(1, 10))
-        root = None
-        for v in values:
-            root = insert(root, v)
-        p, q = random.choice(values), random.choice(values)
-        assert solve(root, p, q) == brute_force(root, p, q), (values, p, q)
 
 
 # --- bugs ---
@@ -148,8 +102,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

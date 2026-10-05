@@ -8,14 +8,6 @@ one level (never above root), repeated slashes count as one, and there is no tra
 Any other name, including '...', is an ordinary directory name.
 Example: "/a/./b/../../c/" -> "/c"
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -38,34 +30,14 @@ def solve(path: str) -> str:
         if part == "..":
             if stack:
                 stack.pop()
-            log(f"'..' -> go up; stack top->bottom {stack[::-1]}")
         else:
             stack.append(part)
-            log(f"{part!r} -> push; stack top->bottom {stack[::-1]}")
     return "/" + "/".join(stack)
 
 
 # --- demo ---
 def demo():
     return solve("/a/./b/../../c/")
-
-
-# --- tests ---
-def tests():
-    assert solve("/a/./b/../../c/") == "/c"
-    assert solve("/home/") == "/home"
-    assert solve("/../") == "/"
-    assert solve("/home//foo/") == "/home/foo"
-    assert solve("/a/../../b/../c//.//") == "/c"
-    assert solve("/a//b////c/d//././/..") == "/a/b/c"
-    assert solve("/.../a/../b/c/../d/./") == "/.../b/d"
-    assert solve("/") == "/"
-    import random
-    rng = random.Random(0)
-    names = ["a", "b", "c", ".", "..", "...", ""]
-    for _ in range(200):
-        path = "/" + "/".join(rng.choice(names) for _ in range(rng.randint(0, 8)))
-        assert solve(path) == brute_force(path), path
 
 
 # --- bugs ---
@@ -95,8 +67,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

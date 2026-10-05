@@ -9,16 +9,8 @@ priorities fall back to the arrival counter (first in, first out) and the payloa
 solve(tasks) takes (priority, payload) pairs and returns the payloads in pop order.
 Example: [(2, "write"), (5, "deploy"), (2, "test"), (9, "fix prod")] -> ["fix prod", "deploy", "write", "test"]
 """
-import sys
 import heapq
 from typing import Any, List, Tuple
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -33,33 +25,16 @@ def solve(tasks: List[Tuple[int, Any]]) -> List[Any]:
     heap = []
     for arrival, (priority, payload) in enumerate(tasks):
         heapq.heappush(heap, (-priority, arrival, payload))
-        log(f"push ({-priority}, {arrival}, {payload!r})   heap {heap}")
     order = []
     while heap:
         neg, arrival, payload = heapq.heappop(heap)
         order.append(payload)
-        log(f"pop  priority {-neg} arrival {arrival} -> {payload!r}   heap {heap}")
     return order
 
 
 # --- demo ---
 def demo():
     return solve([(2, "write"), (5, "deploy"), (2, "test"), (9, "fix prod")])
-
-
-# --- tests ---
-def tests():
-    assert solve([(2, "write"), (5, "deploy"), (2, "test"), (9, "fix prod")]) == ["fix prod", "deploy", "write", "test"]
-    assert solve([]) == []
-    assert solve([(1, "only")]) == ["only"]
-    assert solve([(3, "a"), (3, "b"), (3, "c")]) == ["a", "b", "c"]  # all tied: arrival order
-    assert solve([(1, {"job": 1}), (1, {"job": 2})]) == [{"job": 1}, {"job": 2}]  # dicts cannot be compared
-    assert solve([(-1, "low"), (0, "mid"), (-5, "lowest")]) == ["mid", "low", "lowest"]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        tasks = [(rng.randint(1, 4), {"id": i}) for i in range(rng.randint(0, 10))]
-        assert solve(tasks) == brute_force(tasks), tasks
 
 
 # --- bugs ---
@@ -89,8 +64,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

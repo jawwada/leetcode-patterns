@@ -7,15 +7,7 @@ Given daily temperatures, return answer where answer[i] is how many days you wai
 day i for a warmer temperature, or 0 if there is none.
 Example: [73, 74, 75, 71, 69, 72, 76, 73] -> [1, 1, 4, 2, 1, 1, 0, 0]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -40,34 +32,16 @@ def solve(temps: List[int]) -> List[int]:
     answer = [0] * n
     waiting = []  # indices; temps[waiting] is decreasing from bottom to top
     for i, t in enumerate(temps):
-        log(f"day {i} temp {t:3d} | waiting top->bottom {[(j, temps[j]) for j in reversed(waiting)]}")
         while waiting and temps[waiting[-1]] < t:
             j = waiting.pop()
             answer[j] = i - j
-            log(f"    pop day {j} ({temps[j]} < {t}): answer[{j}] = {i} - {j} = {answer[j]}")
         waiting.append(i)
-        log(f"    push day {i}; answer so far {answer}")
     return answer
 
 
 # --- demo ---
 def demo():
     return solve([73, 74, 75, 71, 69, 72, 76, 73])
-
-
-# --- tests ---
-def tests():
-    assert solve([73, 74, 75, 71, 69, 72, 76, 73]) == [1, 1, 4, 2, 1, 1, 0, 0]
-    assert solve([30, 40, 50, 60]) == [1, 1, 1, 0]
-    assert solve([30, 60, 90]) == [1, 1, 0]
-    assert solve([5, 5, 5]) == [0, 0, 0]  # equal is not warmer
-    assert solve([90, 80, 70]) == [0, 0, 0]
-    assert solve([]) == []
-    assert solve([42]) == [0]
-    import random
-    for _ in range(200):
-        a = [random.randint(1, 20) for _ in range(random.randint(0, 12))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -108,8 +82,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

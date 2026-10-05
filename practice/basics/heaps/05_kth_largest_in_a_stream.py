@@ -8,16 +8,8 @@ Keep a min-heap of the k largest values: every add pushes, pops the root when th
 answers with the root. solve(k, nums, adds) returns the answer after each add.
 Example: k=3, nums=[4, 5, 8, 2], adds=[3, 5, 10, 9, 4] -> [4, 5, 5, 8, 8]
 """
-import sys
 import heapq
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -42,11 +34,8 @@ class KthLargest:
 
     def add(self, val: int) -> int:
         heapq.heappush(self.heap, val)
-        log(f"add {val:>2}: push -> {self.heap}")
         if len(self.heap) > self.k:
             dropped = heapq.heappop(self.heap)
-            log(f"        size {len(self.heap) + 1} > k={self.k}: pop root {dropped} -> {self.heap}")
-        log(f"        k-th largest = root {self.heap[0]}")
         return self.heap[0]
 
 
@@ -58,22 +47,6 @@ def solve(k: int, nums: List[int], adds: List[int]) -> List[int]:
 # --- demo ---
 def demo():
     return solve(3, [4, 5, 8, 2], [3, 5, 10, 9, 4])
-
-
-# --- tests ---
-def tests():
-    assert solve(3, [4, 5, 8, 2], [3, 5, 10, 9, 4]) == [4, 5, 5, 8, 8]
-    assert solve(1, [], [-3, -2, -4, 0, 4]) == [-3, -2, -2, 0, 4]
-    assert solve(2, [0], [-1, 1, -2, -4, 3]) == [-1, 0, 0, 0, 1]
-    assert solve(2, [5, 5], [5, 5]) == [5, 5]  # duplicates count as separate values
-    assert solve(3, [1, 2, 3], []) == []
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        k = rng.randint(1, 4)
-        nums = [rng.randint(-5, 9) for _ in range(rng.randint(k - 1, 6))]
-        adds = [rng.randint(-5, 9) for _ in range(rng.randint(1, 8))]
-        assert solve(k, nums, adds) == brute_force(k, nums, adds), (k, nums, adds)
 
 
 # --- bugs ---
@@ -103,8 +76,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

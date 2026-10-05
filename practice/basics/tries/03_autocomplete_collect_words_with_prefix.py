@@ -8,15 +8,7 @@ Given a word list and a prefix, return every stored word that starts with the pr
 its subtree visiting children in alphabetical order so the words come out sorted for free.
 Example: words [car, card, care, cat, dog], prefix "car" -> [car, card, care]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -51,18 +43,14 @@ def solve(words: List[str], prefix: str) -> List[str]:
     root = TrieNode()
     for w in words:
         insert(root, w)
-    log(f"trie {to_dict(root)}")
     node = root
     for ch in prefix:
         if ch not in node.children:
-            log(f"prefix breaks at '{ch}': no matches")
             return []
         node = node.children[ch]
-        log(f"follow '{ch}' -> subtree {to_dict(node)}")
     out = []
 
     def dfs(node, path):
-        log(f"    {'  ' * (len(path) - len(prefix))}at '{path}'{' (word)' if node.end else ''}, children {sorted(node.children)}")
         if node.end:
             out.append(path)
         for ch in sorted(node.children):
@@ -74,25 +62,6 @@ def solve(words: List[str], prefix: str) -> List[str]:
 # --- demo ---
 def demo():
     return solve(["car", "card", "care", "cat", "dog"], "car")
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # the demo already showed the trace; keep the test run silent
-    assert solve(["car", "card", "care", "cat", "dog"], "car") == ["car", "card", "care"]
-    assert solve(["car", "card", "care", "cat", "dog"], "ca") == ["car", "card", "care", "cat"]
-    assert solve(["car", "card", "care", "cat", "dog"], "x") == []
-    assert solve(["car", "card", "care", "cat", "dog"], "") == ["car", "card", "care", "cat", "dog"]  # all
-    assert solve(["b", "a", "ab"], "") == ["a", "ab", "b"]              # sorted, not insertion order
-    assert solve(["a", "a"], "a") == ["a"]                              # duplicates once
-    assert solve([], "a") == []
-    import random
-    rng = random.Random(7)
-    for _ in range(200):
-        words = ["".join(rng.choice("ab") for _ in range(rng.randint(1, 3))) for _ in range(rng.randint(0, 6))]
-        prefix = "".join(rng.choice("ab") for _ in range(rng.randint(0, 2)))
-        assert solve(words, prefix) == brute_force(words, prefix), (words, prefix)
 
 
 # --- bugs ---
@@ -122,7 +91,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

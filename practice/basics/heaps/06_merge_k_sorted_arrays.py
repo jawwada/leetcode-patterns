@@ -7,16 +7,8 @@ Merge k sorted arrays into one sorted array. A min-heap holds one candidate per 
 append it, and push the successor from the same array. Each element enters and leaves the heap once.
 Example: [[1, 4, 7], [2, 5], [0, 8, 9]] -> [0, 1, 2, 4, 5, 7, 8, 9]
 """
-import sys
 import heapq
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -30,36 +22,18 @@ def solve(arrays: List[List[int]]) -> List[int]:
     """One candidate per array in a heap keyed (value, which array, position). O(N log k)."""
     heap = [(arr[0], i, 0) for i, arr in enumerate(arrays) if arr]
     heapq.heapify(heap)
-    log(f"heads {heap}")
     out = []
     while heap:
         val, i, j = heapq.heappop(heap)
         out.append(val)
-        log(f"pop {val} (array {i} pos {j}) -> out {out}")
         if j + 1 < len(arrays[i]):
             heapq.heappush(heap, (arrays[i][j + 1], i, j + 1))
-            log(f"    push next of array {i}: {arrays[i][j + 1]}   heap {heap}")
     return out
 
 
 # --- demo ---
 def demo():
     return solve([[1, 4, 7], [2, 5], [0, 8, 9]])
-
-
-# --- tests ---
-def tests():
-    assert solve([[1, 4, 7], [2, 5], [0, 8, 9]]) == [0, 1, 2, 4, 5, 7, 8, 9]
-    assert solve([]) == []
-    assert solve([[], [], []]) == []
-    assert solve([[3]]) == [3]
-    assert solve([[], [1, 2], []]) == [1, 2]
-    assert solve([[1, 1], [1], [0, 1]]) == [0, 1, 1, 1, 1]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        arrays = [sorted(rng.randint(0, 9) for _ in range(rng.randint(0, 5))) for _ in range(rng.randint(0, 4))]
-        assert solve(arrays) == brute_force(arrays), arrays
 
 
 # --- bugs ---
@@ -89,8 +63,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

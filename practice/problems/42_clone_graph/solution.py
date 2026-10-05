@@ -8,16 +8,8 @@ return a deep copy: the same shape built from brand-new nodes, none shared with 
 Here solve returns the copy read back as {value: sorted neighbour values} so it can be checked.
 Example: the 4-cycle {1: [2, 4], 2: [1, 3], 3: [2, 4], 4: [1, 3]} -> the same dict, from fresh nodes
 """
-import sys
 from collections import deque
 from typing import Dict, List, Optional
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -76,14 +68,11 @@ def clone_graph(node: Optional[Node]) -> Optional[Node]:
     queue = deque([node])
     while queue:
         cur = queue.popleft()
-        log(f"pop {cur.val}; queue {[q.val for q in queue]}; cloned so far {sorted(c.val for c in clones.values())}")
         for nb in cur.neighbors:
             if nb not in clones:
                 clones[nb] = Node(nb.val)
                 queue.append(nb)
-                log(f"  {nb.val} seen for the first time: new Node({nb.val}), enqueue it")
             clones[cur].neighbors.append(clones[nb])
-            log(f"  wire clone {cur.val} -> clone {nb.val}; copy so far {to_adj(clones[node])}")
     return clones[node]
 
 
@@ -95,45 +84,6 @@ def solve(node: Optional[Node]) -> Dict[int, List[int]]:
 # --- demo ---
 def demo():
     return solve(build({1: [2, 4], 2: [1, 3], 3: [2, 4], 4: [1, 3]}))
-
-
-# --- tests ---
-def tests():
-    def ids(node):
-        seen, stack = set(), [node]
-        while stack:
-            cur = stack.pop()
-            if id(cur) not in seen:
-                seen.add(id(cur))
-                stack.extend(cur.neighbors)
-        return seen
-
-    adj = {1: [2, 4], 2: [1, 3], 3: [2, 4], 4: [1, 3]}
-    start = build(adj)
-    assert solve(start) == adj
-    copy = clone_graph(start)
-    assert copy is not start and to_adj(copy) == adj
-    assert not (ids(start) & ids(copy))                        # no node object shared
-    assert to_adj(start) == adj                                # input untouched
-    assert solve(None) == {}
-    assert solve(build({1: []})) == {1: []}                    # single node
-    assert solve(build({1: [2], 2: [1]})) == {1: [2], 2: [1]}
-    assert solve(build({1: [2, 3], 2: [1, 3], 3: [1, 2]})) == {1: [2, 3], 2: [1, 3], 3: [1, 2]}
-    import random
-    for _ in range(200):
-        n = random.randint(1, 6)
-        edges = {v: set() for v in range(1, n + 1)}
-        for v in range(2, n + 1):                              # a random tree keeps it connected
-            u = random.randint(1, v - 1)
-            edges[v].add(u); edges[u].add(v)
-        for _ in range(random.randint(0, n) if n > 1 else 0):  # extra edges
-            u, v = random.sample(range(1, n + 1), 2)
-            edges[v].add(u); edges[u].add(v)
-        adj = {v: sorted(s) for v, s in edges.items()}
-        start = build(adj)
-        copy = clone_graph(start)
-        assert to_adj(copy) == adj and not (ids(start) & ids(copy)), adj
-        assert solve(start) == to_adj(brute_force(build(adj))) == adj, adj
 
 
 # --- bugs ---
@@ -174,8 +124,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

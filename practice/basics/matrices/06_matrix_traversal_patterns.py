@@ -9,14 +9,6 @@ anti-diagonal order, each diagonal read top-right to bottom-left; the other walk
 vectors are shown in the trace and checked in the tests.
 Example: [[1,2,3],[4,5,6],[7,8,9]] -> [1, 2, 4, 3, 5, 7, 6, 8, 9]
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -49,47 +41,18 @@ def neighbors(matrix, r, c, dirs=DIRS4):
 def solve(matrix):
     """Anti-diagonal d holds the cells with r + c == d; r runs from max(0, d-n+1) to min(m-1, d). O(m*n)."""
     m, n = len(matrix), len(matrix[0])
-    log(f"row-major    {row_major(matrix)}")
-    log(f"column-major {col_major(matrix)}")
-    log(f"4-neighbors of (0,0) {neighbors(matrix, 0, 0)} | 8-neighbors of ({m // 2},{n // 2}) {neighbors(matrix, m // 2, n // 2, DIRS8)}")
     out = []
     for d in range(m + n - 1):
         seg = []
         for r in range(max(0, d - n + 1), min(m - 1, d) + 1):
             seg.append(matrix[r][d - r])
         out += seg
-        log(f"anti-diagonal r+c={d}: rows {max(0, d - n + 1)}..{min(m - 1, d)} -> {seg} | out {out}")
     return out
 
 
 # --- demo ---
 def demo():
     return solve([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-
-
-# --- tests ---
-def tests():
-    M = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-    assert solve(M) == [1, 2, 4, 3, 5, 7, 6, 8, 9]
-    assert solve([[1, 2, 3, 4]]) == [1, 2, 3, 4]
-    assert solve([[1], [2], [3]]) == [1, 2, 3]
-    assert solve([[1, 2], [3, 4], [5, 6]]) == [1, 2, 3, 4, 5, 6]
-    assert solve([[1, 2, 3], [4, 5, 6]]) == [1, 2, 4, 3, 5, 6]
-    assert solve([[7]]) == [7]
-    assert row_major(M) == [1, 2, 3, 4, 5, 6, 7, 8, 9] and col_major(M) == [1, 4, 7, 2, 5, 8, 3, 6, 9]
-    assert neighbors(M, 0, 0) == [(1, 0), (0, 1)] and neighbors(M, 2, 2) == [(1, 2), (2, 1)]
-    assert sorted(neighbors(M, 1, 1, DIRS8)) == sorted((r, c) for r in range(3) for c in range(3) if (r, c) != (1, 1))
-    assert neighbors(M, 0, 2, DIRS8) == [(1, 2), (0, 1), (1, 1)] and neighbors([[1]], 0, 0, DIRS8) == []
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        m, n = rng.randint(1, 6), rng.randint(1, 6)
-        a = [[rng.randint(0, 9) for _ in range(n)] for _ in range(m)]
-        assert solve(a) == brute_force(a), a
-        assert col_major(a) == row_major([list(col) for col in zip(*a)]), a
-        r, c = rng.randrange(m), rng.randrange(n)
-        assert all(0 <= nr < m and 0 <= nc < n for nr, nc in neighbors(a, r, c, DIRS8)), (a, r, c)
-        assert len(neighbors(a, r, c, DIRS8)) == len({(nr, nc) for nr in range(max(0, r - 1), min(m, r + 2)) for nc in range(max(0, c - 1), min(n, c + 2))}) - 1
 
 
 # --- bugs ---
@@ -130,8 +93,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

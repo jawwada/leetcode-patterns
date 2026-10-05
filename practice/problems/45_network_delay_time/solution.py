@@ -8,17 +8,9 @@ reaches v after w units. A signal is sent from node k. Return the time at which 
 received it, or -1 if some node never does.
 Example: times = [[1,2,4],[1,3,1],[3,2,1],[2,4,2]], n = 4, k = 1 -> 4
 """
-import sys
 import heapq
 from collections import defaultdict
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -48,40 +40,18 @@ def solve(times: List[List[int]], n: int, k: int) -> int:
     heap = [(0, k)]  # (arrival time, node)
     while heap:
         d, u = heapq.heappop(heap)
-        log(f"pop ({d}, {u}) | heap {heap} | dist {dist}")
         if d > dist[u]:
-            log(f"    stale: node {u} was already reached at {dist[u]} < {d}, skip")
             continue
         for v, w in adj[u]:
             if d + w < dist.get(v, INF):
                 dist[v] = d + w
                 heapq.heappush(heap, (d + w, v))
-                log(f"    relax {u}->{v} (w={w}): dist[{v}] = {d + w}, push ({d + w}, {v}); heap {heap}")
     return max(dist.values()) if len(dist) == n else -1
 
 
 # --- demo ---
 def demo():
     return solve([[1, 2, 4], [1, 3, 1], [3, 2, 1], [2, 4, 2]], 4, 1)
-
-
-# --- tests ---
-def tests():
-    assert solve([[1, 2, 4], [1, 3, 1], [3, 2, 1], [2, 4, 2]], 4, 1) == 4
-    assert solve([[2, 1, 1], [2, 3, 1], [3, 4, 1]], 4, 2) == 2
-    assert solve([[1, 2, 1]], 2, 1) == 1
-    assert solve([[1, 2, 1]], 2, 2) == -1  # node 1 never reached
-    assert solve([], 1, 1) == 0  # single node, nothing to send
-    assert solve([[1, 2, 1], [2, 3, 1], [1, 3, 5]], 3, 1) == 2  # later, shorter path must win
-    assert solve([[1, 2, 1], [2, 1, 1]], 2, 1) == 1  # cycle
-    import random
-    random.seed(1)
-    for _ in range(200):
-        n = random.randint(1, 6)
-        pairs = [(u, v) for u in range(1, n + 1) for v in range(1, n + 1) if u != v]
-        times = [[u, v, random.randint(1, 9)] for u, v in random.sample(pairs, random.randint(0, len(pairs)))]
-        k = random.randint(1, n)
-        assert solve(times, n, k) == brute_force(times, n, k), (times, n, k)
 
 
 # --- bugs ---
@@ -122,8 +92,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

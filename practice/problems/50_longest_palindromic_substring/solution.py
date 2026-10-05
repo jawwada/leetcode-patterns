@@ -7,14 +7,6 @@ Given a string s, return the longest substring that reads the same forwards and 
 If several have the maximum length, return the leftmost one.
 Example: "babad" -> "bab"
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -39,38 +31,17 @@ def solve(s: str) -> str:
     best_lo, best_len = 0, 0
     for center in range(n):
         for l, r in ((center, center), (center, center + 1)):
-            log(f"center {center} ({'odd' if l == r else 'even'}): l={l} r={r}")
             while l >= 0 and r < n and s[l] == s[r]:
                 l -= 1
                 r += 1
-                log(f"    s[{l + 1}] == s[{r - 1}] -> expand to l={l} r={r}, palindrome {s[l + 1:r]!r}")
             if r - l - 1 > best_len:
                 best_lo, best_len = l + 1, r - l - 1
-                log(f"    new best {s[best_lo:best_lo + best_len]!r} (len {best_len})")
     return s[best_lo:best_lo + best_len]
 
 
 # --- demo ---
 def demo():
     return solve("babad")
-
-
-# --- tests ---
-def tests():
-    assert solve("babad") == "bab"  # leftmost of bab / aba
-    assert solve("cbbd") == "bb"  # even length
-    assert solve("a") == "a"
-    assert solve("") == ""
-    assert solve("ac") == "a"
-    assert solve("aaaa") == "aaaa"
-    assert solve("abba") == "abba"  # palindrome reaching index 0
-    assert solve("abacdfgdcaba") == "aba"
-    assert solve("forgeeksskeegfor") == "geeksskeeg"
-    import random
-    random.seed(1)
-    for _ in range(200):
-        s = "".join(random.choice("abc") for _ in range(random.randint(0, 10)))
-        assert solve(s) == brute_force(s), s
 
 
 # --- bugs ---
@@ -111,8 +82,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

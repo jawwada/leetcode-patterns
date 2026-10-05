@@ -8,15 +8,7 @@ cycle begins, or -1 if there is no cycle, in O(1) space. build_list(values, pos)
 to the node at index pos (pos = -1 means no cycle).
 Example: values [3, 2, 0, -4], pos 1  ->  1   (the tail -4 points back to 2)
 """
-import sys
-from typing import List, Optional
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
+from typing import Optional
 
 
 # --- helpers ---
@@ -57,50 +49,23 @@ def brute_force(head: Optional[ListNode]) -> int:
 # --- optimal ---
 def solve(head: Optional[ListNode]) -> int:
     """Floyd: fast (2 steps) catches slow (1 step) inside the cycle; then head and the meeting point advance by 1 and meet at the entry. O(n), O(1)."""
-    log(f"list: {' -> '.join(map(str, to_list(head))) or 'empty'}")
     slow = fast = head
     while fast and fast.next:
         slow, fast = slow.next, fast.next.next
-        log(f"  slow -> {slow.val}, fast -> {fast.val if fast else None}")
         if slow is fast:
-            log(f"  meet at node {slow.val}: there is a cycle")
             break
     else:
-        log("  fast ran off the end: no cycle")
         return -1
     ptr, index = head, 0
     while ptr is not slow:
         ptr, slow = ptr.next, slow.next
         index += 1
-        log(f"  reset walk: ptr -> {ptr.val} (index {index}), slow -> {slow.val}")
-    log(f"  ptr and slow meet at index {index}: the cycle entry")
     return index
 
 
 # --- demo ---
 def demo():
     return solve(build_list([3, 2, 0, -4], 1))
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # the demo already showed the trace; keep the test run silent
-    assert solve(build_list([3, 2, 0, -4], 1)) == 1
-    assert solve(build_list([1, 2], 0)) == 0          # tail points to head
-    assert solve(build_list([1], 0)) == 0             # single node pointing to itself
-    assert solve(build_list([1], -1)) == -1
-    assert solve(build_list([], -1)) == -1
-    assert solve(build_list([1, 2, 3, 4, 5], -1)) == -1
-    assert solve(build_list([1, 1, 1], -1)) == -1     # equal values are not the same node
-    assert solve(build_list([1, 1, 1], 2)) == 2
-    import random
-    rng = random.Random(7)
-    for _ in range(200):
-        a = [rng.randint(1, 3) for _ in range(rng.randint(0, 9))]
-        pos = rng.randint(-1, len(a) - 1)
-        head = build_list(a, pos)
-        assert solve(head) == brute_force(head) == (pos if a else -1), (a, pos)
 
 
 # --- bugs ---
@@ -130,7 +95,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

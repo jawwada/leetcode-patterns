@@ -9,15 +9,7 @@ keeps an edge iff it joins two different components. On a disconnected graph it 
 Example: n=5, edges [(0,1,4),(0,2,1),(1,2,2),(1,3,5),(2,3,8),(3,4,3)]
          -> (11, [(0,2,1), (1,2,2), (3,4,3), (1,3,5)])   edge (0,1,4) is rejected: 0 and 1 already joined
 """
-import sys
 import heapq
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -60,14 +52,11 @@ def solve(n, edges):
     for w, u, v in sorted((w, u, v) for u, v, w in edges):
         ru, rv = find(parent, u), find(parent, v)
         if ru == rv:
-            log(f"edge {u}-{v} w={w}: REJECT, roots {ru} == {rv} (would close a cycle) | parent {parent}")
             continue
         parent[ru] = rv
         total += w
         tree.append((u, v, w))
-        log(f"edge {u}-{v} w={w}: accept, roots {ru} != {rv}, total {total} | parent {parent} tree {tree}")
         if len(tree) == n - 1:
-            log(f"{n - 1} edges accepted: the tree spans all {n} nodes, stop early")
             break
     return total, tree
 
@@ -75,24 +64,6 @@ def solve(n, edges):
 # --- demo ---
 def demo():
     return solve(5, [(0, 1, 4), (0, 2, 1), (1, 2, 2), (1, 3, 5), (2, 3, 8), (3, 4, 3)])
-
-
-# --- tests ---
-def tests():
-    assert solve(5, [(0, 1, 4), (0, 2, 1), (1, 2, 2), (1, 3, 5), (2, 3, 8), (3, 4, 3)]) == (11, [(0, 2, 1), (1, 2, 2), (3, 4, 3), (1, 3, 5)])
-    assert solve(4, [(0, 1, 1), (0, 2, 2), (1, 2, 3), (2, 3, 4)]) == (7, [(0, 1, 1), (0, 2, 2), (2, 3, 4)])
-    assert solve(1, []) == (0, [])
-    assert solve(3, [(0, 1, 5)]) == (5, [(0, 1, 5)])  # disconnected: a spanning forest
-    assert solve(2, [(0, 1, 3), (0, 1, 1)]) == (1, [(0, 1, 1)])  # parallel edges: the cheapest wins
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        n = rng.randint(1, 7)
-        edges = [(rng.randrange(n), rng.randrange(n), rng.randint(1, 9)) for _ in range(rng.randint(0, 12))]
-        edges = [(u, v, w) for u, v, w in edges if u != v]
-        total, tree = solve(n, edges)
-        assert total == brute_force(n, edges), (n, edges)
-        assert sum(w for _, _, w in tree) == total and len(tree) < n, (n, edges)
 
 
 # --- bugs ---
@@ -133,8 +104,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

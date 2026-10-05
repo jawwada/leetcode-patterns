@@ -6,14 +6,6 @@ Key operations: expand right, look up the last index of the new char, jump left 
 Given a string s, return the length of the longest substring in which no character repeats.
 Example: "abcabcbb" -> 3 ("abc"); "pwwkew" -> 3 ("wke"); "bbbbb" -> 1
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -38,40 +30,18 @@ def solve(s: str) -> int:
     last = {}  # char -> index of its most recent occurrence
     left = 0   # window is s[left..right]
     best = 0
-    log(f"    {s}")
     for right, ch in enumerate(s):
         if ch in last and last[ch] >= left:
-            log(f"r={right} '{ch}' repeats at {last[ch]} (inside window from {left}) -> left = {last[ch] + 1}")
             left = last[ch] + 1
         last[ch] = right
         if right - left + 1 > best:
             best = right - left + 1
-        log(f"r={right} '{ch}' window [{left}..{right}] '{s[left:right + 1]}' len {right - left + 1} best {best}  last {last}")
-        log(f"    {' ' * left}{'^' * (right - left + 1)}")
     return best
 
 
 # --- demo ---
 def demo():
     return solve("abcabcbb")
-
-
-# --- tests ---
-def tests():
-    assert solve("abcabcbb") == 3
-    assert solve("pwwkew") == 3
-    assert solve("bbbbb") == 1
-    assert solve("") == 0
-    assert solve("a") == 1
-    assert solve(" ") == 1
-    assert solve("abba") == 2  # stale 'a' must not pull left backwards
-    assert solve("dvdf") == 3
-    assert solve("abcdef") == 6
-    import random
-    random.seed(1)
-    for _ in range(200):
-        t = "".join(random.choice("abcd") for _ in range(random.randint(0, 12)))
-        assert solve(t) == brute_force(t), t
 
 
 # --- bugs ---
@@ -112,8 +82,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

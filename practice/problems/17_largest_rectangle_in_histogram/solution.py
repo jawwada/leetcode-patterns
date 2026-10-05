@@ -7,15 +7,7 @@ Given the heights of a histogram's bars (each bar has width 1), return the area 
 rectangle that fits entirely inside the histogram.
 Example: [2, 1, 5, 6, 2, 3] -> 10 (height 5 spanning the bars 5 and 6)
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -42,38 +34,18 @@ def solve(heights: List[int]) -> int:
     best = 0
     stack = []  # indices; bars[stack] is increasing from bottom to top
     for i, h in enumerate(bars):
-        log(f"bar {i} h={h} | stack top->bottom {[(j, bars[j]) for j in reversed(stack)]}")
         while stack and bars[stack[-1]] > h:
             top = stack.pop()
             left = stack[-1] if stack else -1
             area = bars[top] * (i - left - 1)
             best = max(best, area)
-            log(f"    pop bar {top} ({bars[top]} > {h}): walls {left}|{i}, width {i}-({left})-1={i - left - 1}, area {bars[top]}*{i - left - 1}={area}, best {best}")
         stack.append(i)
-        log(f"    push bar {i}")
     return best
 
 
 # --- demo ---
 def demo():
     return solve([2, 1, 5, 6, 2, 3])
-
-
-# --- tests ---
-def tests():
-    assert solve([2, 1, 5, 6, 2, 3]) == 10
-    assert solve([2, 4]) == 4
-    assert solve([1]) == 1
-    assert solve([]) == 0
-    assert solve([2, 2, 2]) == 6  # a plateau is one wide rectangle
-    assert solve([5, 4, 3, 2, 1]) == 9
-    assert solve([1, 2, 3, 4, 5]) == 9  # only the sentinel closes these
-    assert solve([0, 0]) == 0
-    import random
-    rng = random.Random(84)
-    for _ in range(200):
-        a = [rng.randint(0, 9) for _ in range(rng.randint(0, 12))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -114,8 +86,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

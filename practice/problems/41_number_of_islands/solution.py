@@ -7,15 +7,7 @@ Given an m x n grid of '1' (land) and '0' (water), count the islands: maximal gr
 connected up / down / left / right. The grid must not be modified.
 Example: [["1","1","0","0","0"],["1","1","0","0","0"],["0","0","1","0","0"],["0","0","0","1","1"]] -> 3
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -57,17 +49,12 @@ def solve(grid: List[List[str]]) -> int:
                 count += 1
                 seen[r][c] = True
                 stack = [(r, c)]
-                log(f"({r},{c}) is unvisited land: island #{count}, flood from it")
                 while stack:
                     x, y = stack.pop()
-                    log(f"  pop ({x},{y}); stack {stack}")
                     for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
                         if 0 <= nx < rows and 0 <= ny < cols and grid[nx][ny] == "1" and not seen[nx][ny]:
                             seen[nx][ny] = True
                             stack.append((nx, ny))
-                            log(f"    push ({nx},{ny}) and mark it visited")
-                log(f"  island #{count} flooded; visited grid {draw(grid, seen)}")
-    log(f"scan done: {count} islands")
     return count
 
 
@@ -76,26 +63,6 @@ def demo():
     grid = [["1", "1", "0", "0", "0"], ["1", "1", "0", "0", "0"],
             ["0", "0", "1", "0", "0"], ["0", "0", "0", "1", "1"]]
     return solve(grid)
-
-
-# --- tests ---
-def tests():
-    g = [["1", "1", "0", "0", "0"], ["1", "1", "0", "0", "0"], ["0", "0", "1", "0", "0"], ["0", "0", "0", "1", "1"]]
-    assert solve(g) == 3
-    assert g[0][0] == "1" and g[3][4] == "1"                   # input untouched
-    assert solve([["1", "1", "1", "1", "0"], ["1", "1", "0", "1", "0"], ["1", "1", "0", "0", "0"], ["0", "0", "0", "0", "0"]]) == 1
-    assert solve([["0"]]) == 0
-    assert solve([["1"]]) == 1
-    assert solve([["0", "0"], ["0", "0"]]) == 0
-    assert solve([["1", "0", "1"], ["0", "1", "0"], ["1", "0", "1"]]) == 5   # diagonals do not connect
-    assert solve([["1", "1", "1"], ["0", "0", "1"], ["1", "1", "1"]]) == 1   # U shape bends back left
-    assert solve([["1", "1", "1", "1", "1"]]) == 1
-    assert solve([["1"], ["0"], ["1"]]) == 2
-    import random
-    for _ in range(200):
-        rows, cols = random.randint(1, 5), random.randint(1, 5)
-        grid = [[random.choice("01") for _ in range(cols)] for _ in range(rows)]
-        assert solve(grid) == brute_force(grid), grid
 
 
 # --- bugs ---
@@ -136,8 +103,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

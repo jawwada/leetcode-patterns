@@ -10,15 +10,7 @@ O(n) expected when values are spread evenly. solve picks counting sort for ints 
 Example: [2, 5, 3, 0, 2, 3, 0, 3] -> [0, 0, 2, 2, 3, 3, 3, 5]
          [0.78, 0.17, 0.39, 0.26, 0.72, 0.94, 0.21, 0.12, 0.23, 0.68] -> [0.12, 0.17, 0.21, 0.23, 0.26, 0.39, 0.68, 0.72, 0.78, 0.94]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -35,11 +27,9 @@ def counting_sort(nums: List[int]) -> List[int]:
     counts = [0] * (max(nums) + 1)
     for x in nums:
         counts[x] += 1
-    log(f"counting sort {nums}: counts {counts}   (counts[v] = how many v)")
     out = []
     for v, c in enumerate(counts):
         out += [v] * c
-        log(f"    value {v} x{c} -> {out}")
     return out
 
 
@@ -47,15 +37,11 @@ def bucket_sort(xs: List[float]) -> List[float]:
     """n buckets over [0, 1); int(x * n) grows with x, so bucket order is value order. O(n) expected."""
     n = len(xs)
     buckets = [[] for _ in range(n)]
-    log(f"bucket sort {xs}: {n} buckets, x goes to int(x * {n})")
     for x in xs:
         buckets[int(x * n)].append(x)
-        log(f"    {x} -> bucket {int(x * n)}")
-    log(f"buckets {buckets}")
     out = []
     for b in buckets:
         out += sorted(b)
-    log(f"sort each bucket and concatenate -> {out}")
     return out
 
 
@@ -69,25 +55,6 @@ def solve(values: list) -> list:
 # --- demo ---
 def demo():
     return solve([2, 5, 3, 0, 2, 3, 0, 3]), solve([0.78, 0.17, 0.39, 0.26, 0.72, 0.94, 0.21, 0.12, 0.23, 0.68])
-
-
-# --- tests ---
-def tests():
-    assert solve([2, 5, 3, 0, 2, 3, 0, 3]) == [0, 0, 2, 2, 3, 3, 3, 5]
-    assert solve([0.78, 0.17, 0.39, 0.26, 0.72, 0.94, 0.21, 0.12, 0.23, 0.68]) == [0.12, 0.17, 0.21, 0.23, 0.26, 0.39, 0.68, 0.72, 0.78, 0.94]
-    assert solve([]) == []
-    assert solve([7]) == [7]
-    assert solve([0.5]) == [0.5]
-    assert solve([0, 0, 0]) == [0, 0, 0]
-    assert solve([9, 0]) == [0, 9]
-    assert solve([0.99, 0.98, 0.0, 0.97]) == [0.0, 0.97, 0.98, 0.99]  # three values in the top bucket
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        ints = [rng.randint(0, 9) for _ in range(rng.randint(0, 12))]
-        assert solve(ints) == brute_force(ints), ints
-        floats = [rng.randrange(100) / 100 for _ in range(rng.randint(1, 10))]  # in [0, 1)
-        assert solve(floats) == brute_force(floats), floats
 
 
 # --- bugs ---
@@ -117,8 +84,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

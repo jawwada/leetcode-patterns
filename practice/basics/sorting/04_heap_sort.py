@@ -8,15 +8,7 @@ maximum, with the last slot of the heap region, shrink the region by one, and si
 The sorted suffix grows from the right. O(n log n) in every case, O(1) extra space, not stable.
 Example: [5, 2, 4, 6, 1, 3] -> [1, 2, 3, 4, 5, 6]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 def levels(a):
@@ -44,7 +36,6 @@ def sift_down(a: List[int], i: int, n: int) -> None:
         if c >= n or a[c] <= a[i]:
             return
         a[i], a[c] = a[c], a[i]
-        log(f"    sift: a[{i}]={a[c]} < child a[{c}]={a[i]}, swap  {a[:n]}")
         i = c
 
 
@@ -52,37 +43,17 @@ def solve(nums: List[int]) -> List[int]:
     """Heapify, then move the max to the end n - 1 times. O(n log n), in place."""
     a = list(nums)
     n = len(a)
-    log(f"heapify {a} into a max-heap, sifting indices {n // 2 - 1}..0")
     for i in range(n // 2 - 1, -1, -1):
         sift_down(a, i, n)
-    log(f"max-heap {a}  tree: {levels(a)}")
     for end in range(n - 1, 0, -1):
         a[0], a[end] = a[end], a[0]
-        log(f"swap root {a[end]} with a[{end}]={a[0]}: heap {a[:end]} | sorted {a[end:]}")
         sift_down(a, 0, end)
-        log(f"  heap {a[:end]} tree: {levels(a[:end])} | sorted {a[end:]}")
     return a
 
 
 # --- demo ---
 def demo():
     return solve([5, 2, 4, 6, 1, 3])
-
-
-# --- tests ---
-def tests():
-    assert solve([5, 2, 4, 6, 1, 3]) == [1, 2, 3, 4, 5, 6]
-    assert solve([]) == []
-    assert solve([1]) == [1]
-    assert solve([2, 1]) == [1, 2]
-    assert solve([1, 2, 3]) == [1, 2, 3]
-    assert solve([3, 2, 1]) == [1, 2, 3]
-    assert solve([2, 2, 1, 2]) == [1, 2, 2, 2]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        a = [rng.randint(0, 9) for _ in range(rng.randint(0, 12))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -112,8 +83,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

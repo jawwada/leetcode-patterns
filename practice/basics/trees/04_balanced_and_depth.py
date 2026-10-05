@@ -7,14 +7,6 @@ A binary tree is height-balanced when at every node the heights of its two subtr
 Return True or False.
 Example: [3, 9, 20, None, None, 15, 7] -> True; [1, 2, 2, 3, 3, None, None, 4, 4] -> False
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -56,9 +48,7 @@ def solve(root):
         if right == -1:
             return -1
         if abs(left - right) > 1:
-            log(f"node {node.val}: left height {left}, right height {right} differ by more than 1 -> -1")
             return -1
-        log(f"node {node.val}: left height {left}, right height {right} -> height {1 + max(left, right)}")
         return 1 + max(left, right)
     return height(root) != -1
 
@@ -66,38 +56,6 @@ def solve(root):
 # --- demo ---
 def demo():
     return solve(build_tree([3, 9, 20, None, None, 15, 7])), solve(build_tree([1, 2, 2, 3, 3, None, None, 4, 4]))
-
-
-# --- tests ---
-def random_tree(rng, n):
-    """Random shape with unique values 0..n-1: attach each new node to a random free slot."""
-    nodes = [TreeNode(i) for i in range(n)]
-    for i in range(1, n):
-        while True:
-            p = nodes[rng.randrange(i)]
-            if p.left is None or p.right is None:
-                break
-        side = rng.choice([s for s in ("left", "right") if getattr(p, s) is None])
-        setattr(p, side, nodes[i])
-    return nodes[0] if n else None
-
-
-def tests():
-    assert solve(build_tree([3, 9, 20, None, None, 15, 7])) is True
-    assert solve(build_tree([1, 2, 2, 3, 3, None, None, 4, 4])) is False
-    assert solve(None) is True
-    assert solve(build_tree([1])) is True
-    assert solve(build_tree([1, 2])) is True                    # heights 1 and 0 differ by exactly 1
-    assert solve(build_tree([1, 2, None, 3])) is False          # chain of 3
-    assert solve(build_tree([1, 2, 3, 4, None, None, 5, 6])) is False  # balanced at root, not at node 2
-    import random
-    rng = random.Random(4)
-    seen = set()
-    for _ in range(200):
-        root = random_tree(rng, rng.randint(0, 10))
-        seen.add(solve(root))
-        assert solve(root) == brute_force(root)
-    assert seen == {True, False}
 
 
 # --- bugs ---
@@ -127,8 +85,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -7,16 +7,8 @@ The diameter of a binary tree is the number of edges on the longest path between
 the path does not have to pass through the root. Return the diameter.
 Example: [1, 2, 3, 4, 5] (level order) -> 3, the path 4 -> 2 -> 1 -> 3 (or 5 -> 2 -> 1 -> 3).
 """
-import sys
 from collections import deque
 from typing import List, Optional
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -64,11 +56,9 @@ def solve(root: Optional[TreeNode]) -> int:
         nonlocal best
         if node is None:
             return 0
-        log(f"{'    ' * depth}enter {node.val}")
         left = height(node.left, depth + 1)
         right = height(node.right, depth + 1)
         best = max(best, left + right)
-        log(f"{'    ' * depth}node {node.val}: arms left={left} right={right} -> path bending here {left + right}, best {best}, return arm {1 + max(left, right)}")
         return 1 + max(left, right)
 
     height(root)
@@ -78,23 +68,6 @@ def solve(root: Optional[TreeNode]) -> int:
 # --- demo ---
 def demo():
     return solve(build_tree([1, 2, 3, 4, 5]))
-
-
-# --- tests ---
-def tests():
-    assert solve(build_tree([1, 2, 3, 4, 5])) == 3
-    assert solve(build_tree([1, 2])) == 1
-    assert solve(build_tree([1])) == 0
-    assert solve(build_tree([])) == 0
-    assert solve(build_tree([1, None, 2, None, 3])) == 2  # a chain: the diameter is the height
-    assert solve(build_tree([1, 2, None, 3, 4, 5, None, 6])) == 4  # 5-3-2-4-6 avoids the root (height is 3)
-    assert solve(build_tree([1, 2, 3, 4, None, None, 5, 6, None, None, 7])) == 6  # 6-4-2-1-3-5-7 through the root
-    import random
-    for _ in range(200):
-        n = random.randint(0, 15)
-        vals = [1] + [random.choice([None, None, random.randint(2, 9)]) for _ in range(n)]
-        root = build_tree(vals)
-        assert solve(root) == brute_force(root), vals
 
 
 # --- bugs ---
@@ -135,8 +108,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

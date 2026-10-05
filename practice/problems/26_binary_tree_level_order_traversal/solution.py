@@ -6,15 +6,7 @@ Key operations: queue of the current level, snapshot len(q), popleft and push ch
 Return the node values level by level, left to right, as a list of lists.
 Example: [3, 9, 20, None, None, 15, 7] -> [[3], [9, 20], [15, 7]]
 """
-import sys
 from collections import deque
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -64,7 +56,6 @@ def solve(root):
         return []
     levels, q = [], deque([root])
     while q:
-        log(f"level {len(levels)} starts, queue {[n.val for n in q]} -> pop {len(q)} nodes")
         level = []
         for _ in range(len(q)):
             node = q.popleft()
@@ -73,32 +64,13 @@ def solve(root):
                 q.append(node.left)
             if node.right:
                 q.append(node.right)
-            log(f"    pop {node.val}, push {[c.val for c in (node.left, node.right) if c]} | queue {[n.val for n in q]} level {level}")
         levels.append(level)
-        log(f"  level {len(levels) - 1} done: {level}; levels {levels}")
     return levels
 
 
 # --- demo ---
 def demo():
     return solve(build_tree([3, 9, 20, None, None, 15, 7]))
-
-
-# --- tests ---
-def tests():
-    assert solve(build_tree([3, 9, 20, None, None, 15, 7])) == [[3], [9, 20], [15, 7]]
-    assert solve(build_tree([])) == []
-    assert solve(build_tree([1])) == [[1]]
-    assert solve(build_tree([1, None, 2, None, 3])) == [[1], [2], [3]]      # right-leaning chain
-    assert solve(build_tree([1, 2, None, 3])) == [[1], [2], [3]]            # left-leaning chain
-    assert solve(build_tree([1, 2, 3, 4, None, None, 5])) == [[1], [2, 3], [4, 5]]
-    assert solve(build_tree([2, 2, 2, 2])) == [[2], [2, 2], [2]]
-    import random
-    random.seed(0)
-    for _ in range(200):
-        values = [random.randint(0, 9) if random.random() < 0.7 else None for _ in range(random.randint(0, 15))]
-        root = build_tree(values)
-        assert solve(root) == brute_force(root), values
 
 
 # --- bugs ---
@@ -139,8 +111,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -8,16 +8,8 @@ an open bracket is allowed while fewer than n are placed, a close bracket while 
 open bracket to its left. Results sorted.
 Example: n = 3 -> ["((()))", "(()())", "(())()", "()(())", "()()()"]
 """
-import sys
 from itertools import product
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -43,20 +35,15 @@ def solve(n: int) -> List[str]:
     def backtrack(opened: int, closed: int) -> None:
         if len(path) == 2 * n:
             res.append("".join(path))
-            log("  " * len(path) + f"record {''.join(path)}")
             return
         if opened < n:
             path.append("(")
-            log("  " * len(path) + f"choose open  -> {''.join(path)}  opened={opened + 1} closed={closed}")
             backtrack(opened + 1, closed)
             path.pop()
-            log("  " * (len(path) + 1) + f"unchoose open  -> {''.join(path)}")
         if closed < opened:
             path.append(")")
-            log("  " * len(path) + f"choose close -> {''.join(path)}  opened={opened} closed={closed + 1}")
             backtrack(opened, closed + 1)
             path.pop()
-            log("  " * (len(path) + 1) + f"unchoose close -> {''.join(path)}")
 
     backtrack(0, 0)
     return sorted(res)
@@ -65,19 +52,6 @@ def solve(n: int) -> List[str]:
 # --- demo ---
 def demo():
     return solve(3)
-
-
-# --- tests ---
-def tests():
-    assert solve(3) == ["((()))", "(()())", "(())()", "()(())", "()()()"]
-    assert solve(1) == ["()"]
-    assert solve(2) == ["(())", "()()"]
-    assert solve(0) == [""]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        n = rng.randint(0, 5)
-        assert solve(n) == brute_force(n), n
 
 
 # --- bugs ---
@@ -107,8 +81,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

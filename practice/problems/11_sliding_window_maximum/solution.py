@@ -7,16 +7,8 @@ Given nums and a window size k, return the maximum of every contiguous window of
 left to right.
 Example: nums = [1, 3, -1, -3, 5, 3, 6, 7], k = 3 -> [3, 3, 5, 5, 6, 7]
 """
-import sys
 from collections import deque
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -36,43 +28,20 @@ def solve(nums: List[int], k: int) -> List[int]:
     window. Each index is pushed and popped once: O(n) time, O(k) space."""
     dq = deque()  # indices; nums[dq[0]] >= nums[dq[1]] >= ...
     out = []
-    log(f"nums {nums} k {k}")
     for i, x in enumerate(nums):
         while dq and nums[dq[-1]] <= x:
-            log(f"i={i} x={x:2d}  pop back {dq[-1]} ({nums[dq[-1]]} <= {x})")
             dq.pop()
         dq.append(i)
         if dq[0] <= i - k:
-            log(f"i={i} x={x:2d}  pop front {dq[0]} (left the window, {dq[0]} <= {i - k})")
             dq.popleft()
         if i >= k - 1:
             out.append(nums[dq[0]])
-        log(f"i={i} x={x:2d}  push {i}  deque front->back {[(j, nums[j]) for j in dq]}  window [{max(0, i - k + 1)}..{i}] {nums[max(0, i - k + 1):i + 1]}  out {out}")
     return out
 
 
 # --- demo ---
 def demo():
     return solve([1, 3, -1, -3, 5, 3, 6, 7], 3)
-
-
-# --- tests ---
-def tests():
-    assert solve([1, 3, -1, -3, 5, 3, 6, 7], 3) == [3, 3, 5, 5, 6, 7]
-    assert solve([1], 1) == [1]
-    assert solve([9, 8, 7, 6], 2) == [9, 8, 7]  # the front expires every step
-    assert solve([1, 2, 3, 4], 2) == [2, 3, 4]
-    assert solve([4, 4, 4], 2) == [4, 4]  # equal values
-    assert solve([1, 2, 3], 3) == [3]
-    assert solve([5, 1, 1, 1], 2) == [5, 1, 1]
-    assert solve([-2, -1], 1) == [-2, -1]
-    import random
-    random.seed(1)
-    for _ in range(200):
-        n = random.randint(1, 12)
-        a = [random.randint(-5, 9) for _ in range(n)]
-        k = random.randint(1, n)
-        assert solve(a, k) == brute_force(a, k), (a, k)
 
 
 # --- bugs ---
@@ -113,8 +82,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

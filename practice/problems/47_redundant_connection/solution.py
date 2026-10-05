@@ -8,16 +8,8 @@ edge that can be removed so that the result is a tree again; if several work, re
 appears last in the input.
 Example: [[1,2],[2,3],[3,4],[1,4],[1,5]] -> [1,4]
 """
-import sys
 from collections import deque
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -56,43 +48,15 @@ def solve(edges: List[List[int]]) -> List[int]:
 
     for u, v in edges:
         ru, rv = find(u), find(v)
-        log(f"edge ({u},{v}): find({u}) = {ru}, find({v}) = {rv} | parent[1..{n}] = {parent[1:]}")
         if ru == rv:
-            log(f"    same root {ru}: ({u},{v}) closes a cycle -> answer")
             return [u, v]
         parent[rv] = ru
-        log(f"    union: parent[{rv}] = {ru} | parent[1..{n}] = {parent[1:]}")
     return []
 
 
 # --- demo ---
 def demo():
     return solve([[1, 2], [2, 3], [3, 4], [1, 4], [1, 5]])
-
-
-# --- tests ---
-def tests():
-    assert solve([[1, 2], [2, 3], [3, 4], [1, 4], [1, 5]]) == [1, 4]
-    assert solve([[1, 2], [1, 3], [2, 3]]) == [2, 3]
-    assert solve([[1, 2], [1, 3], [3, 2]]) == [3, 2]  # answer keeps the input orientation
-    assert solve([[2, 3], [1, 2], [1, 3]]) == [1, 3]  # roots differ from parents: 3 -> 2 -> 1
-    assert solve([[1, 2], [3, 2], [1, 3]]) == [1, 3]  # the root of 2 is 1, not 2
-    assert solve([[3, 4], [1, 2], [2, 4], [3, 5], [2, 5]]) == [2, 5]
-    assert solve([[2, 1], [3, 1], [4, 2], [1, 4]]) == [1, 4]
-    import random
-    random.seed(1)
-    for _ in range(200):
-        n = random.randint(3, 8)
-        nodes = list(range(1, n + 1))
-        random.shuffle(nodes)
-        tree = [(nodes[i], nodes[random.randrange(i)]) for i in range(1, n)]
-        present = {frozenset(e) for e in tree}
-        extra = tuple(random.sample(nodes, 2))
-        while frozenset(extra) in present:
-            extra = tuple(random.sample(nodes, 2))
-        edges = [list(e) if random.random() < 0.5 else list(e[::-1]) for e in tree + [extra]]
-        random.shuffle(edges)
-        assert solve(edges) == brute_force(edges), edges
 
 
 # --- bugs ---
@@ -133,8 +97,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

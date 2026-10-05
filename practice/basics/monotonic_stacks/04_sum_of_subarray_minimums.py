@@ -8,15 +8,7 @@ of (i - left) * (right - i) subarrays, where left is its previous strictly-small
 next smaller-or-equal index; one increasing stack finds both at the moment the element is popped.
 Example: [3, 1, 2, 4] -> 17  (3 + 1 + 2 + 4 + 1 + 1 + 2 + 1 + 1 + 1)
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -38,38 +30,18 @@ def solve(nums: List[int]) -> int:
     stack = []  # indices; nums strictly increasing bottom -> top
     total = 0
     for i in range(n + 1):  # i == n is the sentinel that pops everything
-        log(f"i={i} x={nums[i] if i < n else 'END'} | stack top->bottom {[nums[k] for k in reversed(stack)]}")
         while stack and (i == n or nums[stack[-1]] >= nums[i]):
             j = stack.pop()
             left = stack[-1] if stack else -1
             total += nums[j] * (j - left) * (i - j)
-            log(f"    pop index {j} value {nums[j]}: min of {(j - left) * (i - j)} subarrays (l in ({left}, {j}], r in [{j}, {i})); total {total}")
         if i < n:
             stack.append(i)
-            log(f"    push index {i}; stack top->bottom {[nums[k] for k in reversed(stack)]}")
     return total % (10**9 + 7)
 
 
 # --- demo ---
 def demo():
     return solve([3, 1, 2, 4])
-
-
-# --- tests ---
-def tests():
-    assert solve([3, 1, 2, 4]) == 17
-    assert solve([11, 81, 94, 43, 3]) == 444
-    assert solve([1, 1]) == 3            # ties: each 1 counted exactly once per subarray
-    assert solve([2, 2, 2]) == 12
-    assert solve([5]) == 5
-    assert solve([]) == 0
-    assert solve([1, 2, 3]) == 10
-    assert solve([3, 2, 1]) == 10
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        a = [rng.randint(1, 9) for _ in range(rng.randint(0, 10))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -110,8 +82,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

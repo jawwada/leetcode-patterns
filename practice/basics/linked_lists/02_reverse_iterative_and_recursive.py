@@ -8,15 +8,7 @@ pointers (prev, cur, nxt) in O(1) space; the recursive version reverses the rest
 current node behind its old next node.
 Example: 1 -> 2 -> 3 -> 4 -> 5 -> 5 -> 4 -> 3 -> 2 -> 1
 """
-import sys
 from typing import List, Optional
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -50,25 +42,19 @@ def brute_force(values: List[int]) -> List[int]:
 def solve(head: Optional[ListNode]) -> Optional[ListNode]:
     """Iterative: nxt = cur.next (save), cur.next = prev (cut), both advance. O(n) time, O(1) space."""
     prev, cur = None, head
-    log(f"iterative: prev={draw(prev)} | cur={draw(cur)}")
     while cur:
         nxt = cur.next
-        log(f"  save  nxt={nxt.val if nxt else None}")
         cur.next = prev
-        log(f"  cut   cur {cur.val} now points back: {draw(cur)}")
         prev, cur = cur, nxt
-        log(f"  move  prev={draw(prev)} | cur={draw(cur)} | nxt={nxt.val if nxt else None}")
     return prev
 
 def reverse_recursive(head: Optional[ListNode]) -> Optional[ListNode]:
     """Reverse everything after head, then make head's old next point back to head. O(n) time, O(n) stack."""
     if head is None or head.next is None:
-        log(f"recursive: base case at {head.val if head else None}, the rest is reversed; unwind")
         return head
     new_head = reverse_recursive(head.next)
     head.next.next = head
     head.next = None
-    log(f"  unwind {head.val}: old next {draw(new_head).split(' -> ')[-2]} now points back to it: {draw(new_head)}")
     return new_head
 
 
@@ -76,24 +62,6 @@ def reverse_recursive(head: Optional[ListNode]) -> Optional[ListNode]:
 def demo():
     reverse_recursive(build_list([1, 2, 3, 4, 5]))  # traced for comparison
     return to_list(solve(build_list([1, 2, 3, 4, 5])))
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # the demo already showed the trace; keep the test run silent
-    assert to_list(solve(build_list([1, 2, 3, 4, 5]))) == [5, 4, 3, 2, 1]
-    assert to_list(reverse_recursive(build_list([1, 2, 3, 4, 5]))) == [5, 4, 3, 2, 1]
-    assert solve(None) is None and reverse_recursive(None) is None
-    assert to_list(solve(build_list([1]))) == [1]
-    assert to_list(reverse_recursive(build_list([1, 2]))) == [2, 1]
-    assert to_list(solve(build_list([2, 2, 2]))) == [2, 2, 2]
-    import random
-    rng = random.Random(7)
-    for _ in range(200):
-        a = [rng.randint(1, 9) for _ in range(rng.randint(0, 10))]
-        assert to_list(solve(build_list(a))) == brute_force(a), a
-        assert to_list(reverse_recursive(build_list(a))) == brute_force(a), a
 
 
 # --- bugs ---
@@ -134,7 +102,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

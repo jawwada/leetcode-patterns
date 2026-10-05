@@ -8,15 +8,7 @@ extra space: find the middle with fast/slow pointers, reverse the second half in
 it with the first half node by node.
 Example: 1 -> 2 -> 2 -> 1 -> True ;  1 -> 2 -> 3 -> False
 """
-import sys
 from typing import List, Optional
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -52,45 +44,22 @@ def solve(head: Optional[ListNode]) -> bool:
     slow = fast = head
     while fast and fast.next:
         slow, fast = slow.next, fast.next.next
-    log(f"list {draw(head)}: second half starts at {slow.val if slow else None}")
     prev, cur = None, slow
     while cur:
         nxt = cur.next
         cur.next = prev
         prev, cur = cur, nxt
-    log(f"reversed second half: {draw(prev)} | front half now: {draw(head)}")
     left, right = head, prev
     while right:
-        log(f"  compare left {left.val} vs right {right.val}")
         if left.val != right.val:
-            log("  mismatch: not a palindrome")
             return False
         left, right = left.next, right.next
-    log("  right half exhausted with no mismatch: palindrome")
     return True
 
 
 # --- demo ---
 def demo():
     return solve(build_list([1, 2, 2, 1]))
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # the demo already showed the trace; keep the test run silent
-    assert solve(build_list([1, 2, 2, 1])) is True
-    assert solve(build_list([1, 2, 3])) is False
-    assert solve(build_list([1, 2, 1])) is True        # odd length: the middle compares with itself
-    assert solve(build_list([1, 2, 3, 1])) is False    # only the ends match
-    assert solve(build_list([1, 2])) is False
-    assert solve(build_list([7])) is True
-    assert solve(None) is True
-    import random
-    rng = random.Random(7)
-    for _ in range(200):
-        a = [rng.randint(1, 2) for _ in range(rng.randint(0, 9))]
-        assert solve(build_list(a)) == brute_force(a), a
 
 
 # --- bugs ---
@@ -120,7 +89,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

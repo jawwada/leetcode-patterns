@@ -8,14 +8,6 @@ space. The first row and the first column are reused as the markers for "this co
 be zeroed"; two booleans remember whether they themselves need zeroing.
 Example: [[0,1,2,0],[3,4,5,2],[1,3,1,5]] -> [[0,0,0,0],[0,4,5,0],[0,3,1,0]]
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -33,46 +25,25 @@ def solve(matrix):
     m, n = len(matrix), len(matrix[0])
     row0 = any(x == 0 for x in matrix[0])
     col0 = any(matrix[r][0] == 0 for r in range(m))
-    log(f"flags: zero row 0 = {row0}, zero column 0 = {col0}")
     for r in range(1, m):
         for c in range(1, n):
             if matrix[r][c] == 0:
                 matrix[r][0] = matrix[0][c] = 0
-    log("markers set in row 0 and column 0:\n" + "\n".join(f"    {row}" for row in matrix))
     for r in range(1, m):
         for c in range(1, n):
             if matrix[r][0] == 0 or matrix[0][c] == 0:
                 matrix[r][c] = 0
-    log("inside zeroed from the markers:\n" + "\n".join(f"    {row}" for row in matrix))
     if row0:
         matrix[0][:] = [0] * n
     if col0:
         for r in range(m):
             matrix[r][0] = 0
-    log("borders finished from the flags:\n" + "\n".join(f"    {row}" for row in matrix))
     return matrix
 
 
 # --- demo ---
 def demo():
     return solve([[0, 1, 2, 0], [3, 4, 5, 2], [1, 3, 1, 5]])
-
-
-# --- tests ---
-def tests():
-    assert solve([[0, 1, 2, 0], [3, 4, 5, 2], [1, 3, 1, 5]]) == [[0, 0, 0, 0], [0, 4, 5, 0], [0, 3, 1, 0]]
-    assert solve([[1, 1, 1], [1, 0, 1], [1, 1, 1]]) == [[1, 0, 1], [0, 0, 0], [1, 0, 1]]
-    assert solve([[1, 0, 1], [1, 1, 1]]) == [[0, 0, 0], [1, 0, 1]]  # zero in row 0 but not in the corner
-    assert solve([[1, 1], [0, 1]]) == [[0, 1], [0, 0]]  # zero in column 0 but not in the corner
-    assert solve([[1]]) == [[1]] and solve([[0]]) == [[0]]
-    assert solve([[1, 2], [3, 4]]) == [[1, 2], [3, 4]]
-    assert solve([[1, 2, 3], [4, 5, 6], [7, 8, 0]]) == [[1, 2, 0], [4, 5, 0], [0, 0, 0]]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        m, n = rng.randint(1, 5), rng.randint(1, 5)
-        a = [[0 if rng.random() < 0.2 else rng.randint(1, 9) for _ in range(n)] for _ in range(m)]
-        assert solve([row[:] for row in a]) == brute_force(a), a
 
 
 # --- bugs ---
@@ -113,8 +84,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

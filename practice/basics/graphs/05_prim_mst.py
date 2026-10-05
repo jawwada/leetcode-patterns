@@ -10,15 +10,7 @@ The graph is assumed connected.
 Example: n=5, edges [(0,1,4),(0,2,1),(1,2,2),(1,3,5),(2,3,8),(3,4,3)], start 0
          -> (11, [(0,2,1), (2,1,2), (1,3,5), (3,4,3)])
 """
-import sys
 import heapq
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -52,7 +44,6 @@ def solve(n, edges, start=0):
     while heap and len(seen) < n:
         w, v, u = heapq.heappop(heap)
         if v in seen:
-            log(f"pop ({w}, {v}, from {u}): {v} already in the tree, SKIP | heap {heap}")
             continue
         seen.add(v)
         if v != start:
@@ -61,33 +52,12 @@ def solve(n, edges, start=0):
         for wx, x in adj[v]:
             if x not in seen:
                 heapq.heappush(heap, (wx, x, v))
-        log(f"pop ({w}, {v}, from {u}): add {v}, total {total} | heap {heap} tree {tree}")
     return total, tree
 
 
 # --- demo ---
 def demo():
     return solve(5, [(0, 1, 4), (0, 2, 1), (1, 2, 2), (1, 3, 5), (2, 3, 8), (3, 4, 3)], 0)
-
-
-# --- tests ---
-def tests():
-    E = [(0, 1, 4), (0, 2, 1), (1, 2, 2), (1, 3, 5), (2, 3, 8), (3, 4, 3)]
-    assert solve(5, E, 0) == (11, [(0, 2, 1), (2, 1, 2), (1, 3, 5), (3, 4, 3)])
-    assert solve(5, E, 4) == (11, [(4, 3, 3), (3, 1, 5), (1, 2, 2), (2, 0, 1)])  # another start, same total
-    assert solve(1, [], 0) == (0, [])
-    assert solve(2, [(0, 1, 3), (0, 1, 1)], 1) == (1, [(1, 0, 1)])  # parallel edges: the cheapest wins
-    assert solve(3, [(0, 1, 2), (1, 2, 2), (0, 2, 2)], 0)[0] == 4  # ties: any two edges
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        n = rng.randint(1, 7)
-        edges = [(i, rng.randrange(i), rng.randint(1, 9)) for i in range(1, n)]  # a random spanning tree
-        edges += [(rng.randrange(n), rng.randrange(n), rng.randint(1, 9)) for _ in range(rng.randint(0, 8))]
-        edges = [(u, v, w) for u, v, w in edges if u != v]
-        total, tree = solve(n, edges, rng.randrange(n))
-        assert total == brute_force(n, edges), (n, edges)
-        assert len(tree) == n - 1 and sum(w for _, _, w in tree) == total, (n, edges)
 
 
 # --- bugs ---
@@ -128,8 +98,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

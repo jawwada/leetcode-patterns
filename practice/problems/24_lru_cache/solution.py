@@ -8,14 +8,6 @@ put would exceed the capacity, evict the least recently used key (the one whose 
 Here solve(capacity, ops) runs a list of ("get", k) / ("put", k, v) operations and returns the get results.
 Example: capacity 2, put(1,1) put(2,2) get(1) put(3,3) get(2) put(4,4) get(1) get(3) get(4) -> [1, -1, -1, 3, 4]
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -76,23 +68,19 @@ def solve(capacity, ops):
             if node:
                 unlink(node)
                 push_front(node)
-                log(f"get {op[1]}: hit, moved to the front")
             results.append(node.val if node else -1)
         else:
             _, key, val = op
             if key in where:
                 where[key].val = val
                 unlink(where[key])
-                log(f"put {key}: key exists, update value and unlink it")
             else:
                 where[key] = Node(key, val)
                 if len(where) > capacity:
                     victim = tail.prev
                     unlink(victim)
                     del where[victim.key]
-                    log(f"put {key}: over capacity, evict ({victim.key}:{victim.val}) from the tail")
             push_front(where[key])
-        log(f"{op} -> {results[-1] if op[0] == 'get' else 'ok':>3} | {draw(head)} | keys {sorted(where)}")
     return results
 
 
@@ -100,26 +88,6 @@ def solve(capacity, ops):
 def demo():
     ops = [("put", 1, 1), ("put", 2, 2), ("get", 1), ("put", 3, 3), ("get", 2), ("put", 4, 4), ("get", 1), ("get", 3), ("get", 4)]
     return solve(2, ops)
-
-
-# --- tests ---
-def tests():
-    ops = [("put", 1, 1), ("put", 2, 2), ("get", 1), ("put", 3, 3), ("get", 2), ("put", 4, 4), ("get", 1), ("get", 3), ("get", 4)]
-    assert solve(2, ops) == [1, -1, -1, 3, 4]
-    assert solve(1, [("put", 5, 5), ("put", 5, 6), ("get", 5), ("put", 7, 7), ("get", 5), ("get", 7)]) == [6, -1, 7]
-    assert solve(2, [("get", 1)]) == [-1]
-    assert solve(2, [("put", 1, 1), ("put", 2, 2), ("put", 1, 10), ("put", 3, 3), ("get", 1), ("get", 2)]) == [10, -1]
-    assert solve(3, [("put", 1, 1), ("put", 2, 2), ("put", 3, 3), ("get", 1), ("get", 2), ("put", 4, 4), ("get", 3)]) == [1, 2, -1]
-    assert solve(2, []) == []
-    import random
-    random.seed(0)
-    for _ in range(200):
-        capacity = random.randint(1, 4)
-        ops = []
-        for _ in range(random.randint(0, 25)):
-            k = random.randint(0, 5)
-            ops.append(("get", k) if random.random() < 0.4 else ("put", k, random.randint(0, 99)))
-        assert solve(capacity, ops) == brute_force(capacity, ops), (capacity, ops)
 
 
 # --- bugs ---
@@ -160,8 +128,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

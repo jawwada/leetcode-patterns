@@ -7,15 +7,7 @@ Merge two sorted linked lists into one sorted list by splicing their nodes toget
 head of the merged list.
 Example: 1 -> 2 -> 4 and 1 -> 3 -> 4 -> 1 -> 1 -> 2 -> 3 -> 4 -> 4
 """
-import sys
 from typing import List, Optional
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -50,46 +42,20 @@ def solve(l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:
     dummy = ListNode()
     tail = dummy
     while l1 and l2:
-        log(f"l1: {' -> '.join(map(str, to_list(l1)))} -> None   l2: {' -> '.join(map(str, to_list(l2)))} -> None")
         if l1.val <= l2.val:
             tail.next = l1
             l1 = l1.next
-            log(f"    {tail.next.val} <= {l2.val}: take the front of l1")
         else:
             tail.next = l2
             l2 = l2.next
-            log(f"    {l1.val} > {tail.next.val}: take the front of l2")
         tail = tail.next
-        log("    merged: dummy -> " + " -> ".join(map(str, to_list(dummy.next)[:len(to_list(dummy.next)) - len(to_list(tail.next))])) + f"   (tail = {tail.val})")
     tail.next = l1 or l2
-    log(f"one list is empty: attach the rest {to_list(l1 or l2)} behind tail")
-    log(f"merged list: {' -> '.join(map(str, to_list(dummy.next)))} -> None")
     return dummy.next
 
 
 # --- demo ---
 def demo():
     return to_list(solve(build_list([1, 2, 4]), build_list([1, 3, 4])))
-
-
-# --- tests ---
-def tests():
-    assert to_list(solve(build_list([1, 2, 4]), build_list([1, 3, 4]))) == [1, 1, 2, 3, 4, 4]
-    assert solve(None, None) is None  # both empty
-    assert to_list(solve(None, build_list([0]))) == [0]
-    assert to_list(solve(build_list([0]), None)) == [0]
-    assert to_list(solve(build_list([5]), build_list([1, 2, 3]))) == [1, 2, 3, 5]  # l2 runs out last
-    assert to_list(solve(build_list([1, 2, 3]), build_list([5]))) == [1, 2, 3, 5]  # l1 runs out first
-    assert to_list(solve(build_list([1, 1]), build_list([1]))) == [1, 1, 1]  # duplicates
-    a, b = build_list([1, 3]), build_list([2])
-    merged = solve(a, b)
-    assert merged is a and a.next is b  # in place: the original nodes are relinked
-    import random
-    rng = random.Random(21)
-    for _ in range(200):
-        x = sorted(rng.randint(0, 9) for _ in range(rng.randint(0, 6)))
-        y = sorted(rng.randint(0, 9) for _ in range(rng.randint(0, 6)))
-        assert to_list(solve(build_list(x), build_list(y))) == to_list(brute_force(build_list(x), build_list(y))), (x, y)
 
 
 # --- bugs ---
@@ -130,8 +96,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

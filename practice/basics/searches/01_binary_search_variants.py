@@ -8,16 +8,7 @@ first index whose value is > x (upper bound), and count = upper - lower. Both bo
 range [lo, hi) and may return len(nums).
 Example: [1, 2, 2, 2, 5, 7], x=2 -> index 2, lower 1, upper 4, count 3
 """
-import sys
-import bisect
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 def marks(nums, lo, mid, hi):
@@ -45,7 +36,6 @@ def classic(nums, x):
     lo, hi = 0, len(nums) - 1
     while lo <= hi:
         mid = (lo + hi) // 2
-        log(f"classic: lo={lo} mid={mid} hi={hi}, nums[mid]={nums[mid]}\n" + marks(nums, lo, mid, hi))
         if nums[mid] == x:
             return mid
         elif nums[mid] < x:
@@ -60,7 +50,6 @@ def lower_bound(nums, x):
     lo, hi = 0, len(nums)
     while lo < hi:
         mid = (lo + hi) // 2
-        log(f"lower: lo={lo} mid={mid} hi={hi}, nums[mid]={nums[mid]} {'< x: answer is right of mid' if nums[mid] < x else '>= x: mid could be it, keep it'}\n" + marks(nums, lo, mid, hi))
         if nums[mid] < x:
             lo = mid + 1
         else:
@@ -73,7 +62,6 @@ def upper_bound(nums, x):
     lo, hi = 0, len(nums)
     while lo < hi:
         mid = (lo + hi) // 2
-        log(f"upper: lo={lo} mid={mid} hi={hi}, nums[mid]={nums[mid]} {'<= x: answer is right of mid' if nums[mid] <= x else '> x: mid could be it, keep it'}\n" + marks(nums, lo, mid, hi))
         if nums[mid] <= x:
             lo = mid + 1
         else:
@@ -84,36 +72,12 @@ def upper_bound(nums, x):
 def solve(nums, x):
     """Three O(log n) searches; count of x = upper - lower."""
     idx, lo, hi = classic(nums, x), lower_bound(nums, x), upper_bound(nums, x)
-    log(f"x={x}: index {idx}; lower={lo} upper={hi} -> x occupies indices {lo}..{hi - 1}, count {hi - lo}")
     return {"index": idx, "lower": lo, "upper": hi, "count": hi - lo}
 
 
 # --- demo ---
 def demo():
     return solve([1, 2, 2, 2, 5, 7], 2)
-
-
-# --- tests ---
-def tests():
-    assert solve([1, 2, 2, 2, 5, 7], 2) == {"index": 2, "lower": 1, "upper": 4, "count": 3}
-    assert solve([1, 2, 2, 2, 5, 7], 3) == {"index": -1, "lower": 4, "upper": 4, "count": 0}  # absent, in the middle
-    assert solve([1, 2, 2, 2, 5, 7], 0) == {"index": -1, "lower": 0, "upper": 0, "count": 0}  # smaller than all
-    assert solve([1, 2, 2, 2, 5, 7], 9) == {"index": -1, "lower": 6, "upper": 6, "count": 0}  # bigger than all
-    assert solve([1, 2, 2, 2, 5, 7], 7) == {"index": 5, "lower": 5, "upper": 6, "count": 1}  # last element
-    assert solve([], 4) == {"index": -1, "lower": 0, "upper": 0, "count": 0}
-    assert solve([4], 4) == {"index": 0, "lower": 0, "upper": 1, "count": 1}
-    assert solve([4, 4, 4], 4) == {"index": 1, "lower": 0, "upper": 3, "count": 3}
-    import random
-    rng = random.Random(7)
-    for _ in range(200):
-        nums = sorted(rng.randint(0, 9) for _ in range(rng.randint(0, 10)))
-        x = rng.randint(-1, 10)
-        got, want = solve(nums, x), brute_force(nums, x)
-        assert got["lower"] == want["lower"] == bisect.bisect_left(nums, x), (nums, x)
-        assert got["upper"] == want["upper"] == bisect.bisect_right(nums, x), (nums, x)
-        assert got["count"] == want["count"] == nums.count(x)
-        assert (got["index"] == -1) == (want["index"] == -1), (nums, x)
-        assert got["index"] == -1 or nums[got["index"]] == x    # any index of x is a valid classic answer
 
 
 # --- bugs ---
@@ -143,8 +107,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

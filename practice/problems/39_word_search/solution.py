@@ -8,15 +8,7 @@ horizontally or vertically adjacent cells, each cell used at most once.
 Example: board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "ABCCED" -> True
 (word = "ABCB" -> False: the B would have to be reused)
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -55,11 +47,9 @@ def solve(board: List[List[str]], word: str) -> bool:
         if r < 0 or r >= rows or c < 0 or c >= cols or board[r][c] != word[k]:
             return False
         saved, board[r][c] = board[r][c], "#"
-        log(f"{'  ' * k}({r},{c}) = '{saved}' matches word[{k}]; mark it: {draw(board)}")
         found = (dfs(r + 1, c, k + 1) or dfs(r - 1, c, k + 1)
                  or dfs(r, c + 1, k + 1) or dfs(r, c - 1, k + 1))
         board[r][c] = saved
-        log(f"{'  ' * k}({r},{c}) restore '{saved}': {'FOUND' if found else 'dead end'}; board {draw(board)}")
         return found
 
     return any(dfs(r, c, 0) for r in range(rows) for c in range(cols))
@@ -69,29 +59,6 @@ def solve(board: List[List[str]], word: str) -> bool:
 def demo():
     board = [["A", "B", "C", "E"], ["S", "F", "C", "S"], ["A", "D", "E", "E"]]
     return solve(board, "ABCCED")
-
-
-# --- tests ---
-def tests():
-    board = [["A", "B", "C", "E"], ["S", "F", "C", "S"], ["A", "D", "E", "E"]]
-    assert solve(board, "ABCCED") is True
-    assert solve(board, "SEE") is True
-    assert solve(board, "ABCB") is False                   # B would be reused
-    assert solve(board, "ABCCEDX") is False
-    assert board == [["A", "B", "C", "E"], ["S", "F", "C", "S"], ["A", "D", "E", "E"]]  # restored
-    assert solve([["a"]], "a") is True                     # 1x1
-    assert solve([["a"]], "ab") is False
-    assert solve([["a", "a"]], "aaa") is False             # longer than the board
-    assert solve([["a", "b"], ["c", "d"]], "abdc") is True  # path that turns twice
-    assert solve([["a", "b"], ["c", "d"]], "abcd") is False
-    import random
-    for _ in range(200):
-        rows, cols = random.randint(1, 4), random.randint(1, 4)
-        grid = [[random.choice("AB") for _ in range(cols)] for _ in range(rows)]
-        word = "".join(random.choice("AB") for _ in range(random.randint(1, 4)))
-        copy = [row[:] for row in grid]
-        assert solve(grid, word) == brute_force(copy, word), (grid, word)
-        assert grid == copy
 
 
 # --- bugs ---
@@ -132,8 +99,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

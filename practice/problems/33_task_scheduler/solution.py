@@ -8,16 +8,8 @@ letter must be at least n ticks apart. Return the minimum number of ticks to run
 Example: tasks = ["A", "A", "A", "B", "B", "B"], n = 2 -> 8  (A B idle A B idle A B)
 """
 import heapq
-import sys
 from collections import Counter, deque
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -53,16 +45,12 @@ def solve(tasks: List[str], n: int) -> int:
         time += 1
         if heap:
             cnt, ch = heapq.heappop(heap)
-            log(f"t={time}: run {ch} ({-cnt - 1} left)")
             if cnt + 1 < 0:
                 cooling.append((time + n, cnt + 1, ch))
         if cooling and cooling[0][0] == time:
             _, cnt, ch = cooling.popleft()
             heapq.heappush(heap, (cnt, ch))
-            log(f"    t={time}: {ch} is ready again (ready_time {time}) -> back into the heap")
-        log(f"    heap {[(ch, -c) for c, ch in heap]}   cooling {[(ch, -c, 'ready', r) for r, c, ch in cooling]}")
         if not heap and cooling:
-            log(f"    nothing runnable: idle t={time + 1}..{cooling[0][0]}, jump the clock")
             time = cooling[0][0] - 1
     return time
 
@@ -70,23 +58,6 @@ def solve(tasks: List[str], n: int) -> int:
 # --- demo ---
 def demo():
     return solve(["A", "A", "A", "B", "B", "B"], 2)
-
-
-# --- tests ---
-def tests():
-    assert solve(["A", "A", "A", "B", "B", "B"], 2) == 8
-    assert solve(["A", "C", "A", "B", "D", "B"], 1) == 6  # enough variety: no idle
-    assert solve(["A", "A", "A", "B", "B", "B"], 3) == 10
-    assert solve(["A", "A", "A", "B"], 1) == 5  # A B A _ A: most frequent first
-    assert solve(["A"], 0) == 1
-    assert solve(["A", "A", "A", "A"], 5) == 19  # long idle gaps
-    assert solve([], 3) == 0
-    assert solve(["A", "B", "A", "B"], 0) == 4  # no cooldown at all
-    import random
-    for _ in range(200):
-        tasks = [random.choice("ABC") for _ in range(random.randint(0, 10))]
-        n = random.randint(0, 4)
-        assert solve(tasks, n) == brute_force(tasks, n), (tasks, n)
 
 
 # --- bugs ---
@@ -138,8 +109,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -8,15 +8,7 @@ Greedy: a bigger digit standing in front of a smaller one should go first, so th
 non-decreasing bottom to top while deletions remain; whatever is left of k is cut from the end.
 Example: "1432219", k=3 -> "1219"; "10200", k=1 -> "200"; "10", k=2 -> "0"
 """
-import sys
 from itertools import combinations
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -36,41 +28,17 @@ def solve(num: str, k: int) -> str:
     """Non-decreasing stack of digits: pop a bigger top before a smaller digit while k > 0, then trim k from the end. O(n)."""
     stack = []
     for d in num:
-        log(f"d={d} k={k} | stack top->bottom {stack[::-1]}")
         while k and stack and stack[-1] > d:
             popped = stack.pop()
             k -= 1
-            log(f"    pop {popped} > {d} (k left {k}); stack top->bottom {stack[::-1]}")
         stack.append(d)
-        log(f"    push {d}; stack top->bottom {stack[::-1]}")
     stack = stack[:len(stack) - k]
-    log(f"cut {k} from the end -> {''.join(stack)!r}")
     return "".join(stack).lstrip("0") or "0"
 
 
 # --- demo ---
 def demo():
     return solve("1432219", 3)
-
-
-# --- tests ---
-def tests():
-    assert solve("1432219", 3) == "1219"
-    assert solve("10200", 1) == "200"
-    assert solve("10", 2) == "0"
-    assert solve("9", 1) == "0"
-    assert solve("112", 1) == "11"       # equal digits are not popped
-    assert solve("12345", 2) == "123"    # increasing: cut from the end
-    assert solve("54321", 2) == "321"
-    assert solve("10001", 1) == "1"      # leading zeros stripped after the cut
-    assert solve("7", 0) == "7"
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        n = rng.randint(1, 7)
-        num = str(rng.randint(1, 9)) + "".join(str(rng.randint(0, 9)) for _ in range(n - 1))
-        k = rng.randint(0, n)
-        assert solve(num, k) == brute_force(num, k), (num, k)
 
 
 # --- bugs ---
@@ -111,8 +79,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

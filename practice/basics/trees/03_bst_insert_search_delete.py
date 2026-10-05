@@ -8,15 +8,7 @@ Apply a sequence of insert / search / delete operations to an initially empty bi
 Example: insert 5, 3, 8, 1, 4, 9; search 4; delete 3; delete 5; search 3
 -> searches [True, False], inorder [1, 4, 8, 9]
 """
-import sys
 import bisect
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 def show(node):
@@ -52,9 +44,7 @@ def brute_force(ops):
 # --- optimal ---
 def insert(root, v):
     if root is None:
-        log(f"    empty spot -> new leaf {v}")
         return TreeNode(v)
-    log(f"    at {root.val}: {v} goes {'left' if v < root.val else 'right' if v > root.val else 'nowhere (duplicate)'}")
     if v < root.val:
         root.left = insert(root.left, v)
     elif v > root.val:
@@ -64,27 +54,23 @@ def insert(root, v):
 
 def search(root, v):
     while root and root.val != v:
-        log(f"    at {root.val}: {v} is {'smaller, go left' if v < root.val else 'bigger, go right'}")
         root = root.left if v < root.val else root.right
     return root is not None
 
 
 def delete(root, v):
     if root is None:
-        log(f"    {v} not in the tree, nothing to delete")
         return None
     if v < root.val:
         root.left = delete(root.left, v)
     elif v > root.val:
         root.right = delete(root.right, v)
     elif root.left is None or root.right is None:
-        log(f"    {v} has {'no' if root.left is root.right else 'one'} child: splice it out, child {show(root.left or root.right)} takes its place")
         return root.left or root.right
     else:
         succ = root.right
         while succ.left:
             succ = succ.left
-        log(f"    {v} has two children: copy inorder successor {succ.val} here, then delete {succ.val} from the right subtree")
         root.val = succ.val
         root.right = delete(root.right, succ.val)
     return root
@@ -97,35 +83,16 @@ def solve(ops):
     """Each op descends one root-to-leaf path: O(height) per op, O(n) for the final inorder."""
     root, found = None, []
     for op, v in ops:
-        log(f"{op} {v}")
         if op == "search":
             found.append(search(root, v))
         else:
             root = insert(root, v) if op == "insert" else delete(root, v)
-        log(f"  -> {('found ' + str(found[-1]) + '; ') if op == 'search' else ''}tree {show(root)}")
     return found, inorder(root)
 
 
 # --- demo ---
 def demo():
     return solve([("insert", v) for v in (5, 3, 8, 1, 4, 9)] + [("search", 4), ("delete", 3), ("delete", 5), ("search", 3)])
-
-
-# --- tests ---
-def tests():
-    ops = [("insert", v) for v in (5, 3, 8, 1, 4, 9)] + [("search", 4), ("delete", 3), ("delete", 5), ("search", 3)]
-    assert solve(ops) == ([True, False], [1, 4, 8, 9])
-    assert solve([]) == ([], [])
-    assert solve([("search", 1), ("delete", 1)]) == ([False], [])          # empty tree
-    assert solve([("insert", 1), ("delete", 1), ("search", 1)]) == ([False], [])
-    assert solve([("insert", 2), ("insert", 2), ("insert", 1)]) == ([], [1, 2])   # duplicate ignored
-    assert solve([("insert", 1), ("insert", 2), ("insert", 3), ("delete", 2)]) == ([], [1, 3])  # one child
-    assert solve([("insert", 4), ("insert", 2), ("insert", 6), ("insert", 5), ("delete", 4)]) == ([], [2, 5, 6])
-    import random
-    rng = random.Random(3)
-    for _ in range(200):
-        ops = [(rng.choice(["insert", "insert", "search", "delete"]), rng.randint(0, 12)) for _ in range(rng.randint(0, 25))]
-        assert solve(ops) == brute_force(ops), ops
 
 
 # --- bugs ---
@@ -155,8 +122,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

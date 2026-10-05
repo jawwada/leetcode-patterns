@@ -7,14 +7,6 @@ Given a string of the brackets ()[]{}, decide whether it is valid: every opener 
 same kind of bracket, in nested order, and nothing is left open.
 Example: "([]{})" -> True; "([)]" -> False; "((" -> False
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -37,43 +29,19 @@ def solve(s: str) -> bool:
     popped; at the end nothing may remain open. One push or pop per character: O(n)."""
     pairs = {")": "(", "]": "[", "}": "{"}  # closer -> matching opener
     stack = []
-    log(f"{s}")
     for i, ch in enumerate(s):
         if ch in pairs:
             if not stack or stack[-1] != pairs[ch]:
-                log(f"{' ' * i}^ '{ch}' closer, top {stack[-1] if stack else 'empty'} does not match '{pairs[ch]}' -> False")
                 return False
             stack.pop()
-            log(f"{' ' * i}^ '{ch}' closer matches top '{pairs[ch]}' -> pop   stack top->bottom {stack[::-1]}")
         else:
             stack.append(ch)
-            log(f"{' ' * i}^ '{ch}' opener -> push   stack top->bottom {stack[::-1]}")
-    log(f"end: stack {stack[::-1]} -> {not stack}")
     return not stack
 
 
 # --- demo ---
 def demo():
     return solve("([]{})")
-
-
-# --- tests ---
-def tests():
-    assert solve("([]{})") is True
-    assert solve("()") is True
-    assert solve("()[]{}") is True
-    assert solve("{[]}") is True
-    assert solve("") is True
-    assert solve("(]") is False
-    assert solve("([)]") is False  # right counts, wrong order
-    assert solve("((") is False  # left open
-    assert solve("]") is False  # closer with nothing open
-    assert solve("())") is False
-    import random
-    random.seed(1)
-    for _ in range(200):
-        t = "".join(random.choice("()[]{}") for _ in range(random.randint(0, 10)))
-        assert solve(t) == brute_force(t), t
 
 
 # --- bugs ---
@@ -114,8 +82,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

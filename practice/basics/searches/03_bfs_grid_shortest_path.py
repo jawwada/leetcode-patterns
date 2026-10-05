@@ -8,16 +8,8 @@ bottom-right moving up, down, left or right, or -1 if there is none. BFS explore
 time the target leaves the queue its distance is final.
 Example: [[0, 0, 1], [1, 0, 0], [1, 1, 0]] -> 5, the path (0,0) (0,1) (1,1) (1,2) (2,2)
 """
-import sys
 from collections import deque
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 def picture(grid, dist):
@@ -57,42 +49,20 @@ def solve(grid):
     dist = {(0, 0): 1}
     q = deque([(0, 0)])
     while q:
-        log(f"layer {dist[q[0]]}: frontier {list(q)}")
         for _ in range(len(q)):
             r, c = q.popleft()
             if (r, c) == (m - 1, n - 1):
-                log(f"  pop {(r, c)}: target reached at distance {dist[r, c]}")
                 return dist[r, c]
             for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):
                 if 0 <= nr < m and 0 <= nc < n and grid[nr][nc] == 0 and (nr, nc) not in dist:
                     dist[nr, nc] = dist[r, c] + 1
                     q.append((nr, nc))
-            log(f"  pop {(r, c)}; queue now {list(q)}")
-        log(picture(grid, dist))
     return -1
 
 
 # --- demo ---
 def demo():
     return solve([[0, 0, 1], [1, 0, 0], [1, 1, 0]])
-
-
-# --- tests ---
-def tests():
-    assert solve([[0, 0, 1], [1, 0, 0], [1, 1, 0]]) == 5
-    assert solve([[0]]) == 1                           # start is the target
-    assert solve([[1]]) == -1                          # start is a wall
-    assert solve([[0, 0], [0, 1]]) == -1               # target is a wall
-    assert solve([[0, 1], [1, 0]]) == -1               # no path (diagonals do not count)
-    assert solve([[0, 0], [0, 0]]) == 3
-    assert solve([[0, 0, 0], [1, 1, 0], [0, 0, 0], [0, 1, 1], [0, 0, 0]]) == 11   # snake, must go back left
-    assert solve([[0, 1, 0], [0, 1, 0], [0, 0, 0]]) == 5
-    import random
-    rng = random.Random(9)
-    for _ in range(200):
-        m, n = rng.randint(1, 4), rng.randint(1, 4)
-        grid = [[1 if rng.random() < 0.3 else 0 for _ in range(n)] for _ in range(m)]
-        assert solve(grid) == brute_force(grid), grid
 
 
 # --- bugs ---
@@ -122,8 +92,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

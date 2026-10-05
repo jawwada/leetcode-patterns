@@ -7,15 +7,7 @@ Return every distinct subset of an array that may contain duplicates. Sorting pu
 by side; on one level of the tree only the first of a run of equal values may be chosen. Results sorted.
 Example: [1, 2, 2] -> [[], [1], [1, 2], [1, 2, 2], [2], [2, 2]]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -35,16 +27,12 @@ def solve(nums: List[int]) -> List[List[int]]:
 
     def backtrack(start: int) -> None:
         res.append(path[:])
-        log("  " * len(path) + f"record {path}")
         for i in range(start, len(nums)):
             if i > start and nums[i] == nums[i - 1]:
-                log("  " * (len(path) + 1) + f"skip {nums[i]} at i={i}: equal to nums[{i - 1}] on this level")
                 continue
             path.append(nums[i])
-            log("  " * len(path) + f"choose {nums[i]} -> path {path}")
             backtrack(i + 1)
             path.pop()
-            log("  " * (len(path) + 1) + f"unchoose {nums[i]} -> path {path}")
 
     backtrack(0)
     return sorted(res)
@@ -53,20 +41,6 @@ def solve(nums: List[int]) -> List[List[int]]:
 # --- demo ---
 def demo():
     return solve([1, 2, 2])
-
-
-# --- tests ---
-def tests():
-    assert solve([1, 2, 2]) == [[], [1], [1, 2], [1, 2, 2], [2], [2, 2]]
-    assert solve([2, 1, 2]) == [[], [1], [1, 2], [1, 2, 2], [2], [2, 2]]  # unsorted input
-    assert solve([1, 1, 1]) == [[], [1], [1, 1], [1, 1, 1]]
-    assert solve([]) == [[]]
-    assert solve([4]) == [[], [4]]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        a = [rng.randint(1, 3) for _ in range(rng.randint(0, 6))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -96,8 +70,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

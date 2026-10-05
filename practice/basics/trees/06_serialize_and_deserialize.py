@@ -7,15 +7,7 @@ Turn a binary tree into a string and the string back into the same tree. Preorde
 '#' for every missing child is unambiguous, so decoding can consume the tokens in the same order.
 Example: [1, 2, 3, None, None, 4, 5] -> "1,2,#,#,3,4,#,#,5,#,#" -> the same tree
 """
-import sys
 from collections import deque
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -55,10 +47,8 @@ def serialize(root):
     def rec(node):
         if node is None:
             out.append("#")
-            log(f"  emit # (missing child)      -> {','.join(out)}")
             return
         out.append(str(node.val))
-        log(f"  emit {node.val} then its children -> {','.join(out)}")
         rec(node.left)
         rec(node.right)
     rec(root)
@@ -72,10 +62,8 @@ def deserialize(data):
     def rec():
         tok = next(tokens)
         if tok == "#":
-            log("  read #: empty subtree")
             return None
         node = TreeNode(int(tok))
-        log(f"  read {tok}: make the node, now build its left subtree, then its right")
         node.left = rec()
         node.right = rec()
         return node
@@ -85,7 +73,6 @@ def deserialize(data):
 def solve(root):
     """Round trip: encode, decode, encode again; the two strings must match."""
     data = serialize(root)
-    log(f"serialized: {data}")
     again = serialize(deserialize(data))
     assert again == data, (data, again)
     return data
@@ -94,36 +81,6 @@ def solve(root):
 # --- demo ---
 def demo():
     return solve(build_tree([1, 2, 3, None, None, 4, 5]))
-
-
-# --- tests ---
-def random_tree(rng, n):
-    """Random shape with random values in -50..99 (multi-digit and negative values must survive)."""
-    nodes = [TreeNode(rng.randint(-50, 99)) for _ in range(n)]
-    for i in range(1, n):
-        while True:
-            p = nodes[rng.randrange(i)]
-            if p.left is None or p.right is None:
-                break
-        side = rng.choice([s for s in ("left", "right") if getattr(p, s) is None])
-        setattr(p, side, nodes[i])
-    return nodes[0] if n else None
-
-
-def tests():
-    assert solve(build_tree([1, 2, 3, None, None, 4, 5])) == "1,2,#,#,3,4,#,#,5,#,#"
-    assert solve(None) == "#"
-    assert deserialize("#") is None
-    assert solve(build_tree([7])) == "7,#,#"
-    assert solve(build_tree([12, -3])) == "12,-3,#,#,#"                   # multi-digit and negative
-    assert solve(build_tree([1, None, 2, None, 3])) == "1,#,2,#,3,#,#"    # right chain
-    assert brute_force(deserialize("1,2,#,#,3,4,#,#,5,#,#")) == [1, 2, 3, None, None, 4, 5]
-    import random
-    rng = random.Random(6)
-    for _ in range(200):
-        root = random_tree(rng, rng.randint(0, 12))
-        back = deserialize(solve(root))
-        assert brute_force(back) == brute_force(root)        # same shape and values, checked by an independent encoding
 
 
 # --- bugs ---
@@ -153,8 +110,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

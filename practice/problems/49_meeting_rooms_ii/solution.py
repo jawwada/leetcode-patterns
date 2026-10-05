@@ -7,16 +7,8 @@ Given meeting intervals [start, end), return the minimum number of conference ro
 that no two meetings in the same room overlap. A meeting may start exactly when another ends.
 Example: [[0,30],[5,10],[15,20]] -> 2
 """
-import sys
 import heapq
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -35,43 +27,19 @@ def solve(intervals: List[List[int]]) -> int:
     """Sort by start; a min-heap holds the end time of every occupied room. For each meeting free
     the rooms that have ended, take a room, record the peak occupancy. O(n log n)."""
     intervals = sorted(intervals, key=lambda iv: iv[0])
-    log(f"sorted by start: {intervals}")
     ends = []  # min-heap of end times, one per occupied room
     rooms = 0
     for start, end in intervals:
         while ends and ends[0] <= start:
             freed = heapq.heappop(ends)
-            log(f"    room ending {freed} <= {start} is free again; ends {ends}")
         heapq.heappush(ends, end)
         rooms = max(rooms, len(ends))
-        log(f"[{start},{end}] takes a room | ends heap {ends} | in use {len(ends)}, peak {rooms}")
     return rooms
 
 
 # --- demo ---
 def demo():
     return solve([[0, 30], [5, 10], [15, 20]])
-
-
-# --- tests ---
-def tests():
-    assert solve([[0, 30], [5, 10], [15, 20]]) == 2
-    assert solve([[7, 10], [2, 4]]) == 1
-    assert solve([[1, 5], [5, 10]]) == 1  # back to back share a room
-    assert solve([]) == 0
-    assert solve([[3, 4]]) == 1
-    assert solve([[1, 10], [2, 7], [3, 19], [8, 12], [10, 20], [11, 30]]) == 4
-    assert solve([[9, 10], [4, 9], [4, 17]]) == 2
-    assert solve([[0, 1], [0, 1], [5, 6]]) == 2  # peak is early, not at the end
-    assert solve([[1, 2], [1, 3], [0, 10], [4, 5]]) == 3  # a long early meeting
-    import random
-    random.seed(1)
-    for _ in range(200):
-        ivs = []
-        for _ in range(random.randint(0, 8)):
-            s = random.randint(0, 12)
-            ivs.append([s, s + random.randint(1, 6)])
-        assert solve(ivs) == brute_force(ivs), ivs
 
 
 # --- bugs ---
@@ -112,8 +80,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

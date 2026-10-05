@@ -7,15 +7,7 @@ Given strings s and t, return the shortest substring of s that contains every ch
 (with multiplicity), or "" if there is none.
 Example: s = "ADOBECODEBANC", t = "ABC" -> "BANC"
 """
-import sys
 from collections import Counter
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -44,50 +36,24 @@ def solve(s: str, t: str) -> str:
     formed, required = 0, len(need)  # formed == required <=> the window covers t
     left = 0
     best_start, best_len = 0, float("inf")
-    log(f"need {dict(need)}  required {required}")
     for right, ch in enumerate(s):
         have[ch] += 1
         if ch in need and have[ch] == need[ch]:
             formed += 1
-        log(f"r={right} in '{ch}': have {{{', '.join(f'{c}:{have[c]}' for c in need)}}} formed {formed}/{required}  window [{left}..{right}] '{s[left:right + 1]}'")
         while formed == required:
             if right - left + 1 < best_len:
                 best_start, best_len = left, right - left + 1
-            log(f"    covers t: [{left}..{right}] '{s[left:right + 1]}' len {right - left + 1}, best '{s[best_start:best_start + best_len]}'")
             out = s[left]
             have[out] -= 1
             if out in need and have[out] < need[out]:
                 formed -= 1
             left += 1
-            log(f"    out '{out}': have[{out}] {have[out]}, formed {formed}/{required}  window [{left}..{right}] '{s[left:right + 1]}'")
-        log(f"    {s}")
-        log(f"    {' ' * left}{'^' * (right - left + 1)}")
     return "" if best_len == float("inf") else s[best_start:best_start + best_len]
 
 
 # --- demo ---
 def demo():
     return solve("ADOBECODEBANC", "ABC")
-
-
-# --- tests ---
-def tests():
-    assert solve("ADOBECODEBANC", "ABC") == "BANC"
-    assert solve("a", "a") == "a"
-    assert solve("a", "aa") == ""  # multiplicity matters
-    assert solve("aa", "aa") == "aa"
-    assert solve("ab", "b") == "b"
-    assert solve("abc", "d") == ""
-    assert solve("", "a") == ""
-    assert solve("aabbcc", "abc") == "abbc"
-    assert solve("aab", "ab") == "ab"
-    import random
-    random.seed(1)
-    for _ in range(200):
-        s = "".join(random.choice("abc") for _ in range(random.randint(0, 10)))
-        t = "".join(random.choice("abc") for _ in range(random.randint(1, 3)))
-        got, want = solve(s, t), brute_force(s, t)
-        assert len(got) == len(want) and got in s and not (Counter(t) - Counter(got) if got else want), (s, t, got, want)
 
 
 # --- bugs ---
@@ -128,8 +94,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

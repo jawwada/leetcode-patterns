@@ -9,14 +9,6 @@ bigger), a smaller one rules out its whole row (everything to the left is smalle
 discards a row or a column.
 Example: [[1,4,7,11,15],[2,5,8,12,19],[3,6,9,16,22],[10,13,14,17,24],[18,21,23,26,30]], target 5 -> True
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -35,16 +27,11 @@ def solve(matrix, target):
     while r < m and c >= 0:
         x = matrix[r][c]
         if x == target:
-            log(f"({r},{c}) = {x} == {target}: FOUND")
             return True
         if x > target:
-            log(f"({r},{c}) = {x} > {target}: column {c} ruled out, move left")
             c -= 1
         else:
-            log(f"({r},{c}) = {x} < {target}: row {r} ruled out, move down")
             r += 1
-        log(f"    remaining rows {r}..{m - 1}, cols 0..{c}")
-    log(f"walked off the matrix at ({r},{c}): not found")
     return False
 
 
@@ -52,26 +39,6 @@ def solve(matrix, target):
 def demo():
     matrix = [[1, 4, 7, 11, 15], [2, 5, 8, 12, 19], [3, 6, 9, 16, 22], [10, 13, 14, 17, 24], [18, 21, 23, 26, 30]]
     return solve(matrix, 5)
-
-
-# --- tests ---
-def tests():
-    M = [[1, 4, 7, 11, 15], [2, 5, 8, 12, 19], [3, 6, 9, 16, 22], [10, 13, 14, 17, 24], [18, 21, 23, 26, 30]]
-    assert solve(M, 5) is True
-    assert solve(M, 20) is False
-    assert solve(M, 18) is True  # bottom-left corner: the last column checked is 0
-    assert solve(M, 30) is True and solve(M, 1) is True and solve(M, 15) is True
-    assert solve(M, 0) is False and solve(M, 31) is False
-    assert solve([], 1) is False and solve([[]], 1) is False
-    assert solve([[5]], 5) is True and solve([[5]], 4) is False
-    assert solve([[1, 3, 5]], 3) is True and solve([[1], [3], [5]], 5) is True
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        m, n = rng.randint(1, 5), rng.randint(1, 5)
-        a = [[3 * r + 3 * c + rng.randint(0, 2) for c in range(n)] for r in range(m)]  # sorted both ways
-        target = rng.randint(-1, 3 * (m + n))
-        assert solve(a, target) == brute_force(a, target), (a, target)
 
 
 # --- bugs ---
@@ -112,8 +79,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

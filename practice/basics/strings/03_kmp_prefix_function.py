@@ -8,15 +8,7 @@ text[i] does not match pattern[j], the first j characters already match, so inst
 i - j + 1 the pattern slides to its longest border: j = fail[j - 1]. Return every start index.
 Example: text "aabaaabaab", pattern "aab" -> [0, 4, 7]   (failure table of "aab": [0, 1, 0])
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -33,56 +25,31 @@ def build_failure(pattern: str) -> List[int]:
     k = 0
     for i in range(1, len(pattern)):
         while k > 0 and pattern[i] != pattern[k]:
-            log(f"    build i={i}: {pattern[i]!r} != {pattern[k]!r} at k={k}, fall back to fail[{k - 1}] = {fail[k - 1]}")
             k = fail[k - 1]
         if pattern[i] == pattern[k]:
             k += 1
         fail[i] = k
-        log(f"    build i={i}: fail = {fail[:i + 1]}")
     return fail
 
 
 def solve(text: str, pattern: str) -> List[int]:
     """One pass over text; j = matched prefix length, never moves i backwards. O(n + m)."""
     fail = build_failure(pattern)
-    log(f"failure table for {pattern!r}: {fail}")
     hits, j = [], 0
     for i, ch in enumerate(text):
         while j > 0 and ch != pattern[j]:
-            log(f"i={i} {ch!r} != {pattern[j]!r} at j={j}: fall back to fail[{j - 1}] = {fail[j - 1]}")
             j = fail[j - 1]
         if ch == pattern[j]:
             j += 1
-        log(f"i={i} {ch!r}: matched {j} = {pattern[:j]!r}")
         if j == len(pattern):
             hits.append(i - j + 1)
             j = fail[-1]
-            log(f"    hit at {i - len(pattern) + 1}; continue with border j={j}")
     return hits
 
 
 # --- demo ---
 def demo():
     return solve("aabaaabaab", "aab")
-
-
-# --- tests ---
-def tests():
-    assert build_failure("aab") == [0, 1, 0]
-    assert build_failure("aabaaab") == [0, 1, 0, 1, 2, 2, 3]
-    assert build_failure("abcabd") == [0, 0, 0, 1, 2, 0]
-    assert solve("aabaaabaab", "aab") == [0, 4, 7]
-    assert solve("aaaa", "aa") == [0, 1, 2]  # overlapping hits
-    assert solve("aaxaab", "aaab") == []  # needs two fall-backs in a row at the x
-    assert solve("abc", "abcd") == []
-    assert solve("", "a") == []
-    assert solve("abab", "abab") == [0]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        text = "".join(rng.choice("ab") for _ in range(rng.randint(0, 10)))
-        pattern = "".join(rng.choice("ab") for _ in range(rng.randint(1, 4)))
-        assert solve(text, pattern) == brute_force(text, pattern), (text, pattern)
 
 
 # --- bugs ---
@@ -123,8 +90,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

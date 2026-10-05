@@ -7,15 +7,7 @@ Reverse every k consecutive nodes of a singly linked list; a final group shorter
 Only node links may change, not values.
 Example: 1 -> 2 -> 3 -> 4 -> 5, k = 2 -> 2 -> 1 -> 4 -> 3 -> 5
 """
-import sys
 from typing import List, Optional
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -58,10 +50,8 @@ def solve(head: Optional[ListNode], k: int) -> Optional[ListNode]:
         for _ in range(k):
             kth = kth.next
             if kth is None:
-                log(f"fewer than {k} nodes left after {draw(dummy.next)}: leave the tail")
                 return dummy.next
         group_next = kth.next
-        log(f"group {' -> '.join(map(str, to_list(group_prev.next)[:k]))} | kth={kth.val} group_next={group_next.val if group_next else None}")
         prev, cur = group_next, group_prev.next
         while cur is not group_next:
             nxt = cur.next
@@ -69,33 +59,12 @@ def solve(head: Optional[ListNode], k: int) -> Optional[ListNode]:
             prev, cur = cur, nxt
         tail = group_prev.next
         group_prev.next = kth
-        log(f"    reversed, hooked after {'dummy' if group_prev is dummy else group_prev.val}: {draw(dummy.next)}")
         group_prev = tail
 
 
 # --- demo ---
 def demo():
     return to_list(solve(build_list([1, 2, 3, 4, 5]), 2))
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # the demo already showed the trace; keep the test run silent
-    assert to_list(solve(build_list([1, 2, 3, 4, 5]), 2)) == [2, 1, 4, 3, 5]
-    assert to_list(solve(build_list([1, 2, 3, 4, 5]), 3)) == [3, 2, 1, 4, 5]
-    assert to_list(solve(build_list([1, 2, 3, 4, 5]), 1)) == [1, 2, 3, 4, 5]
-    assert to_list(solve(build_list([1, 2, 3, 4, 5]), 5)) == [5, 4, 3, 2, 1]
-    assert to_list(solve(build_list([1, 2, 3, 4, 5]), 6)) == [1, 2, 3, 4, 5]   # group never completes
-    assert to_list(solve(build_list([1, 2, 3, 4]), 2)) == [2, 1, 4, 3]         # exact multiple
-    assert to_list(solve(None, 2)) == []
-    assert to_list(solve(build_list([1]), 1)) == [1]
-    import random
-    rng = random.Random(7)
-    for _ in range(200):
-        a = [rng.randint(1, 9) for _ in range(rng.randint(0, 9))]
-        k = rng.randint(1, len(a) + 1)
-        assert to_list(solve(build_list(a), k)) == brute_force(a, k), (a, k)
 
 
 # --- bugs ---
@@ -136,7 +105,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

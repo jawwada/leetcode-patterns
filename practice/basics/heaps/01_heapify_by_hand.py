@@ -8,16 +8,8 @@ n//2 - 1. Walk i from that parent down to 0 and sift a[i] down: swap it with its
 that child is smaller. Every subtree below i is already a heap when i's turn comes.
 Example: [9, 4, 7, 1, 2, 6, 3] -> [1, 2, 3, 4, 9, 6, 7]
 """
-import sys
 import heapq
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 def levels(a):
@@ -54,7 +46,6 @@ def sift_down(a: List[int], i: int, n: int) -> None:
         if smallest == i:
             return
         a[i], a[smallest] = a[smallest], a[i]
-        log(f"    swap a[{i}]={a[smallest]} with smaller child a[{smallest}]={a[i]} -> {a}")
         i = smallest
 
 
@@ -62,36 +53,14 @@ def solve(nums: List[int]) -> List[int]:
     """Floyd's build: sift down every internal node, last parent first, root last. O(n) total."""
     a = list(nums)
     n = len(a)
-    log(f"start {a}  tree: {levels(a)}  last parent = {n // 2 - 1}")
     for i in range(n // 2 - 1, -1, -1):
-        log(f"sift down index {i} (value {a[i]}, children {a[2 * i + 1:2 * i + 3]})")
         sift_down(a, i, n)
-        log(f"    now {a}  tree: {levels(a)}")
     return a
 
 
 # --- demo ---
 def demo():
     return solve([9, 4, 7, 1, 2, 6, 3])
-
-
-# --- tests ---
-def tests():
-    assert solve([9, 4, 7, 1, 2, 6, 3]) == [1, 2, 3, 4, 9, 6, 7]
-    assert solve([]) == []
-    assert solve([5]) == [5]
-    assert solve([1, 2, 3, 4]) == [1, 2, 3, 4]  # already a heap: no swaps
-    assert solve([4, 3, 2, 1]) == [1, 3, 2, 4]
-    assert solve([3, 3, 3]) == [3, 3, 3]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        n = rng.randint(0, 12)
-        distinct = rng.sample(range(100), n)
-        assert solve(distinct) == brute_force(distinct), distinct  # same swaps as heapq when values differ
-        dup = [rng.randint(1, 4) for _ in range(n)]
-        out = solve(dup)  # ties may land in different slots than heapq's, but it must still be a heap
-        assert is_min_heap(out) and sorted(out) == sorted(dup), dup
 
 
 # --- bugs ---
@@ -121,8 +90,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

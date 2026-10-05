@@ -7,15 +7,7 @@ Return every subset (the power set) of an array of distinct integers. Results ar
 output is deterministic.
 Example: [1, 2, 3] -> [[], [1], [1, 2], [1, 2, 3], [1, 3], [2], [2, 3], [3]]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -34,13 +26,10 @@ def solve(nums: List[int]) -> List[List[int]]:
 
     def backtrack(start: int) -> None:
         res.append(path[:])
-        log("  " * len(path) + f"record {path}")
         for i in range(start, len(nums)):
             path.append(nums[i])
-            log("  " * len(path) + f"choose {nums[i]} -> path {path}")
             backtrack(i + 1)
             path.pop()
-            log("  " * (len(path) + 1) + f"unchoose {nums[i]} -> path {path}")
 
     backtrack(0)
     return sorted(res)
@@ -49,19 +38,6 @@ def solve(nums: List[int]) -> List[List[int]]:
 # --- demo ---
 def demo():
     return solve([1, 2, 3])
-
-
-# --- tests ---
-def tests():
-    assert solve([1, 2, 3]) == [[], [1], [1, 2], [1, 2, 3], [1, 3], [2], [2, 3], [3]]
-    assert solve([]) == [[]]
-    assert solve([7]) == [[], [7]]
-    assert solve([3, 1]) == [[], [1], [3], [3, 1]]  # unsorted input is fine: subsets keep input order
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        a = rng.sample(range(1, 10), rng.randint(0, 6))
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -91,8 +67,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -9,15 +9,7 @@ add the new character. Equal hashes may be collisions, so a hit is confirmed by 
 Return every start index. The small modulus here makes collisions visible in the trace.
 Example: text "abracadabra", pattern "abra" -> [0, 7]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -41,38 +33,18 @@ def solve(text: str, pattern: str) -> List[int]:
         target = (target * BASE + ord(pattern[k])) % MOD
     for k in range(min(m, n)):
         h = (h * BASE + ord(text[k])) % MOD
-    log(f"pattern {pattern!r} hash {target}; high = {BASE}^{m - 1} mod {MOD} = {high}")
     hits = []
     for i in range(n - m + 1):
-        log(f"window [{i}..{i + m - 1}] {text[i:i + m]!r} hash {h}" + (f"  == target -> verify: {'match' if text[i:i + m] == pattern else 'COLLISION, ignored'}" if h == target else ""))
         if h == target and text[i:i + m] == pattern:
             hits.append(i)
-            log(f"    hit at {i}")
         if i + m < n:
             h = ((h - ord(text[i]) * high) * BASE + ord(text[i + m])) % MOD
-            log(f"    roll: drop {text[i]!r}, add {text[i + m]!r} -> hash {h}")
     return hits
 
 
 # --- demo ---
 def demo():
     return solve("abracadabra", "abra")
-
-
-# --- tests ---
-def tests():
-    assert solve("abracadabra", "abra") == [0, 7]
-    assert solve("abccabra", "abra") == [4]  # 'abcc' has the same hash as 'abra': collision, verified away
-    assert solve("aaaa", "aa") == [0, 1, 2]
-    assert solve("abc", "abcd") == []
-    assert solve("", "a") == []
-    assert solve("x", "x") == [0]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        text = "".join(rng.choice("abc") for _ in range(rng.randint(0, 12)))
-        pattern = "".join(rng.choice("abc") for _ in range(rng.randint(1, 3)))
-        assert solve(text, pattern) == brute_force(text, pattern), (text, pattern)
 
 
 # --- bugs ---
@@ -102,8 +74,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

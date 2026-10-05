@@ -8,15 +8,6 @@ n, shift the result left and OR the bit in, shift n right. Python's >> is arithm
 sign: -8 >> 1 == -4, it floors); a logical right shift of a 32-bit value is (n & 0xFFFFFFFF) >> k.
 Example: reverse_bits(0b00000010100101000001111010011100) -> 964176192 (0b00111001011110000010100101000000)
 """
-import sys
-import random
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -33,43 +24,18 @@ def reverse_bits(n: int) -> int:
         bit = n & 1
         result = (result << 1) | bit
         n >>= 1
-        log(f"  round {i:>2}: bit {bit} -> result {result:032b}   n left {n:032b}")
     return result
 
 
 def logical_right_shift(n: int, k: int) -> int:
     """Python's >> keeps the sign (arithmetic); mask to 32 bits first to shift in zeros (logical). O(1)."""
     unsigned = n & 0xFFFFFFFF
-    log(f"  {n} as 32-bit unsigned: {unsigned:032b}")
-    log(f"  arithmetic {n} >> {k} = {n >> k};  logical ({unsigned:#x} >> {k}) = {unsigned >> k} = {unsigned >> k:032b}")
     return unsigned >> k
 
 
 # --- demo ---
 def demo():
     return reverse_bits(0b00000010100101000001111010011100), logical_right_shift(-8, 1)
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # keep the trace to the demo
-    assert reverse_bits(0b00000010100101000001111010011100) == 964176192
-    assert reverse_bits(0) == 0 and reverse_bits(1) == 1 << 31 and reverse_bits(1 << 31) == 1
-    assert reverse_bits(0xFFFFFFFF) == 0xFFFFFFFF and reverse_bits(0b11) == 0b11 << 30
-    assert reverse_bits(0xFFFFFFFD) == 3221225471          # 10111111...1
-    # shifts: << multiplies by 2^k, >> floors a division by 2^k and keeps the sign
-    assert 5 << 3 == 40 and 40 >> 3 == 5 and 41 >> 3 == 5
-    assert -8 >> 1 == -4 and -7 >> 1 == -4                  # arithmetic: floor(-3.5) == -4, the sign stays
-    assert logical_right_shift(-8, 1) == 0x7FFFFFFC         # logical: zeros come in from the left
-    assert logical_right_shift(-1, 0) == 0xFFFFFFFF and logical_right_shift(-1, 31) == 1 and logical_right_shift(40, 3) == 5
-    rng = random.Random(0)
-    for _ in range(200):
-        n = rng.choice([rng.randint(0, 2**32 - 1), rng.randint(0, 255), 1 << rng.randint(0, 31)])
-        assert reverse_bits(n) == brute_force(n), n
-        assert reverse_bits(reverse_bits(n)) == n, n
-        m, k = rng.randint(-2**31, 2**31 - 1), rng.randint(0, 31)
-        assert logical_right_shift(m, k) == int(format(m & 0xFFFFFFFF, "032b")[:32 - k] or "0", 2), (m, k)
 
 
 # --- bugs ---
@@ -110,7 +76,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

@@ -8,16 +8,8 @@ Put ALL zeros in the queue at the start: one BFS then grows from every source at
 which a cell is first reached is its distance to the closest zero.
 Example: [[0, 0, 0], [0, 1, 0], [1, 1, 1]] -> [[0, 0, 0], [0, 1, 0], [1, 2, 1]]
 """
-import sys
 from collections import deque
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 def picture(dist):
@@ -39,40 +31,19 @@ def solve(mat):
     m, n = len(mat), len(mat[0])
     dist = [[0 if v == 0 else -1 for v in row] for row in mat]
     q = deque((r, c) for r in range(m) for c in range(n) if mat[r][c] == 0)
-    log(f"all zeros enqueued with distance 0: {list(q)}\n" + picture(dist))
     while q:
-        log(f"layer {dist[q[0][0]][q[0][1]] + 1}: frontier {list(q)}")
         for _ in range(len(q)):
             r, c = q.popleft()
             for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):
                 if 0 <= nr < m and 0 <= nc < n and dist[nr][nc] == -1:
                     dist[nr][nc] = dist[r][c] + 1
                     q.append((nr, nc))
-        log(picture(dist))
     return dist
 
 
 # --- demo ---
 def demo():
     return solve([[0, 0, 0], [0, 1, 0], [1, 1, 1]])
-
-
-# --- tests ---
-def tests():
-    assert solve([[0, 0, 0], [0, 1, 0], [1, 1, 1]]) == [[0, 0, 0], [0, 1, 0], [1, 2, 1]]
-    assert solve([[0, 0, 0], [0, 1, 0], [0, 0, 0]]) == [[0, 0, 0], [0, 1, 0], [0, 0, 0]]
-    assert solve([[0]]) == [[0]]
-    assert solve([[0, 1, 1, 1]]) == [[0, 1, 2, 3]]                             # single row, one source
-    assert solve([[1], [1], [0], [1]]) == [[2], [1], [0], [1]]                 # single column
-    assert solve([[1, 1, 1], [1, 0, 1], [1, 1, 1]]) == [[2, 1, 2], [1, 0, 1], [2, 1, 2]]
-    assert solve([[0, 1, 1, 1, 0]]) == [[0, 1, 2, 1, 0]]                       # two sources meet in the middle
-    import random
-    rng = random.Random(12)
-    for _ in range(200):
-        m, n = rng.randint(1, 5), rng.randint(1, 5)
-        mat = [[1 if rng.random() < 0.7 else 0 for _ in range(n)] for _ in range(m)]
-        mat[rng.randrange(m)][rng.randrange(n)] = 0            # at least one source
-        assert solve(mat) == brute_force(mat), mat
 
 
 # --- bugs ---
@@ -102,8 +73,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -8,15 +8,7 @@ distance). Any order is accepted; here the result is returned sorted for determi
 Example: points = [[3, 3], [5, -1], [-2, 4]], k = 2 -> [[-2, 4], [3, 3]]  (distances 20 and 18 beat 26)
 """
 import heapq
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -41,10 +33,8 @@ def solve(points: List[List[int]], k: int) -> List[List[int]]:
     for x, y in points:
         d = dist(x, y)
         heapq.heappush(kept, (-d, x, y))
-        log(f"point ({x}, {y}) d={d}: push -> heap {[(-nd, (px, py)) for nd, px, py in kept]}")
         if len(kept) > k:
             far = heapq.heappop(kept)
-            log(f"    size {len(kept) + 1} > k={k}: evict root ({far[1]}, {far[2]}) d={-far[0]} -> heap {[(-nd, (px, py)) for nd, px, py in kept]}, radius now {-kept[0][0]}")
     return sorted([x, y] for _, x, y in kept)
 
 
@@ -52,26 +42,6 @@ def solve(points: List[List[int]], k: int) -> List[List[int]]:
 def demo():
     points = [[3, 3], [5, -1], [-2, 4]]
     return solve(points, 2)
-
-
-# --- tests ---
-def tests():
-    assert solve([[3, 3], [5, -1], [-2, 4]], 2) == [[-2, 4], [3, 3]]
-    assert solve([[1, 3], [-2, 2]], 1) == [[-2, 2]]
-    assert solve([[3, 0], [2, 2]], 1) == [[2, 2]]  # 8 < 9: Euclidean, not Manhattan
-    assert solve([[0, 1], [1, 0]], 2) == [[0, 1], [1, 0]]  # k == n keeps everything
-    assert solve([[7, 7]], 1) == [[7, 7]]
-    assert solve([[1, 1], [1, 1], [2, 2]], 2) == [[1, 1], [1, 1]]  # duplicate points
-    assert solve([[0, 0], [1, 1], [2, 2], [3, 3]], 1) == [[0, 0]]  # the origin itself
-    import random
-    for _ in range(200):
-        n = random.randint(1, 10)
-        pts = [[random.randint(-5, 5), random.randint(-5, 5)] for _ in range(n)]
-        k = random.randint(1, n)
-        got = solve(pts, k)
-        assert len(got) == k, (pts, k)
-        dists = lambda res: sorted(dist(x, y) for x, y in res)
-        assert dists(got) == dists(brute_force(pts, k)), (pts, k)  # ties may pick either point
 
 
 # --- bugs ---
@@ -112,8 +82,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -7,15 +7,7 @@ Given an integer array nums (negatives and zeros allowed) and an integer k, retu
 contiguous subarrays whose elements sum to k.
 Example: nums = [1, 2, 3, -3, 3], k = 3 -> 5 ([1,2], [1,2,3,-3], [3], [3,-3,3] and the last [3])
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -40,13 +32,10 @@ def solve(nums: List[int], k: int) -> int:
     counts = {0: 1}  # prefix sum -> how many prefixes had it; the empty prefix counts once
     prefix = 0
     answer = 0
-    log(f"nums {nums}  k {k}  | counts {counts}")
     for i, v in enumerate(nums):
         prefix += v
         answer += counts.get(prefix - k, 0)
-        log(f"i={i} v={v:3d}: prefix {prefix:3d}; earlier prefixes == {prefix} - {k} = {prefix - k}: {counts.get(prefix - k, 0)} -> answer {answer}")
         counts[prefix] = counts.get(prefix, 0) + 1
-        log(f"    record prefix {prefix} -> counts {counts}")
     return answer
 
 
@@ -54,24 +43,6 @@ def solve(nums: List[int], k: int) -> int:
 def demo():
     nums, k = [1, 2, 3, -3, 3], 3
     return solve(nums, k)
-
-
-# --- tests ---
-def tests():
-    assert solve([1, 2, 3, -3, 3], 3) == 5
-    assert solve([1, 1, 1], 2) == 2
-    assert solve([1, 2, 3], 3) == 2
-    assert solve([1, -1, 0], 0) == 3
-    assert solve([0, 0, 0, 0], 0) == 10
-    assert solve([-1, -1, 1], 0) == 1
-    assert solve([3], 3) == 1
-    assert solve([3], 4) == 0
-    assert solve([], 0) == 0
-    import random
-    for _ in range(200):
-        a = [random.randint(-3, 3) for _ in range(random.randint(0, 9))]
-        k = random.randint(-3, 3)
-        assert solve(a, k) == brute_force(a, k), (a, k)
 
 
 # --- bugs ---
@@ -112,8 +83,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

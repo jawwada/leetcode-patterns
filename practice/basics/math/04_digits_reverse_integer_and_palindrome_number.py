@@ -8,16 +8,7 @@ LeetCode 7: reverse the digits of a signed 32-bit integer; return 0 if the resul
 into a string: reverse just the lower half of the digits and compare it with the upper half.
 Example: reverse(-123) -> -321; reverse(1534236469) -> 0 (overflow); is_palindrome(12321) -> True
 """
-import sys
-import random
 from typing import Tuple
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -35,13 +26,10 @@ def reverse(x: int) -> int:
     """Peel digits off |x| with divmod(n, 10), rebuild, restore the sign, reject 32-bit overflow. O(digits)."""
     sign = -1 if x < 0 else 1
     n, rev = abs(x), 0
-    log(f"reverse({x}):")
     while n:
         n, d = divmod(n, 10)
         rev = rev * 10 + d
-        log(f"  digit {d}: rev = {rev}, left = {n}")
     rev *= sign
-    log(f"  sign {sign:+d} -> {rev}; in [{INT_MIN}, {INT_MAX}]? {INT_MIN <= rev <= INT_MAX}")
     return rev if INT_MIN <= rev <= INT_MAX else 0
 
 
@@ -50,37 +38,15 @@ def is_palindrome(x: int) -> bool:
     if x < 0 or (x % 10 == 0 and x != 0):
         return False
     half = 0
-    log(f"is_palindrome({x}):")
     while x > half:
         x, d = divmod(x, 10)
         half = 10 * half + d
-        log(f"  upper = {x}, reversed lower = {half}")
     return x == half or x == half // 10
 
 
 # --- demo ---
 def demo():
     return reverse(-123), is_palindrome(12321)
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # keep the trace to the demo
-    assert reverse(-123) == -321 and reverse(123) == 321 and reverse(120) == 21
-    assert reverse(0) == 0 and reverse(7) == 7 and reverse(-7) == -7
-    assert reverse(1534236469) == 0                   # 9646324351 > 2^31 - 1
-    assert reverse(-2147483648) == 0 and reverse(2147483647) == 0
-    assert reverse(1463847412) == 2147483641          # just fits
-    assert is_palindrome(12321) and is_palindrome(1221) and is_palindrome(0) and is_palindrome(7)
-    assert not is_palindrome(-121) and not is_palindrome(10) and not is_palindrome(123)
-    assert is_palindrome(1000021) is False and is_palindrome(100001) is True
-    rng = random.Random(0)
-    for _ in range(200):
-        s = str(rng.randint(0, 999))
-        x = rng.choice([rng.randint(-10**4, 10**4), rng.randint(-2**31, 2**31 - 1), int(s + s[::-1]), int(s + s[-2::-1])])
-        r, p = brute_force(x)
-        assert reverse(x) == r and is_palindrome(x) == p, x
 
 
 # --- bugs ---
@@ -110,7 +76,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

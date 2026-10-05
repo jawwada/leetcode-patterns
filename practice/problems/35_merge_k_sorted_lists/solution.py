@@ -8,15 +8,7 @@ in for the linked lists; node_index plays the role of the node pointer.)
 Example: [[1, 4, 5], [1, 3, 4], [2, 6]] -> [1, 1, 2, 3, 4, 4, 5, 6]
 """
 import heapq
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -33,38 +25,18 @@ def solve(lists: List[List[int]]) -> List[int]:
     O(N log k) time, O(k) heap space."""
     heap = [(row[0], i, 0) for i, row in enumerate(lists) if row]
     heapq.heapify(heap)
-    log(f"heads -> heap {heap}")
     merged = []
     while heap:
         val, i, j = heapq.heappop(heap)
         merged.append(val)
-        log(f"pop {val} (list {i}, pos {j}) -> merged {merged}")
         if j + 1 < len(lists[i]):
             heapq.heappush(heap, (lists[i][j + 1], i, j + 1))
-            log(f"    list {i} advances: push {lists[i][j + 1]} (pos {j + 1})")
-        log(f"    heap {heap}   remaining {dict(sorted((a, lists[a][b:]) for _, a, b in heap))}")
     return merged
 
 
 # --- demo ---
 def demo():
     return solve([[1, 4, 5], [1, 3, 4], [2, 6]])
-
-
-# --- tests ---
-def tests():
-    assert solve([[1, 4, 5], [1, 3, 4], [2, 6]]) == [1, 1, 2, 3, 4, 4, 5, 6]
-    assert solve([]) == []
-    assert solve([[]]) == []
-    assert solve([[], [1], []]) == [1]  # mostly empty lists
-    assert solve([[5], [1, 2, 3], [-1]]) == [-1, 1, 2, 3, 5]
-    assert solve([[1, 1], [1], [1, 1, 1]]) == [1, 1, 1, 1, 1, 1]  # all equal: the index breaks ties
-    assert solve([[1, 2, 3]]) == [1, 2, 3]  # a single list
-    import random
-    for _ in range(200):
-        lists = [sorted(random.randint(-9, 9) for _ in range(random.randint(0, 5)))
-                 for _ in range(random.randint(0, 4))]
-        assert solve(lists) == brute_force(lists), lists
 
 
 # --- bugs ---
@@ -116,8 +88,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

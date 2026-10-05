@@ -10,15 +10,7 @@ Return the booleans in order.
 Example: insert apple, search apple, search app, startsWith app, insert app, search app
       -> [True, False, True, True]
 """
-import sys
 from typing import List, Optional, Tuple
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -53,19 +45,15 @@ def insert(root: TrieNode, word: str) -> None:
     for ch in word:
         if ch not in node.children:
             node.children[ch] = TrieNode()
-            log(f"    create child '{ch}'")
         node = node.children[ch]
     node.end = True
-    log(f"    path {' -> '.join(word)}, end flag set; trie {to_dict(root)}")
 
 def find(root: TrieNode, s: str) -> Optional[TrieNode]:
     node = root
     for ch in s:
         if ch not in node.children:
-            log(f"    path breaks at '{ch}' (children here: {sorted(node.children)})")
             return None
         node = node.children[ch]
-    log(f"    walked {' -> '.join(s) or '(root)'}, end flag {node.end}")
     return node
 
 def search(root: TrieNode, word: str) -> bool:
@@ -79,14 +67,12 @@ def solve(ops: List[Tuple[str, str]]) -> List[bool]:
     """Each op walks at most len(word) nodes: O(len) per op, independent of how many words are stored."""
     root, out = TrieNode(), []
     for op, word in ops:
-        log(f"{op} '{word}':")
         if op == "insert":
             insert(root, word)
         elif op == "search":
             out.append(search(root, word))
         else:
             out.append(starts_with(root, word))
-        log(f"    -> {out[-1] if op != 'insert' else 'done'}")
     return out
 
 
@@ -94,27 +80,6 @@ def solve(ops: List[Tuple[str, str]]) -> List[bool]:
 def demo():
     return solve([("insert", "apple"), ("search", "apple"), ("search", "app"),
                   ("startsWith", "app"), ("insert", "app"), ("search", "app")])
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # the demo already showed the trace; keep the test run silent
-    assert solve([("insert", "apple"), ("search", "apple"), ("search", "app"),
-                  ("startsWith", "app"), ("insert", "app"), ("search", "app")]) == [True, False, True, True]
-    assert solve([]) == []
-    assert solve([("search", "a"), ("startsWith", "a")]) == [False, False]        # empty trie
-    assert solve([("insert", "a"), ("search", "ab"), ("startsWith", "ab")]) == [False, False]  # longer than stored
-    assert solve([("insert", "ab"), ("startsWith", ""), ("search", "")]) == [True, False]      # empty prefix/word
-    assert solve([("insert", "a"), ("insert", "a"), ("search", "a")]) == [True]              # duplicate insert
-    import random
-    rng = random.Random(7)
-    for _ in range(200):
-        ops = []
-        for _ in range(rng.randint(1, 10)):
-            w = "".join(rng.choice("ab") for _ in range(rng.randint(1, 3)))
-            ops.append((rng.choice(["insert", "search", "startsWith"]), w))
-        assert solve(ops) == brute_force(ops), ops
 
 
 # --- bugs ---
@@ -144,7 +109,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

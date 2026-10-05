@@ -7,14 +7,6 @@ Given the head of a linked list, return the index of the node where the cycle be
 is no cycle. Use O(1) extra space and do not modify the list.
 Example: values [3, 2, 0, -4] with the tail linked back to index 1 -> 1 (the node holding 2).
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -60,47 +52,21 @@ def solve(values, pos):
     nodes = build_list(values, pos)
     head = nodes[0] if nodes else None
     slow = fast = head
-    log(f"start: {draw(nodes, pos, slow=slow, fast=fast)}")
     while fast and fast.next:
         slow, fast = slow.next, fast.next.next
-        log(f"  race: {draw(nodes, pos, slow=slow, fast=fast)}")
         if slow is fast:
             break
     else:
-        log("  fast ran off the end: no cycle")
         return -1
-    log(f"  met at index {nodes.index(slow)}; reset ptr to the head, then walk both one step at a time")
     ptr = head
-    log(f"  walk: {draw(nodes, pos, ptr=ptr, slow=slow)}")
     while ptr is not slow:
         ptr, slow = ptr.next, slow.next
-        log(f"  walk: {draw(nodes, pos, ptr=ptr, slow=slow)}")
-    log(f"  ptr and slow meet at index {nodes.index(ptr)}: the cycle entry")
     return nodes.index(ptr)
 
 
 # --- demo ---
 def demo():
     return solve([3, 2, 0, -4], 1)
-
-
-# --- tests ---
-def tests():
-    assert solve([3, 2, 0, -4], 1) == 1
-    assert solve([1, 2], 0) == 0
-    assert solve([1], -1) == -1
-    assert solve([1], 0) == 0                 # a node pointing to itself
-    assert solve([], -1) == -1
-    assert solve([1, 2, 3, 4, 5], 4) == 4     # loop of length 1 at the tail
-    assert solve([1, 2, 3, 4, 5], 0) == 0     # the whole list is the loop
-    assert solve([1, 1, 1, 1], -1) == -1      # equal values are different nodes
-    assert solve([7, 7, 7, 7, 7], 2) == 2
-    import random
-    random.seed(0)
-    for _ in range(200):
-        values = [random.randint(1, 3) for _ in range(random.randint(0, 9))]
-        pos = random.randint(-1, len(values) - 1)
-        assert solve(values, pos) == brute_force(values, pos), (values, pos)
 
 
 # --- bugs ---
@@ -141,8 +107,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

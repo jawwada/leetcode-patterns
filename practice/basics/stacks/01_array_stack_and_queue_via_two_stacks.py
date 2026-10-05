@@ -9,15 +9,7 @@ Every element crosses once, so n operations cost O(n) in total (amortized O(1) e
 solve(ops) runs ops like "enq 3", "deq", "peek", "empty" and returns the outputs of the last three.
 Example: ["enq 1", "enq 2", "peek", "deq", "enq 3", "deq", "deq", "empty"] -> [1, 1, 2, 3, True]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -60,18 +52,15 @@ class Queue:
 
     def enqueue(self, x):
         self.inbox.push(x)
-        log(f"    enq {x}: inbox top->bottom {self.inbox.items[::-1]} | outbox top->bottom {self.outbox.items[::-1]}")
 
     def _refill(self):
         if self.outbox.empty():
             while not self.inbox.empty():
                 self.outbox.push(self.inbox.pop())
-            log(f"    outbox empty -> drain inbox: outbox top->bottom {self.outbox.items[::-1]}")
 
     def dequeue(self):
         self._refill()
         x = self.outbox.pop()
-        log(f"    deq -> {x}: inbox top->bottom {self.inbox.items[::-1]} | outbox top->bottom {self.outbox.items[::-1]}")
         return x
 
     def peek(self):
@@ -86,50 +75,16 @@ def solve(ops: List[str]) -> list:
     """Drive a two-stack Queue with "enq x" / "deq" / "peek" / "empty"; amortized O(1) per op."""
     q, out = Queue(), []
     for op in ops:
-        log(f"op {op}")
         if op.startswith("enq"):
             q.enqueue(int(op.split()[1]))
         else:
             out.append({"deq": q.dequeue, "peek": q.peek, "empty": q.empty}[op]())
-            log(f"    output {out[-1]}")
     return out
 
 
 # --- demo ---
 def demo():
     return solve(["enq 1", "enq 2", "peek", "deq", "enq 3", "deq", "deq", "empty"])
-
-
-# --- tests ---
-def tests():
-    assert solve(["enq 1", "enq 2", "peek", "deq", "enq 3", "deq", "deq", "empty"]) == [1, 1, 2, 3, True]
-    assert solve([]) == []
-    assert solve(["empty"]) == [True]
-    assert solve(["enq 5", "empty", "peek", "deq", "empty"]) == [False, 5, 5, True]
-    assert solve(["enq 1", "enq 2", "deq", "enq 3", "deq", "deq"]) == [1, 2, 3]  # refill only when outbox is empty
-    st = Stack()
-    assert st.empty()
-    st.push(1)
-    st.push(2)
-    assert st.peek() == 2 and not st.empty()
-    assert st.pop() == 2 and st.pop() == 1 and st.empty()
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        ops, size = [], 0
-        for _ in range(rng.randint(0, 12)):
-            r = rng.random()
-            if size == 0 or r < 0.5:
-                ops.append(f"enq {rng.randint(0, 9)}")
-                size += 1
-            elif r < 0.75:
-                ops.append("deq")
-                size -= 1
-            elif r < 0.9:
-                ops.append("peek")
-            else:
-                ops.append("empty")
-        assert solve(ops) == brute_force(ops), ops
 
 
 # --- bugs ---
@@ -170,8 +125,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

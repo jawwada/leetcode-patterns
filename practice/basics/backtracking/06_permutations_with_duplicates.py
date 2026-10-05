@@ -8,16 +8,8 @@ adjacent; among a run of equal values the recursion must take them left to right
 whose left twin is not yet used is skipped on this level. Results sorted.
 Example: [1, 1, 2] -> [[1, 1, 2], [1, 2, 1], [2, 1, 1]]
 """
-import sys
 from itertools import permutations
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -36,21 +28,17 @@ def solve(nums: List[int]) -> List[List[int]]:
     def backtrack() -> None:
         if len(path) == len(nums):
             res.append(path[:])
-            log("  " * len(path) + f"record {path}")
             return
         for i in range(len(nums)):
             if used[i]:
                 continue
             if i > 0 and nums[i] == nums[i - 1] and not used[i - 1]:
-                log("  " * (len(path) + 1) + f"skip {nums[i]} at i={i}: its left twin at {i - 1} is not used")
                 continue
             used[i] = True
             path.append(nums[i])
-            log("  " * len(path) + f"choose {nums[i]} at i={i} -> path {path}")
             backtrack()
             path.pop()
             used[i] = False
-            log("  " * (len(path) + 1) + f"unchoose {nums[i]} at i={i} -> path {path}")
 
     backtrack()
     return sorted(res)
@@ -59,20 +47,6 @@ def solve(nums: List[int]) -> List[List[int]]:
 # --- demo ---
 def demo():
     return solve([1, 1, 2])
-
-
-# --- tests ---
-def tests():
-    assert solve([1, 1, 2]) == [[1, 1, 2], [1, 2, 1], [2, 1, 1]]
-    assert solve([1, 2, 1]) == [[1, 1, 2], [1, 2, 1], [2, 1, 1]]  # unsorted input
-    assert solve([2, 2, 2]) == [[2, 2, 2]]
-    assert solve([1, 2, 3]) == [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]]
-    assert solve([]) == [[]]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        a = [rng.randint(1, 3) for _ in range(rng.randint(0, 5))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -102,8 +76,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

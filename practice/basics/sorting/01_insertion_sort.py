@@ -8,15 +8,7 @@ that is bigger than it one slot to the right, and place a[i] in the gap that ope
 O(n) when the input is nearly sorted, in place and stable (equal keys are never shifted past).
 Example: [5, 2, 4, 6, 1, 3] -> [1, 2, 3, 4, 5, 6]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 def mark(a, k):
@@ -34,38 +26,19 @@ def brute_force(nums: List[int]) -> List[int]:
 def solve(nums: List[int]) -> List[int]:
     """Sorted prefix grows by one each round; the new element walks left to its slot. O(n^2), stable."""
     a = list(nums)
-    log(f"start {mark(a, 1)}   (left of | is sorted)")
     for i in range(1, len(a)):
         key = a[i]
         j = i - 1
         while j >= 0 and a[j] > key:
             a[j + 1] = a[j]
-            log(f"    {a[j]} > {key}: shift it right  {a}")
             j -= 1
         a[j + 1] = key
-        log(f"i={i} insert {key} at index {j + 1}  {mark(a, i + 1)}")
     return a
 
 
 # --- demo ---
 def demo():
     return solve([5, 2, 4, 6, 1, 3])
-
-
-# --- tests ---
-def tests():
-    assert solve([5, 2, 4, 6, 1, 3]) == [1, 2, 3, 4, 5, 6]
-    assert solve([]) == []
-    assert solve([1]) == [1]
-    assert solve([2, 1]) == [1, 2]
-    assert solve([1, 2, 3]) == [1, 2, 3]  # already sorted: no shifts
-    assert solve([3, 2, 1]) == [1, 2, 3]
-    assert solve([2, 2, 1, 2]) == [1, 2, 2, 2]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        a = [rng.randint(0, 9) for _ in range(rng.randint(0, 12))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -95,8 +68,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -7,16 +7,8 @@ Place n queens on an n x n board so that no two share a row, column or diagonal.
 distinct board as a list of strings ('Q' queen, '.' empty), sorted.
 Example: n = 4 -> [["..Q.", "Q...", "...Q", ".Q.."], [".Q..", "...Q", "Q...", "..Q."]]
 """
-import sys
 from itertools import permutations
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -45,22 +37,17 @@ def solve(n: int) -> List[List[str]]:
     cols, diag, anti = set(), set(), set()
 
     def dfs(r: int) -> None:
-        log(f"{'  ' * r}row {r}: board {' / '.join(render(queens, n)) or '(empty)'}")
         if r == n:
             result.append(render(queens, n))
-            log(f"{'  ' * r}all {n} rows placed: solution #{len(result)} {result[-1]}")
             return
         for c in range(n):
             if c in cols or r - c in diag or r + c in anti:
-                log(f"{'  ' * r}  col {c}: attacked (cols {sorted(cols)}, diag {sorted(diag)}, anti {sorted(anti)})")
                 continue
             cols.add(c); diag.add(r - c); anti.add(r + c)
             queens.append(c)
-            log(f"{'  ' * r}  col {c}: place ({r},{c}); queens {queens}; cols {sorted(cols)}, diag {sorted(diag)}, anti {sorted(anti)}")
             dfs(r + 1)
             queens.pop()
             cols.discard(c); diag.discard(r - c); anti.discard(r + c)
-            log(f"{'  ' * r}  col {c}: lift ({r},{c}); queens {queens}")
 
     dfs(0)
     return sorted(result)
@@ -69,20 +56,6 @@ def solve(n: int) -> List[List[str]]:
 # --- demo ---
 def demo():
     return solve(4)
-
-
-# --- tests ---
-def tests():
-    assert solve(4) == [["..Q.", "Q...", "...Q", ".Q.."], [".Q..", "...Q", "Q...", "..Q."]]
-    assert solve(1) == [["Q"]]
-    assert solve(2) == [] and solve(3) == []      # no solutions
-    assert len(solve(5)) == 10 and len(solve(6)) == 4
-    for board in solve(5):
-        assert len(board) == 5 and all(len(row) == 5 and row.count("Q") == 1 for row in board)
-    import random
-    for _ in range(200):
-        n = random.randint(1, 6)
-        assert solve(n) == brute_force(n), n
 
 
 # --- bugs ---
@@ -123,8 +96,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

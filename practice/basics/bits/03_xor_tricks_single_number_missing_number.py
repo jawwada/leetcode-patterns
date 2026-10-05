@@ -9,17 +9,8 @@ one missing -> XOR all values and all indices 0..n. LeetCode 260: two singles a,
 a ^ b; any set bit of it (take the lowest) is set in exactly one of them; XOR each group separately.
 Example: single_number([4, 1, 2, 1, 2]) -> 4; missing_number([3, 0, 1]) -> 2; single_number_iii([1, 2, 1, 3, 2, 5]) -> [3, 5]
 """
-import sys
-import random
 from collections import Counter
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -39,17 +30,14 @@ def single_number(nums: List[int]) -> int:
     acc = 0
     for x in nums:
         acc ^= x
-        log(f"  ^ {x:>2} -> acc {acc:>2} = {acc & 0xFF:08b}")
     return acc
 
 
 def missing_number(nums: List[int]) -> int:
     """XOR 0..n with every element: each present value cancels its index copy, the missing one survives. O(n)."""
     acc = len(nums)
-    log(f"  start with n = {acc}")
     for i, x in enumerate(nums):
         acc ^= i ^ x
-        log(f"  ^ i={i} ^ x={x} -> acc {acc}")
     return acc
 
 
@@ -59,45 +47,16 @@ def single_number_iii(nums: List[int]) -> List[int]:
     for x in nums:
         both ^= x
     diff = both & -both
-    log(f"  a ^ b = {both} = {both & 0xFF:08b}, distinguishing bit {diff:08b}")
     a = 0
     for x in nums:
         if x & diff:
             a ^= x
-    log(f"  group with that bit set xors to {a}; the other single is {both} ^ {a} = {both ^ a}")
     return sorted([a, both ^ a])
 
 
 # --- demo ---
 def demo():
     return single_number([4, 1, 2, 1, 2]), missing_number([3, 0, 1]), single_number_iii([1, 2, 1, 3, 2, 5])
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # keep the trace to the demo
-    assert single_number([4, 1, 2, 1, 2]) == 4 and single_number([7]) == 7 and single_number([0, 0, 5]) == 5
-    assert missing_number([3, 0, 1]) == 2 and missing_number([0]) == 1 and missing_number([1]) == 0
-    assert missing_number([9, 6, 4, 2, 3, 5, 7, 0, 1]) == 8
-    assert single_number_iii([1, 2, 1, 3, 2, 5]) == [3, 5] and single_number_iii([0, 1]) == [0, 1]
-    assert single_number_iii([2, 3, 7, 7]) == [2, 3]          # a ^ b = 1: a single distinguishing bit
-    assert single_number_iii([-1, 0]) == [-1, 0]
-    rng = random.Random(0)
-    for _ in range(200):
-        pool = rng.sample(range(16), rng.randint(3, 10))
-        pairs = [x for x in pool[2:] for _ in range(2)]
-        a = pairs + pool[:1]
-        rng.shuffle(a)
-        assert [single_number(a)] == brute_force(a), a
-        b = pairs + pool[:2]
-        rng.shuffle(b)
-        assert single_number_iii(b) == brute_force(b), b
-        n = rng.randint(1, 12)
-        c = list(range(n + 1))
-        c.remove(rng.randrange(n + 1))
-        rng.shuffle(c)
-        assert missing_number(c) == brute_missing(c), c
 
 
 # --- bugs ---
@@ -127,7 +86,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

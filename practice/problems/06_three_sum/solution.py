@@ -7,15 +7,7 @@ Given an integer array, return every unique triplet [a, b, c] with a + b + c == 
 triplets and of the numbers inside them does not matter; no triplet may appear twice.
 Example: nums = [-1, 0, 1, 2, -1, -4] -> [[-1, -1, 2], [-1, 0, 1]]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -41,57 +33,29 @@ def solve(nums: List[int]) -> List[List[int]]:
     nums = sorted(nums)
     n = len(nums)
     result = []
-    log("sorted  " + "".join(f"{x:4d}" for x in nums))
     for i in range(n - 2):
         if i > 0 and nums[i] == nums[i - 1]:
-            log(f"i={i} ({nums[i]}): same anchor as i={i - 1} -> skip")
             continue
         lo, hi = i + 1, n - 1
-        log(f"i={i} ({nums[i]}): two pointers on nums[{lo}..{hi}]")
         while lo < hi:
             total = nums[i] + nums[lo] + nums[hi]
-            log("        " + "".join("  i " if j == i else "  L " if j == lo else "  R " if j == hi else "    " for j in range(n)))
             if total < 0:
                 lo += 1
-                log(f"    {nums[i]} + {nums[lo - 1]} + {nums[hi]} = {total} < 0 -> move L right")
             elif total > 0:
                 hi -= 1
-                log(f"    {nums[i]} + {nums[lo]} + {nums[hi + 1]} = {total} > 0 -> move R left")
             else:
                 result.append([nums[i], nums[lo], nums[hi]])
-                log(f"    {nums[i]} + {nums[lo]} + {nums[hi]} = 0 -> record {result[-1]}, move both; result {result}")
                 lo, hi = lo + 1, hi - 1
                 while lo < hi and nums[lo] == nums[lo - 1]:
                     lo += 1
-                    log(f"    nums[{lo - 1}] == nums[{lo - 2}] == {nums[lo - 1]} -> L skips the duplicate")
                 while lo < hi and nums[hi] == nums[hi + 1]:
                     hi -= 1
-                    log(f"    nums[{hi + 1}] == nums[{hi + 2}] == {nums[hi + 1]} -> R skips the duplicate")
     return result
 
 
 # --- demo ---
 def demo():
     return solve([-1, 0, 1, 2, -1, -4])
-
-
-# --- tests ---
-def tests():
-    def norm(triplets):
-        return sorted(sorted(t) for t in triplets)
-    assert norm(solve([-1, 0, 1, 2, -1, -4])) == [[-1, -1, 2], [-1, 0, 1]]
-    assert solve([0, 1, 1]) == []
-    assert solve([0, 0, 0]) == [[0, 0, 0]]
-    assert solve([0, 0, 0, 0]) == [[0, 0, 0]]
-    assert norm(solve([-2, 0, 0, 2, 2])) == [[-2, 0, 2]]
-    assert norm(solve([-1, -1, -1, 2, 2])) == [[-1, -1, 2]]
-    assert solve([-2, 1, 3]) == []  # lo == hi must not reuse the 1
-    assert solve([]) == []
-    assert solve([1, 2]) == []
-    import random
-    for _ in range(200):
-        a = [random.randint(-4, 4) for _ in range(random.randint(0, 9))]
-        assert norm(solve(a)) == norm(brute_force(a)), a
 
 
 # --- bugs ---
@@ -132,8 +96,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

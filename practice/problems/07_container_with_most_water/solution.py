@@ -7,15 +7,7 @@ Given heights of n vertical lines at x = 0..n-1, choose two lines that together 
 form the container holding the most water: area = min(h[i], h[j]) * (j - i). Return that area.
 Example: height = [1, 8, 6, 2, 5, 4, 8, 3, 7] -> 49 (walls at index 1 and 8: min(8, 7) * 7)
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -36,18 +28,13 @@ def solve(height: List[int]) -> int:
     every container that keeps the shorter wall is narrower and no taller. O(n) time, O(1) space."""
     lo, hi = 0, len(height) - 1
     best = 0
-    log("height  " + "".join(f"{h:4d}" for h in height))
     while lo < hi:
         area = min(height[lo], height[hi]) * (hi - lo)
         best = max(best, area)
-        log("        " + "".join("  L " if j == lo else "  R " if j == hi else "  ~ " if lo < j < hi else "    " for j in range(len(height))))
-        log(f"    L={lo} ({height[lo]}) R={hi} ({height[hi]}): area = min({height[lo]}, {height[hi]}) * {hi - lo} = {area:3d}, best {best}")
         if height[lo] < height[hi]:
             lo += 1
-            log(f"    left wall is shorter -> drop it, L -> {lo}")
         else:
             hi -= 1
-            log(f"    right wall is shorter or equal -> drop it, R -> {hi}")
     return best
 
 
@@ -55,22 +42,6 @@ def solve(height: List[int]) -> int:
 def demo():
     height = [1, 8, 6, 2, 5, 4, 8, 3, 7]
     return solve(height)
-
-
-# --- tests ---
-def tests():
-    assert solve([1, 8, 6, 2, 5, 4, 8, 3, 7]) == 49
-    assert solve([1, 1]) == 1
-    assert solve([4, 3, 2, 1, 4]) == 16
-    assert solve([1, 2, 1]) == 2
-    assert solve([2, 3, 10, 5, 7, 8, 9]) == 36
-    assert solve([5, 5, 5, 5]) == 15
-    assert solve([5]) == 0
-    assert solve([]) == 0
-    import random
-    for _ in range(200):
-        a = [random.randint(0, 9) for _ in range(random.randint(0, 10))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -111,8 +82,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

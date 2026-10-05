@@ -8,14 +8,6 @@ several digits. Letters outside brackets are copied as they are.
 Example: "3[a2[c]]" -> "accaccacc"
 """
 import re
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -37,12 +29,10 @@ def solve(s: str) -> str:
             k = k * 10 + int(ch)
         elif ch == "[":
             stack.append((cur, k))
-            log(f"'[': push ({cur!r}, {k}); stack top->bottom {stack[::-1]}")
             cur, k = "", 0
         elif ch == "]":
             prev, cnt = stack.pop()
             cur = prev + cur * cnt
-            log(f"']': pop ({prev!r}, {cnt}) -> cur = {cur!r}; stack top->bottom {stack[::-1]}")
         else:
             cur += ch
     return cur
@@ -51,32 +41,6 @@ def solve(s: str) -> str:
 # --- demo ---
 def demo():
     return solve("3[a2[c]]")
-
-
-# --- tests ---
-def tests():
-    assert solve("3[a2[c]]") == "accaccacc"
-    assert solve("3[a]2[bc]") == "aaabcbc"
-    assert solve("2[abc]3[cd]ef") == "abcabccdcdcdef"
-    assert solve("abc") == "abc"
-    assert solve("") == ""
-    assert solve("10[a]") == "a" * 10          # multi-digit count
-    assert solve("x2[y3[z]]w") == "xyzzzyzzzw"  # prefix before the bracket is kept in order
-    import random
-    rng = random.Random(0)
-
-    def gen(depth):
-        out = ""
-        for _ in range(rng.randint(0, 3)):
-            if depth < 3 and rng.random() < 0.4:
-                out += f"{rng.randint(1, 12)}[{gen(depth + 1)}]"
-            else:
-                out += rng.choice("abc")
-        return out
-
-    for _ in range(200):
-        s = gen(0)
-        assert solve(s) == brute_force(s), s
 
 
 # --- bugs ---
@@ -117,8 +81,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

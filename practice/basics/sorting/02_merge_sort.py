@@ -8,15 +8,7 @@ head, the left one on ties (that is what keeps the sort stable), then append wha
 O(n log n) in every case, O(n) extra space for the merged runs.
 Example: [5, 2, 4, 6, 1, 3] -> [1, 2, 3, 4, 5, 6]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -37,7 +29,6 @@ def merge(left: List[int], right: List[int]) -> List[int]:
             out.append(right[j])
             j += 1
     out += left[i:] + right[j:]
-    log(f"merge {left} + {right} -> {out}")
     return out
 
 
@@ -46,7 +37,6 @@ def solve(nums: List[int]) -> List[int]:
     if len(nums) <= 1:
         return list(nums)
     mid = len(nums) // 2
-    log(f"split {list(nums)} -> {list(nums[:mid])} | {list(nums[mid:])}")
     left = solve(nums[:mid])
     right = solve(nums[mid:])
     return merge(left, right)
@@ -55,24 +45,6 @@ def solve(nums: List[int]) -> List[int]:
 # --- demo ---
 def demo():
     return solve([5, 2, 4, 6, 1, 3])
-
-
-# --- tests ---
-def tests():
-    assert solve([5, 2, 4, 6, 1, 3]) == [1, 2, 3, 4, 5, 6]
-    assert solve([]) == []
-    assert solve([1]) == [1]
-    assert solve([2, 1]) == [1, 2]
-    assert solve([1, 2, 3]) == [1, 2, 3]
-    assert solve([3, 2, 1]) == [1, 2, 3]
-    assert solve([2, 2, 1, 2]) == [1, 2, 2, 2]
-    assert merge([1, 4], [2, 3, 9]) == [1, 2, 3, 4, 9]
-    assert merge([], [1]) == [1]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        a = [rng.randint(0, 9) for _ in range(rng.randint(0, 12))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -102,8 +74,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

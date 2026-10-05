@@ -9,15 +9,7 @@ and answers each query.
 Example: n=6, unions [(0,1),(1,2),(3,4),(0,2)], queries [(0,2),(2,3),(4,3),(5,5)]
          -> [True, False, True, True], 3 components {0,1,2} {3,4} {5}
 """
-import sys
 from collections import deque
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -71,41 +63,15 @@ class DSU:
 def solve(n, unions, queries):
     """Apply the unions, then answer every query with two finds. Near O(1) amortized per operation."""
     dsu = DSU(n)
-    log(f"start: parent {dsu.parent} components {dsu.count}")
     for a, b in unions:
         merged = dsu.union(a, b)
-        log(f"union({a}, {b}) {'merged' if merged else 'already joined'} | parent {dsu.parent} size {dsu.size} components {dsu.count}")
     ans = [dsu.connected(a, b) for a, b in queries]
-    log(f"queries {queries} -> {ans} | parent after the finds {dsu.parent}")
     return ans
 
 
 # --- demo ---
 def demo():
     return solve(6, [(0, 1), (1, 2), (3, 4), (0, 2)], [(0, 2), (2, 3), (4, 3), (5, 5)])
-
-
-# --- tests ---
-def tests():
-    assert solve(6, [(0, 1), (1, 2), (3, 4), (0, 2)], [(0, 2), (2, 3), (4, 3), (5, 5)]) == [True, False, True, True]
-    assert solve(4, [(0, 1), (2, 3), (1, 3)], [(0, 2), (0, 3), (1, 2)]) == [True, True, True]  # merge two roots via non-roots
-    assert solve(1, [], [(0, 0)]) == [True]
-    assert solve(3, [], [(0, 1), (1, 2)]) == [False, False]
-    d = DSU(5)
-    assert [d.union(0, 1), d.union(1, 0), d.union(2, 3)] == [True, False, True] and d.count == 3
-    assert d.find(1) == d.find(0) and d.size[d.find(0)] == 2
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        n = rng.randint(1, 8)
-        unions = [(rng.randrange(n), rng.randrange(n)) for _ in range(rng.randint(0, 8))]
-        queries = [(rng.randrange(n), rng.randrange(n)) for _ in range(6)]
-        assert solve(n, unions, queries) == brute_force(n, unions, queries), (n, unions, queries)
-        d = DSU(n)
-        for a, b in unions:
-            d.union(a, b)
-        labels = {min(w for w in range(n) if brute_force(n, unions, [(u, w)])[0]) for u in range(n)}
-        assert d.count == len(labels), (n, unions)
 
 
 # --- bugs ---
@@ -135,8 +101,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

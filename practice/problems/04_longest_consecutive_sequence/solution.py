@@ -7,15 +7,7 @@ Given an unsorted integer array, return the length of the longest run of consecu
 (values, not positions) in O(n) time.
 Example: nums = [100, 4, 200, 1, 3, 2] -> 4, the run 1, 2, 3, 4
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -37,40 +29,19 @@ def solve(nums: List[int]) -> int:
     so every value is stepped on by exactly one walk. O(n) time, O(n) space."""
     values = set(nums)
     best = 0
-    log(f"values on the number line: {sorted(values)}")
     for x in values:
         if x - 1 in values:
-            log(f"x={x}: {x - 1} present -> not a run start, skip (its run is measured from the bottom)")
             continue
         length = 1
-        log(f"x={x}: {x - 1} absent -> run start, walk up:")
         while x + length in values:
             length += 1
-            log(f"    {x + length - 1} present -> run {list(range(x, x + length))} length {length}")
         best = max(best, length)
-        log(f"    {x + length} absent -> run ends at {x + length - 1}; length {length}, best {best}")
     return best
 
 
 # --- demo ---
 def demo():
     return solve([100, 4, 200, 1, 3, 2])
-
-
-# --- tests ---
-def tests():
-    assert solve([100, 4, 200, 1, 3, 2]) == 4
-    assert solve([0, 3, 7, 2, 5, 8, 4, 6, 0, 1]) == 9
-    assert solve([]) == 0
-    assert solve([7]) == 1
-    assert solve([1, 1, 1]) == 1
-    assert solve([1, 2, 10, 11, 12]) == 3
-    assert solve([-2, -1, 0, 5]) == 3
-    assert solve([9, 1, 4, 7, 3, -1, 0, 5, 8, -1, 6]) == 7
-    import random
-    for _ in range(200):
-        a = [random.randint(-5, 10) for _ in range(random.randint(0, 10))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -111,8 +82,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

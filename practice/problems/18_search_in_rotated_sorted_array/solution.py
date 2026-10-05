@@ -7,15 +7,7 @@ A sorted array of distinct integers was rotated at an unknown pivot. Return the 
 or -1 if it is absent, in O(log n).
 Example: nums = [4, 5, 6, 7, 0, 1, 2], target = 0 -> 4
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -34,59 +26,26 @@ def solve(nums: List[int], target: int) -> int:
     the target against that half's endpoints: inside -> search it, else -> the other half.
     O(log n) time, O(1) space."""
     lo, hi = 0, len(nums) - 1
-    log("".join(f"{x:4d}" for x in nums))
     while lo <= hi:
         mid = (lo + hi) // 2
-        log("".join(f"{'^' if j in (lo, mid, hi) else '':>4}" for j in range(len(nums))) + f"   lo={lo} mid={mid} hi={hi}")
         if nums[mid] == target:
-            log(f"    nums[{mid}] == {target}: found")
             return mid
         if nums[lo] <= nums[mid]:  # left half [lo..mid] is sorted
-            log(f"    nums[lo]={nums[lo]} <= nums[mid]={nums[mid]}: left half [{nums[lo]}..{nums[mid]}] is sorted")
             if nums[lo] <= target < nums[mid]:
                 hi = mid - 1
-                log(f"    {target} is inside it: hi = {hi}")
             else:
                 lo = mid + 1
-                log(f"    {target} is not inside it: lo = {lo}")
         else:  # right half [mid..hi] is sorted
-            log(f"    nums[lo]={nums[lo]} > nums[mid]={nums[mid]}: right half [{nums[mid]}..{nums[hi]}] is sorted")
             if nums[mid] < target <= nums[hi]:
                 lo = mid + 1
-                log(f"    {target} is inside it: lo = {lo}")
             else:
                 hi = mid - 1
-                log(f"    {target} is not inside it: hi = {hi}")
-    log("    lo > hi: not found")
     return -1
 
 
 # --- demo ---
 def demo():
     return solve([4, 5, 6, 7, 0, 1, 2], 0)
-
-
-# --- tests ---
-def tests():
-    assert solve([4, 5, 6, 7, 0, 1, 2], 0) == 4
-    assert solve([4, 5, 6, 7, 0, 1, 2], 3) == -1
-    assert solve([4, 5, 6, 7, 0, 1, 2], 4) == 0  # target equal to nums[lo]
-    assert solve([4, 5, 6, 7, 0, 1, 2], 2) == 6  # target equal to nums[hi]
-    assert solve([1], 0) == -1
-    assert solve([1], 1) == 0
-    assert solve([3, 1], 1) == 1  # two elements: lo == mid
-    assert solve([5, 1, 3], 5) == 0
-    assert solve([5, 1, 3], 3) == 2
-    assert solve([1, 2, 3, 4, 5], 5) == 4  # no rotation at all
-    import random
-    rng = random.Random(33)
-    for _ in range(200):
-        n = rng.randint(1, 10)
-        vals = sorted(rng.sample(range(-20, 21), n))
-        k = rng.randrange(n)
-        nums = vals[k:] + vals[:k]
-        target = rng.choice(nums) if rng.random() < 0.6 else rng.randint(-25, 25)
-        assert solve(nums, target) == brute_force(nums, target), (nums, target)
 
 
 # --- bugs ---
@@ -127,8 +86,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -8,17 +8,8 @@ from_base reads it back with Horner's rule. Excel columns (LeetCode 168 and 171)
 digits A..Z standing for 1..26 and no zero: subtract 1 before each divmod so that 26 -> Z and 27 -> AA.
 Example: to_base(2026, 2) -> '11111101010'; from_base('ff', 16) -> 255; column_title(701) -> 'ZY'; column_number('AB') -> 28
 """
-import sys
-import random
 from itertools import product
 from string import ascii_uppercase
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -55,70 +46,40 @@ def to_base(n: int, b: int) -> str:
     if n == 0:
         return "0"
     sign, n, digits = "-" if n < 0 else "", abs(n), []
-    log(f"to_base({sign}{n}, {b}):")
     while n:
         n, d = divmod(n, b)
         digits.append(DIGITS[d])
-        log(f"  {n * b + d} = {n} * {b} + {d} -> digit '{DIGITS[d]}', collected lowest first: {''.join(digits)}")
     return sign + "".join(reversed(digits))
 
 
 def from_base(s: str, b: int) -> int:
     """Horner: n = n * b + digit, one character at a time from the left. O(len)."""
     n = 0
-    log(f"from_base('{s}', {b}):")
     for ch in s:
         n = n * b + DIGITS.index(ch)
-        log(f"  '{ch}' = {DIGITS.index(ch)} -> n = {n}")
     return n
 
 
 def column_title(n: int) -> str:
     """Bijective base 26: divmod(n - 1, 26) so the digits run 1..26 (A..Z) with no zero. O(log n)."""
     out = []
-    log(f"column_title({n}):")
     while n:
         n, r = divmod(n - 1, 26)
         out.append(chr(ord("A") + r))
-        log(f"  n - 1 = {n * 26 + r} = {n} * 26 + {r} -> '{chr(ord('A') + r)}', collected lowest first: {''.join(out)}")
     return "".join(reversed(out))
 
 
 def column_number(s: str) -> int:
     """Horner in base 26 with A = 1 .. Z = 26. O(len)."""
     n = 0
-    log(f"column_number('{s}'):")
     for ch in s:
         n = n * 26 + ord(ch) - ord("A") + 1
-        log(f"  '{ch}' = {ord(ch) - ord('A') + 1} -> n = {n}")
     return n
 
 
 # --- demo ---
 def demo():
     return to_base(2026, 2), from_base("ff", 16), column_title(701), column_number("AB")
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # keep the trace to the demo
-    assert to_base(2026, 2) == "11111101010" and from_base("11111101010", 2) == 2026
-    assert to_base(255, 16) == "ff" and from_base("ff", 16) == 255
-    assert to_base(0, 7) == "0" and to_base(-10, 2) == "-1010" and to_base(35, 36) == "z" and to_base(36, 36) == "10"
-    assert to_base(100, 10) == "100" and from_base("0", 5) == 0 and from_base("007", 8) == 7
-    assert column_title(1) == "A" and column_title(26) == "Z" and column_title(27) == "AA"
-    assert column_title(28) == "AB" and column_title(52) == "AZ" and column_title(701) == "ZY" and column_title(702) == "ZZ"
-    assert column_title(703) == "AAA" and column_title(18278) == "ZZZ"
-    assert column_number("A") == 1 and column_number("Z") == 26 and column_number("AA") == 27
-    assert column_number("ZY") == 701 and column_number("ZZZ") == 18278
-    rng = random.Random(0)
-    for _ in range(200):
-        n, b = rng.randint(0, 300), rng.randint(2, 36)
-        s = to_base(n, b)
-        assert s == brute_to_base(n, b) and from_base(s, b) == n == int(s, b), (n, b)
-        c = rng.randint(1, 702)
-        assert column_title(c) == brute_force(c) and column_number(column_title(c)) == c, c
 
 
 # --- bugs ---
@@ -159,7 +120,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

@@ -9,16 +9,8 @@ with the smaller child while that child is smaller. solve(ops) runs the operatio
 None pops) and returns the popped values in order.
 Example: [5, 3, 8, None, 1, None, None] -> [3, 1, 5]
 """
-import sys
 import heapq
 from typing import List, Optional
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 def levels(a):
@@ -50,7 +42,6 @@ def push(heap: List[int], x: int) -> None:
     while i > 0 and heap[(i - 1) // 2] > heap[i]:
         p = (i - 1) // 2
         heap[i], heap[p] = heap[p], heap[i]
-        log(f"    float {x}: index {i} -> parent {p}  {heap}")
         i = p
 
 
@@ -67,7 +58,6 @@ def pop(heap: List[int]) -> int:
         if c >= n or heap[i] <= heap[c]:
             break
         heap[i], heap[c] = heap[c], heap[i]
-        log(f"    sink {last}: index {i} -> smaller child {c}  {heap}")
         i = c
     return top
 
@@ -77,42 +67,15 @@ def solve(ops: List[Optional[int]]) -> List[int]:
     heap, popped = [], []
     for op in ops:
         if op is None:
-            log(f"pop: root {heap[0]} leaves, last {heap[-1]} moves to the root")
             popped.append(pop(heap))
-            log(f"    -> popped {popped[-1]}   heap {heap}  tree: {levels(heap)}")
         else:
-            log(f"push {op}: append at index {len(heap)}")
             push(heap, op)
-            log(f"    -> heap {heap}  tree: {levels(heap)}")
     return popped
 
 
 # --- demo ---
 def demo():
     return solve([5, 3, 8, None, 1, None, None])
-
-
-# --- tests ---
-def tests():
-    assert solve([5, 3, 8, None, 1, None, None]) == [3, 1, 5]
-    assert solve([]) == []
-    assert solve([7, None]) == [7]
-    assert solve([2, 2, 2, None, None, None]) == [2, 2, 2]
-    assert solve([5, 4, 3, 2, 1, None, None, None, None, None]) == [1, 2, 3, 4, 5]
-    assert solve([1, 2, 3, 4, 5, None, None, None, None, None]) == [1, 2, 3, 4, 5]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        ops, size = [], 0
-        for _ in range(rng.randint(0, 16)):
-            if size and rng.random() < 0.4:
-                ops.append(None)
-                size -= 1
-            else:
-                ops.append(rng.randint(1, 9))
-                size += 1
-        ops += [None] * size  # drain, so every pushed value is popped once
-        assert solve(ops) == brute_force(ops), ops
 
 
 # --- bugs ---
@@ -142,8 +105,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

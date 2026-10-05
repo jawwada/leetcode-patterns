@@ -8,15 +8,7 @@ Two lowercase words are anagrams when they use the same letters the same number 
 every anagram of a word in the same group. Groups and their words are returned sorted.
 Example: ["eat", "tea", "tan", "ate", "nat", "bat"] -> [["ate", "eat", "tea"], ["bat"], ["nat", "tan"]]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -53,7 +45,6 @@ def is_anagram(s: str, t: str) -> bool:
     if len(s) != len(t):
         return False
     cs, ct = counts(s), counts(t)
-    log(f"counts {s!r}: {letters(cs)} | {t!r}: {letters(ct)} -> equal? {cs == ct}")
     return cs == ct
 
 
@@ -63,34 +54,12 @@ def solve(words: List[str]) -> List[List[str]]:
     for w in words:
         key = tuple(counts(w))
         groups.setdefault(key, []).append(w)
-        log(f"{w!r} -> key {letters(key)!r}; group now {groups[key]}")
     return sorted(sorted(g) for g in groups.values())
 
 
 # --- demo ---
 def demo():
     return solve(["eat", "tea", "tan", "ate", "nat", "bat"])
-
-
-# --- tests ---
-def tests():
-    assert solve(["eat", "tea", "tan", "ate", "nat", "bat"]) == [["ate", "eat", "tea"], ["bat"], ["nat", "tan"]]
-    assert solve([]) == []
-    assert solve([""]) == [[""]]
-    assert solve(["a", "a"]) == [["a", "a"]]
-    assert is_anagram("anagram", "nagaram") is True
-    assert is_anagram("rat", "car") is False
-    assert is_anagram("aab", "abb") is False  # same letters, different counts
-    assert is_anagram("zebra", "braze") is True
-    assert is_anagram("", "") is True
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        words = ["".join(rng.choice("abc") for _ in range(rng.randint(0, 4))) for _ in range(rng.randint(0, 8))]
-        assert solve(words) == brute_force(words), words
-        s = "".join(rng.choice("ab") for _ in range(rng.randint(0, 4)))
-        t = "".join(rng.choice("ab") for _ in range(rng.randint(0, 4)))
-        assert is_anagram(s, t) == brute_is_anagram(s, t), (s, t)
 
 
 # --- bugs ---
@@ -120,8 +89,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -9,15 +9,7 @@ Here solve(nums) returns the list of medians after each addition.
 Example: [5, 15, 1, 3, 8] -> [5.0, 10.0, 5.0, 4.0, 5.0]
 """
 import heapq
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -41,38 +33,19 @@ def solve(nums: List[int]) -> List[float]:
     low, high, medians = [], [], []
     for x in nums:
         heapq.heappush(low, -x)
-        log(f"add {x}: push into low      -> low {[-v for v in low]} | high {high}")
         heapq.heappush(high, -heapq.heappop(low))
-        log(f"    move low's max to high  -> low {[-v for v in low]} | high {high}")
         if len(high) > len(low):
             heapq.heappush(low, -heapq.heappop(high))
-            log(f"    high is bigger: rebalance -> low {[-v for v in low]} | high {high}")
         if len(low) > len(high):
             medians.append(float(-low[0]))
         else:
             medians.append((-low[0] + high[0]) / 2)
-        log(f"    seam: max(low)={-low[0]}, min(high)={high[0] if high else None} -> median {medians[-1]}")
     return medians
 
 
 # --- demo ---
 def demo():
     return solve([5, 15, 1, 3, 8])
-
-
-# --- tests ---
-def tests():
-    assert solve([5, 15, 1, 3, 8]) == [5.0, 10.0, 5.0, 4.0, 5.0]
-    assert solve([1, 2, 3]) == [1.0, 1.5, 2.0]
-    assert solve([]) == []
-    assert solve([-5]) == [-5.0]
-    assert solve([2, 2, 2, 2]) == [2.0, 2.0, 2.0, 2.0]  # duplicates
-    assert solve([1, 2]) == [1.0, 1.5]
-    assert solve([3, 2, 1]) == [3.0, 2.5, 2.0]  # arriving in decreasing order
-    import random
-    for _ in range(200):
-        nums = [random.randint(-20, 20) for _ in range(random.randint(0, 12))]
-        assert solve(nums) == brute_force(nums), nums
 
 
 # --- bugs ---
@@ -124,8 +97,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

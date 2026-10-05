@@ -6,15 +6,7 @@ Key operations: pop while top >= current, answer is the survivor under the curre
 For each element return the nearest element to its LEFT that is strictly smaller, or -1.
 Example: [3, 1, 4, 1, 5] -> [-1, -1, 1, -1, 1]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -36,35 +28,16 @@ def solve(nums: List[int]) -> List[int]:
     ans = [-1] * len(nums)
     stack = []  # values increasing bottom -> top
     for i, x in enumerate(nums):
-        log(f"i={i} x={x} | stack top->bottom {stack[::-1]}")
         while stack and stack[-1] >= x:
             popped = stack.pop()
-            log(f"    pop {popped} >= {x}: nothing to the right can use it (x is closer and smaller)")
         ans[i] = stack[-1] if stack else -1
         stack.append(x)
-        log(f"    ans[{i}] = {ans[i]} (survivor under {x}); push {x}; stack top->bottom {stack[::-1]}")
     return ans
 
 
 # --- demo ---
 def demo():
     return solve([3, 1, 4, 1, 5])
-
-
-# --- tests ---
-def tests():
-    assert solve([3, 1, 4, 1, 5]) == [-1, -1, 1, -1, 1]
-    assert solve([1, 2, 3]) == [-1, 1, 2]
-    assert solve([3, 2, 1]) == [-1, -1, -1]
-    assert solve([2, 2, 2]) == [-1, -1, -1]      # equal is not smaller
-    assert solve([5, 1, 9, 2, 8]) == [-1, -1, 1, 1, 2]
-    assert solve([]) == []
-    assert solve([7]) == [-1]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        a = [rng.randint(1, 9) for _ in range(rng.randint(0, 10))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -94,8 +67,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

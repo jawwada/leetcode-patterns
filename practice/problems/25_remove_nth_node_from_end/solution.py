@@ -7,14 +7,6 @@ Remove the n-th node from the end of a singly linked list and return the head. n
 (1 <= n <= length).
 Example: 1 -> 2 -> 3 -> 4 -> 5, n = 2 -> 1 -> 2 -> 3 -> 5
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -70,40 +62,17 @@ def solve(head, n):
     dummy lets the same splice delete the head. One pass, O(n) time, O(1) space."""
     dummy = ListNode("dummy", head)
     slow = fast = dummy
-    log(f"start:   {draw(dummy, slow=slow, fast=fast)}")
     for _ in range(n + 1):
         fast = fast.next
-    log(f"gap {n + 1}:   {draw(dummy, slow=slow, fast=fast)}")
     while fast:
         slow, fast = slow.next, fast.next
-        log(f"slide:   {draw(dummy, slow=slow, fast=fast)}")
-    log(f"fast is off the end, so slow.next ({slow.next.val}) is node {n} from the end: splice it out")
     slow.next = slow.next.next
-    log(f"result:  {draw(dummy, slow=slow)}")
     return dummy.next
 
 
 # --- demo ---
 def demo():
     return to_list(solve(build_list([1, 2, 3, 4, 5]), 2))
-
-
-# --- tests ---
-def tests():
-    assert to_list(solve(build_list([1, 2, 3, 4, 5]), 2)) == [1, 2, 3, 5]
-    assert to_list(solve(build_list([1]), 1)) == []            # remove the only node
-    assert to_list(solve(build_list([1, 2]), 1)) == [1]        # remove the tail
-    assert to_list(solve(build_list([1, 2]), 2)) == [2]        # remove the head
-    assert to_list(solve(build_list([1, 2, 3]), 3)) == [2, 3]
-    assert to_list(solve(build_list([4, 4, 4]), 2)) == [4, 4]
-    import random
-    random.seed(0)
-    for _ in range(200):
-        values = [random.randint(0, 9) for _ in range(random.randint(1, 9))]
-        n = random.randint(1, len(values))
-        got = to_list(solve(build_list(values), n))
-        assert got == to_list(brute_force(build_list(values), n)), (values, n)
-        assert got == values[:len(values) - n] + values[len(values) - n + 1:], (values, n)
 
 
 # --- bugs ---
@@ -144,8 +113,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

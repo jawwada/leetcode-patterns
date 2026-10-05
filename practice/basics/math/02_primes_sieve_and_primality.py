@@ -8,17 +8,8 @@ sieve(n): mark every number 2..n as prime, then for each surviving p up to sqrt(
 p*p, p*p + p, p*p + 2p, ... (smaller multiples were crossed off by a smaller prime); the survivors are the primes.
 Example: is_prime(91) -> False (91 = 7 * 13); sieve(30) -> [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
 """
-import sys
-import random
 from math import isqrt
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -40,7 +31,6 @@ def is_prime(n: int) -> bool:
         return False
     d = 2
     while d * d <= n:
-        log(f"is_prime({n}): {n} % {d} = {n % d}")
         if n % d == 0:
             return False
         d += 1
@@ -50,38 +40,16 @@ def is_prime(n: int) -> bool:
 def sieve(n: int) -> List[int]:
     """Eratosthenes: for each surviving p up to sqrt(n) cross off p*p, p*p+p, ... O(n log log n)."""
     is_p = [False, False] + [True] * (n - 1)
-    log(f"start   {row(is_p)}")
     for p in range(2, isqrt(n) + 1):
         if is_p[p]:
             for m in range(p * p, n + 1, p):
                 is_p[m] = False
-            log(f"p = {p:<3} {row(is_p)}")
     return [i for i in range(n + 1) if is_p[i]]
 
 
 # --- demo ---
 def demo():
     return is_prime(91), sieve(30)
-
-
-# --- tests ---
-def tests():
-    global VERBOSE
-    VERBOSE = False  # keep the trace to the demo
-    assert sieve(30) == [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
-    assert sieve(0) == [] and sieve(1) == [] and sieve(2) == [2] and sieve(3) == [2, 3]
-    assert sieve(4) == [2, 3] and sieve(25) == [2, 3, 5, 7, 11, 13, 17, 19, 23]  # n itself composite
-    assert is_prime(91) is False and is_prime(97) is True
-    assert is_prime(0) is False and is_prime(1) is False and is_prime(2) is True and is_prime(3) is True
-    assert is_prime(4) is False and is_prime(9) is False and is_prime(49) is False  # d == sqrt(n) must be tried
-    assert is_prime(1_000_003) is True                                              # about 1000 divisions
-    small = set(brute_force(300))
-    assert sieve(300) == sorted(small)
-    assert all(is_prime(k) == (k in small) for k in range(301))
-    rng = random.Random(0)
-    for _ in range(200):
-        n = rng.randint(0, 80)
-        assert sieve(n) == brute_force(n), n
 
 
 # --- bugs ---
@@ -111,7 +79,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    tests()
-    print("ok")

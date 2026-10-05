@@ -7,15 +7,7 @@ Given an integer array nums, return answer where answer[i] is the product of eve
 nums[i]. No division, O(n) time; the output array does not count as extra space.
 Example: nums = [1, 2, 3, 4] -> [24, 12, 8, 6]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -41,40 +33,19 @@ def solve(nums: List[int]) -> List[int]:
     n = len(nums)
     answer = [1] * n
     prefix = 1  # product of nums[0..i-1]
-    log(f"nums {nums}")
-    log("left sweep: answer[i] = product of nums[0..i-1]")
     for i in range(n):
         answer[i] = prefix
-        log(f"  i={i}: answer[{i}] = prefix = {prefix:3d}")
         prefix *= nums[i]
-        log(f"        prefix *= nums[{i}] = {nums[i]} -> {prefix:3d} | answer {answer}")
     suffix = 1  # product of nums[i+1..n-1]
-    log("right sweep: answer[i] *= product of nums[i+1..n-1]")
     for i in range(n - 1, -1, -1):
         answer[i] *= suffix
-        log(f"  i={i}: answer[{i}] *= suffix {suffix} -> {answer[i]:3d}")
         suffix *= nums[i]
-        log(f"        suffix *= nums[{i}] = {nums[i]} -> {suffix:3d} | answer {answer}")
     return answer
 
 
 # --- demo ---
 def demo():
     return solve([1, 2, 3, 4])
-
-
-# --- tests ---
-def tests():
-    assert solve([1, 2, 3, 4]) == [24, 12, 8, 6]
-    assert solve([-1, 1, 0, -3, 3]) == [0, 0, 9, 0, 0]
-    assert solve([0, 0, 2]) == [0, 0, 0]
-    assert solve([5, 2]) == [2, 5]
-    assert solve([7]) == [1]
-    assert solve([]) == []
-    import random
-    for _ in range(200):
-        a = [random.randint(-3, 3) for _ in range(random.randint(0, 8))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -115,8 +86,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

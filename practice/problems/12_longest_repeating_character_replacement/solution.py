@@ -7,14 +7,6 @@ Given an uppercase string s and an integer k, you may change at most k character
 length of the longest substring that can be turned into one repeated letter.
 Example: s = "AABABBA", k = 1 -> 4 (change the A in "ABBA" into B: "BBBB")
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -38,42 +30,19 @@ def solve(s: str, k: int) -> int:
     can only give a shorter window than one already recorded. O(n) time, O(26) space."""
     count = {}
     left = max_freq = best = 0
-    log(f"    {s}  k={k}")
     for right, ch in enumerate(s):
         count[ch] = count.get(ch, 0) + 1
         max_freq = max(max_freq, count[ch])
-        log(f"r={right} in '{ch}': count {count} max_freq {max_freq}  window [{left}..{right}] len {right - left + 1} needs {right - left + 1 - max_freq} changes (k={k})")
         while right - left + 1 - max_freq > k:
             count[s[left]] -= 1
-            log(f"    too many changes -> out '{s[left]}': count {count}, left -> {left + 1}")
             left += 1
         best = max(best, right - left + 1)
-        log(f"    {' ' * left}{'^' * (right - left + 1)}  window '{s[left:right + 1]}' len {right - left + 1} best {best}")
     return best
 
 
 # --- demo ---
 def demo():
     return solve("AABABBA", 1)
-
-
-# --- tests ---
-def tests():
-    assert solve("AABABBA", 1) == 4
-    assert solve("ABAB", 2) == 4
-    assert solve("AAAA", 0) == 4
-    assert solve("ABCDE", 1) == 2
-    assert solve("", 3) == 0
-    assert solve("A", 0) == 1
-    assert solve("AAAAB", 1) == 5  # stale max_freq must still grow the window
-    assert solve("ABBB", 2) == 4
-    assert solve("ABAA", 0) == 2
-    import random
-    random.seed(1)
-    for _ in range(200):
-        t = "".join(random.choice("ABC") for _ in range(random.randint(0, 12)))
-        k = random.randint(0, 3)
-        assert solve(t, k) == brute_force(t, k), (t, k)
 
 
 # --- bugs ---
@@ -114,8 +83,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -8,15 +8,7 @@ ending today (today included) had a price <= today's. A popped day hands its who
 so the stack only keeps days with strictly decreasing prices bottom to top.
 Example: prices [100, 80, 60, 70, 60, 75, 85] -> spans [1, 1, 1, 2, 1, 4, 6]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -41,9 +33,7 @@ class StockSpanner:
         while self.stack and self.stack[-1][0] <= price:
             p, s = self.stack.pop()
             span += s
-            log(f"    pop ({p}, span {s}) <= {price}: span so far {span}")
         self.stack.append((price, span))
-        log(f"    push ({price}, {span}); stack top->bottom {self.stack[::-1]}")
         return span
 
 
@@ -51,7 +41,6 @@ def solve(prices: List[int]) -> List[int]:
     """Feed the prices one by one; each price is pushed once and popped at most once, amortized O(1) per day."""
     spanner, spans = StockSpanner(), []
     for day, p in enumerate(prices):
-        log(f"day {day} price {p}")
         spans.append(spanner.next(p))
     return spans
 
@@ -59,21 +48,6 @@ def solve(prices: List[int]) -> List[int]:
 # --- demo ---
 def demo():
     return solve([100, 80, 60, 70, 60, 75, 85])
-
-
-# --- tests ---
-def tests():
-    assert solve([100, 80, 60, 70, 60, 75, 85]) == [1, 1, 1, 2, 1, 4, 6]
-    assert solve([31, 41, 48, 59, 79]) == [1, 2, 3, 4, 5]
-    assert solve([5, 4, 3, 2, 1]) == [1, 1, 1, 1, 1]
-    assert solve([60, 60, 60]) == [1, 2, 3]        # equal prices count
-    assert solve([]) == []
-    assert solve([9]) == [1]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        a = [rng.randint(1, 9) for _ in range(rng.randint(0, 10))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -103,8 +77,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

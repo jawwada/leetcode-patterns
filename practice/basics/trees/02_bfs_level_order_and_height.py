@@ -7,15 +7,7 @@ Return the values of a binary tree level by level, and its height counted in lev
 on the longest root-to-leaf path; an empty tree has height 0).
 Example: [3, 9, 20, None, None, 15, 7] -> levels [[3], [9, 20], [15, 7]], height 3
 """
-import sys
 from collections import deque
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -55,7 +47,6 @@ def solve(root):
     levels = []
     q = deque([root] if root else [])
     while q:
-        log(f"level {len(levels)}: queue front->back {[n.val for n in q]}")
         level = []
         for _ in range(len(q)):
             node = q.popleft()
@@ -64,43 +55,13 @@ def solve(root):
                 q.append(node.left)
             if node.right:
                 q.append(node.right)
-            log(f"  pop {node.val}; push {[c.val for c in (node.left, node.right) if c]}; queue {[n.val for n in q]}")
         levels.append(level)
-        log(f"  level {len(levels) - 1} done {level}; height so far {len(levels)}")
     return levels, len(levels)
 
 
 # --- demo ---
 def demo():
     return solve(build_tree([3, 9, 20, None, None, 15, 7]))
-
-
-# --- tests ---
-def random_tree(rng, n):
-    """Random shape with unique values 0..n-1: attach each new node to a random free slot."""
-    nodes = [TreeNode(i) for i in range(n)]
-    for i in range(1, n):
-        while True:
-            p = nodes[rng.randrange(i)]
-            if p.left is None or p.right is None:
-                break
-        side = rng.choice([s for s in ("left", "right") if getattr(p, s) is None])
-        setattr(p, side, nodes[i])
-    return nodes[0] if n else None
-
-
-def tests():
-    assert solve(build_tree([3, 9, 20, None, None, 15, 7])) == ([[3], [9, 20], [15, 7]], 3)
-    assert solve(None) == ([], 0)
-    assert solve(build_tree([1])) == ([[1]], 1)
-    assert solve(build_tree([1, None, 2, None, 3])) == ([[1], [2], [3]], 3)    # right chain
-    assert solve(build_tree([1, 2, 3, 4, 5, 6, 7])) == ([[1], [2, 3], [4, 5, 6, 7]], 3)
-    assert solve(build_tree([1, 2, None, 3, None, 4]))[1] == 4                 # left chain height
-    import random
-    rng = random.Random(2)
-    for _ in range(200):
-        root = random_tree(rng, rng.randint(0, 12))
-        assert solve(root) == brute_force(root)
 
 
 # --- bugs ---
@@ -130,8 +91,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

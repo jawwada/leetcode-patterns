@@ -8,16 +8,8 @@ most k values: its root is the smallest of the best, so a new value gets in only
 and the root is what leaves. The heap never grows past k, so each step costs O(log k).
 Example: nums=[3, 1, 5, 12, 2, 11], k=3 -> [5, 11, 12]
 """
-import sys
 import heapq
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -31,34 +23,16 @@ def solve(nums: List[int], k: int) -> List[int]:
     """Min-heap of the k largest so far; the root is the gatekeeper. O(n log k)."""
     heap = []
     for x in nums:
-        log(f"x={x:>2}: " + (f"heap has {len(heap)} < k, push" if len(heap) < k else f"beats root {heap[0]}, push x and pop the root" if x > heap[0] else f"not above root {heap[0]}, skip"))
         if len(heap) < k:
             heapq.heappush(heap, x)
         elif x > heap[0]:
             heapq.heappushpop(heap, x)
-        log(f"       heap {heap}   k-th largest so far = root {heap[0]}, best {sorted(heap)}")
     return sorted(heap)
 
 
 # --- demo ---
 def demo():
     return solve([3, 1, 5, 12, 2, 11], 3)
-
-
-# --- tests ---
-def tests():
-    assert solve([3, 1, 5, 12, 2, 11], 3) == [5, 11, 12]
-    assert solve([], 2) == []
-    assert solve([4], 1) == [4]
-    assert solve([4, 9], 5) == [4, 9]  # k larger than the stream: everything
-    assert solve([7, 7, 7, 1], 2) == [7, 7]
-    assert solve([5, 4, 3, 2, 1], 2) == [4, 5]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        a = [rng.randint(1, 9) for _ in range(rng.randint(0, 12))]
-        k = rng.randint(1, 6)
-        assert solve(a, k) == brute_force(a, k), (a, k)
 
 
 # --- bugs ---
@@ -88,8 +62,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

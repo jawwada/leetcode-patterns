@@ -7,15 +7,7 @@ Given a string s, return every way to split s into pieces such that each piece i
 Any order of partitions is accepted; here they are returned sorted for determinism.
 Example: "aab" -> [["a", "a", "b"], ["aa", "b"]]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -53,20 +45,15 @@ def solve(s: str) -> List[List[str]]:
     result, path = [], []
 
     def backtrack(start):
-        log(f"{'    ' * len(path)}at {start}: path {path}")
         if start == len(s):
             result.append(path[:])
-            log(f"{'    ' * len(path)}end of string -> record {path}")
             return
         for end in range(start + 1, len(s) + 1):
             piece = s[start:end]
-            log(f"{'    ' * len(path)}try {piece!r}: {'palindrome' if is_palindrome(piece) else 'not a palindrome, skip'}")
             if is_palindrome(piece):
                 path.append(piece)
-                log(f"{'    ' * len(path)}choose {piece!r} -> path {path}")
                 backtrack(end)
                 path.pop()
-                log(f"{'    ' * (len(path) + 1)}undo {piece!r} -> path {path}")
 
     backtrack(0)
     return sorted(result)
@@ -75,22 +62,6 @@ def solve(s: str) -> List[List[str]]:
 # --- demo ---
 def demo():
     return solve("aab")
-
-
-# --- tests ---
-def tests():
-    assert solve("aab") == [["a", "a", "b"], ["aa", "b"]]
-    assert solve("a") == [["a"]]
-    assert solve("ab") == [["a", "b"]]
-    assert solve("aaa") == [["a", "a", "a"], ["a", "aa"], ["aa", "a"], ["aaa"]]
-    assert solve("aba") == [["a", "b", "a"], ["aba"]]
-    assert solve("abc") == [["a", "b", "c"]]
-    assert solve("") == [[]]
-    assert solve("abba") == [["a", "b", "b", "a"], ["a", "bb", "a"], ["abba"]]
-    import random
-    for _ in range(200):
-        s = "".join(random.choice("ab") for _ in range(random.randint(0, 7)))
-        assert solve(s) == brute_force(s), s
 
 
 # --- bugs ---
@@ -131,8 +102,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -1,6 +1,6 @@
 # Practice bank
 
-Traced, testable scripts for interview drilling. Run any file for a step-by-step trace, add `--quiet` for tests only.
+Clean, self-contained scripts for interview drilling. Run any file to print the demo result, or set a breakpoint in `solve` and step through it in a debugger.
 Format: [SPEC.md](SPEC.md). Build/validate: `python3 practice/build_bank.py`. The drill artifact reads `bank.json`.
 
 ## Problems

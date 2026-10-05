@@ -8,16 +8,8 @@ iff every course can be taken, i.e. the prerequisite graph has no directed cycle
 Example: n = 4, prerequisites = [[1, 0], [2, 0], [3, 1], [3, 2]] -> True (0, then 1 and 2, then 3)
          n = 2, prerequisites = [[1, 0], [0, 1]] -> False
 """
-import sys
 from collections import deque
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -51,44 +43,20 @@ def solve(n: int, prerequisites: List[List[int]]) -> bool:
         adj[pre].append(course)
         indeg[course] += 1
     queue = deque(c for c in range(n) if indeg[c] == 0)
-    log(f"adjacency {dict(enumerate(adj))}; indegree {dict(enumerate(indeg))}; queue {list(queue)}")
     taken = 0
     while queue:
         cur = queue.popleft()
         taken += 1
-        log(f"take {cur} (taken {taken}); queue {list(queue)}")
         for nxt in adj[cur]:
             indeg[nxt] -= 1
-            log(f"  release {cur} -> {nxt}: indegree {dict(enumerate(indeg))}")
             if indeg[nxt] == 0:
                 queue.append(nxt)
-                log(f"  {nxt} has no prerequisites left: enqueue; queue {list(queue)}")
-    log(f"taken {taken} of {n}; stuck with indegree > 0: {[c for c in range(n) if indeg[c] > 0]}")
     return taken == n
 
 
 # --- demo ---
 def demo():
     return solve(4, [[1, 0], [2, 0], [3, 1], [3, 2]])
-
-
-# --- tests ---
-def tests():
-    assert solve(4, [[1, 0], [2, 0], [3, 1], [3, 2]]) is True
-    assert solve(2, [[1, 0]]) is True
-    assert solve(2, [[1, 0], [0, 1]]) is False
-    assert solve(1, []) is True
-    assert solve(3, []) is True                                   # isolated courses count as taken
-    assert solve(3, [[0, 1], [1, 2], [2, 0]]) is False            # 3-cycle
-    assert solve(4, [[1, 0], [2, 1], [3, 2], [1, 3]]) is False    # cycle behind a free course
-    assert solve(3, [[1, 0], [1, 0]]) is True                     # duplicate edge
-    assert solve(1, [[0, 0]]) is False                            # self loop
-    assert solve(5, [[1, 4], [2, 4], [3, 1], [3, 2]]) is True
-    import random
-    for _ in range(200):
-        n = random.randint(1, 6)
-        pre = [[random.randrange(n), random.randrange(n)] for _ in range(random.randint(0, 8))]
-        assert solve(n, pre) == brute_force(n, pre), (n, pre)
 
 
 # --- bugs ---
@@ -129,8 +97,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

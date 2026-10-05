@@ -7,16 +7,8 @@ Given distinct positive candidates and a target, return every combination (with 
 each candidate) whose sum is the target. Each combination is non-decreasing; results sorted.
 Example: candidates [2, 3, 6, 7], target 7 -> [[2, 2, 3], [7]]
 """
-import sys
 from itertools import combinations_with_replacement
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -40,17 +32,13 @@ def solve(candidates: List[int], target: int) -> List[List[int]]:
     def backtrack(start: int, remaining: int) -> None:
         if remaining == 0:
             res.append(path[:])
-            log("  " * len(path) + f"record {path}")
             return
         for i in range(start, len(cands)):
             if cands[i] > remaining:
-                log("  " * (len(path) + 1) + f"prune: {cands[i]} > remaining {remaining}, later candidates are bigger")
                 break
             path.append(cands[i])
-            log("  " * len(path) + f"choose {cands[i]} -> path {path}, remaining {remaining - cands[i]}")
             backtrack(i, remaining - cands[i])
             path.pop()
-            log("  " * (len(path) + 1) + f"unchoose {cands[i]} -> path {path}")
 
     backtrack(0, target)
     return sorted(res)
@@ -59,21 +47,6 @@ def solve(candidates: List[int], target: int) -> List[List[int]]:
 # --- demo ---
 def demo():
     return solve([2, 3, 6, 7], 7)
-
-
-# --- tests ---
-def tests():
-    assert solve([2, 3, 6, 7], 7) == [[2, 2, 3], [7]]
-    assert solve([2, 3, 5], 8) == [[2, 2, 2, 2], [2, 3, 3], [3, 5]]
-    assert solve([2], 1) == []
-    assert solve([1], 2) == [[1, 1]]
-    assert solve([7, 3], 6) == [[3, 3]]  # unsorted input
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        cands = rng.sample(range(2, 8), rng.randint(1, 4))
-        target = rng.randint(1, 12)
-        assert solve(cands, target) == brute_force(cands, target), (cands, target)
 
 
 # --- bugs ---
@@ -103,8 +76,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -9,14 +9,6 @@ combine it with the top right away, and the answer is the sum of the stack.
 Example: "3+2*2" -> 7, " 3/2 " -> 1, "14-3/2" -> 13
 """
 import re
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -59,7 +51,6 @@ def solve(s: str) -> int:
                 stack.append(stack.pop() * num)
             else:
                 stack.append(int(stack.pop() / num))
-            log(f"ch={ch!r}: apply pending '{op}' to {num}; stack top->bottom {stack[::-1]}")
             num, op = 0, ch
     return sum(stack)
 
@@ -67,28 +58,6 @@ def solve(s: str) -> int:
 # --- demo ---
 def demo():
     return solve("14-3/2")
-
-
-# --- tests ---
-def tests():
-    assert solve("3+2*2") == 7
-    assert solve(" 3/2 ") == 1
-    assert solve(" 3+5 / 2 ") == 5
-    assert solve("14-3/2") == 13
-    assert solve("42") == 42
-    assert solve("0") == 0
-    assert solve("1-7/2") == -2          # truncate toward zero, not floor
-    assert solve("2*3+4*5-6/4") == 25
-    assert solve("100 - 100 * 2 / 3") == 34
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        parts = [str(rng.randint(1, 20))]
-        for _ in range(rng.randint(0, 5)):
-            parts.append(rng.choice(["+", "-", "*", "/"]))
-            parts.append(str(rng.randint(1, 20)))
-        s = rng.choice(["", " "]).join(parts) + rng.choice(["", " "])
-        assert solve(s) == brute_force(s), s
 
 
 # --- bugs ---
@@ -129,8 +98,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

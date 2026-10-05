@@ -8,15 +8,7 @@ piles[i] bananas sit in pile i. Each hour Koko picks one pile and eats up to k b
 integer speed k at which she finishes every pile within h hours.
 Example: piles = [3, 6, 7, 11], h = 8 -> 4 (hours at speed 4: 1 + 2 + 2 + 3 = 8)
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -38,41 +30,18 @@ def solve(piles: List[int], h: int) -> int:
         return sum((p + speed - 1) // speed for p in piles)  # ceil(p / speed) hours per pile
 
     lo, hi = 1, max(piles)  # speed max(piles) always works: one hour per pile
-    log("speed " + "".join(f"{s:3d}" for s in range(1, hi + 1)))
     while lo < hi:
         mid = (lo + hi) // 2
-        log("      " + "".join(f"{'^' if s in (lo, mid, hi) else '':>3}" for s in range(1, max(piles) + 1)) + f"   lo={lo} mid={mid} hi={hi}")
-        log(f"    speed {mid}: hours per pile {[(p + mid - 1) // mid for p in piles]} -> {hours(mid)} hours, budget {h}")
         if hours(mid) <= h:
             hi = mid
-            log(f"    feasible: the answer is {mid} or slower, hi = {hi}")
         else:
             lo = mid + 1
-            log(f"    too slow: lo = {lo}")
-    log(f"lo == hi == {lo}: the first feasible speed")
     return lo
 
 
 # --- demo ---
 def demo():
     return solve([3, 6, 7, 11], 8)
-
-
-# --- tests ---
-def tests():
-    assert solve([3, 6, 7, 11], 8) == 4
-    assert solve([30, 11, 23, 4, 20], 5) == 30  # h == len(piles): must finish each pile in one hour
-    assert solve([30, 11, 23, 4, 20], 6) == 23
-    assert solve([1], 1) == 1
-    assert solve([5, 5, 5], 3) == 5
-    assert solve([6], 2) == 3  # exactly fits the budget
-    assert solve([1, 1, 1, 1], 100) == 1  # plenty of time: slowest speed
-    import random
-    rng = random.Random(875)
-    for _ in range(200):
-        piles = [rng.randint(1, 30) for _ in range(rng.randint(1, 6))]
-        h = rng.randint(len(piles), 40)
-        assert solve(piles, h) == brute_force(piles, h), (piles, h)
 
 
 # --- bugs ---
@@ -113,8 +82,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

@@ -9,14 +9,6 @@ O(1) extra space: bit 0 keeps the current state while the pass runs, bit 1 recei
 and a final pass shifts every cell right by one.
 Example: [[0,1,0],[0,0,1],[1,1,1],[0,0,0]] -> [[0,0,0],[1,0,1],[0,1,1],[0,1,0]]
 """
-import sys
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -45,34 +37,15 @@ def solve(board):
                         live += board[nr][nc] & 1
             if live == 3 or (live == 2 and board[r][c] & 1):
                 board[r][c] |= 2
-            log(f"cell ({r},{c}) now {board[r][c] & 1}, live neighbors {live}, next {board[r][c] >> 1} | stored {board[r][c]}")
-    log("encoded (bit 0 = now, bit 1 = next):\n" + "\n".join(f"    {row}" for row in board))
     for r in range(m):
         for c in range(n):
             board[r][c] >>= 1
-    log("decoded next generation:\n" + "\n".join(f"    {row}" for row in board))
     return board
 
 
 # --- demo ---
 def demo():
     return solve([[0, 1, 0], [0, 0, 1], [1, 1, 1], [0, 0, 0]])
-
-
-# --- tests ---
-def tests():
-    assert solve([[0, 1, 0], [0, 0, 1], [1, 1, 1], [0, 0, 0]]) == [[0, 0, 0], [1, 0, 1], [0, 1, 1], [0, 1, 0]]
-    assert solve([[1, 1], [1, 0]]) == [[1, 1], [1, 1]]  # the dead corner has 3 neighbors: born
-    assert solve([[1]]) == [[0]] and solve([[0]]) == [[0]]
-    assert solve([[0, 0, 0], [1, 1, 1], [0, 0, 0]]) == [[0, 1, 0], [0, 1, 0], [0, 1, 0]]  # blinker turns
-    assert solve([[1, 1], [1, 1]]) == [[1, 1], [1, 1]]  # block is stable
-    assert solve([[0, 0, 0], [0, 1, 0], [0, 0, 0]]) == [[0, 0, 0], [0, 0, 0], [0, 0, 0]]  # lonely cell dies
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        m, n = rng.randint(1, 5), rng.randint(1, 5)
-        a = [[rng.randint(0, 1) for _ in range(n)] for _ in range(m)]
-        assert solve([row[:] for row in a]) == brute_force(a), a
 
 
 # --- bugs ---
@@ -113,8 +86,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

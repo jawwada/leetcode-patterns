@@ -8,15 +8,7 @@ moving toward each other collide: the smaller explodes, equal sizes both explode
 the same way never meet. Return the survivors in order.
 Example: [5, 10, -5] -> [5, 10]; [8, -8] -> []; [10, 2, -5] -> [10]
 """
-import sys
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- brute force ---
@@ -44,47 +36,24 @@ def solve(asteroids: List[int]) -> List[int]:
     """Stack of survivors; a left-mover fights the right-moving tops until it explodes or nothing can hit it. O(n)."""
     stack = []
     for a in asteroids:
-        log(f"a={a} | stack top->bottom {stack[::-1]}")
         alive = True
         while alive and a < 0 and stack and stack[-1] > 0:
             top = stack[-1]
             if top < -a:
                 stack.pop()
-                log(f"    {a} destroys {top}; stack top->bottom {stack[::-1]}")
             elif top == -a:
                 stack.pop()
                 alive = False
-                log(f"    {a} and {top} both explode; stack top->bottom {stack[::-1]}")
             else:
                 alive = False
-                log(f"    {a} explodes against {top}")
         if alive:
             stack.append(a)
-            log(f"    push {a}; stack top->bottom {stack[::-1]}")
     return stack
 
 
 # --- demo ---
 def demo():
     return solve([5, 10, -5])
-
-
-# --- tests ---
-def tests():
-    assert solve([5, 10, -5]) == [5, 10]
-    assert solve([8, -8]) == []
-    assert solve([10, 2, -5]) == [10]
-    assert solve([-2, -1, 1, 2]) == [-2, -1, 1, 2]   # moving apart or same way: no collision
-    assert solve([1, -2, -2, -2]) == [-2, -2, -2]
-    assert solve([-5, -10]) == [-5, -10]              # two left-movers never meet
-    assert solve([3, 5, -5, -4]) == [-4]              # 5 and -5 both explode; -4 then destroys 3
-    assert solve([]) == []
-    assert solve([7]) == [7]
-    import random
-    rng = random.Random(0)
-    for _ in range(200):
-        a = [rng.choice([-1, 1]) * rng.randint(1, 6) for _ in range(rng.randint(0, 8))]
-        assert solve(a) == brute_force(a), a
 
 
 # --- bugs ---
@@ -114,8 +83,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")

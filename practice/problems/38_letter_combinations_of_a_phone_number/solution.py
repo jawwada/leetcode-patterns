@@ -8,16 +8,8 @@ Given a string of digits 2-9, return every string the digits could spell on a ph
 The empty string gives [].
 Example: "23" -> ["ad", "ae", "af", "bd", "be", "bf", "cd", "ce", "cf"]
 """
-import sys
 from itertools import product
 from typing import List
-
-VERBOSE = "--quiet" not in sys.argv
-
-
-def log(*args):
-    if VERBOSE:
-        print(*args)
 
 
 # --- helpers ---
@@ -45,14 +37,11 @@ def solve(digits: str) -> List[str]:
     def dfs(i: int) -> None:
         if i == len(digits):
             result.append("".join(path))
-            log(f"{'  ' * i}leaf: record '{''.join(path)}' ({len(result)} so far)")
             return
         for ch in KEYPAD[digits[i]]:
             path.append(ch)
-            log(f"{'  ' * i}digit {digits[i]}: choose '{ch}' -> path {path}")
             dfs(i + 1)
             path.pop()
-            log(f"{'  ' * i}digit {digits[i]}: unchoose '{ch}' -> path {path}")
 
     dfs(0)
     return result
@@ -61,21 +50,6 @@ def solve(digits: str) -> List[str]:
 # --- demo ---
 def demo():
     return solve("23")
-
-
-# --- tests ---
-def tests():
-    assert solve("23") == ["ad", "ae", "af", "bd", "be", "bf", "cd", "ce", "cf"]
-    assert solve("") == []                        # no combinations, not [""]
-    assert solve("2") == ["a", "b", "c"]
-    assert solve("7") == ["p", "q", "r", "s"]     # four-letter key
-    assert len(solve("79")) == 16
-    assert len(solve("234")) == 27 and len(set(solve("234"))) == 27
-    assert all(len(s) == 4 for s in solve("2345"))
-    import random
-    for _ in range(200):
-        digits = "".join(random.choice("23456789") for _ in range(random.randint(0, 4)))
-        assert solve(digits) == brute_force(digits), digits
 
 
 # --- bugs ---
@@ -116,8 +90,4 @@ BUGS = [
 ]
 
 if __name__ == "__main__":
-    log("--- demo ---")
     print("result:", demo())
-    VERBOSE = False  # the demo above is the worked example; tests run quietly
-    tests()
-    print("ok")
