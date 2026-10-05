@@ -118,6 +118,11 @@ def build_page(check_file):
             '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
             + fragment + "\n</html>\n")
     open(os.path.join(SITE, "companion_index.html"), "w").write(full)
+    # the website build: a folder Vercel (or any static host) can serve as-is; Python comes from the Pyodide CDN
+    dist = os.path.join(SITE, "companion_site")
+    os.makedirs(dist, exist_ok=True)
+    open(os.path.join(dist, "index.html"), "w").write(full)
+    open(os.path.join(dist, "pyworker.js"), "w").write(open(os.path.join(SITE, "companion", "pyworker.js")).read())
     write_readme(chapters, problems, fundamentals)
     nb = sum(len(f["items"]) for f in fundamentals)
     print(f"built companion: {len(chapters)} chapters, {len(problems)} problems, {nb} fundamentals -> site/companion_index.html ({len(full) // 1024} KB)")
