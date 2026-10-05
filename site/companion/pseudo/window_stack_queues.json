@@ -1,0 +1,62 @@
+{
+ "best_time_to_buy_and_sell_stock": {
+  "brute": "best = 0\nfor each buy day:\n    for each later sell day:   (rescans every earlier buy for each sell)\n        profit = prices[sell] - prices[buy]\n        if profit > best: best = profit\nreturn best",
+  "optimal": "min_price = +infinity, best = 0\nfor each price:\n    profit = price - min_price   (sell today, bought on the cheapest day so far)\n    if profit > best: best = profit\n    if price < min_price: min_price = price\nreturn best"
+ },
+ "minimum_size_subarray_sum": {
+  "brute": "best = 0\nfor each start:\n    total = 0   (re-summed from scratch for every start)\n    for each end from start to the last index:\n        total += nums[end]\n        if total >= target:\n            length = end - start + 1\n            if best == 0 or length < best: best = length\n            stop extending\nreturn best",
+  "optimal": "left = 0, total = 0, best = 0\nfor each right:\n    total += nums[right]\n    while total >= target:   (valid window: record it, then try shorter)\n        length = right - left + 1\n        if best == 0 or length < best: best = length\n        total -= nums[left]\n        left += 1\nreturn best"
+ },
+ "longest_substring_without_repeating_characters": {
+  "brute": "best = 0\nfor each start:\n    seen = empty set   (rebuilt from scratch for every start)\n    for each end from start to the last index:\n        if s[end] is in seen: stop extending\n        add s[end] to seen\n    if size of seen > best: best = size of seen\nreturn best",
+  "optimal": "last = empty dict (char -> index where it was most recently seen), left = 0, best = 0\nfor each right:\n    ch = s[right]\n    if ch is in last and last[ch] >= left:\n        left = last[ch] + 1   (jump just past the earlier copy, never backwards)\n    last[ch] = right\n    length = right - left + 1\n    if length > best: best = length\nreturn best"
+ },
+ "max_consecutive_ones_iii": {
+  "brute": "best = 0\nfor each start:\n    zeros = 0   (recounted from scratch for every start)\n    for each end from start to the last index:\n        if nums[end] == 0: zeros += 1\n        if zeros > k: stop extending\n        length = end - start + 1\n        if length > best: best = length\nreturn best",
+  "optimal": "left = 0, zeros = 0, best = 0\nfor each right:\n    if nums[right] == 0: zeros += 1\n    while zeros > k:   (k+1 zeros inside: push left past one zero)\n        if nums[left] == 0: zeros -= 1\n        left += 1\n    length = right - left + 1\n    if length > best: best = length\nreturn best"
+ },
+ "longest_repeating_character_replacement": {
+  "brute": "best = 0\nfor each start:\n    count = 26 zeros   (recounted from scratch for every start)\n    for each end from start to the last index:\n        count[s[end]] += 1\n        length = end - start + 1\n        if length - max of count <= k:   (keep the top letter, change all the others)\n            if length > best: best = length\nreturn best",
+  "optimal": "count = 26 zeros, left = 0, max_freq = 0, best = 0\nfor each right:\n    idx = letter index of s[right]\n    count[idx] += 1\n    if count[idx] > max_freq: max_freq = count[idx]   (never lowered: a smaller window can't win)\n    if (right - left + 1) - max_freq > k:\n        count[s[left]] -= 1\n        left += 1\n    length = right - left + 1\n    if length > best: best = length\nreturn best"
+ },
+ "valid_parentheses": {
+  "brute": "changed = true\nwhile changed:   (rescan from the start after each deletion)\n    changed = false\n    for each pair in \"()\", \"[]\", \"{}\":\n        if pair appears in s:\n            delete its first occurrence from s\n            changed = true\nreturn s is empty",
+  "optimal": "pairs = dict closer -> the opener it needs\nstack = empty\nfor each ch in s:\n    if ch is a closer:\n        if the stack is empty: return false\n        top = pop the stack\n        if top != pairs[ch]: return false   (the closer must match the innermost opener)\n    else:\n        push ch\nreturn the stack is empty   (leftover openers mean invalid)"
+ },
+ "min_stack": {
+  "brute": "init: stack = empty list\npush(val):\n    append val to the list\npop():\n    remove the last element\ntop():\n    return the last element\nget_min():\n    return the minimum of the whole list   (O(n) rescan on every call)",
+  "optimal": "init: stack = empty list of entries [value, min of everything at or below it]\npush(val):\n    current_min = val\n    if the stack is not empty and the min stored on top < val:\n        current_min = the min stored on top   (the entries below val never change under it)\n    push [val, current_min]\npop():\n    pop the top   (the entry below still holds its correct min)\ntop():\n    return the value of the top entry\nget_min():\n    return the min of the top entry"
+ },
+ "evaluate_reverse_polish_notation": {
+  "brute": "tokens = copy of tokens\nwhile more than one token remains:   (one reduction per full rescan)\n    for each index i:\n        if tokens[i] is an operator:\n            a = tokens[i - 2] as a number, b = tokens[i - 1] as a number\n            value = a op b   (division truncates toward zero)\n            tokens = tokens before i - 2 + [value] + tokens after i\n            break\nreturn the single remaining token as a number",
+  "optimal": "stack = empty\nfor each token:\n    if token is an operator:\n        b = pop the top   (popped first, but it is the RIGHT operand)\n        a = pop the top\n        push a op b   (division truncates toward zero)\n    else:\n        push token as a number\nreturn the only element on the stack"
+ },
+ "decode_string": {
+  "brute": "while s contains \"[\":   (one innermost group per pass)\n    close_at = index of the first \"]\"   (it closes an innermost group)\n    open_at = index of the last \"[\" before close_at\n    start = open_at\n    while start > 0 and s[start - 1] is a digit: start -= 1   (walk back over the digits of k)\n    k = the number in s[start .. open_at)\n    inner = s between open_at and close_at\n    s = s before start + inner repeated k times + s after close_at   (rebuilds the whole string)\nreturn s",
+  "optimal": "stack = empty stack of frames [text before the \"[\", repeat count]\ncurrent = \"\", num = 0\nfor each ch in s:\n    if ch is a digit: num = num * 10 + ch   (counts can have several digits)\n    else if ch == \"[\":\n        push [current, num]   (park the outer text and its count)\n        current = \"\", num = 0\n    else if ch == \"]\":\n        frame = pop the top\n        current = frame's text + current repeated frame's count times   (resume the outer text)\n    else: append ch to current\nreturn current"
+ },
+ "basic_calculator_ii": {
+  "brute": "tokens = tokenize(s)   (numbers and operators alternate, spaces dropped)\nfor each level in (\"*/\", \"+-\"):   (two passes: high precedence first)\n    i = 1   (operators sit at the odd positions)\n    while i < size of tokens:\n        if tokens[i] is in level:\n            value = tokens[i - 1] op tokens[i + 1]\n            tokens = tokens before i - 1 + [value] + tokens after i + 1   (splice shifts the tail)\n        else: i += 2\nreturn tokens[0]",
+  "optimal": "stack = empty, num = 0, op = \"+\"   (op = the operator BEFORE the number being read)\nfor each i, ch in s:\n    if ch is a digit: num = num * 10 + ch\n    if ch is an operator or ch is the last character:   (number finished: apply the pending op)\n        if op == \"+\": push num\n        else if op == \"-\": push -num\n        else if op == \"*\": push (pop the top) * num\n        else: push (pop the top) / num truncated toward zero\n        num = 0, op = ch\nreturn the sum of the stack"
+ },
+ "daily_temperatures": {
+  "brute": "answer = array of n zeros\nfor each day i:\n    for each later day j > i:   (walks over cooler days that are also waiting)\n        if temperatures[j] > temperatures[i]:\n            answer[i] = j - i\n            break\nreturn answer",
+  "optimal": "answer = array of n zeros\nwaiting = empty stack of indices of days still waiting for a warmer day\nfor each day i:\n    while waiting is not empty and temperature at the top < temperatures[i]:\n        j = pop the top   (today is day j's first warmer day)\n        answer[j] = i - j\n    push i\nreturn answer"
+ },
+ "car_fleet": {
+  "brute": "fleets = 0\nfor each car i:\n    time_i = (target - position[i]) / speed[i]\n    leader = true\n    for each car j:   (rescans every car ahead of i)\n        if position[j] > position[i]:\n            time_j = (target - position[j]) / speed[j]\n            if time_j >= time_i: leader = false   (i catches car j, so it joins a fleet)\n    if leader: fleets += 1\nreturn fleets",
+  "optimal": "cars = list of [position, speed] pairs\nsort cars by position, closest to the target first\nfleets = empty stack of arrival times of fleet leaders\nfor each car:\n    time = (target - car's position) / car's speed\n    if fleets is empty or time > top of fleets:\n        push time   (slower than the fleet ahead: a new fleet)\n    else: it catches the fleet ahead and merges into it, adding nothing\nreturn size of fleets"
+ },
+ "implement_queue_using_stacks": {
+  "brute": "init: main = empty stack   (the oldest element sits on top)\npush(x):\n    helper = empty stack\n    while main is not empty: push pop of main onto helper   (pour everything out)\n    push x onto main   (x lands at the bottom)\n    while helper is not empty: push pop of helper onto main   (pour it all back)\npop(): return pop the top of main\npeek(): return the top of main\nempty(): return main is empty",
+  "optimal": "init: inbox = empty stack (newest on top), outbox = empty stack (oldest on top)\npush(x): push x onto inbox\npop():\n    peek()   (make sure the outbox holds the front)\n    return pop the top of outbox\npeek():\n    if outbox is empty:   (pour only when the outbox runs dry)\n        while inbox is not empty: push pop of inbox onto outbox   (reverses the order once)\n    return the top of outbox\nempty(): return inbox is empty and outbox is empty"
+ },
+ "design_circular_queue": {
+  "brute": "init(k): capacity = k, items = empty list\nen_queue(value):\n    if size of items == capacity: return false\n    append value, return true\nde_queue():\n    if items is empty: return false\n    remove items[0]   (shifts every element one slot left)\n    return true\nfront(): return -1 if items is empty else items[0]\nrear(): return -1 if items is empty else the last item\nis_empty(): return items is empty\nis_full(): return size of items == capacity",
+  "optimal": "init(k): buf = array of k slots, head = 0, count = 0\nen_queue(value):\n    if full: return false\n    tail = (head + count) mod k   (wraps from slot k-1 back to slot 0)\n    buf[tail] = value\n    count += 1, return true\nde_queue():\n    if empty: return false\n    head = (head + 1) mod k   (move the index, not the data)\n    count -= 1, return true\nfront(): return -1 if empty else buf[head]\nrear(): return -1 if empty else buf[(head + count - 1) mod k]\nis_empty(): return count == 0\nis_full(): return count == k"
+ },
+ "dota2_senate": {
+  "brute": "n = length of senate, banned = n falses\nloop forever:\n    for each i from 0 to n - 1:\n        if banned[i]: continue\n        j = (i + 1) mod n\n        while j != i and (banned[j] or senate[j] == senate[i]): j = (j + 1) mod n   (scan for an opponent)\n        if j == i:   (no opponent left: senator i's party wins)\n            return \"Radiant\" if senate[i] == \"R\" else \"Dire\"\n        banned[j] = true",
+  "optimal": "n = length of senate\nradiant = empty deque, dire = empty deque\nfor each i: append i to radiant if senate[i] == \"R\" else to dire\nwhile both deques are not empty:\n    r = pop the front of radiant, d = pop the front of dire   (the two who act soonest face off)\n    if r < d: append r + n to radiant   (r acts first: bans d, votes again next round)\n    else: append d + n to dire\nreturn \"Radiant\" if radiant is not empty else \"Dire\""
+ }
+}

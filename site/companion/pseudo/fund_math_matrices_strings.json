@@ -1,0 +1,41 @@
+{
+  "math/01_gcd_lcm_euclid": {
+    "algorithm": "gcd(a, b):\n    a = |a|, b = |b|\n    while b != 0:   (stop only when the remainder is exactly 0)\n        remainder = a % b\n        a = b\n        b = remainder\n    return a\nlcm(a, b):\n    if a == 0 or b == 0: return 0\n    return |a| // gcd(a, b) * |b|"
+  },
+  "math/02_primes_sieve_and_primality": {
+    "algorithm": "is_prime(n):\n    if n < 2: return false\n    d = 2\n    while d * d <= n:   (<= not <: a perfect square's only small factor is sqrt(n))\n        if n % d == 0: return false\n        d = d + 1\n    return true\nsieve(n):\n    if n < 2: return []\n    is_p = [true] * (n + 1), is_p[0] = is_p[1] = false\n    for p = 2 while p * p <= n:\n        if is_p[p]:\n            for multiple = p * p, p * p + p, ... up to n: is_p[multiple] = false\n    return every i in 2..n with is_p[i] true"
+  },
+  "math/03_fast_power_and_modular_arithmetic": {
+    "algorithm": "power(base, exp):\n    result = 1   (the empty product, not base)\n    while exp > 0:\n        if lowest bit of exp is 1: result = result * base\n        base = base * base\n        exp = exp >> 1\n    return result\nmod_power(base, exp, mod):\n    result = 1, base = base % mod\n    while exp > 0:\n        if lowest bit of exp is 1: result = result * base % mod\n        base = base * base % mod\n        exp = exp >> 1\n    return result % mod"
+  },
+  "math/04_digits_reverse_integer_and_palindrome_number": {
+    "algorithm": "reverse_integer(x):\n    sign = -1 if x < 0 else 1, n = |x|, rev = 0\n    while n > 0:\n        digit = n % 10, n = n // 10\n        rev = rev * 10 + digit\n    rev = rev * sign\n    if rev outside [-2^31, 2^31 - 1]: return 0\n    return rev\nis_palindrome_number(x):\n    if x < 0: return false\n    if x ends in 0 and x != 0: return false\n    half = 0\n    while x > half:   (stop once the reversed part is at least as long as the rest)\n        digit = x % 10, x = x // 10\n        half = half * 10 + digit\n    return x == half or x == half // 10"
+  },
+  "math/05_base_conversion_and_excel_columns": {
+    "algorithm": "to_base(n, base):\n    if n == 0: return \"0\"\n    sign = \"-\" if n < 0 else \"\", n = |n|, digits = []\n    while n > 0:\n        digit = n % base, n = n // base, append DIGITS[digit]\n    reverse digits, return sign + digits joined\nfrom_base(s, base):\n    n = 0\n    for each character ch: n = n * base + value of ch\n    return n\ncolumn_title(n):\n    letters = []\n    while n > 0:\n        n = n - 1   (digits are 1..26: 26 must give remainder 25 = Z and quotient 0)\n        append letter 'A' + n % 26, n = n // 26\n    reverse letters, return them joined\ncolumn_number(s):\n    n = 0\n    for each letter ch: n = n * 26 + (ch - 'A' + 1)\n    return n"
+  },
+  "math/06_random_pick_and_reservoir_sampling": {
+    "algorithm": "reservoir_sample(stream, k, rng):\n    reservoir = [], i = 0\n    for each item in stream:\n        if i < k: append item to reservoir\n        else:\n            j = random integer in 0..i   (item i is the (i + 1)-th seen: chance k / (i + 1))\n            if j < k: reservoir[j] = item\n        i = i + 1\n    return reservoir\nrandom_pick_index(nums, target, rng):\n    pick = -1, seen = 0\n    for each index i:\n        if nums[i] == target:\n            seen = seen + 1\n            if random integer in 0..seen-1 == 0: pick = i\n    return pick"
+  },
+  "matrices/04_search_2d_matrix_staircase": {
+    "algorithm": "if the matrix is empty: return false\nrow = 0, col = last column   (top-right: one compare rules out a whole row or column)\nwhile row < rows and col >= 0:\n    value = matrix[row][col]\n    if value == target: return true\n    if value > target: col = col - 1, everything below is bigger\n    else: row = row + 1, everything to the left is smaller\nreturn false"
+  },
+  "matrices/05_game_of_life_in_place": {
+    "algorithm": "count_live_neighbors(board, row, col):\n    live = 0\n    for each of the 8 offsets (dr, dc), skipping (0, 0):\n        if (row + dr, col + dc) is inside the board:\n            live = live + (board[row + dr][col + dc] & 1)   (bit 0 only: bit 1 may hold a next state)\n    return live\ngame_of_life(board):\n    for each cell (row, col):\n        live = count_live_neighbors(board, row, col)\n        alive = board[row][col] & 1\n        if live == 3 or (live == 2 and alive): set bit 1 of board[row][col]\n    for each cell: board[row][col] = board[row][col] >> 1\n    return board"
+  },
+  "matrices/06_matrix_traversal_patterns": {
+    "algorithm": "row_major(matrix):\n    for each row, for each value in the row: append value\ncol_major(matrix):\n    for each col, for each row: append matrix[row][col]\nneighbors(matrix, row, col, dirs):\n    for each (dr, dc) in dirs:\n        nr = row + dr, nc = col + dc\n        if 0 <= nr < rows and 0 <= nc < cols: append (nr, nc)\n    return the list\nanti_diagonals(matrix):\n    for d from 0 to rows + cols - 2:   (m + n - 1 diagonals, cells with row + col == d)\n        first_row = max(0, d - cols + 1), last_row = min(rows - 1, d)\n        for row from first_row to last_row inclusive: append matrix[row][d - row]\n    return the list"
+  },
+  "strings/02_two_pointer_palindromes_and_reverse_words": {
+    "algorithm": "is_palindrome(s):\n    lo = 0, hi = last index\n    while lo < hi:\n        if s[lo] is not alphanumeric: lo = lo + 1\n        else if s[hi] is not alphanumeric: hi = hi - 1\n        else:\n            if lowercase s[lo] != lowercase s[hi]: return false\n            lo = lo + 1, hi = hi - 1\n    return true\nreverse_range(chars, lo, hi):\n    while lo < hi: swap chars[lo] and chars[hi], lo = lo + 1, hi = hi - 1\nreverse_words(s):\n    chars = list of s, reverse_range over the whole list\n    start = 0\n    for i from 0 to len(chars) inclusive:   (i == len closes the last word)\n        if i == len(chars) or chars[i] is a space:\n            reverse_range(chars, start, i - 1)\n            start = i + 1\n    return chars joined"
+  },
+  "strings/03_kmp_prefix_function": {
+    "algorithm": "build_failure(pattern):\n    fail = [0] * m, k = 0\n    for i from 1 to m - 1:   (fail[0] is always 0: a border is a PROPER prefix)\n        while k > 0 and pattern[i] != pattern[k]: k = fail[k - 1]\n        if pattern[i] == pattern[k]: k = k + 1\n        fail[i] = k\n    return fail\nkmp_search(text, pattern):\n    fail = build_failure(pattern), hits = [], j = 0\n    for each index i of text:\n        while j > 0 and text[i] != pattern[j]: j = fail[j - 1]   (while, not if)\n        if text[i] == pattern[j]: j = j + 1\n        if j == m:\n            append i - j + 1 to hits\n            j = fail[m - 1]\n    return hits"
+  },
+  "strings/04_rabin_karp_rolling_hash": {
+    "algorithm": "poly_hash(s):\n    h = 0\n    for each character ch: h = (h * BASE + ch) % MOD\n    return h\nrabin_karp(text, pattern):\n    if m > n: return []\n    high = BASE^(m - 1) % MOD   (weight of the window's leftmost character)\n    target = poly_hash(pattern), h = poly_hash(first m characters of text)\n    hits = []\n    for i from 0 to n - m:\n        if h == target and text[i..i + m) == pattern: append i\n        if i + m < n:\n            h = (h - text[i] * high) * BASE + text[i + m]\n            h = h % MOD\n    return hits"
+  },
+  "strings/05_encode_decode_strings_and_join": {
+    "algorithm": "encode(strs):\n    parts = []\n    for each string s: append str(len(s)) + \"#\" + s\n    return parts joined once   (one join copies each char once; += in a loop is quadratic)\ndecode(s):\n    out = [], i = 0\n    while i < len(s):\n        j = index of the first '#' at or after i\n        length = int(s[i..j))\n        start = j + 1\n        append s[start..start + length)\n        i = start + length\n    return out"
+  }
+}

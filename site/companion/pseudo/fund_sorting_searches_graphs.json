@@ -1,0 +1,56 @@
+{
+  "sorting/01_insertion_sort": {
+    "algorithm": "a = copy of nums\nfor i from 1 to len(a) - 1:\n    key = a[i]\n    j = i - 1\n    while j >= 0 and a[j] > key:   (j may reach 0: the first element can shift too)\n        a[j + 1] = a[j]\n        j = j - 1\n    a[j + 1] = key\nreturn a"
+  },
+  "sorting/02_merge_sort": {
+    "algorithm": "merge(left, right):\n    out = [], i = 0, j = 0\n    while both runs have elements left:\n        if left[i] <= right[j]: append left[i], i = i + 1   (<= so the left wins ties: stable)\n        else: append right[j], j = j + 1\n    append the rest of left, then the rest of right\n    return out\nmerge_sort(nums):\n    if len(nums) <= 1: return a copy\n    mid = len(nums) // 2\n    left = merge_sort(nums[:mid]), right = merge_sort(nums[mid:])\n    return merge(left, right)"
+  },
+  "sorting/03_quick_sort": {
+    "algorithm": "partition(a, lo, hi):\n    pivot = a[hi], i = lo - 1\n    for j from lo to hi - 1:   (stop before hi: the pivot itself must not be swapped)\n        if a[j] <= pivot: i = i + 1, swap a[i] and a[j]\n    swap a[i + 1] and a[hi]\n    return i + 1\nsort_range(a, lo, hi):\n    if lo < hi:\n        p = partition(a, lo, hi)\n        sort_range(a, lo, p - 1), sort_range(a, p + 1, hi)\nquick_sort(nums):\n    a = copy of nums, sort_range(a, 0, len(a) - 1), return a"
+  },
+  "sorting/04_heap_sort": {
+    "algorithm": "sift_down(a, i, size):\n    loop:\n        child = 2 * i + 1\n        if child + 1 < size and a[child + 1] > a[child]: child = child + 1\n        if child >= size or a[child] <= a[i]: return\n        swap a[i] and a[child], i = child\nheap_sort(nums):\n    a = copy of nums, n = len(a)\n    for i from n // 2 - 1 down to 0: sift_down(a, i, n)\n    for end from n - 1 down to 1:\n        swap a[0] and a[end]\n        sift_down(a, 0, end)   (sift inside the shrunk heap a[:end], not the whole array)\n    return a"
+  },
+  "sorting/05_counting_and_bucket_sort": {
+    "algorithm": "counting_sort(nums):\n    if nums is empty: return []\n    counts = [0] * (max(nums) + 1)   (values run 0..max inclusive)\n    for x in nums: counts[x] = counts[x] + 1\n    out = []\n    for value from 0 to len(counts) - 1: append value counts[value] times\n    return out\nbucket_sort(xs):\n    n = len(xs), buckets = n empty lists\n    for x in xs: append x to buckets[int(x * n)]\n    out = []\n    for bucket in buckets: append sorted(bucket)   (a bucket groups nearby values; still sort it)\n    return out"
+  },
+  "sorting/06_python_sort_keys_and_stability": {
+    "algorithm": "dept_then_salary_desc(record): return (dept, -salary)   (negating flips just that field)\nsalary_of(record): return salary\ndept_of(record): return dept\nsort_one_pass(records):\n    return sorted(records, key = dept_then_salary_desc)\nsort_two_passes(records):\n    by_salary = sorted(records, key = salary_of, descending)\n    return sorted(by_salary, key = dept_of)   (sort the output of the first pass; stable keeps it)"
+  },
+  "searches/01_binary_search_variants": {
+    "algorithm": "binary_search(nums, x):\n    lo = 0, hi = len(nums) - 1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if nums[mid] == x: return mid\n        if nums[mid] < x: lo = mid + 1 else hi = mid - 1\n    return -1\nlower_bound(nums, x):\n    lo = 0, hi = len(nums)   (hi may be the answer: \"no such index\" is len(nums))\n    while lo < hi:\n        mid = (lo + hi) // 2\n        if nums[mid] < x: lo = mid + 1 else hi = mid\n    return lo\nupper_bound(nums, x): same loop with nums[mid] <= x\ncount_of(nums, x): return upper_bound(nums, x) - lower_bound(nums, x)"
+  },
+  "searches/02_binary_search_on_answer": {
+    "algorithm": "can_ship(weights, days, cap):\n    ships = 1, load = 0\n    for w in weights:\n        if load + w > cap: ships = ships + 1, load = 0\n        load = load + w\n    return ships <= days\nship_within_days(weights, days):\n    lo = max(weights), hi = sum(weights)\n    while lo < hi:\n        mid = (lo + hi) // 2\n        if can_ship(weights, days, mid): hi = mid   (mid works; a smaller capacity might too)\n        else: lo = mid + 1\n    return lo"
+  },
+  "searches/03_bfs_grid_shortest_path": {
+    "algorithm": "rows, cols = size of grid\nif grid[0][0] == 1: return -1\ndist = {(0, 0): 1}, queue = [(0, 0)]\nwhile the queue is not empty:\n    (r, c) = pop the front\n    if (r, c) is the bottom-right: return dist[(r, c)]\n    for each of the four neighbours (nr, nc):\n        skip if out of bounds\n        skip if grid[nr][nc] == 1 or (nr, nc) already in dist\n        dist[(nr, nc)] = dist[(r, c)] + 1   (mark when enqueued, or cells get queued twice)\n        push (nr, nc)\nreturn -1"
+  },
+  "searches/04_dfs_recursive_and_iterative": {
+    "algorithm": "dfs_recursive(graph, node, seen, order):\n    add node to seen, append node to order\n    for neighbour in graph[node]:\n        if neighbour not in seen: dfs_recursive(graph, neighbour, seen, order)\n    return order\ndfs_iterative(graph, start):\n    order = [], seen = {}, stack = [start]\n    while the stack is not empty:\n        node = pop the top\n        if node in seen: continue   (a stale copy: the node was already reached another way)\n        add node to seen, append node to order\n        for neighbour in reversed(graph[node]): push neighbour\n    return order"
+  },
+  "searches/05_connected_components": {
+    "algorithm": "build_adjacency(n, edges):\n    adj = n empty lists\n    for (a, b) in edges: append b to adj[a], append a to adj[b]\n    return adj\ncount_components(n, edges):\n    adj = build_adjacency(n, edges), seen = {}, count = 0\n    for start from 0 to n - 1:\n        if start in seen: continue\n        count = count + 1   (a fresh start node means a brand-new component)\n        add start to seen, queue = [start]\n        while the queue is not empty:\n            node = pop the front\n            for neighbour in adj[node] not in seen: add to seen, push neighbour\n    return count"
+  },
+  "searches/06_multi_source_bfs_01_matrix": {
+    "algorithm": "rows, cols = size of mat\ndist = grid of -1, queue = empty\nfor each cell (r, c):\n    if mat[r][c] == 0: dist[r][c] = 0, push (r, c)   (all sources go in before the BFS starts)\nwhile the queue is not empty:\n    (r, c) = pop the front\n    for each of the four neighbours (nr, nc):\n        skip if out of bounds\n        skip if dist[nr][nc] != -1\n        dist[nr][nc] = dist[r][c] + 1\n        push (nr, nc)\nreturn dist"
+  },
+  "graphs/01_adjacency_list_bfs_dfs": {
+    "algorithm": "build_adjacency(n, edges, directed):\n    adj = n empty lists\n    for (u, v) in edges: append v to adj[u]; if not directed also append u to adj[v]\n    sort each list, return adj\nbfs(adj, source):\n    order = [], seen = {source}, queue = [source]\n    while the queue is not empty:\n        node = pop the front, append node to order\n        for neighbour in adj[node] not in seen: add to seen, push neighbour   (mark on enqueue)\n    return order\ndfs(adj, source):\n    order = [], seen = {}, stack = [source]\n    while the stack is not empty:\n        node = pop the top\n        if node in seen: continue\n        add node to seen, append node to order\n        for neighbour in reversed(adj[node]) not in seen: push neighbour\n    return order"
+  },
+  "graphs/02_topological_sort_kahn_and_dfs": {
+    "algorithm": "build_adjacency(n, edges): adj = n empty lists; for (u, v) in edges append v to adj[u]\ntopological_sort_kahn(n, edges):\n    adj = build_adjacency(n, edges), indegree[v] = number of edges into v\n    queue = every node with indegree 0, order = []\n    while the queue is not empty:\n        node = pop the front, append node to order\n        for neighbour in adj[node]:\n            indegree[neighbour] = indegree[neighbour] - 1\n            if indegree[neighbour] == 0: push neighbour\n    if len(order) < n: return []   (nodes never reached indegree 0: a cycle)\n    return order\nvisit(adj, node, color, post):\n    color[node] = grey\n    for neighbour in adj[node]:\n        if grey: return false; if white and not visit(adj, neighbour, color, post): return false\n    color[node] = black, append node to post, return true\ntopological_sort_dfs(n, edges):\n    adj = build_adjacency(n, edges), color = all white, post = []\n    for node from 0 to n - 1: if white and not visit(adj, node, color, post): return []\n    return post reversed"
+  },
+  "graphs/03_union_find": {
+    "algorithm": "make_sets(n): parent = [0, 1, ..., n - 1], size = [1] * n\nfind(parent, x):\n    if parent[x] != x: parent[x] = find(parent, parent[x])   (path compression: point x at the root)\n    return parent[x]\nunion(parent, size, a, b):\n    root_a = find(a), root_b = find(b)\n    if root_a == root_b: return false\n    if size[root_a] < size[root_b]: swap root_a and root_b\n    parent[root_b] = root_a, size[root_a] = size[root_a] + size[root_b]\n    return true\nconnected(parent, a, b): return find(a) == find(b)\ncount_components(parent): count the x with parent[x] == x"
+  },
+  "graphs/04_kruskal_mst": {
+    "algorithm": "find(parent, x):\n    while parent[x] != x: parent[x] = parent[parent[x]], x = parent[x]\n    return x\nkruskal(n, edges):\n    by_weight = (w, u, v) for every edge, sorted\n    parent = [0, 1, ..., n - 1], total = 0, tree = []\n    for (w, u, v) in by_weight:\n        root_u = find(u), root_v = find(v)\n        if root_u == root_v: continue   (already connected: this edge would close a cycle)\n        parent[root_u] = root_v\n        total = total + w, append (u, v, w) to tree\n        if len(tree) == n - 1: break\n    return (total, tree)"
+  },
+  "graphs/05_prim_mst": {
+    "algorithm": "build_adjacency(n, edges): adj = n empty lists; for (u, v, w) append (w, v) to adj[u], (w, u) to adj[v]\nprim(n, edges, start):\n    adj = build_adjacency(n, edges), in_tree = {}, total = 0, tree = []\n    heap = [(0, start, start)]\n    while the heap is not empty and len(in_tree) < n:\n        (w, node, parent) = pop the smallest\n        if node in in_tree: continue   (stale: node joined the tree through a cheaper edge)\n        add node to in_tree\n        if node != start: total = total + w, append (parent, node, w) to tree\n        for (next_w, neighbour) in adj[node] not in in_tree: push (next_w, neighbour, node)\n    return (total, tree)"
+  },
+  "graphs/06_dijkstra": {
+    "algorithm": "build_adjacency(n, edges): adj = n empty lists; for (u, v, w) in edges append (v, w) to adj[u]\ndijkstra(n, edges, source):\n    adj = build_adjacency(n, edges)\n    dist = {source: 0}, heap = [(0, source)]\n    while the heap is not empty:\n        (d, node) = pop the smallest\n        if d > dist[node]: continue   (stale: a shorter route to node was found after this push)\n        for (neighbour, w) in adj[node]:\n            if d + w < dist.get(neighbour, infinity):\n                dist[neighbour] = d + w\n                push (d + w, neighbour)\n    return dist"
+  }
+}

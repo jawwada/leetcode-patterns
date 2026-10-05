@@ -1,0 +1,47 @@
+{
+  "heaps/01_heapify_by_hand": {
+    "algorithm": "sift_down(heap, i, n):\n    loop:\n        left = 2i + 1, right = 2i + 2, smallest = i\n        if left < n and heap[left] < heap[smallest]: smallest = left\n        if right < n and heap[right] < heap[smallest]: smallest = right   (compare with the smaller candidate)\n        if smallest == i: stop\n        swap heap[i] and heap[smallest]\n        i = smallest\nheapify(nums):\n    heap = copy of nums, n = its length\n    for i from n//2 - 1 down to 0:   (the last parent first, the root last)\n        sift_down(heap, i, n)\n    return heap"
+  },
+  "heaps/02_push_and_pop_by_hand": {
+    "algorithm": "heap_push(heap, value):\n    append value, i = last index\n    while i > 0:\n        parent = (i - 1) // 2\n        if heap[parent] <= heap[i]: stop   (float up only while the parent is bigger)\n        swap heap[i] and heap[parent]\n        i = parent\nheap_pop(heap):\n    top = heap[0], last = remove the final element\n    if heap is now empty: return top\n    heap[0] = last, i = 0, n = length\n    loop:\n        child = 2i + 1\n        if child + 1 < n and heap[child + 1] < heap[child]: child = child + 1   (the smaller child)\n        if child >= n or heap[i] <= heap[child]: stop\n        swap heap[i] and heap[child]\n        i = child\n    return top"
+  },
+  "heaps/03_top_k_with_size_k_min_heap": {
+    "algorithm": "top_k_largest(nums, k):\n    heap = empty min-heap\n    for each value in nums:\n        if heap has fewer than k values: push value\n        else if value > heap[0]: push value then pop the smallest   (the root is the gatekeeper)\n    return heap sorted ascending\nkth_largest(nums, k):\n    return top_k_largest(nums, k)[0]   (the root of the size-k min-heap)"
+  },
+  "heaps/04_max_heap_by_negation_and_tuples": {
+    "algorithm": "max_push(heap, value):\n    push -value   (the smallest negative is the largest original)\nmax_pop(heap):\n    return -(pop the smallest)\npop_in_priority_order(tasks):\n    heap = empty min-heap, arrival = 0\n    for each (priority, payload) in tasks:\n        push (-priority, arrival, payload)   (arrival breaks ties, so payloads never compare)\n        arrival = arrival + 1\n    order = empty list\n    while heap is not empty:\n        (neg_priority, arrival, payload) = pop the smallest\n        append payload to order\n    return order"
+  },
+  "heaps/06_merge_k_sorted_arrays": {
+    "algorithm": "merge_k_sorted(arrays):\n    heap = empty list\n    for each array index i:\n        if arrays[i] is not empty: add (arrays[i][0], i, 0)   (skip empty arrays: no head to offer)\n    heapify heap\n    out = empty list\n    while heap is not empty:\n        (value, i, j) = pop the smallest\n        append value to out\n        if j + 1 < length of arrays[i]: push (arrays[i][j + 1], i, j + 1)\n    return out"
+  },
+  "tries/02_trie_delete": {
+    "algorithm": "insert(root, word):\n    node = root\n    for each ch in word:\n        if ch not a child of node: add a new child for ch\n        node = that child\n    mark node as a word end\nbuild_trie(words):\n    root = new node, insert every word, return root\ndelete(root, word):\n    path = [root], node = root\n    for each ch in word:\n        if ch not a child of node: return false   (the word is not in the trie)\n        node = that child, append node to path\n    if node is not a word end: return false\n    clear the end flag of node\n    for i from last index of word down to 0:\n        parent = path[i], child = path[i + 1]\n        if child has children or ends a word: stop   (another word still needs it)\n        remove word[i] from parent's children\n    return true"
+  },
+  "tries/03_autocomplete_collect_words_with_prefix": {
+    "algorithm": "insert(root, word):\n    node = root\n    for each ch in word:\n        if ch not a child of node: add a new child for ch\n        node = that child\n    mark node as a word end\nbuild_trie(words):\n    root = new node, insert every word, return root\ncollect(node, word_so_far, out):\n    if node ends a word: append word_so_far to out\n    for each ch in node's children in sorted order:   (sorted children give sorted output)\n        collect(child for ch, word_so_far + ch, out)\nwords_with_prefix(root, prefix):\n    node = root\n    for each ch in prefix:\n        if ch not a child of node: return empty list\n        node = that child\n    out = empty list\n    collect(node, prefix, out)\n    return out"
+  },
+  "backtracking/02_subsets_with_duplicates": {
+    "algorithm": "backtrack(nums, start, path, res):\n    append a copy of path to res\n    for i from start to last index:\n        if i > start and nums[i] == nums[i - 1]: skip   (only the first of equal values on a level)\n        append nums[i] to path\n        backtrack(nums, i + 1, path, res)\n        remove the last element of path\nsubsets_with_duplicates(nums):\n    nums = sorted nums\n    res = empty list\n    backtrack(nums, 0, empty path, res)\n    return res sorted"
+  },
+  "backtracking/03_combinations_n_choose_k": {
+    "algorithm": "backtrack(n, k, start, path, res):\n    if path has k numbers: append a copy to res, return\n    for i from start to n:\n        if n - i + 1 < k - length of path: stop   (too few numbers left to fill the open slots)\n        append i to path\n        backtrack(n, k, i + 1, path, res)\n        remove the last element of path\ncombinations(n, k):\n    res = empty list\n    backtrack(n, k, 1, empty path, res)\n    return res sorted"
+  },
+  "backtracking/06_permutations_with_duplicates": {
+    "algorithm": "backtrack(nums, used, path, res):\n    if path is as long as nums: append a copy to res, return\n    for each index i:\n        if used[i]: skip\n        if i > 0 and nums[i] == nums[i - 1] and not used[i - 1]: skip   (equal values left to right)\n        used[i] = true, append nums[i] to path\n        backtrack(nums, used, path, res)\n        remove the last element of path, used[i] = false\npermutations_with_duplicates(nums):\n    nums = sorted nums\n    used = all false\n    res = empty list\n    backtrack(nums, used, empty path, res)\n    return res sorted"
+  },
+  "bits/01_get_set_clear_toggle_bits": {
+    "algorithm": "get_bit(n, i):\n    return (n >> i) & 1\nset_bit(n, i):\n    mask = 1 << i\n    return n | mask\nclear_bit(n, i):\n    mask = 1 << i\n    return n & ~mask   (~mask is 0 at position i and 1 everywhere else)\ntoggle_bit(n, i):\n    mask = 1 << i\n    return n ^ mask\nupdate_bit(n, i, v):\n    cleared = clear_bit(n, i)\n    return cleared | (v << i)"
+  },
+  "bits/02_count_bits_and_lowest_set_bit": {
+    "algorithm": "count_bits(n):\n    count = 0\n    while n != 0:\n        n = n & (n - 1)   (one set bit disappears per round)\n        count = count + 1\n    return count\nlowest_set_bit(n):\n    return n & -n\nis_power_of_two(n):\n    if n <= 0: return false\n    return n & (n - 1) == 0"
+  },
+  "bits/03_xor_tricks_single_number_missing_number": {
+    "algorithm": "single_number(nums):\n    acc = 0\n    for each x in nums: acc = acc ^ x\n    return acc\nmissing_number(nums):\n    acc = n   (index n has no element to pair with)\n    for each index i: acc = acc ^ i ^ nums[i]\n    return acc\ntwo_single_numbers(nums):\n    both = XOR of all nums   (pairs cancel: both == a ^ b)\n    diff = both & -both   (lowest set bit: set in exactly one of a, b)\n    first = 0\n    for each x in nums:\n        if x & diff != 0: first = first ^ x\n    second = both ^ first\n    return [first, second] sorted"
+  },
+  "bits/04_bitmask_subset_enumeration": {
+    "algorithm": "subsets_by_bitmask(items):\n    n = length of items, out = empty list\n    for mask from 0 to 2^n - 1:\n        chosen = empty list\n        for i from 0 to n - 1:\n            if (mask >> i) & 1: append items[i] to chosen   (bit i says items[i] is in)\n        append chosen to out\n    return out\nsubmasks(mask):\n    out = empty list, sub = mask\n    while sub != 0:\n        append sub to out\n        sub = (sub - 1) & mask   (the & keeps the borrow inside the mask's bits)\n    append 0 to out\n    return out"
+  },
+  "bits/05_reverse_bits_and_shifts": {
+    "algorithm": "reverse_bits(n):\n    result = 0\n    repeat 32 times:   (leading zeros count too, so always 32 rounds)\n        bit = n & 1\n        result = (result << 1) | bit\n        n = n >> 1\n    return result\nlogical_right_shift(n, k):\n    unsigned = n & 0xFFFFFFFF   (the 32-bit pattern as a positive number)\n    return unsigned >> k"
+  }
+}

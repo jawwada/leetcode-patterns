@@ -1,0 +1,54 @@
+{
+ "maximum_subarray": {
+  "brute": "best = nums[0]\nfor each start index:\n    total = 0\n    for each end index from start to n - 1:\n        total = total + nums[end]\n        if total > best: best = total\nreturn best",
+  "optimal": "current = nums[0], best = nums[0]\nfor each index i from 1 to n - 1:\n    if current < 0:\n        current = nums[i]   (a negative running sum is dead weight: restart here)\n    else:\n        current = current + nums[i]\n    if current > best: best = current\nreturn best"
+ },
+ "jump_game": {
+  "brute": "can_reach_end(i):\n    if i >= n - 1: return true\n    for each step from 1 to nums[i]:\n        if can_reach_end(i + step): return true\n    return false\nreturn can_reach_end(0)",
+  "optimal": "reach = 0   (furthest index we can stand on so far)\nfor each index i:\n    if i > reach: return false   (beyond the frontier: we never got here)\n    if i + nums[i] > reach: reach = i + nums[i]\nreturn true"
+ },
+ "jump_game_ii": {
+  "brute": "jumps_to = array of n values -1, jumps_to[0] = 0\nqueue = [0]   (BFS, one level per jump)\nwhile the queue is not empty:\n    i = pop from the front of the queue\n    if i == n - 1: return jumps_to[i]\n    furthest = min(n - 1, i + nums[i])\n    for each j from i + 1 to furthest:\n        if jumps_to[j] == -1:\n            jumps_to[j] = jumps_to[i] + 1\n            append j to the queue\nreturn jumps_to[n - 1]",
+  "optimal": "jumps = 0, current_end = 0, farthest = 0\nfor each index i from 0 to n - 2:\n    if i + nums[i] > farthest: farthest = i + nums[i]\n    if i == current_end:   (stepping off the current window: one more jump)\n        jumps = jumps + 1\n        current_end = farthest\nreturn jumps"
+ },
+ "gas_station": {
+  "brute": "for each start station:\n    tank = 0, completed = true\n    for each of the n steps around the circle:\n        i = (start + step) mod n\n        tank = tank + gas[i] - cost[i]\n        if tank < 0: completed = false, break\n    if completed: return start\nreturn -1",
+  "optimal": "total = 0, tank = 0, start = 0\nfor each station i:\n    diff = gas[i] - cost[i]\n    total = total + diff\n    tank = tank + diff\n    if tank < 0:   (no station from start to i can work: skip past i)\n        start = i + 1, tank = 0\nif total < 0: return -1\nreturn start"
+ },
+ "partition_labels": {
+  "brute": "sizes = [], start = 0\nfor each index i:\n    part_letters = set of letters in s[start..i]\n    appears_later = false\n    for each j from i + 1 to n - 1:\n        if s[j] is in part_letters: appears_later = true, break\n    if not appears_later:   (no letter of the part shows up again: cut here)\n        append i - start + 1 to sizes\n        start = i + 1\nreturn sizes",
+  "optimal": "last = empty dict\nfor each index i: last[s[i]] = i   (final index of every letter)\nsizes = [], start = 0, end = 0\nfor each index i:\n    if last[s[i]] > end: end = last[s[i]]\n    if i == end:   (nothing inside points further right: cut here)\n        append end - start + 1 to sizes\n        start = i + 1\nreturn sizes"
+ },
+ "number_of_1_bits": {
+  "brute": "count = 0\nfor each bit position i from 0 to 31:\n    bit = (n shifted right by i) AND 1\n    if bit == 1: count = count + 1\nreturn count",
+  "optimal": "count = 0\nwhile n != 0:\n    n = n AND (n - 1)   (clears the lowest set bit)\n    count = count + 1\nreturn count"
+ },
+ "counting_bits": {
+  "brute": "result = empty list\nfor each num from 0 to n:\n    count = 0\n    for each bit position b from 0 to 31:\n        if bit b of num is set: count = count + 1\n    append count to result\nreturn result",
+  "optimal": "bits = n + 1 zeros\nfor each i from 1 to n:\n    half = i shifted right by 1\n    bits[i] = bits[half] + (lowest bit of i)   (drop one bit, reuse the smaller answer)\nreturn bits"
+ },
+ "reverse_bits": {
+  "brute": "bits = n written as a 32-character binary string\nreversed_bits = bits read right to left\nreturn reversed_bits parsed as a base-2 integer",
+  "optimal": "result = 0\nrepeat 32 times:\n    lowest = n AND 1\n    result = (result shifted left by 1) OR lowest   (push the input's lowest bit onto the output)\n    n = n shifted right by 1\nreturn result"
+ },
+ "single_number": {
+  "brute": "for each x in nums:\n    count = 0\n    for each y in nums:\n        if y == x: count = count + 1\n    if count == 1: return x\nreturn -1",
+  "optimal": "result = 0\nfor each x in nums:\n    result = result XOR x   (pairs cancel, the lone value survives)\nreturn result"
+ },
+ "missing_number": {
+  "brute": "for each candidate from 0 to n:\n    found = false\n    for each x in nums:\n        if x == candidate: found = true, break\n    if not found: return candidate\nreturn -1",
+  "optimal": "result = n   (index n has no slot in the array)\nfor each index i:\n    result = result XOR i\n    result = result XOR nums[i]   (every present value cancels with its index)\nreturn result"
+ },
+ "rotate_image": {
+  "brute": "rotated = n x n matrix of zeros\nfor each row r:\n    for each column c:\n        rotated[c][n - 1 - r] = matrix[r][c]\nfor each row r:\n    matrix[r] = rotated[r]",
+  "optimal": "for each row r:\n    for each column c > r:\n        swap matrix[r][c] and matrix[c][r]   (transpose)\nfor each row in matrix:\n    reverse the row   (transpose + horizontal flip = 90 degrees clockwise)"
+ },
+ "spiral_matrix": {
+  "brute": "visited = rows x cols grid of false\nrow_step = [0, 1, 0, -1], col_step = [1, 0, -1, 0]   (right, down, left, up)\nr = 0, c = 0, direction = 0, result = empty list\nrepeat rows * cols times:\n    append matrix[r][c] to result, mark (r, c) visited\n    next_r = r + row_step[direction], next_c = c + col_step[direction]\n    if (next_r, next_c) is off the grid or visited:\n        direction = (direction + 1) mod 4\n        next_r = r + row_step[direction], next_c = c + col_step[direction]\n    r = next_r, c = next_c\nreturn result",
+  "optimal": "result = empty list\ntop = 0, bottom = rows - 1, left = 0, right = cols - 1\nwhile top <= bottom and left <= right:\n    for each c from left to right: append matrix[top][c]\n    top = top + 1\n    for each r from top to bottom: append matrix[r][right]\n    right = right - 1\n    if top <= bottom:   (a row is still left, else the top row would repeat)\n        for each c from right down to left: append matrix[bottom][c]\n        bottom = bottom - 1\n    if left <= right:\n        for each r from bottom down to top: append matrix[r][left]\n        left = left + 1\nreturn result"
+ },
+ "set_matrix_zeroes": {
+  "brute": "snapshot = copy of every row of matrix\nfor each row r:\n    for each column c:\n        if snapshot[r][c] == 0:\n            set every cell in row r of matrix to 0\n            set every cell in column c of matrix to 0",
+  "optimal": "first_col_zero = false\nfor each row r: if matrix[r][0] == 0: first_col_zero = true   (column 0 needs its own flag)\nfor each row r:\n    for each column c from 1 to cols - 1:\n        if matrix[r][c] == 0: matrix[r][0] = 0, matrix[0][c] = 0\nfor each row r from 1 to rows - 1:\n    for each column c from 1 to cols - 1:\n        if matrix[r][0] == 0 or matrix[0][c] == 0: matrix[r][c] = 0\nif matrix[0][0] == 0: set every cell in row 0 to 0\nif first_col_zero: set every cell in column 0 to 0"
+ }
+}

@@ -1,0 +1,444 @@
+<title>Brute to Optimal</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: the book's companion. Same paper, same faces: a chapter list on the left, one reading column, and
+   per problem exactly two sections (brute force, optimal), each with a runnable Python / pseudocode panel. */
+:root{
+  --paper:#fbfbf8; --panel:#ffffff; --ink:#1d2024; --ink-soft:#5a6068; --rule:#dcdcd4;
+  --accent:#0e6b65; --accent-soft:#e1f0ee;
+  --mark:#b5731a; --mark-soft:#f8ecd6;
+  --easy:#1d7a4a; --medium:#b07a12; --hard:#b8282f; --ok:#1d7a4a; --err:#b8282f;
+  --display:"Bricolage Grotesque",system-ui,sans-serif;
+  --body:"Literata",Georgia,serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --measure:72ch; --fs:17px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#15171a; --panel:#1c1f23; --ink:#e8e6df; --ink-soft:#a0a6ad; --rule:#2e3237;
+  --accent:#6fc8c0; --accent-soft:#163331; --mark:#e0a94f; --mark-soft:#3a2d16;
+  --easy:#6fd39a; --medium:#e2b655; --hard:#ff7b82; --ok:#6fd39a; --err:#ff7b82; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#15171a; --panel:#1c1f23; --ink:#e8e6df; --ink-soft:#a0a6ad; --rule:#2e3237;
+  --accent:#6fc8c0; --accent-soft:#163331; --mark:#e0a94f; --mark-soft:#3a2d16;
+  --easy:#6fd39a; --medium:#e2b655; --hard:#ff7b82; --ok:#6fd39a; --err:#ff7b82; color-scheme:dark }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:var(--fs)/1.65 var(--body)}
+a{color:var(--accent)}
+button{font:14px var(--display);color:inherit;background:none;border:1px solid var(--rule);border-radius:6px;padding:6px 10px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.on{background:var(--accent-soft);border-color:var(--accent)}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,[tabindex]:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3,h4{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+code,pre,textarea{font-family:var(--mono)}
+.eyebrow{font:600 11px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+.muted{color:var(--ink-soft)}
+[hidden]{display:none!important}
+
+.app{display:grid;grid-template-columns:300px minmax(0,1fr);height:100%}
+.toc{border-right:1px solid var(--rule);background:var(--panel);overflow:auto;display:flex;flex-direction:column}
+.toc-head{padding:20px 18px 14px;border-bottom:1px solid var(--rule)}
+.toc-head h1{font-size:24px;font-weight:800;letter-spacing:-.01em}
+.toc-head h1 a{color:inherit;text-decoration:none}
+.toc-head .sub{font-size:13px;color:var(--ink-soft);margin-top:4px;font-family:var(--display)}
+.toc-head input{width:100%;margin-top:12px;padding:7px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);font:14px var(--display)}
+.pystatus{margin-top:10px;font:12px var(--display);color:var(--ink-soft);display:flex;gap:6px;align-items:center}
+.pystatus .d{width:8px;height:8px;border-radius:50%;background:var(--rule);flex:none}
+.pystatus.ready .d{background:var(--ok)}.pystatus.fail .d{background:var(--err)}.pystatus.loading .d{background:var(--mark)}
+.toc nav{padding:8px 8px 20px;font-family:var(--display)}
+.toc .ch{margin:4px 0}
+.toc .ch>button{display:flex;width:100%;justify-content:space-between;align-items:center;border:0;padding:8px 10px;border-radius:6px;text-align:left;font-weight:700;font-size:14px}
+.toc .ch>button:hover{background:var(--accent-soft)}
+.toc .ch.open>button,.toc .ch.cur>button{color:var(--accent)}
+.toc .ch .n{font:600 12px var(--mono);color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.toc .secs{display:none;flex-direction:column;padding:2px 0 6px 10px;border-left:2px solid var(--rule);margin-left:14px}
+.toc .ch.open .secs{display:flex}
+.toc .secs a{display:flex;gap:8px;align-items:baseline;text-decoration:none;color:var(--ink);font-size:13.5px;padding:5px 8px;border-radius:5px}
+.toc .secs a:hover{background:var(--accent-soft)}
+.toc .secs a.on{color:var(--accent);font-weight:700}
+.toc .secs a .d{width:7px;height:7px;border-radius:50%;flex:none;background:var(--rule)}
+.toc .secs a .d.Easy{background:var(--easy)}.toc .secs a .d.Medium{background:var(--medium)}.toc .secs a .d.Hard{background:var(--hard)}
+.toc .secs a.done .d{box-shadow:0 0 0 2px var(--accent)}
+.toc .secs a.done{text-decoration:line-through;text-decoration-color:var(--rule)}
+.toc .secs a.bg{font-style:italic}
+.toctoggle{display:none;margin-top:10px}
+
+.main{min-width:0;overflow:auto;padding-block:28px 72px;padding-inline:clamp(16px,5vw,64px)}
+.page{max-width:var(--measure);margin:0 auto}
+.pagehead{margin-bottom:22px}
+.pagehead .crumbs{font-family:var(--display);font-size:13px;color:var(--ink-soft);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pagehead .crumbs a{text-decoration:none}
+.pagehead h1{font-size:clamp(28px,4vw,40px);letter-spacing:-.015em;margin:8px 0 10px}
+.pagehead .meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-family:var(--display);font-size:14px;color:var(--ink-soft)}
+.pill{display:inline-block;font:600 11px/1 var(--display);letter-spacing:.04em;padding:4px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.pill.Easy{color:var(--easy)}.pill.Medium{color:var(--medium)}.pill.Hard{color:var(--hard)}
+.donebox{display:flex;gap:8px;align-items:center;font:14px var(--display);cursor:pointer;margin-left:auto}
+.donebox input{width:16px;height:16px;accent-color:var(--accent)}
+
+.prose>*{max-width:var(--measure)}
+.prose h2{font-size:24px;margin:40px 0 12px;padding-top:14px;border-top:1px solid var(--rule)}
+.prose h2:first-of-type{border-top:0;padding-top:0;margin-top:26px}
+.prose h3{font-size:19px;margin:26px 0 8px}
+.prose p{margin:0 0 14px}
+.prose ul,.prose ol{padding-left:24px;margin:0 0 14px}.prose li{margin:4px 0}
+.prose table{border-collapse:collapse;font-family:var(--display);font-size:14.5px;margin:0 0 16px;display:block;overflow-x:auto;max-width:100%}
+.prose th,.prose td{border:1px solid var(--rule);padding:6px 10px;text-align:left;vertical-align:top}
+.prose th{background:var(--accent-soft)}
+.prose pre{margin:0 0 16px;padding:14px 16px;background:var(--panel);border:1px solid var(--rule);border-radius:8px;overflow-x:auto;font-size:13.5px;line-height:1.45}
+.prose pre.drawing{background-image:linear-gradient(var(--rule) 1px,transparent 1px),linear-gradient(90deg,var(--rule) 1px,transparent 1px);background-size:16px 16px;background-position:-1px -1px}
+.prose code:not(pre code){background:var(--accent-soft);padding:1px 5px;border-radius:4px;font-size:.9em}
+.prose blockquote{margin:0 0 14px;padding:10px 16px;border-left:4px solid var(--mark);background:var(--mark-soft);border-radius:0 8px 8px 0}
+.prose blockquote p:last-child{margin:0}
+
+.statement{margin:6px 0 8px;padding:16px 18px;background:var(--panel);border:1px solid var(--rule);border-left:4px solid var(--accent);border-radius:0 8px 8px 0;font-size:.97em}
+.statement .eyebrow{margin-bottom:8px;color:var(--accent)}
+.statement p{margin:0 0 8px}.statement p:last-child{margin:0}
+.statement pre{margin:8px 0 0;padding:10px 12px;background:var(--paper);border:1px solid var(--rule);border-radius:6px;overflow-x:auto;font-size:13px;line-height:1.45;white-space:pre-wrap}
+.cost{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-family:var(--display);font-size:13.5px;color:var(--ink-soft);margin:0 0 14px}
+.cost code{background:var(--accent-soft);padding:2px 7px;border-radius:4px;font-size:13px;color:var(--ink)}
+.idea{margin:0 0 14px;padding:10px 16px;border-left:4px solid var(--mark);background:var(--mark-soft);border-radius:0 8px 8px 0}
+.idea .eyebrow{color:var(--mark);margin-bottom:4px}
+
+/* code panel: tabs, editor, output */
+.panel{margin:4px 0 8px;border:1px solid var(--rule);border-radius:8px;background:var(--panel);overflow:hidden}
+.panel .bar{display:flex;gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.panel .tabs{display:flex;gap:4px}
+.panel .tabs button{border:0;padding:6px 10px;border-radius:6px;font-weight:600;color:var(--ink-soft)}
+.panel .tabs button.on{background:var(--accent-soft);color:var(--accent)}
+.panel .acts{margin-left:auto;display:flex;gap:6px;align-items:center}
+.panel .acts .run{background:var(--accent);color:var(--paper);border-color:var(--accent);font-weight:700}
+.panel .acts .run:hover{filter:brightness(1.1)}
+.panel .hint{font:12px var(--display);color:var(--ink-soft)}
+.editor{display:grid;overflow-x:auto;min-height:60px}
+.editor pre,.editor textarea{grid-area:1/1;margin:0;padding:14px 16px;font-size:13.5px;line-height:1.5;tab-size:4;white-space:pre;overflow:hidden;border:0;border-radius:0;min-width:max-content}
+.editor pre{background:var(--panel);pointer-events:none}
+.editor pre code{background:none;padding:0;font-size:inherit;white-space:pre}
+.editor textarea{width:100%;height:100%;background:transparent;color:transparent;caret-color:var(--ink);resize:none;outline:none;display:block}
+.editor textarea::selection{background:var(--accent-soft)}
+.editor.plain textarea{color:var(--ink)}
+.panel .pseudo{margin:0;padding:14px 16px;font-size:13.5px;line-height:1.55;white-space:pre;overflow-x:auto;background:var(--panel);background-image:linear-gradient(var(--rule) 1px,transparent 1px);background-size:100% 1.55em;background-position:0 14px}
+.panel .out{margin:0;padding:12px 16px;border-top:1px solid var(--rule);background:var(--paper);font-size:13px;line-height:1.5;white-space:pre-wrap;max-height:260px;overflow:auto}
+.panel .out.err{color:var(--err)}
+.panel .out:empty{display:none}
+.hljs-keyword,.hljs-built_in{color:var(--accent);font-weight:600}
+.hljs-string{color:var(--mark)}.hljs-number{color:var(--hard)}
+.hljs-comment{color:var(--ink-soft);font-style:italic}
+.hljs-title{font-weight:600}
+
+.pager{display:flex;justify-content:space-between;gap:16px;margin:48px 0 0;padding-top:18px;border-top:1px solid var(--rule);font-family:var(--display);flex-wrap:wrap}
+.pager a{text-decoration:none;max-width:48%;display:flex;flex-direction:column;gap:2px}
+.pager a span:first-child{font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em}
+.pager a.next{text-align:right;margin-left:auto}
+
+/* chapter page */
+.overview{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:8px;background:var(--panel);overflow:hidden;font-family:var(--display)}
+.overview a{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 16px;border-bottom:1px solid var(--rule);text-decoration:none;color:inherit}
+.overview a:last-child{border-bottom:0}
+.overview a:hover{background:var(--accent-soft)}
+.overview .k{font:600 13px var(--mono);color:var(--ink-soft);font-variant-numeric:tabular-nums;padding-top:3px}
+.overview .t{font-weight:700}
+.overview .w{font-size:13.5px;color:var(--ink-soft);margin-top:2px;font-family:var(--body)}
+.basics details{border:1px solid var(--rule);border-radius:8px;background:var(--panel);margin:0 0 10px}
+.basics summary{cursor:pointer;padding:10px 14px;font-family:var(--display);font-weight:700;list-style:none;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.basics summary::-webkit-details-marker{display:none}
+.basics summary .ops{font-weight:400;font-size:13px;color:var(--ink-soft)}
+.basics .body{padding:0 14px 14px}
+.basics .body p{font-size:15px;margin:0 0 10px}
+.basics .panel{margin:0}
+.bgsec summary{cursor:pointer;font:700 19px var(--display);padding:8px 0;list-style:none}
+.bgsec summary::-webkit-details-marker{display:none}
+.bgsec summary::before{content:"▸ ";color:var(--ink-soft);font-size:.8em}
+.bgsec[open] summary::before{content:"▾ "}
+.bgsec{border-top:1px solid var(--rule)}
+
+/* home */
+.home h1{font-size:clamp(34px,5vw,54px);letter-spacing:-.02em;margin:0 0 12px}
+.lede{font-size:19px;max-width:60ch;margin:0 0 26px}
+.chapters{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.chapters a{text-decoration:none;color:inherit;border:1px solid var(--rule);border-radius:8px;background:var(--panel);padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.chapters a:hover{border-color:var(--accent)}
+.chapters h3{font-size:17px}
+.chapters .s{font-size:14px;color:var(--ink-soft);font-family:var(--display)}
+.chapters .bar{height:4px;background:var(--rule);border-radius:2px;overflow:hidden}.chapters .bar>div{height:100%;background:var(--accent)}
+
+@media (max-width:860px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .toc{border-right:0;border-bottom:1px solid var(--rule);max-height:55vh}
+  .toc nav{display:none}.toc.open nav{display:block}
+  .toctoggle{display:inline-block}
+  .main{padding-inline:16px}
+  .pager a{max-width:100%}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+
+<div class="app">
+  <aside class="toc" id="toc">
+    <div class="toc-head">
+      <h1><a href="#home">Brute to Optimal</a></h1>
+      <div class="sub" id="subtitle"></div>
+      <input id="search" type="search" placeholder="Find a problem" aria-label="Find a problem" autocomplete="off">
+      <div class="pystatus" id="pystatus"><span class="d"></span><span id="pytext">Python runtime loads when you open a problem</span></div>
+      <button class="toctoggle" id="toctoggle" type="button">Contents</button>
+    </div>
+    <nav id="nav"></nav>
+  </aside>
+  <main class="main" id="main"><div class="page" id="page"></div></main>
+</div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function(){
+'use strict';
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const CH = DATA.chapters, P = DATA.problems, FUND = DATA.fundamentals || [];
+const byArea = Object.fromEntries(FUND.map(f => [f.id, f]));
+const FITEMS = {}; FUND.forEach(f => f.items.forEach(it => { FITEMS[it.id] = it; }));
+const forder = FUND.flatMap(f => f.items.map(it => it.id));
+const byTopic = Object.fromEntries(CH.map(c => [c.topic, c]));
+const order = CH.flatMap(c => c.problems);            // reading order of slugs
+const $ = (s, el) => (el || document).querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem('b2o:' + k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem('b2o:' + k, JSON.stringify(v)); }catch(e){} }
+};
+let done = new Set(store.get('done', []));
+
+/* ---------- markdown (for chapter backgrounds) ---------- */
+if (window.marked){
+  marked.setOptions({gfm:true, breaks:false});
+  const r = new marked.Renderer();
+  r.code = function(a, b){
+    const code = typeof a === 'object' ? a.text : a, lang = (typeof a === 'object' ? a.lang : b) || '';
+    if (lang === 'python') return '<pre><code class="language-python">' + esc(code) + '</code></pre>';
+    return '<pre class="drawing"><code>' + esc(code) + '</code></pre>';
+  };
+  marked.use({renderer: r});
+}
+const md2html = md => window.marked ? marked.parse(md) : '<pre>' + esc(md) + '</pre>';
+
+/* ---------- Python runtime (Pyodide in a worker, files published next to the page) ---------- */
+const py = { worker:null, state:'idle', queue:[], busy:null };
+const status = $('#pystatus'), statusText = $('#pytext');
+function setStatus(state, text){ py.state = state; status.className = 'pystatus ' + state; statusText.textContent = text; }
+function startWorker(){
+  if (py.worker) return;
+  try{
+    py.worker = new Worker('pyworker.js');
+  }catch(e){ setStatus('fail', 'Python runtime unavailable here'); return; }
+  setStatus('loading', 'Loading Python (about 12 MB, once)');
+  py.worker.onmessage = e => {
+    const m = e.data;
+    if (m.type === 'ready'){ setStatus('ready', m.text + ' ready'); pump(); return; }
+    if (m.type === 'fail'){ setStatus('fail', 'Python could not load: ' + m.text.slice(0, 80)); failAll(m.text); return; }
+    const job = py.busy; if (!job) return;
+    if (m.type === 'out') job.out(m.text, false);
+    if (m.type === 'err') job.out(m.text, true);
+    if (m.type === 'done'){ job.finish(); py.busy = null; pump(); }
+  };
+  py.worker.onerror = e => { setStatus('fail', 'Python worker error'); failAll(e.message || 'worker error'); };
+  py.worker.postMessage({type:'init'});
+}
+function failAll(text){ const jobs = py.queue.splice(0); if (py.busy) jobs.unshift(py.busy); py.busy = null; jobs.forEach(j => { j.out('Python runtime is not available: ' + text + '\n', true); j.finish(); }); }
+function pump(){ if (py.state !== 'ready' || py.busy || !py.queue.length) return; py.busy = py.queue.shift(); py.worker.postMessage({type:'run', code: py.busy.code}); }
+function runPython(code, out, finish){ const job = {code, out, finish}; py.queue.push(job); if (!py.worker) startWorker(); pump(); }
+function stopPython(){ if (!py.worker) return; try{ py.worker.terminate(); }catch(e){} py.worker = null; const b = py.busy; py.busy = null; if (b){ b.out('\nStopped.\n', true); b.finish(); } py.queue.splice(0).forEach(j => j.finish()); setStatus('idle', 'Python stopped; it reloads on the next run'); }
+
+/* ---------- code panel ---------- */
+function codePanel(id, pyCode, pseudo){
+  const hasPseudo = pseudo != null;
+  return `<div class="panel" data-panel="${id}">
+    <div class="bar">
+      <div class="tabs" role="tablist">
+        <button type="button" class="on" data-tab="py" role="tab" aria-selected="true">Python</button>
+        ${hasPseudo ? '<button type="button" data-tab="ps" role="tab" aria-selected="false">Pseudocode</button>' : ''}
+      </div>
+      <div class="acts">
+        <span class="hint">edit, then run (Ctrl/⌘+Enter)</span>
+        <button type="button" class="reset" title="Put the original code back">Reset</button>
+        <button type="button" class="stop" hidden>Stop</button>
+        <button type="button" class="run">Run ▶</button>
+      </div>
+    </div>
+    <div class="view-py">
+      <div class="editor"><pre><code class="language-python"></code></pre><textarea id="code-${id}" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Python code"></textarea></div>
+      <pre class="out" aria-live="polite"></pre>
+    </div>
+    ${hasPseudo ? `<pre class="view-ps pseudo" hidden>${esc(pseudo)}</pre>` : ''}
+  </div>`;
+}
+function wirePanel(root, pyCode){
+  const ta = $('textarea', root), pre = $('.editor pre code', root), out = $('.out', root), editor = $('.editor', root);
+  const paint = () => {
+    const src = ta.value;
+    if (window.hljs){ pre.innerHTML = hljs.highlight(src.endsWith('\n') ? src + ' ' : src, {language:'python'}).value; }
+    else { pre.textContent = src; editor.classList.add('plain'); }
+  };
+  ta.value = pyCode; paint();
+  ta.addEventListener('input', paint);
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Tab'){ e.preventDefault(); const s = ta.selectionStart, t = ta.selectionEnd; ta.setRangeText('    ', s, t, 'end'); paint(); }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); run(); }
+  });
+  root.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+    root.querySelectorAll('.tabs button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', x === b); });
+    $('.view-py', root).hidden = b.dataset.tab !== 'py';
+    const ps = $('.view-ps', root); if (ps) ps.hidden = b.dataset.tab !== 'ps';
+  }));
+  $('.reset', root).addEventListener('click', () => { ta.value = pyCode; paint(); out.textContent = ''; out.classList.remove('err'); });
+  const runBtn = $('.run', root), stopBtn = $('.stop', root);
+  function run(){
+    out.textContent = ''; out.classList.remove('err'); runBtn.disabled = true; stopBtn.hidden = false;
+    out.textContent = py.state === 'ready' ? 'running…' : 'waiting for the Python runtime…';
+    let first = true;
+    runPython(ta.value, (text, isErr) => { if (first){ out.textContent = ''; first = false; } out.textContent += text; if (isErr) out.classList.add('err'); },
+      () => { if (first) out.textContent = '(no output)'; runBtn.disabled = false; stopBtn.hidden = true; });
+  }
+  runBtn.addEventListener('click', run);
+  stopBtn.addEventListener('click', () => stopPython());
+}
+
+/* ---------- rendering ---------- */
+const page = $('#page'), main = $('#main');
+function costLine(x){ return `<div class="cost"><span>Cost</span><code>${esc(x.time)} time</code><code>${esc(x.space)} space</code></div>`; }
+function statementBox(p){
+  const text = p.statement;
+  const i = text.search(/\bExample[s]?:/);
+  const body = i >= 0 ? `<p>${esc(text.slice(0, i).trim())}</p><pre>${esc(text.slice(i).trim())}</pre>` : `<p>${esc(text)}</p>`;
+  return `<div class="statement"><div class="eyebrow">The problem</div>${body}</div>`;
+}
+function renderProblem(slug){
+  const p = P[slug], ch = byTopic[p.topic];
+  const i = order.indexOf(slug), prev = order[i - 1], next = order[i + 1];
+  page.innerHTML = `
+    <header class="pagehead">
+      <div class="crumbs"><a href="#home">Chapters</a><span>›</span><a href="#${ch.topic}">${esc(ch.title)}</a><span>›</span><span>${i + 1} of ${order.length}</span></div>
+      <h1>${esc(p.title)}</h1>
+      <div class="meta"><span class="pill ${p.difficulty}">${p.difficulty}</span><a href="https://leetcode.com/problems/${esc(p.lc_slug || '')}/" target="_blank" rel="noopener">LeetCode ${p.leetcode}</a><span>·</span><span>${esc(p.pattern)}</span>
+        <label class="donebox"><input type="checkbox" id="done-${slug}" ${done.has(slug) ? 'checked' : ''}> solved it</label></div>
+    </header>
+    ${statementBox(p)}
+    <div class="prose">
+      <h2>Brute force</h2>
+      <p>${esc(p.brute.text)}</p>
+      ${costLine(p.brute)}
+      ${codePanel('brute', p.brute.py, p.brute.pseudo)}
+      <h2>Optimal solution</h2>
+      <div class="idea"><div class="eyebrow">Key idea</div>${esc(p.pattern)}</div>
+      <p>${esc(p.opt.text)}</p>
+      ${costLine(p.opt)}
+      ${codePanel('opt', p.opt.py, p.opt.pseudo)}
+    </div>
+    <nav class="pager">
+      ${prev ? `<a href="#${prev}"><span>Previous</span><span>${esc(P[prev].title)}</span></a>` : '<span></span>'}
+      ${next ? `<a class="next" href="#${next}"><span>Next</span><span>${esc(P[next].title)}</span></a>` : ''}
+    </nav>`;
+  wirePanel($('[data-panel="brute"]', page), p.brute.py);
+  wirePanel($('[data-panel="opt"]', page), p.opt.py);
+  $('#done-' + slug).addEventListener('change', e => { if (e.target.checked) done.add(slug); else done.delete(slug); store.set('done', [...done]); renderNav(); });
+  startWorker();
+}
+function renderChapter(topic){
+  const ch = byTopic[topic];
+  const bg = ch.background.map((s, k) => `<details class="bgsec" ${k === 0 ? 'open' : ''}><summary>${esc(s.title)}</summary><div class="prose">${md2html(s.md)}</div></details>`).join('');
+  const areas = (ch.areas || []).map(a => byArea['fund-' + a]).filter(Boolean);
+  const basics = areas.length ? `<h2>Fundamentals to have at your fingertips</h2><div class="overview">${areas.flatMap(f => f.items.map(it => `<a href="#${it.id}"><span class="k">▸</span><span><div class="t">${esc(it.title)}</div><div class="w">${esc(it.key_ops)}</div></span><span class="pill">${esc(f.title)}</span></a>`)).join('')}</div>` : '';
+  page.innerHTML = `
+    <header class="pagehead"><div class="crumbs"><a href="#home">Chapters</a><span>›</span><span>${esc(ch.title)}</span></div>
+      <h1>${esc(ch.title)}</h1><div class="meta"><span>${ch.problems.length} problems</span></div></header>
+    <div class="prose"><p class="lede">${esc(ch.intro)}</p></div>
+    <div class="prose"><h2>Background</h2></div>${bg}
+    <div class="prose">${basics}
+      <h2>Problems, in reading order</h2></div>
+    <div class="overview">${ch.problems.map((s, k) => `<a href="#${s}"><span class="k">${String(k + 1).padStart(2, '0')}</span><span><div class="t">${esc(P[s].title)}</div><div class="w">${esc(P[s].why_here || P[s].pattern)}</div></span><span class="pill ${P[s].difficulty}">${P[s].difficulty}</span></a>`).join('')}</div>`;
+  if (window.hljs) page.querySelectorAll('.prose code.language-python').forEach(el => hljs.highlightElement(el));
+}
+function renderArea(id){
+  const f = byArea[id];
+  page.innerHTML = `
+    <header class="pagehead"><div class="crumbs"><a href="#home">Chapters</a><span>›</span><span>Fundamentals</span><span>›</span><span>${esc(f.title)}</span></div>
+      <h1>${esc(f.title)}</h1><div class="meta"><span>${f.items.length} algorithms</span></div></header>
+    <div class="prose"><p class="lede">The operations and classic algorithms behind this chapter, each as one short program you should be able to write from memory.</p></div>
+    <div class="overview">${f.items.map((it, k) => `<a href="#${it.id}"><span class="k">${String(k + 1).padStart(2, '0')}</span><span><div class="t">${esc(it.title)}</div><div class="w">${esc(it.key_ops)}</div></span></a>`).join('')}</div>`;
+}
+function renderFund(id){
+  const it = FITEMS[id], f = byArea['fund-' + it.area];
+  const i = forder.indexOf(id), prev = forder[i - 1], next = forder[i + 1];
+  page.innerHTML = `
+    <header class="pagehead">
+      <div class="crumbs"><a href="#home">Chapters</a><span>›</span><span>Fundamentals</span><span>›</span><a href="#${f.id}">${esc(f.title)}</a></div>
+      <h1>${esc(it.title)}</h1>
+      <div class="meta"><span class="pill">Fundamentals</span><span>${esc(it.key_ops)}</span>
+        <label class="donebox"><input type="checkbox" id="done-${id}" ${done.has(id) ? 'checked' : ''}> know it cold</label></div>
+    </header>
+    ${statementBox({statement: it.statement})}
+    <div class="prose">
+      <h2>The algorithm</h2>
+      ${codePanel('alg', it.py, it.pseudo)}
+    </div>
+    <nav class="pager">
+      ${prev ? `<a href="#${prev}"><span>Previous</span><span>${esc(FITEMS[prev].title)}</span></a>` : '<span></span>'}
+      ${next ? `<a class="next" href="#${next}"><span>Next</span><span>${esc(FITEMS[next].title)}</span></a>` : ''}
+    </nav>`;
+  wirePanel($('[data-panel="alg"]', page), it.py);
+  $('#done-' + id).addEventListener('change', e => { if (e.target.checked) done.add(id); else done.delete(id); store.set('done', [...done]); renderNav(); });
+  startWorker();
+}
+function renderHome(){
+  const total = order.length, nd = order.filter(s => done.has(s)).length;
+  page.innerHTML = `<div class="home"><h1>Brute to Optimal</h1>
+    <p class="lede">Every problem in two sections: the brute force and the optimal solution, each as a short paragraph, runnable Python and pseudocode. Edit the inputs, run, compare. ${total} problems, ${CH.length} chapters.</p>
+    <p class="muted" style="font-family:var(--display);font-size:14px">${nd} of ${total} marked solved on this device.</p>
+    <h2 style="font-size:22px;margin:0 0 10px">Fundamentals</h2>
+    <div class="chapters" style="margin-bottom:28px">${FUND.map(f => { const d = f.items.filter(it => done.has(it.id)).length; return `<a href="#${f.id}"><h3>${esc(f.title)}</h3><span class="s">${f.items.length} algorithms</span><div class="bar"><div style="width:${f.items.length ? 100 * d / f.items.length : 0}%"></div></div></a>`; }).join('')}</div>
+    <h2 style="font-size:22px;margin:0 0 10px">Problems by chapter</h2>
+    <div class="chapters">${CH.map(c => { const d = c.problems.filter(s => done.has(s)).length; return `<a href="#${c.topic}"><h3>${esc(c.title)}</h3><span class="s">${c.problems.length} problems</span><div class="bar"><div style="width:${c.problems.length ? 100 * d / c.problems.length : 0}%"></div></div></a>`; }).join('')}</div></div>`;
+}
+function renderNav(){
+  const q = ($('#search').value || '').trim().toLowerCase();
+  const cur = location.hash.slice(1);
+  const openSet = new Set(store.get('open', []));
+  const fundNav = FUND.map(f => {
+    const items = f.items.filter(it => !q || it.title.toLowerCase().includes(q) || it.key_ops.toLowerCase().includes(q));
+    if (q && !items.length) return '';
+    const isOpen = q || openSet.has(f.id) || items.some(it => it.id === cur) || cur === f.id;
+    return `<div class="ch ${isOpen ? 'open' : ''} ${cur === f.id ? 'cur' : ''}" data-topic="${f.id}">
+      <button type="button"><span>${esc(f.title)}</span><span class="n">${f.items.filter(it => done.has(it.id)).length}/${f.items.length}</span></button>
+      <div class="secs">${items.map(it => `<a href="#${it.id}" class="${cur === it.id ? 'on' : ''} ${done.has(it.id) ? 'done' : ''}"><span class="d"></span>${esc(it.title)}</a>`).join('')}</div></div>`;
+  }).join('');
+  $('#nav').innerHTML = `<div class="eyebrow" style="padding:10px 10px 4px">Fundamentals</div>` + fundNav + `<div class="eyebrow" style="padding:16px 10px 4px">Problems</div>` + CH.map(c => {
+    const items = c.problems.filter(s => !q || P[s].title.toLowerCase().includes(q) || s.includes(q));
+    if (q && !items.length) return '';
+    const isOpen = q || openSet.has(c.topic) || c.problems.includes(cur) || cur === c.topic;
+    return `<div class="ch ${isOpen ? 'open' : ''} ${cur === c.topic ? 'cur' : ''}" data-topic="${c.topic}">
+      <button type="button"><span>${esc(c.title)}</span><span class="n">${c.problems.filter(s => done.has(s)).length}/${c.problems.length}</span></button>
+      <div class="secs"><a href="#${c.topic}" class="bg ${cur === c.topic ? 'on' : ''}"><span class="d"></span>Background &amp; fundamentals</a>
+      ${items.map(s => `<a href="#${s}" class="${cur === s ? 'on' : ''} ${done.has(s) ? 'done' : ''}"><span class="d ${P[s].difficulty}"></span>${esc(P[s].title)}</a>`).join('')}</div></div>`;
+  }).join('');
+  $('#subtitle').textContent = `${order.length} problems · ${forder.length} fundamentals · companion to Intuition Journey`;
+}
+$('#nav').addEventListener('click', e => {
+  const btn = e.target.closest('.ch > button'); if (!btn) return;
+  const ch = btn.parentElement, topic = ch.dataset.topic;
+  const openSet = new Set(store.get('open', []));
+  if (ch.classList.contains('open')){ openSet.delete(topic); ch.classList.remove('open'); } else { openSet.add(topic); ch.classList.add('open'); }
+  store.set('open', [...openSet]);
+});
+$('#search').addEventListener('input', renderNav);
+$('#toctoggle').addEventListener('click', () => $('#toc').classList.toggle('open'));
+function route(){
+  const h = location.hash.slice(1) || store.get('last', 'home');
+  if (P[h]) renderProblem(h); else if (byTopic[h]) renderChapter(h); else if (FITEMS[h]) renderFund(h); else if (byArea[h]) renderArea(h); else renderHome();
+  if (h !== 'home') store.set('last', h);
+  renderNav(); main.scrollTop = 0; $('#toc').classList.remove('open');
+  const on = $('#nav a.on'); if (on) on.scrollIntoView({block:'nearest'});
+}
+window.addEventListener('hashchange', route);
+route();
+})();
+</script>

@@ -1,0 +1,53 @@
+{
+  "trees/01_traversals_recursive_and_iterative": {
+    "algorithm": "traverse(node, preorder, inorder, postorder):\n    if node is empty: return\n    add node.val to preorder   (before both children)\n    traverse(node.left, ...)\n    add node.val to inorder   (between the children)\n    traverse(node.right, ...)\n    add node.val to postorder   (after both children)\npreorder_iterative(root):\n    order = empty, stack = [root] if root exists\n    while stack is not empty:\n        node = pop, add node.val to order\n        push node.right if it exists, then node.left   (right first so left pops next)\n    return order\ninorder_iterative(root):\n    order = empty, stack = empty, node = root\n    while stack is not empty or node exists:   (a node to walk down from OR one still pending)\n        while node exists: push node, node = node.left\n        node = pop, add node.val to order\n        node = node.right\n    return order"
+  },
+  "trees/02_bfs_level_order_and_height": {
+    "algorithm": "levels = empty list, queue = [root] if root exists\nwhile queue is not empty:\n    level = empty list\n    repeat len(queue) times:   (only the nodes present when the level starts)\n        node = pop from the front\n        add node.val to level\n        append node.left and node.right if they exist   (they form the next level)\n    add level to levels\nreturn levels\nheight(root) = number of levels   (empty tree 0, single node 1)"
+  },
+  "trees/03_bst_insert_search_delete": {
+    "algorithm": "insert(root, val):\n    if root is empty: return a new node(val)\n    if val < root.val: root.left = insert(root.left, val)\n    else if val > root.val: root.right = insert(root.right, val)\n    return root   (equal: a duplicate, nothing changes)\nsearch(root, val):\n    node = root\n    while node exists and node.val != val: node = node.left if val < node.val else node.right\n    return node exists\ndelete(root, val):\n    if root is empty: return empty\n    if val < root.val: root.left = delete(root.left, val)\n    else if val > root.val: root.right = delete(root.right, val)\n    else if root.left is empty: return root.right   (0 or 1 child: the child takes its place)\n    else if root.right is empty: return root.left\n    else:\n        successor = leftmost node of root.right\n        root.val = successor.val\n        root.right = delete(root.right, successor.val)   (delete the SUCCESSOR's value, not val)\n    return root"
+  },
+  "trees/04_balanced_and_depth": {
+    "algorithm": "max_depth(node):\n    if node is empty: return 0\n    return 1 + max(max_depth(node.left), max_depth(node.right))\nchecked_height(node):\n    if node is empty: return 0\n    left = checked_height(node.left)\n    if left == -1: return -1   (pass the failure straight up, no more work)\n    right = checked_height(node.right)\n    if right == -1: return -1\n    if |left - right| > 1: return -1   (a difference of exactly 1 is still balanced)\n    return 1 + max(left, right)\nis_balanced(root) = checked_height(root) != -1"
+  },
+  "trees/06_serialize_and_deserialize": {
+    "algorithm": "emit(node, tokens):\n    if node is empty: add \"#\" to tokens, return   (the explicit None makes decoding unambiguous)\n    add str(node.val) to tokens\n    emit(node.left, tokens)\n    emit(node.right, tokens)\nserialize(root): tokens = empty, emit(root, tokens), return tokens joined by \",\"\nconsume(tokens):\n    token = pop from the front   (every call eats from the same queue, in preorder)\n    if token == \"#\": return empty\n    node = new node(int(token))\n    node.left = consume(tokens)   (the left subtree uses up its tokens first)\n    node.right = consume(tokens)\n    return node\ndeserialize(data): tokens = queue of data split on \",\", return consume(tokens)"
+  },
+  "linked_lists/01_build_print_insert_delete": {
+    "algorithm": "build_list(values):\n    dummy = new node, tail = dummy\n    for each value: tail.next = new node(value), tail = tail.next\n    return dummy.next\nlist_to_array(head):\n    out = empty, node = head\n    while node exists: add node.val to out, node = node.next\n    return out\ninsert_at(head, index, val):\n    dummy = new node pointing at head, prev = dummy   (index 0 becomes an ordinary case)\n    repeat index times: prev = prev.next\n    prev.next = new node(val) pointing at prev.next\n    return dummy.next\ndelete_value(head, val):\n    dummy = new node pointing at head, prev = dummy\n    while prev.next exists and prev.next.val != val: prev = prev.next\n    if prev.next exists: prev.next = prev.next.next   (unlink by skipping over the node)\n    return dummy.next"
+  },
+  "linked_lists/02_reverse_iterative_and_recursive": {
+    "algorithm": "reverse_iterative(head):\n    prev = empty, cur = head\n    while cur exists:\n        nxt = cur.next   (save the rest BEFORE cutting the link)\n        cur.next = prev\n        prev = cur, cur = nxt\n    return prev\nreverse_recursive(head):\n    if head is empty or head.next is empty: return head\n    new_head = reverse_recursive(head.next)\n    head.next.next = head   (the old next node is the tail of the reversed rest)\n    head.next = empty\n    return new_head"
+  },
+  "linked_lists/03_middle_with_fast_and_slow": {
+    "algorithm": "slow = head, fast = head\nwhile fast exists and fast.next exists:   (fast needs two more nodes to keep going)\n    slow = slow.next\n    fast = fast.next.next\nreturn slow   (even length: the second of the two middles)"
+  },
+  "linked_lists/04_detect_cycle_floyd": {
+    "algorithm": "meeting_point(head):\n    slow = head, fast = head\n    while fast exists and fast.next exists:\n        slow = slow.next, fast = fast.next.next\n        if slow is the same node as fast: return slow   (compare nodes, values may repeat)\n    return empty\nhas_cycle(head) = meeting_point(head) is not empty\ncycle_start_index(head):\n    meet = meeting_point(head)\n    if meet is empty: return -1\n    pointer = head, index = 0   (restart one pointer at the head, keep the other)\n    while pointer is not meet: pointer = pointer.next, meet = meet.next, index += 1\n    return index"
+  },
+  "linked_lists/07_reverse_nodes_in_k_group": {
+    "algorithm": "dummy = new node pointing at head, group_prev = dummy\nloop:\n    kth = the node k steps after group_prev\n    if kth is empty: return dummy.next   (fewer than k nodes left: leave them)\n    group_next = kth.next\n    prev = group_next, cur = group_prev.next   (seed prev with the next group)\n    while cur is not group_next:\n        nxt = cur.next, cur.next = prev, prev = cur, cur = nxt\n    old_head = group_prev.next\n    group_prev.next = kth   (kth is the reversed group's new head)\n    group_prev = old_head   (the old head is now the group's tail)"
+  },
+  "stacks/01_array_stack_and_queue_via_two_stacks": {
+    "algorithm": "Stack:\n    push(x): append x to items   (the end of the list is the top)\n    pop(): remove and return the last item\n    peek(): return the last item\n    empty(): items has no elements\nQueue:\n    enqueue(x): inbox.push(x)\n    refill():\n        if outbox is empty:   (ONLY then, or the order would break)\n            while inbox is not empty: outbox.push(inbox.pop())\n    dequeue(): refill(), return outbox.pop()\n    peek(): refill(), return outbox.peek()\n    empty(): inbox is empty and outbox is empty"
+  },
+  "stacks/05_asteroid_collision": {
+    "algorithm": "stack = empty\nfor each size in asteroids:\n    alive = true\n    while alive and size < 0 and stack not empty and top > 0:   (only right-mover vs left-mover)\n        if top < -size: pop   (the top explodes, keep fighting)\n        else if top == -size: pop, alive = false   (both explode)\n        else: alive = false   (the current one explodes)\n    if alive: push size\nreturn stack"
+  },
+  "monotonic_stacks/01_next_greater_element": {
+    "algorithm": "answer = [-1] * n, stack = empty   (indices; values decreasing bottom -> top)\nfor i from 0 to n - 1:\n    while stack not empty and nums[top] < nums[i]:   (strictly smaller tops are answered)\n        j = pop\n        answer[j] = nums[i]\n    push i\nreturn answer"
+  },
+  "monotonic_stacks/02_previous_smaller_element": {
+    "algorithm": "answer = [-1] * n, stack = empty   (values increasing bottom -> top)\nfor i from 0 to n - 1:\n    while stack not empty and top >= nums[i]: pop   (>= : equal values are not smaller)\n    if stack not empty: answer[i] = top\n    push nums[i]\nreturn answer"
+  },
+  "monotonic_stacks/03_online_stock_span": {
+    "algorithm": "stack = empty   ((price, span) pairs; prices decreasing bottom -> top)\nnext(price):\n    span = 1\n    while stack not empty and top price <= price:\n        pop (top_price, top_span)\n        span += top_span   (the popped day already covered its own run)\n    push (price, span)\n    return span"
+  },
+  "monotonic_stacks/04_sum_of_subarray_minimums": {
+    "algorithm": "stack = empty, total = 0   (indices; values strictly increasing bottom -> top)\nfor right from 0 to n:   (right == n is a sentinel that pops everything left)\n    while stack not empty and (right == n or nums[top] >= nums[right]):\n        middle = pop\n        left = new top, or -1 if the stack is empty   (previous strictly smaller index)\n        total += nums[middle] * (middle - left) * (right - middle)\n    if right < n: push right\nreturn total mod (10^9 + 7)"
+  },
+  "monotonic_stacks/05_remove_k_digits": {
+    "algorithm": "stack = empty\nfor each digit in num:\n    while k > 0 and stack not empty and top > digit:   (a bigger digit in front goes first)\n        pop, k -= 1\n    push digit\nwhile k > 0: pop, k -= 1   (leftover deletions: the stack is sorted, cut its end)\nresult = stack joined, leading zeros stripped\nreturn \"0\" if result is empty else result"
+  }
+}

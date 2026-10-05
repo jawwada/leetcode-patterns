@@ -1,0 +1,62 @@
+{
+ "binary_search": {
+  "brute": "for each index i in nums:\n    if nums[i] == target: return i\nreturn -1",
+  "optimal": "left = 0, right = n - 1\nwhile left <= right:   (if target exists it is inside [left, right])\n    mid = (left + right) / 2\n    if nums[mid] == target: return mid\n    if nums[mid] < target: left = mid + 1\n    else: right = mid - 1\nreturn -1"
+ },
+ "search_insert_position": {
+  "brute": "for each index i in nums:\n    if nums[i] >= target: return i   (found target, or the spot where it would go)\nreturn n",
+  "optimal": "left = 0, right = n - 1, answer = n\nwhile left <= right:\n    mid = (left + right) / 2\n    if nums[mid] >= target:\n        answer = mid   (mid qualifies; look further left for an earlier one)\n        right = mid - 1\n    else: left = mid + 1\nreturn answer"
+ },
+ "find_first_and_last_position": {
+  "brute": "first = -1, last = -1\nfor each index i in nums:\n    if nums[i] == target:\n        if first == -1: first = i   (only the first match sets this)\n        last = i\nreturn [first, last]",
+  "optimal": "first_index_at_least(nums, value):   (first index whose element is >= value, or n)\n    left = 0, right = n\n    while left < right:\n        mid = (left + right) / 2\n        if nums[mid] < value: left = mid + 1\n        else: right = mid\n    return left\nfirst = first_index_at_least(nums, target)\nif first == n or nums[first] != target: return [-1, -1]\nlast = first_index_at_least(nums, target + 1) - 1\nreturn [first, last]"
+ },
+ "search_2d_matrix": {
+  "brute": "for each row in matrix:\n    for each value in row:\n        if value == target: return true\nreturn false",
+  "optimal": "if the matrix is empty: return false\nrows = row count, cols = column count\nleft = 0, right = rows * cols - 1   (positions in the rows laid end to end)\nwhile left <= right:\n    mid = (left + right) / 2\n    row = mid / cols, col = mid mod cols\n    value = matrix[row][col]\n    if value == target: return true\n    if value < target: left = mid + 1\n    else: right = mid - 1\nreturn false"
+ },
+ "find_min_rotated_sorted_array": {
+  "brute": "best = nums[0]\nfor each value in nums:\n    if value < best: best = value\nreturn best",
+  "optimal": "left = 0, right = n - 1\nwhile left < right:\n    mid = (left + right) / 2\n    if nums[mid] > nums[right]: left = mid + 1   (mid is on the high run: the drop is to the right)\n    else: right = mid\nreturn nums[left]"
+ },
+ "search_rotated_sorted_array": {
+  "brute": "for each index i in nums:\n    if nums[i] == target: return i\nreturn -1",
+  "optimal": "left = 0, right = n - 1\nwhile left <= right:\n    mid = (left + right) / 2\n    if nums[mid] == target: return mid\n    if nums[left] <= nums[mid]:   (left half [left, mid] is sorted)\n        if nums[left] <= target and target < nums[mid]: right = mid - 1\n        else: left = mid + 1\n    else:   (right half [mid, right] is sorted)\n        if nums[mid] < target and target <= nums[right]: left = mid + 1\n        else: right = mid - 1\nreturn -1"
+ },
+ "koko_eating_bananas": {
+  "brute": "speed = 1\nloop:\n    hours = 0\n    for each pile in piles:\n        hours += pile / speed rounded up\n    if hours <= h: return speed\n    speed += 1",
+  "optimal": "hours_needed(piles, speed):\n    hours = 0\n    for each pile in piles: hours += pile / speed rounded up\n    return hours\nleft = 1, right = max pile\nwhile left < right:\n    mid = (left + right) / 2\n    if hours_needed(piles, mid) <= h: right = mid   (fast enough: try slower)\n    else: left = mid + 1\nreturn left"
+ },
+ "reverse_linked_list": {
+  "brute": "values = empty list\nnode = head\nwhile node is not null:\n    append node.val to values\n    node = node.next\nvalues = values reversed\nbuild and return a new list from values",
+  "optimal": "prev = null, cur = head\nwhile cur is not null:\n    nxt = cur.next   (save the rest before breaking the link)\n    cur.next = prev\n    prev = cur\n    cur = nxt\nreturn prev"
+ },
+ "merge_two_sorted_lists": {
+  "brute": "values = empty list\nnode = list1\nwhile node is not null: append node.val to values, node = node.next\nnode = list2\nwhile node is not null: append node.val to values, node = node.next\nsort values\nbuild and return a new list from values",
+  "optimal": "dummy = new node, tail = dummy\nwhile list1 and list2 are both not null:\n    if list1.val <= list2.val:\n        tail.next = list1   (hook the smaller front node onto the result)\n        list1 = list1.next\n    else:\n        tail.next = list2\n        list2 = list2.next\n    tail = tail.next\nif list1 is not null: tail.next = list1\nelse: tail.next = list2\nreturn dummy.next"
+ },
+ "add_two_numbers": {
+  "brute": "list_to_int(head):   (the number read with the ones digit first)\n    number = 0, place = 1, node = head\n    while node is not null:\n        number += node.val * place\n        place *= 10, node = node.next\n    return number\ntotal = list_to_int(l1) + list_to_int(l2)\ndigits = empty list\nwhile total >= 10:\n    append total mod 10 to digits\n    total = total / 10\nappend total to digits\nbuild and return a new list from digits",
+  "optimal": "dummy = new node, tail = dummy, carry = 0\nwhile l1 or l2 is not null, or carry != 0:   (a final carry adds a digit)\n    total = carry\n    if l1 is not null: total += l1.val, l1 = l1.next\n    if l2 is not null: total += l2.val, l2 = l2.next\n    carry = total / 10\n    digit = total mod 10\n    tail.next = new node(digit)\n    tail = tail.next\nreturn dummy.next"
+ },
+ "remove_nth_from_end": {
+  "brute": "length = 0, node = head\nwhile node is not null:\n    length += 1, node = node.next\ndummy = new node pointing at head\nprev = dummy\nadvance prev (length - n) times   (prev stops just before the node to remove)\nprev.next = prev.next.next\nreturn dummy.next",
+  "optimal": "dummy = new node pointing at head\nslow = dummy, fast = dummy\nadvance fast n + 1 times   (open a gap of n + 1 links)\nwhile fast is not null:\n    slow = slow.next\n    fast = fast.next\nslow.next = slow.next.next\nreturn dummy.next"
+ },
+ "linked_list_cycle_ii": {
+  "brute": "seen = empty set of nodes\nnode = head\nwhile node is not null:\n    if node is in seen: return node   (the first node reached twice starts the cycle)\n    add node to seen\n    node = node.next\nreturn null",
+  "optimal": "slow = head, fast = head\nwhile fast and fast.next are not null:\n    slow = slow.next\n    fast = fast.next.next\n    if slow is fast: stop   (they met: there is a cycle)\nif fast or fast.next is null: return null\npointer = head\nwhile pointer is not slow:   (head and meeting point are equally far from the entrance)\n    pointer = pointer.next\n    slow = slow.next\nreturn pointer"
+ },
+ "intersection_of_two_linked_lists": {
+  "brute": "a = head_a\nwhile a is not null:\n    b = head_b\n    while b is not null:\n        if a is b: return a   (the same node object, not just the same value)\n        b = b.next\n    a = a.next\nreturn null",
+  "optimal": "list_length(head) = number of nodes in the list\nlen_a = list_length(head_a), len_b = list_length(head_b)\na = head_a, b = head_b\nadvance a (len_a - len_b) times   (only when A is longer)\nadvance b (len_b - len_a) times   (only when B is longer)\nwhile a is not b:   (both are now the same distance from the end)\n    a = a.next\n    b = b.next\nreturn a"
+ },
+ "palindrome_linked_list": {
+  "brute": "values = empty list\nnode = head\nwhile node is not null:\n    append node.val to values\n    node = node.next\nreturn values == values reversed",
+  "optimal": "slow = head, fast = head\nwhile fast and fast.next are not null:   (slow lands on the middle)\n    slow = slow.next\n    fast = fast.next.next\nprev = null, cur = slow\nwhile cur is not null:   (reverse from the middle onwards)\n    nxt = cur.next, cur.next = prev\n    prev = cur, cur = nxt\nfirst = head, second = prev\nwhile second is not null:   (the reversed half is the shorter one)\n    if first.val != second.val: return false\n    first = first.next, second = second.next\nreturn true"
+ },
+ "copy_list_with_random_pointer": {
+  "brute": "position_of(head, target) = steps from head to target\nnode_at(head, steps) = the node that many steps after head\ndummy = new node, tail = dummy, node = head\nwhile node is not null:   (pass 1: copy values and next pointers only)\n    tail.next = new node(node.val)\n    tail = tail.next, node = node.next\nnode = head, clone = dummy.next\nwhile node is not null:   (pass 2: random = the clone at the same position)\n    if node.random is not null:\n        steps = position_of(head, node.random)\n        clone.random = node_at(dummy.next, steps)\n    node = node.next, clone = clone.next\nreturn dummy.next",
+  "optimal": "if head is null: return null\nnode = head\nwhile node is not null:   (pass 1: A -> A' -> B -> B' -> ...)\n    clone = new node(node.val) with next = node.next, node.next = clone, node = clone.next\nnode = head\nwhile node is not null:   (pass 2: the clone of X.random is X.random.next)\n    if node.random is not null: node.next.random = node.random.next\n    node = node.next.next\nnode = head, new_head = head.next\nwhile node is not null:   (pass 3: unweave the two lists again)\n    clone = node.next, node.next = clone.next\n    if clone.next is not null: clone.next = clone.next.next\n    node = node.next\nreturn new_head"
+ }
+}

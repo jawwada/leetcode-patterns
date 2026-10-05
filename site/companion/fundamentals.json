@@ -1,0 +1,93 @@
+{
+ "sorting": [
+  "01_insertion_sort",
+  "02_merge_sort",
+  "03_quick_sort",
+  "04_heap_sort",
+  "05_counting_and_bucket_sort",
+  "06_python_sort_keys_and_stability"
+ ],
+ "searches": [
+  "01_binary_search_variants",
+  "02_binary_search_on_answer",
+  "03_bfs_grid_shortest_path",
+  "04_dfs_recursive_and_iterative",
+  "05_connected_components",
+  "06_multi_source_bfs_01_matrix"
+ ],
+ "graphs": [
+  "01_adjacency_list_bfs_dfs",
+  "02_topological_sort_kahn_and_dfs",
+  "03_union_find",
+  "04_kruskal_mst",
+  "05_prim_mst",
+  "06_dijkstra"
+ ],
+ "trees": [
+  "01_traversals_recursive_and_iterative",
+  "02_bfs_level_order_and_height",
+  "03_bst_insert_search_delete",
+  "04_balanced_and_depth",
+  "06_serialize_and_deserialize"
+ ],
+ "linked_lists": [
+  "01_build_print_insert_delete",
+  "02_reverse_iterative_and_recursive",
+  "03_middle_with_fast_and_slow",
+  "04_detect_cycle_floyd",
+  "07_reverse_nodes_in_k_group"
+ ],
+ "stacks": [
+  "01_array_stack_and_queue_via_two_stacks",
+  "05_asteroid_collision"
+ ],
+ "monotonic_stacks": [
+  "01_next_greater_element",
+  "02_previous_smaller_element",
+  "03_online_stock_span",
+  "04_sum_of_subarray_minimums",
+  "05_remove_k_digits"
+ ],
+ "heaps": [
+  "01_heapify_by_hand",
+  "02_push_and_pop_by_hand",
+  "03_top_k_with_size_k_min_heap",
+  "04_max_heap_by_negation_and_tuples",
+  "06_merge_k_sorted_arrays"
+ ],
+ "tries": [
+  "02_trie_delete",
+  "03_autocomplete_collect_words_with_prefix"
+ ],
+ "backtracking": [
+  "02_subsets_with_duplicates",
+  "03_combinations_n_choose_k",
+  "06_permutations_with_duplicates"
+ ],
+ "bits": [
+  "01_get_set_clear_toggle_bits",
+  "02_count_bits_and_lowest_set_bit",
+  "03_xor_tricks_single_number_missing_number",
+  "04_bitmask_subset_enumeration",
+  "05_reverse_bits_and_shifts"
+ ],
+ "math": [
+  "01_gcd_lcm_euclid",
+  "02_primes_sieve_and_primality",
+  "03_fast_power_and_modular_arithmetic",
+  "04_digits_reverse_integer_and_palindrome_number",
+  "05_base_conversion_and_excel_columns",
+  "06_random_pick_and_reservoir_sampling"
+ ],
+ "matrices": [
+  "04_search_2d_matrix_staircase",
+  "05_game_of_life_in_place",
+  "06_matrix_traversal_patterns"
+ ],
+ "strings": [
+  "02_two_pointer_palindromes_and_reverse_words",
+  "03_kmp_prefix_function",
+  "04_rabin_karp_rolling_hash",
+  "05_encode_decode_strings_and_join"
+ ]
+}

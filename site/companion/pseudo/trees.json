@@ -1,0 +1,54 @@
+{
+  "maximum_depth_of_binary_tree": {
+    "brute": "paths = empty list\ncollect_paths(node, path, paths):\n    if the node is empty: return\n    path = path + [node.val]   (a fresh copy of the prefix at every node)\n    if the node is a leaf: add path to paths\n    collect_paths(node.left, path, paths)\n    collect_paths(node.right, path, paths)\ncollect_paths(root, empty path, paths)\nlongest = 0\nfor each path in paths:\n    if length of path > longest: longest = length of path\nreturn longest",
+    "optimal": "if the root is empty: return 0\nleft depth = max_depth(root.left)\nright depth = max_depth(root.right)\nreturn 1 + max(left depth, right depth)   (the taller child decides)"
+  },
+  "invert_binary_tree": {
+    "brute": "if the root is empty: return empty\ncopy = new node with root.val   (a brand-new mirrored tree is built)\ncopy.left = brute_force(root.right)\ncopy.right = brute_force(root.left)\nreturn copy",
+    "optimal": "if the root is empty: return empty\ninverted right = invert_tree(root.right)\ninverted left = invert_tree(root.left)\nroot.left = inverted right   (swap in place: nothing is copied)\nroot.right = inverted left\nreturn root"
+  },
+  "symmetric_tree": {
+    "brute": "level = [root]\nwhile level is not empty:\n    vals = empty list\n    for each node in level: append node.val, or the empty marker for an empty slot\n    if vals != vals reversed: return false   (each level must be a palindrome, empty slots included)\n    next level = empty list\n    for each non-empty node in level: append node.left and node.right to next level\n    level = next level\nreturn true",
+    "optimal": "is_mirror(a, b):\n    if a is empty or b is empty: return true only if both are empty\n    if a.val != b.val: return false\n    return is_mirror(a.left, b.right) and is_mirror(a.right, b.left)   (outer pair, inner pair)\nif the root is empty: return true\nreturn is_mirror(root.left, root.right)"
+  },
+  "balanced_binary_tree": {
+    "brute": "height(node): 0 if empty, else 1 + max(height(node.left), height(node.right))\nif the root is empty: return true\nif |height(root.left) - height(root.right)| > 1: return false   (heights recomputed at every level)\nreturn brute_force(root.left) and brute_force(root.right)",
+    "optimal": "checked_height(node):   (height of the subtree if it is balanced, otherwise -1)\n    if the node is empty: return 0\n    left = checked_height(node.left)\n    if left < 0: return -1\n    right = checked_height(node.right)\n    if right < 0 or |left - right| > 1: return -1\n    return 1 + max(left, right)\nreturn checked_height(root) >= 0"
+  },
+  "diameter_of_binary_tree": {
+    "brute": "height(node): 0 if empty, else 1 + max(height(node.left), height(node.right))\nif the root is empty: return 0\nthrough root = height(root.left) + height(root.right)   (heights recomputed for every node)\nreturn max(through root, brute_force(root.left), brute_force(root.right))",
+    "optimal": "height_and_best(node):\n    if the node is empty: return 0, 0\n    left height, left best = height_and_best(node.left)\n    right height, right best = height_and_best(node.right)\n    through node = left height + right height   (the path that bends at this node)\n    best = max(through node, left best, right best)\n    return 1 + max(left height, right height), best\nroot height, best = height_and_best(root)\nreturn best"
+  },
+  "path_sum_ii": {
+    "brute": "paths = empty list\ncollect_paths(node, path, paths):\n    if the node is empty: return\n    path = path + [node.val]   (a fresh copy of the prefix at every node)\n    if the node is a leaf: add path to paths\n    collect_paths(node.left, path, paths)\n    collect_paths(node.right, path, paths)\ncollect_paths(root, empty path, paths)\nmatching = empty list\nfor each path in paths:\n    if sum of path == target sum: add path to matching\nreturn matching",
+    "optimal": "answers = empty list\ndfs(node, remaining, path, answers):   (one shared path, extended and shrunk)\n    if the node is empty: return\n    append node.val to path, remaining = remaining - node.val\n    if the node is a leaf:\n        if remaining == 0: add a copy of path to answers\n    else:\n        dfs(node.left, remaining, path, answers)\n        dfs(node.right, remaining, path, answers)\n    remove the last value from path   (backtrack)\ndfs(root, target sum, empty path, answers)\nreturn answers"
+  },
+  "binary_tree_level_order_traversal": {
+    "brute": "height(node): 0 if empty, else 1 + max(height(node.left), height(node.right))\ncollect_depth(node, depth, target, out):\n    if the node is empty: return\n    if depth == target: append node.val to out\n    else:\n        collect_depth(node.left, depth + 1, target, out)\n        collect_depth(node.right, depth + 1, target, out)\nresult = empty list\nfor each depth from 0 to height(root) - 1:\n    level = empty list\n    collect_depth(root, 0, depth, level)   (a full traversal per level)\n    append level to result\nreturn result",
+    "optimal": "if the root is empty: return empty list\nresult = empty list, queue = deque holding root\nwhile the queue is not empty:\n    level = empty list\n    count = size of the queue   (exactly the nodes of this level)\n    repeat count times:\n        node = pop the front\n        append node.val to level\n        if node.left exists: push node.left to the back\n        if node.right exists: push node.right to the back\n    append level to result\nreturn result"
+  },
+  "binary_tree_inorder_traversal": {
+    "brute": "out = empty list\ninorder(node, out):\n    if the node is empty: return\n    inorder(node.left, out)\n    append node.val to out   (the call stack remembers the way back)\n    inorder(node.right, out)\ninorder(root, out)\nreturn out",
+    "optimal": "out = empty list, stack = empty, node = root\nwhile node exists or the stack is not empty:\n    while node exists:\n        push node, node = node.left   (slide down the left spine, remembering each node)\n    node = pop the top\n    append node.val to out\n    node = node.right\nreturn out"
+  },
+  "validate_binary_search_tree": {
+    "brute": "all_values(node): every value in the subtree, collected recursively\nif the root is empty: return true\nfor each value in all_values(root.left):   (the same subtree is rescanned by every ancestor)\n    if value >= root.val: return false\nfor each value in all_values(root.right):\n    if value <= root.val: return false\nreturn brute_force(root.left) and brute_force(root.right)",
+    "optimal": "valid(node, low, high):\n    if the node is empty: return true\n    if node.val <= low or node.val >= high: return false\n    return valid(node.left, low, node.val) and valid(node.right, node.val, high)   (tighten the open interval)\nreturn valid(root, -infinity, +infinity)"
+  },
+  "kth_smallest_element_in_a_bst": {
+    "brute": "vals = empty list\ncollect_values(node, vals):\n    if the node is empty: return\n    append node.val to vals\n    collect_values(node.left, vals)\n    collect_values(node.right, vals)\ncollect_values(root, vals)\nsort vals   (ignores that the BST is already ordered)\nreturn vals[k - 1]",
+    "optimal": "stack = empty, node = root\nloop forever:\n    while node exists:\n        push node, node = node.left   (slide left: the smallest unvisited value ends on top)\n    node = pop the top\n    k = k - 1\n    if k == 0: return node.val\n    node = node.right"
+  },
+  "lowest_common_ancestor_of_a_bst": {
+    "brute": "path_to(root, target):   (walk down from the root using the BST order)\n    path = empty list, node = root\n    while node is not target:\n        append node to path\n        if target.val < node.val: node = node.left, else node = node.right\n    append target to path\n    return path\npath p = path_to(root, p), path q = path_to(root, q)\nlca = root\nfor each position i in both paths:\n    if path p[i] is not path q[i]: stop   (the paths split here)\n    lca = path p[i]\nreturn lca",
+    "optimal": "low = min(p.val, q.val), high = max(p.val, q.val)\nnode = root\nwhile node exists:\n    if high < node.val: node = node.left   (both targets are to the left)\n    else if low > node.val: node = node.right   (both targets are to the right)\n    else: return node   (low <= node.val <= high: they split here)\nreturn empty"
+  },
+  "lowest_common_ancestor_of_a_binary_tree": {
+    "brute": "path_to(node, target, path):   (dfs that records the root-to-target path)\n    if the node is empty: return false\n    append node to path\n    if node is target: return true\n    if path_to(node.left, target, path): return true\n    if path_to(node.right, target, path): return true\n    remove node from path, return false\npath p = path_to(root, p), path q = path_to(root, q)\nlca = empty\nfor each position i in both paths:\n    if path p[i] is not path q[i]: stop   (the paths split here)\n    lca = path p[i]\nreturn lca",
+    "optimal": "if the root is empty or root is p or root is q: return root\nleft = lowest_common_ancestor(root.left, p, q)\nright = lowest_common_ancestor(root.right, p, q)\nif both left and right are found: return root   (p and q lie on different sides)\nif left is found: return left\nreturn right"
+  },
+  "construct_binary_tree_from_preorder_and_inorder_traversal": {
+    "brute": "if preorder is empty: return empty\nroot = new node with preorder[0]\nmid = position of root.val in inorder   (linear scan)\nleft size = mid\nleft pre = preorder[1 .. left size], right pre = preorder[left size + 1 ..]   (slice copies at every call)\nroot.left = brute_force(left pre, inorder[0 .. mid - 1])\nroot.right = brute_force(right pre, inorder[mid + 1 ..])\nreturn root",
+    "optimal": "index = dict value -> position in inorder\npre queue = deque of preorder   (eaten front to back: the next value is always the next root)\nmake(pre queue, index, lo, hi):\n    if lo >= hi: return empty\n    root = new node with the front of pre queue, popped\n    mid = index[root.val]\n    root.left = make(pre queue, index, lo, mid)\n    root.right = make(pre queue, index, mid + 1, hi)\n    return root\nreturn make(pre queue, index, 0, size of inorder)"
+  }
+}
