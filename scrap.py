@@ -1,54 +1,27 @@
-# (Linked list, Level 2). List 1 -> 2 -> 3.
-class Node:
-    def __init__(self, data):
-        self.data = data
-        self.prev = None
-        self.cur = None  # acts as the next pointer
+# find the non empty subarry with the largest sum in an array of integers. Return the sum. If all numbers are negative, return smallest negative number. Example: [-2, 1, -3, 4, -1, 2, 1, -5, 4] -> 6 (the subarray [4, -1, 2, 1]).
 
-class DoublyLinkedList:
-    def __init__(self):
-        self.head = None
 
-    def append(self, data):
-        new_node = Node(data)
-        if not self.head:
-            self.head = new_node
-            return
-        current = self.head
-        while current.cur:
-            current = current.cur
-        current.cur = new_node
-        new_node.prev = current
+arr = [-2, 1, -3, 4, -1, 2, 1, -5, 4]
 
-    def next(self, node):
-        """Returns the next node after the given node."""
-        if node and node.cur:
-            return node.cur
-        return None
+max_sum = float('-inf')
+for i in range(len(arr)):
+    for j in range(i, len(arr)):
+        if sum(arr[i:j+1]) > max_sum:
+            max_sum = sum(arr[i:j+1])
+            print(arr[i:j+1], sum(arr[i:j+1]))
 
-    def display(self):
-        elements = []
-        current = self.head
-        while current:
-            elements.append(str(current.data))
-            current = current.cur
-        print(" <-> ".join(elements))
 
-# Create the list 1 -> 2 -> 3
-dll = DoublyLinkedList()
-dll.append(1)
-dll.append(2)
-dll.append(3)
 
-dll.display()
+# what is the optimal solution for this problem?
 
-prev, cur = None, dll.head
-i = 0
-while cur:
-    nxt = cur.next
-    cur.next = prev
-    prev = cur
-    cur = nxt
-    i+=1
-    if i==1:
-        break
+# The optimal solution for finding the non-empty subarray with the largest sum in an array of integers is known as Kadane's Algorithm. This algorithm runs in O(n) time and uses O(1) space. The idea is to iterate through the array while keeping track of the maximum sum of the subarray that ends at the current position, and also keeping track of the overall maximum sum found so far.
+
+def kadane(arr):
+    max_current = max_global = arr[0]
+
+    for i in range(1, len(arr)):
+        max_current = max(arr[i], max_current + arr[i])
+        if max_current > max_global:
+            max_global = max_current
+
+    return max_global
