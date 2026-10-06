@@ -59,6 +59,7 @@ sort, union find, Kruskal, Prim, Dijkstra, heaps, tries, KMP ...) in the same st
 - [Heap Push and Pop by Hand](fundamentals/heaps/02_push_and_pop_by_hand.py) · push: append, float up via (i-1)//2; pop: last to root, sink to the smaller child
 - [Top K Largest with a Size-k Min-Heap](fundamentals/heaps/03_top_k_with_size_k_min_heap.py) · fill to k, compare with the root, heappushpop replaces it, root is the k-th largest
 - [Max-Heap by Negation and Tuples](fundamentals/heaps/04_max_heap_by_negation_and_tuples.py) · push (-priority, arrival, payload), pop and un-negate, arrival breaks ties
+- [Heap as a Sorted Stream (Traced)](fundamentals/heaps/05_heap_as_a_sorted_stream.py) · push at a leaf then sift up, pop the root then sift the last leaf down, pull k or pull all
 - [Merge K Sorted Arrays](fundamentals/heaps/06_merge_k_sorted_arrays.py) · seed heap with each head (value, array, index), pop the min, push that array's next
 
 ### Backtracking

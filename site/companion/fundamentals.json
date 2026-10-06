@@ -53,6 +53,7 @@
   "02_push_and_pop_by_hand",
   "03_top_k_with_size_k_min_heap",
   "04_max_heap_by_negation_and_tuples",
+  "05_heap_as_a_sorted_stream",
   "06_merge_k_sorted_arrays"
  ],
  "tries": [

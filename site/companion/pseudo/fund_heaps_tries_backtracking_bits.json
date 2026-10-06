@@ -43,5 +43,8 @@
   },
   "bits/05_reverse_bits_and_shifts": {
     "algorithm": "reverse_bits(n):\n    result = 0\n    repeat 32 times:   (leading zeros count too, so always 32 rounds)\n        bit = n & 1\n        result = (result << 1) | bit\n        n = n >> 1\n    return result\nlogical_right_shift(n, k):\n    unsigned = n & 0xFFFFFFFF   (the 32-bit pattern as a positive number)\n    return unsigned >> k"
+  },
+  "heaps/05_heap_as_a_sorted_stream": {
+    "algorithm": "push(heap, value):\n    append value at the next leaf, i = last index   (keeps the tree complete)\n    while i > 0 and heap[parent(i)] > heap[i]:\n        swap heap[i] with its parent, i = parent(i)\npop(heap):\n    top = heap[0]\n    move the last leaf into the root, i = 0\n    while i has a child:\n        child = the SMALLER of 2i+1 and 2i+2\n        if heap[i] <= heap[child]: stop\n        swap heap[i] with heap[child], i = child\n    return top\nsorted_stream(values, k):\n    push every value\n    pop k times -> the k smallest, in sorted order   (k = n is heap sort)"
   }
 }

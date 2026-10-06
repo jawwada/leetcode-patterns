@@ -55,9 +55,47 @@ The twenty problems in this chapter fall into a handful of families:
 
 ## What it is
 
-You met the FIFO queue and the deque in the "Queues and Deques" chapter: items leave in arrival order, so the
-oldest leaves first. A priority queue keeps that interface (push, pop, peek) but changes the rule: the most urgent item
-leaves first. A heap is the usual way to build one.
+### The magic: a sorted stream you pull from
+
+A heap is a box you can throw items into, in any order and at any time, and from which you can always pull out the
+smallest one. Pull again and you get the next smallest. Keep pulling and the items come out **sorted**, one at a time,
+only as fast as you ask for them.
+
+```text
+in: any order, any time                       out: always the smallest left
+
+5  3  8  1  9  2   --->  [    heap    ]  --->  1  2  3  5  8  9
+                          smallest on top
+```
+
+The box never sorts its whole contents. It keeps them *just ordered enough* that the smallest sits on top, and each push
+or pop costs O(log n). Three consequences follow, and they are the whole reason heaps exist:
+
+- **Pull all n items: O(n log n).** n pushes plus n pops is n log n work, and the output is sorted. That is heap sort,
+  and you get it for free.
+- **Pull only k items: O(n + k log n).** Heapify everything in O(n), then pop k times. You pay only for the part of the
+  order you actually use.
+- **Push while you pull.** A new item costs O(log n), and the next pop is still correct. Sorting once cannot do this,
+  because a sorted list goes stale the moment a new item lands.
+
+The third point is why heaps sit inside so many algorithms. The algorithm keeps asking "what is the best candidate right
+now?" while its own work keeps creating new candidates.
+
+### Where heaps show up
+
+| Use | What sits in the heap | Push when | Pop gives |
+|---|---|---|---|
+| Heap sort | all n values | once, at the start (heapify) | the next value in sorted order |
+| Top k, k-th largest | the k best so far (a min-heap) | a new value beats the root | the weakest of the k, thrown out |
+| Merge k sorted lists | the front item of each list | the popped item's successor arrives | the next item of the merged output |
+| Dijkstra shortest paths | (distance, node) for discovered nodes | a shorter route to a neighbour is found | the closest unsettled node, whose distance is now final |
+| Prim minimum spanning tree | (weight, node) for edges leaving the tree | a node joins the tree, so its edges are pushed | the cheapest edge that grows the tree |
+| Meeting rooms, CPU scheduling | (end time, room) for busy rooms | a meeting starts | the room that frees up first |
+| Running median | the low half (max-heap) and the high half (min-heap) | every new number | the two middle values, at the two roots |
+| Best-first search, event simulation | (priority, state) | a state is discovered | the most promising state next |
+
+Every row has the same shape. Candidates are generated as the algorithm runs, they are needed back in priority order,
+and the full order is never needed all at once.
 
 ### The priority queue: the most urgent item leaves first
 
@@ -168,55 +206,134 @@ First the priority-queue baselines, then the heap itself.
 | delete an arbitrary value | O(n) find + O(log n) fix | so we usually delete lazily instead |
 | n pops in a row | O(n log n) | that is heapsort |
 
-**Push = append, then sift up.** Push 0 onto the heap above. It goes into the first free slot (index 6), which keeps the
-shape complete, then it swaps with its parent as long as it is smaller than the parent.
+Almost every row of that table is built from two moves: **push** (insert at a leaf, then sift up) or **pop** (take the root, move
+the last leaf up, then sift down). The rest of this section watches both moves turn a jumble into a sorted stream, and
+then watches the same two moves run inside Dijkstra.
+
+### Push: the new item goes in at a leaf, then sifts up
+
+Why a leaf? The tree must stay complete, with no gaps, so that it still fits in the array. The only slot that keeps it
+complete is the next one at the end of the array, which is the leftmost free spot on the bottom level. Dropping the item
+there can break the heap rule in exactly one place, between the new item and its parent. Every other parent-child pair
+is untouched. So the repair walks one path: while the new item is smaller than its parent, swap them. It climbs at most
+the height of the tree, which is O(log n).
+
+Build a heap from `5, 3, 8, 1, 9, 2`, pushing one at a time:
 
 ```text
-Frame 1: append 0 at index 6, parent = (6-1)//2 = 2
-            1
-          /   \
-         3     2         [1, 3, 2, 7, 4, 5, 0]
-        / \   / \                           ^ i=6
-       7   4 5   0
-Frame 2: 0 < parent 2 -> swap; now i=2, parent = 0
-            1
-          /   \
-         3     0         [1, 3, 0, 7, 4, 5, 2]
-        / \   / \               ^ i=2
-       7   4 5   2
-Frame 3: 0 < parent 1 -> swap; i=0 is the root, stop
-            0
-          /   \
-         3     1         [0, 3, 1, 7, 4, 5, 2]
-        / \   / \         ^ i=0
-       7   4 5   2
+push   array after          what happened
+ 5     [5]                  first item, it is the root
+ 3     [3, 5]               3 < parent 5: swap, 3 is the root
+ 8     [3, 5, 8]            8 > parent 3: stays at its leaf
+ 1     [1, 3, 8, 5]         1 < parent 5: swap; 1 < parent 3: swap; 1 is the root
+ 9     [1, 3, 8, 5, 9]      9 > parent 3: stays
+ 2     [1, 3, 2, 5, 9, 8]   2 < parent 8: swap; 2 > parent 1: stop
 ```
 
-Only the path 6 -> 2 -> 0 was touched. The subtree under 3 was never looked at.
-
-**Pop = take the root, move the last item up, sift down.** Pop from `[0, 3, 1, 7, 4, 5, 2]`. The root 0 is the answer. To
-keep the shape complete, the last item (2) moves into the hole at the root, then it swaps with its smaller child while
-that child is smaller than it.
+The last push, frame by frame:
 
 ```text
-Frame 1: return 0; move last item 2 to the root
-            2
-          /   \
-         3     1         [2, 3, 1, 7, 4, 5]
-        / \   /           ^ i=0, children at 1 and 2
-       7   4 5
-Frame 2: smaller child is 1 (i=2), 1 < 2 -> swap
+Frame 1: 2 lands at the next leaf, index 5; parent (5-1)//2 = 2
             1
           /   \
-         3     2         [1, 3, 2, 7, 4, 5]
-        / \   /                 ^ i=2, children at 5 and 6
-       7   4 5
-Frame 3: only child is 5 (i=5), 2 < 5 -> stop
-         result: [1, 3, 2, 7, 4, 5], heap rule holds
+         3     8           [1, 3, 8, 5, 9, 2]
+        / \   /                             ^ i=5
+       5   9 2
+Frame 2: 2 < parent 8 -> swap; now i=2, parent 0
+            1
+          /   \
+         3     2           [1, 3, 2, 5, 9, 8]
+        / \   /                  ^ i=2
+       5   9 8
+Frame 3: 2 > parent 1 -> stop. The rule holds everywhere again.
+```
+
+Only the path 5 -> 2 -> 0 was touched. The 3-5-9 side of the tree was never looked at.
+
+### Pop: the root leaves, the last leaf takes its place and sifts down
+
+The answer is the root. Taking it leaves a hole at the top. Filling the hole with a middle item would only open a hole
+somewhere else. The one item whose removal keeps the tree complete is the last one in the array, the bottom-right leaf,
+so it moves into the root. It is usually too big for the top, so it sinks: swap with the smaller child while that child
+is smaller. This is the "automatic heapify". Nobody re-sorts anything. One item walks down one path, at most log n steps,
+and the rule holds again everywhere.
+
+Pop from `[1, 3, 2, 5, 9, 8]`:
+
+```text
+Frame 1: return 1; the last leaf, 8, moves into the root
+            8
+          /   \
+         3     2           [8, 3, 2, 5, 9]
+        / \                 ^ i=0, children 3 and 2
+       5   9
+Frame 2: the smaller child is 2, and 2 < 8 -> swap
+            2
+          /   \
+         3     8           [2, 3, 8, 5, 9]
+        / \                       ^ i=2, no children
+       5   9
+Frame 3: 8 is a leaf now -> stop. The next smallest, 2, is already on top.
 ```
 
 Why the smaller child? Because whichever child moves up becomes the parent of the other child. Promoting the smaller one
 keeps the rule true for its sibling; promoting the larger one would put a big value above a smaller one.
+
+### Keep pulling: the sorted stream (heap sort)
+
+Pop until the heap is empty. Each pop is one sink down one path, and the outputs arrive in sorted order:
+
+```text
+pop   returns   heap after         the sinking item's walk
+ 1      1       [2, 3, 8, 5, 9]    8 into the root, swaps with 2
+ 2      2       [3, 5, 8, 9]       9 into the root, swaps with 3, then with 5
+ 3      3       [5, 9, 8]          9 into the root, swaps with 5
+ 4      5       [8, 9]             8 into the root, smaller than 9: stays
+ 5      8       [9]                9 into the root, no children
+ 6      9       []
+
+output: 1 2 3 5 8 9
+```
+
+Count the work. Six pushes and six pops, each one walk of at most `log2 n` levels. In general that is n pushes plus n
+pops, 2n walks of length log n, so O(n log n), the same bound as merge sort. It is cheaper than it looks because the heap
+only ever compares a parent with its children. It never orders two items that it does not have to. The in-place heap sort
+in the Sorting fundamentals does the same thing with a max-heap living inside the input array, so it needs O(1) extra
+space.
+
+### The same two moves inside a graph algorithm: Dijkstra
+
+Dijkstra uses the heap as a sorted stream of distances that are *still being discovered*. Take the graph from the
+Dijkstra fundamentals file, with directed edges `0->1 (4)`, `0->2 (1)`, `2->1 (2)`, `1->3 (1)`, `2->3 (5)` and `3->4 (3)`,
+and start at node 0. The heap holds `(distance so far, node)`:
+
+```text
+step  pop      verdict              push (a shorter route found)   heap after
+ 1    (0, 0)   final: dist[0] = 0   (4, 1)  (1, 2)                 (1,2) (4,1)
+ 2    (1, 2)   final: dist[2] = 1   (3, 1)  (6, 3)                 (3,1) (4,1) (6,3)
+ 3    (3, 1)   final: dist[1] = 3   (4, 3)                         (4,1) (4,3) (6,3)
+ 4    (4, 1)   stale: 1 is done     -                              (4,3) (6,3)
+ 5    (4, 3)   final: dist[3] = 4   (7, 4)                         (6,3) (7,4)
+ 6    (6, 3)   stale: 3 is done     -                              (7,4)
+ 7    (7, 4)   final: dist[4] = 7   -                              empty
+```
+
+Read the "pop" column top to bottom: 0, 1, 3, 4, 4, 6, 7. The distances come out **sorted**, exactly like the numbers in
+heap sort, even though most of them did not exist when the search began. That is the whole correctness argument. Edge
+weights are never negative, so anything pushed later is at least as large as what was just popped. When a node comes out
+for the first time, nothing in the heap and nothing still to be discovered can beat its distance, so that distance is
+final. A later, larger copy of the same node is stale and gets skipped (steps 4 and 6).
+
+Each push in that trace is "insert at a leaf, sift up". Each pop is "root out, last leaf in, sift down". With m edges
+there are at most m pushes and m pops, so Dijkstra costs O(m log m). Other algorithms are the same loop with a different
+key:
+
+- **Prim** keys on the weight of the single edge leaving the tree, not on the total distance. Pop the cheapest edge; if
+  its far end is new, add it and push that node's edges.
+- **Meeting rooms and scheduling** key on end time. Pop the room that frees up first.
+- **Merge k sorted lists** keys on the front value. Pop the smallest front and push its successor.
+
+### Two more tools
 
 **Heapify is O(n), not O(n log n).** Turning an arbitrary list into a heap does not push items one at a time. It sifts
 down every internal node, starting from the last internal node `n//2 - 1` and walking back to index 0. Take

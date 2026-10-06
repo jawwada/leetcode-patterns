@@ -154,6 +154,7 @@ code,pre,textarea{font-family:var(--mono)}
 .bgsec summary::before{content:"▸ ";color:var(--ink-soft);font-size:.8em}
 .bgsec[open] summary::before{content:"▾ "}
 .bgsec{border-top:1px solid var(--rule)}
+.bghead{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 
 /* home */
 .home h1{font-size:clamp(34px,5vw,54px);letter-spacing:-.02em;margin:0 0 12px}
@@ -351,15 +352,21 @@ function renderChapter(topic){
 }
 function renderFundChapter(id){
   const f = byArea[id];
-  const bg = f.background.map((s, k) => `<details class="bgsec" ${k === 0 ? 'open' : ''}><summary>${esc(s.title)}</summary><div class="prose">${md2html(s.md)}</div></details>`).join('');
+  const bg = f.background.map(s => `<details class="bgsec"><summary>${esc(s.title)}</summary><div class="prose">${md2html(s.md)}</div></details>`).join('');
   const items = f.items.length ? `<div class="prose"><h2>Algorithms to have at your fingertips</h2></div>
     <div class="overview">${f.items.map((it, k) => `<a href="#${it.id}"><span class="k">${String(k + 1).padStart(2, '0')}</span><span><div class="t">${esc(it.title)}</div><div class="w">${esc(it.key_ops)}</div></span></a>`).join('')}</div>` : '';
   page.innerHTML = `
     <header class="pagehead"><div class="crumbs"><a href="#home">Chapters</a><span>›</span><span>${esc(ED.fund_label)}</span><span>›</span><span>${esc(f.title)}</span></div>
       <h1>${esc(f.title)}</h1><div class="meta">${f.items.length ? `<span>${f.items.length} algorithms</span><span>·</span>` : ''}<a href="#${f.topic}">${byTopic[f.topic].problems.length} problems</a></div></header>
     <div class="prose"><p class="lede">${esc(f.intro)}</p></div>
-    <div class="prose"><h2>Background</h2></div>${bg}
+    <div class="prose bghead"><h2>Background</h2>${bg ? '<button class="bgtoggle">Expand all</button>' : ''}</div>${bg}
     ${items}`;
+  const toggle = page.querySelector('.bgtoggle');
+  if (toggle) toggle.onclick = () => {
+    const open = toggle.textContent === 'Expand all';
+    page.querySelectorAll('.bgsec').forEach(d => { d.open = open; });
+    toggle.textContent = open ? 'Collapse all' : 'Expand all';
+  };
   if (window.hljs) page.querySelectorAll('.prose code.language-python').forEach(el => hljs.highlightElement(el));
 }
 function renderFund(id){
