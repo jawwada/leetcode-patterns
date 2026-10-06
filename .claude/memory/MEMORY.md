@@ -1,0 +1,6 @@
+- [Google interview prep](google-interview-prep.md) — medium/medium-hard DS problems, no DP, brute force first then optimal, visual/geometric explanations
+- [Leetcode repo layout](leetcode-repo-layout.md) — topic folders, per-problem .py format, site/ built from site/data/*.json via build.py
+- [Drill quizmaster format](drill-quizmaster-format.md) — rules live in skill .claude/skills/dsa-quiz in repo (symlinked from ~/.claude/skills/dsa-quiz) (update it on new rules); quiz in chat one MCQ at a time; topic quotas per 40 (strings/graphs/heap/trees 6 each, backtracking/sys design 4, DP 2, 6 others 1); target the core "why" (DS ↔ algorithm ↔ marked code line); state problem + input/output + code; misses get answer + full visual trace + intuition; shuffle correct option
+- [Drill agent site](drill-agent-site.md) — DSA Drill Agent and System Design Drill are claude.ai artifacts (sample+db); no code in repo
+- [Practice bank](practice-bank.md) — practice/ folder: 50 traced problems + basics with verified bug variants, bank.json feeds the DSA Drill artifact debug mode
+- [Brute to Optimal companion](brute-to-optimal-companion.md) — two artifacts + Vercel sites (standard: companion/, 108 problems + 63 fundamentals; hard: companion_hard/, 127 problems), simple Python, built by site/build_companion.py
