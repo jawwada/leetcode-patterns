@@ -154,7 +154,12 @@ code,pre,textarea{font-family:var(--mono)}
 .bgsec summary::before{content:"▸ ";color:var(--ink-soft);font-size:.8em}
 .bgsec[open] summary::before{content:"▾ "}
 .bgsec{border-top:1px solid var(--rule)}
-.bghead{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.grp{display:flex;width:100%;gap:6px;align-items:center;border:0;padding:10px 10px 4px;text-align:left}
+.grp::before{content:"▸";font-size:10px}.grp.open::before{content:"▾"}
+.fundhome>summary{cursor:pointer;list-style:none;font:700 22px var(--display);margin:0 0 10px}
+.fundhome>summary::-webkit-details-marker{display:none}
+.fundhome>summary::before{content:"▸ ";color:var(--ink-soft);font-size:.7em}.fundhome[open]>summary::before{content:"▾ "}
+.fundhome[open]{margin-bottom:28px}
 
 /* home */
 .home h1{font-size:clamp(34px,5vw,54px);letter-spacing:-.02em;margin:0 0 12px}
@@ -352,21 +357,15 @@ function renderChapter(topic){
 }
 function renderFundChapter(id){
   const f = byArea[id];
-  const bg = f.background.map(s => `<details class="bgsec"><summary>${esc(s.title)}</summary><div class="prose">${md2html(s.md)}</div></details>`).join('');
+  const bg = f.background.map((s, k) => `<details class="bgsec" ${k === 0 ? 'open' : ''}><summary>${esc(s.title)}</summary><div class="prose">${md2html(s.md)}</div></details>`).join('');
   const items = f.items.length ? `<div class="prose"><h2>Algorithms to have at your fingertips</h2></div>
     <div class="overview">${f.items.map((it, k) => `<a href="#${it.id}"><span class="k">${String(k + 1).padStart(2, '0')}</span><span><div class="t">${esc(it.title)}</div><div class="w">${esc(it.key_ops)}</div></span></a>`).join('')}</div>` : '';
   page.innerHTML = `
     <header class="pagehead"><div class="crumbs"><a href="#home">Chapters</a><span>›</span><span>${esc(ED.fund_label)}</span><span>›</span><span>${esc(f.title)}</span></div>
       <h1>${esc(f.title)}</h1><div class="meta">${f.items.length ? `<span>${f.items.length} algorithms</span><span>·</span>` : ''}<a href="#${f.topic}">${byTopic[f.topic].problems.length} problems</a></div></header>
     <div class="prose"><p class="lede">${esc(f.intro)}</p></div>
-    <div class="prose bghead"><h2>Background</h2>${bg ? '<button class="bgtoggle">Expand all</button>' : ''}</div>${bg}
+    <div class="prose"><h2>Background</h2></div>${bg}
     ${items}`;
-  const toggle = page.querySelector('.bgtoggle');
-  if (toggle) toggle.onclick = () => {
-    const open = toggle.textContent === 'Expand all';
-    page.querySelectorAll('.bgsec').forEach(d => { d.open = open; });
-    toggle.textContent = open ? 'Collapse all' : 'Expand all';
-  };
   if (window.hljs) page.querySelectorAll('.prose code.language-python').forEach(el => hljs.highlightElement(el));
 }
 function renderFund(id){
@@ -398,9 +397,9 @@ function renderHome(){
   page.innerHTML = `<div class="home"><h1>${esc(ED.title)}</h1>
     <p class="lede">${esc(ED.lede)}</p>
     <p class="muted" style="font-family:var(--display);font-size:14px">${nd} of ${total} problems${forder.length ? ' and ' + forder.filter(s => done.has(s)).length + ' of ' + forder.length + ' fundamentals' : ''} marked done on this device.</p>
-    <h2 style="font-size:22px;margin:0 0 10px">${esc(ED.fund_label)}: background per chapter</h2>
-    <div class="chapters" style="margin-bottom:28px">${FUND.map(f => { const d = f.items.filter(it => done.has(it.id)).length; return `<a href="#${f.id}"><h3>${esc(f.title)}</h3><span class="s">${f.items.length ? f.items.length + ' algorithms · ' : ''}background</span><div class="bar"><div style="width:${f.items.length ? 100 * d / f.items.length : 0}%"></div></div></a>`; }).join('')}</div>
-    <h2 style="font-size:22px;margin:0 0 10px">Problems by chapter</h2>
+    <details class="fundhome"><summary>${esc(ED.fund_label)}: background per chapter</summary>
+    <div class="chapters">${FUND.map(f => { const d = f.items.filter(it => done.has(it.id)).length; return `<a href="#${f.id}"><h3>${esc(f.title)}</h3><span class="s">${f.items.length ? f.items.length + ' algorithms · ' : ''}background</span><div class="bar"><div style="width:${f.items.length ? 100 * d / f.items.length : 0}%"></div></div></a>`; }).join('')}</div></details>
+    <h2 style="font-size:22px;margin:16px 0 10px">Problems by chapter</h2>
     <div class="chapters">${CH.map(c => { const d = c.problems.filter(s => done.has(s)).length; return `<a href="#${c.topic}"><h3>${esc(c.title)}</h3><span class="s">${c.problems.length} problems</span><div class="bar"><div style="width:${c.problems.length ? 100 * d / c.problems.length : 0}%"></div></div></a>`; }).join('')}</div></div>`;
 }
 function renderNav(){
@@ -424,10 +423,19 @@ function renderNav(){
       <button type="button"><span>${esc(c.title)}</span><span class="n">${c.problems.filter(s => done.has(s)).length}/${c.problems.length}</span></button>
       <div class="secs">${items.map(s => `<a href="#${s}" class="${cur === s ? 'on' : ''} ${done.has(s) ? 'done' : ''}"><span class="d ${P[s].difficulty}"></span>${esc(P[s].title)}</a>`).join('')}</div></div>`;
   }).join('');
-  $('#nav').innerHTML = `<div class="eyebrow" style="padding:10px 10px 4px">${esc(ED.fund_label)}</div>` + fundNav + `<div class="eyebrow" style="padding:16px 10px 4px">Problems</div>` + probNav;
+  // the fundamentals group starts collapsed; it opens on a click, on a search hit or on a fundamentals page
+  const fundOpen = q || store.get('fundOpen', false) || cur.startsWith('fund-');
+  $('#nav').innerHTML = `<button type="button" class="eyebrow grp ${fundOpen ? 'open' : ''}" aria-expanded="${fundOpen ? 'true' : 'false'}">${esc(ED.fund_label)}</button>`
+    + `<div class="fundnav" ${fundOpen ? '' : 'hidden'}>${fundNav}</div><div class="eyebrow" style="padding:16px 10px 4px">Problems</div>` + probNav;
   $('#subtitle').textContent = `${order.length} problems · ${forder.length ? forder.length + ' fundamentals · ' : ''}companion to Intuition Journey`;
 }
 $('#nav').addEventListener('click', e => {
+  const grp = e.target.closest('.grp');
+  if (grp){
+    const open = !grp.classList.contains('open');
+    grp.classList.toggle('open', open); grp.setAttribute('aria-expanded', open ? 'true' : 'false');
+    $('#nav .fundnav').hidden = !open; store.set('fundOpen', open); return;
+  }
   const btn = e.target.closest('.ch > button'); if (!btn) return;
   const ch = btn.parentElement, topic = ch.dataset.topic;
   const openSet = new Set(store.get('open', []));
