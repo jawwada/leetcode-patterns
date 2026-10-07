@@ -1,5 +1,8 @@
 # Python LeetCode Cheatsheet
 
+One-page reminder. The full guide (intuition, idea-to-code decisions, traps, edge cases, variations and
+runnable experiments for every technique) is `practice/LeetCode_Playbook.ipynb`, built from `practice/playbook/`.
+
 ## Built-ins you'll use constantly
 ```python
 from collections import Counter, defaultdict, deque

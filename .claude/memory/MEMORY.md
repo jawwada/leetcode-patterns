@@ -4,3 +4,4 @@
 - [Drill agent site](drill-agent-site.md) — DSA Drill Agent and System Design Drill are claude.ai artifacts (sample+db); no code in repo
 - [Practice bank](practice-bank.md) — practice/ folder: 50 traced problems + basics with verified bug variants, bank.json feeds the DSA Drill artifact debug mode
 - [Brute to Optimal companion](brute-to-optimal-companion.md) — two artifacts + Vercel sites (standard: companion/, 108 problems + 63 fundamentals; hard: companion_hard/, 127 problems), simple Python, built by site/build_companion.py
+- [LeetCode Playbook notebook](leetcode-playbook.md) — practice/playbook/*.md -> build.py -> LeetCode_Playbook.ipynb; idea-to-code focus, Try-it after every cell, fused single voice

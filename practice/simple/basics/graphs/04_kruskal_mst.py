@@ -2,7 +2,7 @@
 Kruskal's Minimum Spanning Tree (basics: graphs)
 Find the cheapest set of undirected edges (u, v, w) connecting all n nodes (a forest if it can't).
   n = 5, edges [(0,1,4), (0,2,1), (1,2,2), (1,3,5), (2,3,8), (3,4,3)]
-    ->  (11, [(0, 2, 1), (1, 2, 2), (3, 4, 3), (1, 3, 5)])   (0,1,4) is skipped: 0, 1 already joined
+    ->  (11, [(0, 2, 1), (1, 2, 2), (3, 4, 3), (1, 3, 5)])   (0,1,4) skipped: 0 and 1 already joined
 
 Idea: try edges cheapest first and keep one only if it joins two different components
       (union-find answers that in near O(1)). A tree on n nodes has n - 1 edges, so stop there.
@@ -43,6 +43,6 @@ def kruskal_mst(n, edges):
 
 if __name__ == "__main__":
     edges = [(0, 1, 4), (0, 2, 1), (1, 2, 2), (1, 3, 5), (2, 3, 8), (3, 4, 3)]
-    print(kruskal_mst(5, edges))   # (11, [(0, 2, 1), (1, 2, 2), (3, 4, 3), (1, 3, 5)])
-    two_parts = [(0, 1, 7), (2, 3, 2)]
-    print(kruskal_mst(4, two_parts))  # (9, [(2, 3, 2), (0, 1, 7)])
+    print(kruskal_mst(5, edges))         # (11, [(0, 2, 1), (1, 2, 2), (3, 4, 3), (1, 3, 5)])
+    disconnected = [(0, 1, 7), (2, 3, 2)]
+    print(kruskal_mst(4, disconnected))  # (9, [(2, 3, 2), (0, 1, 7)])

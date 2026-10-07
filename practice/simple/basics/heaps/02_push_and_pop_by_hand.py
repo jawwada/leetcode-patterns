@@ -10,14 +10,14 @@ Idea: the parent of i is (i - 1) // 2, its children 2i+1 and 2i+2. Each operatio
 Pseudocode:
   push(x):  append x; i = last index
             while i > 0:
-                p = (i - 1) // 2
-                if heap[p] <= heap[i]: stop
-                swap them; i = p
+                parent = (i - 1) // 2
+                if heap[parent] <= heap[i]: stop
+                swap them; i = parent
   pop():    top = heap[0]; move the last element to the root; i = 0
             while i has a child:
-                c = the smaller child
-                if heap[i] <= heap[c]: stop
-                swap them; i = c
+                child = the smaller child
+                if heap[i] <= heap[child]: stop
+                swap them; i = child
             return top
 
 Time O(log n) per push or pop, space O(1) extra.

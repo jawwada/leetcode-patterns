@@ -1,6 +1,6 @@
 """
 Asteroid Collision (basics: stacks)
-Return the survivors: + flies right, - flies left; when two meet, the smaller one explodes.
+Return the surviving asteroids: + flies right, - flies left; when two meet the smaller explodes.
   [10, 2, -5]  ->  [10]
 
 Idea: only a left-mover that comes after a right-mover can crash. Keep the survivors on a stack;

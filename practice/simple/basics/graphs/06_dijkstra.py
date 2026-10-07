@@ -35,7 +35,7 @@ def dijkstra(n, edges, src):
         for v, w in adj[u]:
             if d + w < dist.get(v, float("inf")):   # relax: shorter way to v via u
                 dist[v] = d + w
-                heapq.heappush(heap, (dist[v], v))
+                heapq.heappush(heap, (d + w, v))
     return dist
 
 

@@ -8,7 +8,7 @@ Idea: a list is a stack whose top is its end. Pouring one stack into another rev
       is moved once, so each queue operation is amortized O(1).
 
 Pseudocode:
-  Stack:      push = append, pop = pop from the end, peek = items[-1]
+  Stack:      push = append, pop = pop from the end, peek = items[-1], empty = no items
   enqueue(x): inbox.push(x)
   _refill():  if outbox is empty: pop every inbox item and push it onto outbox
   dequeue():  _refill(); return outbox.pop()

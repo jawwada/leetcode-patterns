@@ -1,6 +1,6 @@
 """
 Lowest Common Ancestor of a Binary Tree (basics: trees)
-Return the lowest node that has both p and q in its subtree (a node counts as its own descendant).
+Return the value of the lowest node with both p and q in its subtree (a node is its own descendant).
   [3, 5, 1, 6, 2, 0, 8, None, None, 7, 4], p = 5, q = 4  ->  5
 
 Idea: post-order search. A call returns p or q if it meets one (or the LCA, once found).
@@ -10,10 +10,10 @@ Idea: post-order search. A call returns p or q if it meets one (or the LCA, once
 Pseudocode:
   lca(node):
       if node is None: return None
-      if node.val == p or node.val == q: return node      # found a target
+      if node.val == p or node.val == q: return node   # found a target
       left, right = lca(node.left), lca(node.right)
-      if left is not None and right is not None: return node  # one target on each side
-      return left if left is not None else right          # pass up what was found
+      if both sides found something: return node       # one target on each side
+      return the side that found something (or None)
 
 Here p and q are values that are in the tree (LeetCode passes nodes).
 Time O(n), space O(h) recursion.

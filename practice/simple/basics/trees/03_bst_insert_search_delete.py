@@ -16,7 +16,7 @@ Pseudocode:
       if node is None: return None
       if v < node.val: node.left = delete(node.left, v)
       elif v > node.val: node.right = delete(node.right, v)
-      elif node.left is None or node.right is None: return the other child   # 0 or 1 child
+      elif node.left is None or node.right is None: return the existing child (or None)
       else: node.val = successor value; node.right = delete(node.right, successor value)
       return node
 

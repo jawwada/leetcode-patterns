@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 .DS_Store
 site/artifact.html
+practice/playbook/artifact.html
 site/book.html
 
 .vercel

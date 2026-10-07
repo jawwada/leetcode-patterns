@@ -6,6 +6,9 @@ markdown, and a line `<!-- cell -->` splits a markdown cell. Other fences (```te
 markdown, so use them for code that should be shown but not run. Code cells run in order in one
 namespace (like a kernel) and their output is embedded; a failing cell stops the build.
 
+Every code cell should be followed by a markdown cell that starts with **Try it** (3-4 experiments);
+the build lists the cells that are not.
+
 Rows of every "### Problem map" table (| Problem | Where | Key insight |) feed the A-Z problem finder
 at the end, and the build reports topic-folder problems that no Problem map mentions yet.
 
@@ -21,6 +24,7 @@ import re
 import sys
 import json
 import traceback
+from collections import Counter
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -62,7 +66,21 @@ def parse(text):
     if kind == "code":
         raise ValueError("unclosed ```python fence")
     flush()
-    return cells
+    return [part for kind, src in cells for part in split_try_it(kind, src)]
+
+
+def split_try_it(kind, src):
+    """A markdown cell that opens with **Try it** keeps only its bullet list; the rest becomes its own cell."""
+    if kind != "markdown" or not src.lstrip().startswith("**Try it**"):
+        return [(kind, src)]
+    lines = src.splitlines()
+    end = 1
+    while end < len(lines) and (lines[end].startswith(("-", " ")) or not lines[end].strip()):
+        if not lines[end].strip() and not any(l.startswith("-") for l in lines[end + 1:end + 2]):
+            break
+        end += 1
+    head, tail = "\n".join(lines[:end]).strip(), "\n".join(lines[end:]).strip()
+    return [(kind, head)] + ([(kind, tail)] if tail else [])
 
 
 def problem_rows(markdown):
@@ -126,7 +144,8 @@ def main():
         text = f.read_text()
         title = next((l[3:].strip() for l in text.splitlines() if l.startswith("## ")), f.stem)
         anchor = "s" + f.stem[:2]
-        toc.append(f"{len(toc) + 1}. [{title}](#{anchor})" if f.stem[:2] != "00" else None)
+        if f.stem[:2] != "00":
+            toc.append(f"{len(toc) + 1}. [{title}](#{anchor})")
         first_md = True
         for kind, src in parse(text):
             if kind == "markdown":
@@ -137,7 +156,7 @@ def main():
                     finder.append((name, where, insight, title, anchor))
             cells.append({"kind": kind, "src": src, "where": f.name})
 
-    toc_md = "## Contents\n\n" + "\n".join(t for t in toc if t) + "\n\n[A-Z problem finder](#finder)"
+    toc_md = "## Contents\n\n" + "\n".join(toc) + "\n\n[A-Z problem finder](#finder)"
     if finder:
         body = ["## A-Z problem finder", "",
                 "Every problem in this repo and the practice bank, with the section that teaches its technique.", "",
@@ -153,6 +172,11 @@ def main():
         if i == 0:
             nb_cells.append({"kind": "markdown", "src": toc_md, "where": "toc"})
             nb_cells.append({"kind": "code", "src": SETUP, "where": "setup"})
+
+    no_try = [nb_cells[i]["where"] for i, c in enumerate(nb_cells)
+              if c["kind"] == "code" and c["where"] != "setup"
+              and not (i + 1 < len(nb_cells) and nb_cells[i + 1]["kind"] == "markdown"
+                       and nb_cells[i + 1]["src"].lstrip().startswith("**Try it**"))]
 
     out_cells, code_cells = [], []
     for i, c in enumerate(nb_cells):
@@ -186,6 +210,8 @@ def main():
     bank_missing = [b for b in bank if b not in all_text]
     print(f"wrote {out}: {len(out_cells)} cells ({len(code_cells)} code), "
           f"{len(files)} sections, {len(finder)} problem-map rows")
+    print(f"code cells without a **Try it** block after them: {len(no_try)}"
+          + "".join(f"\n  {w}: {n}" for w, n in sorted(Counter(no_try).items())))
     print(f"topic problems not in any Problem map: {len(missing)}" + ("".join(f"\n  {m}" for m in missing)))
     if not only:
         print(f"practice/simple problems never referenced: {len(bank_missing)}" + ("".join(f"\n  {m}" for m in bank_missing)))
