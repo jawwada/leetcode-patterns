@@ -1,14 +1,18 @@
 # LeetCode Playbook (sources)
 
-`practice/LeetCode_Playbook.ipynb` is generated from the markdown files in this folder:
+The twelve notebooks in `practice/LeetCode_Playbook/` are generated from the markdown sections in this folder:
 
 ```bash
 uv run python practice/playbook/build.py          # build + run every code cell + embed outputs
-uv run jupyter lab practice/LeetCode_Playbook.ipynb
+uv run jupyter lab practice/LeetCode_Playbook/    # open them
+python3 practice/playbook/build_html.py           # the one-page reading copy (artifact.html, not committed)
 ```
 
-Edit the `.md` files, never the notebook. `build.py` also prints which repo problems are not yet in any
-section's Problem map, so the notebook keeps covering every problem in the topic folders.
+Edit the `.md` files, never the notebooks. `NOTEBOOKS` in `build.py` says which sections go into which
+notebook; links like `[Heaps](#s13)` are rewritten to point at the right notebook file. The build also checks
+that every code cell has a **Try it** block, that every repo problem sits in exactly one Problem map row,
+that every `#sNN` link resolves, and that every `practice/simple/` file is referenced.
+To check a few sections in isolation: `build.py --only 06,07 --out /tmp/x.ipynb --folders stack,queues`.
 
 ## File format
 
@@ -33,8 +37,10 @@ order, and the "From idea to code" part is the heart of it.
    (what work the brute force repeats and how the technique avoids it).
 3. `### From idea to code`: the idea in one sentence; the seven-decision table (**State, Definition,
    Invariant, Step, Record, Init, Return**) answered for this technique; an "In words | In code" table;
-   then the template code cell(s), with `# STATE / # INIT / # STEP / # RECORD / # RETURN` tags on the lines
-   that implement each decision.
+   then the template code cell(s), tagged so each decision points at its line: `# STATE`/`# INIT` on the
+   structures (with their definition), `# STEP` on the line that folds the new item into the state (not on
+   the loop header), `# FIX` on the loop that restores the invariant, `# RECORD` where the answer is updated,
+   `# RETURN` on the return. The order of STEP, FIX and RECORD is itself a decision; say why.
 4. `### Watch it work`: a small trace that prints the state per step (encouraged, keep it short).
 5. `### Where it goes wrong`: numbered implementation traps, each with the fix and a tiny failing input.
 6. `### Edge cases to say out loud`: one line of cases, then a code cell of asserts ending with

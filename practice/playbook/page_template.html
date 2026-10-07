@@ -1,0 +1,436 @@
+<title>LeetCode Playbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+/* Layout: a sticky contents rail (a drawer on phones) beside one reading column; code, outputs and
+   tables may run wider inside their own scroll boxes. Engineering-notebook look: ink on graph paper. */
+:root {
+  --paper: #f5f6f2;
+  --sheet: #fcfcfa;
+  --ink: #1b232b;
+  --muted: #5a6570;
+  --rule: #d6dbd3;
+  --grid: #e3e8df;
+  --accent: #0a6b66;
+  --accent-soft: #dcefec;
+  --mark: #f1cf5e;
+  --code-bg: #eef1ea;
+  --out-bg: #f7f8f4;
+  --syn-kw: #8a2f6b;
+  --syn-str: #2f6b1f;
+  --syn-num: #9a4b00;
+  --syn-com: #6b7680;
+  --syn-fn: #1f4fa3;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --rail: 17rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #12171c; --sheet: #161c22; --ink: #dde4ea; --muted: #97a3ae; --rule: #2a333c; --grid: #1d252d;
+    --accent: #52c2b8; --accent-soft: #173a38; --mark: #d9b544; --code-bg: #1b2229; --out-bg: #151b20;
+    --syn-kw: #e08cc4; --syn-str: #9fd38a; --syn-num: #f0a868; --syn-com: #7f8b96; --syn-fn: #8fb4ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #12171c; --sheet: #161c22; --ink: #dde4ea; --muted: #97a3ae; --rule: #2a333c; --grid: #1d252d;
+  --accent: #52c2b8; --accent-soft: #173a38; --mark: #d9b544; --code-bg: #1b2229; --out-bg: #151b20;
+  --syn-kw: #e08cc4; --syn-str: #9fd38a; --syn-num: #f0a868; --syn-com: #7f8b96; --syn-fn: #8fb4ff;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.62 var(--font-body);
+  margin: 0;
+}
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+/* top bar (phones) */
+.topbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  display: none; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 16px; background: var(--sheet); border-bottom: 1px solid var(--rule);
+}
+.topbar strong { font-family: var(--font-display); font-size: 1.05rem; letter-spacing: 0.01em; }
+
+.shell { display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); min-height: 100%; }
+
+/* contents rail */
+.rail {
+  position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+  padding: 28px 18px 40px 20px; border-right: 1px solid var(--rule); background: var(--sheet);
+}
+.rail h2 {
+  font: 700 0.78rem/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--muted); margin: 0 0 6px;
+}
+.progress { font: 0.82rem/1.3 var(--font-mono); color: var(--muted); margin: 0 0 16px; }
+.progress b { color: var(--accent); }
+.rail ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.rail li a {
+  display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 6px;
+  padding: 5px 8px 5px 14px; border-radius: 6px; color: var(--ink); text-decoration: none; font-size: 0.9rem;
+}
+.rail li a:hover { background: var(--accent-soft); }
+.rail li a.here { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.rail .num { font: 0.75rem var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.rail .tick { font: 0.8rem var(--font-mono); color: var(--accent); }
+
+/* reading column */
+main { min-width: 0; padding-inline: 16px; padding-block: 0 80px; }
+.page { max-width: 54rem; margin: 0 auto; }
+.prose { max-width: 44rem; }
+
+.hero { padding-block: 48px 8px; }
+.hero h1 {
+  font: 700 clamp(2rem, 5vw, 3.2rem)/1.05 var(--font-display); letter-spacing: -0.01em;
+  margin: 0 0 18px; text-wrap: balance;
+}
+.hero h1 .hl { background: linear-gradient(transparent 62%, var(--mark) 62%); padding: 0 2px; }
+.hero p { font-size: 1.08rem; color: var(--ink); max-width: 42rem; }
+.hero .runs {
+  font: 0.86rem/1.5 var(--font-mono); color: var(--muted); border-top: 1px dashed var(--rule);
+  padding-top: 12px; margin-top: 18px;
+}
+
+section.sec { padding-top: 36px; border-top: 1px solid var(--rule); margin-top: 40px; scroll-margin-top: 64px; }
+section.sec:first-of-type { border-top: 0; margin-top: 0; }
+.sec-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.sec-head .kicker {
+  font: 600 0.75rem/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent);
+}
+.studied {
+  font: 600 0.8rem/1 var(--font-mono); color: var(--muted); background: transparent; cursor: pointer;
+  border: 1px solid var(--rule); border-radius: 999px; padding: 7px 12px;
+}
+.studied[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+
+.md h2 { font: 700 2rem/1.15 var(--font-display); margin: 14px 0 12px; text-wrap: balance; }
+.md h3 { font: 700 1.28rem/1.25 var(--font-display); margin: 30px 0 8px; letter-spacing: 0.005em; }
+.md h4 { font: 600 1.05rem/1.3 var(--font-body); margin: 22px 0 6px; }
+.md p, .md li { max-width: 44rem; }
+.md ul, .md ol { padding-left: 1.3rem; }
+.md li + li { margin-top: 4px; }
+.md blockquote {
+  margin: 14px 0 18px; padding: 12px 0 12px; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule);
+  font-size: 1.12rem; line-height: 1.5; max-width: 44rem;
+}
+.md blockquote p { margin: 0; }
+.md code { font: 0.9em var(--font-mono); background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+.md pre {
+  font: 0.86rem/1.5 var(--font-mono); background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; margin: 14px 0;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 100% 1.5em, 1.5em 100%; background-position: 0 14px, 16px 0;
+}
+.md pre code { background: transparent; padding: 0; font-size: inherit; }
+.md details { margin: 6px 0 14px; padding: 8px 12px; border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet); }
+.md summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+.md hr { border: 0; border-top: 1px solid var(--rule); margin: 26px 0; }
+
+.table-wrap { overflow-x: auto; margin: 14px 0 18px; border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet); }
+.md table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+.md th, .md td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid var(--rule); }
+.md th { font: 600 0.78rem/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); background: var(--code-bg); }
+.md tr:last-child td { border-bottom: 0; }
+.md td:first-child { font-weight: 600; }
+.md td code { white-space: nowrap; }
+
+/* code cells: In [n] / Out, like the notebook */
+.cell { margin: 18px 0 6px; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--code-bg); }
+.cell-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 6px 10px 6px 14px; border-bottom: 1px solid var(--rule);
+  font: 600 0.74rem/1 var(--font-mono); color: var(--muted); letter-spacing: 0.04em;
+}
+.copy { font: 600 0.74rem/1 var(--font-mono); color: var(--accent); background: transparent; border: 1px solid var(--rule); border-radius: 6px; padding: 5px 9px; cursor: pointer; }
+.cell pre { margin: 0; padding: 14px 16px; overflow-x: auto; font: 0.86rem/1.55 var(--font-mono); }
+.cell .out { background: var(--out-bg); border-top: 1px dashed var(--rule); }
+.cell .out-label { font: 600 0.72rem/1 var(--font-mono); color: var(--muted); padding: 10px 16px 0; letter-spacing: 0.04em; }
+.cell .out pre { color: var(--ink); }
+
+.hljs-keyword, .hljs-built_in.hljs-keyword, .hljs-meta { color: var(--syn-kw); }
+.hljs-string { color: var(--syn-str); }
+.hljs-number, .hljs-literal { color: var(--syn-num); }
+.hljs-comment { color: var(--syn-com); font-style: italic; }
+.hljs-title, .hljs-title.function_, .hljs-built_in { color: var(--syn-fn); }
+.hljs-params { color: var(--ink); }
+
+/* notebook part banners */
+.part {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 18px; align-items: baseline;
+  margin-top: 64px; padding: 22px 0 14px; border-top: 3px solid var(--ink); scroll-margin-top: 64px;
+}
+.part-num { font: 700 2.4rem/1 var(--font-display); color: var(--accent); font-variant-numeric: tabular-nums; }
+.part-title { font: 700 clamp(1.6rem, 4vw, 2.3rem)/1.1 var(--font-display); margin: 0; text-wrap: balance; }
+.part-blurb { grid-column: 2; margin: 4px 0 0; color: var(--muted); max-width: 42rem; }
+.part-kicker { grid-column: 2; font: 600 0.72rem/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.rail li.group {
+  margin-top: 14px; padding: 4px 8px; font: 700 0.74rem/1.3 var(--font-display); letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted);
+}
+.rail li.group:first-child { margin-top: 0; }
+
+/* Try it: an experiment box on graph paper */
+.try {
+  margin: 8px 0 22px; padding: 12px 16px 12px; border: 1px dashed var(--accent); border-radius: 10px;
+  background-color: var(--sheet);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+.try .stamp {
+  display: inline-block; font: 700 0.74rem/1 var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink); background: var(--mark); padding: 5px 8px 4px; border-radius: 3px; margin-bottom: 6px;
+}
+.try ul { margin: 4px 0 0; padding-left: 1.2rem; }
+.try li { max-width: 46rem; }
+
+.finder-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 10px 0 0; }
+.finder-tools input {
+  flex: 1 1 16rem; min-width: 0; font: 0.95rem var(--font-body); color: var(--ink); background: var(--sheet);
+  border: 1px solid var(--rule); border-radius: 8px; padding: 9px 12px;
+}
+.finder-tools span { font: 0.82rem var(--font-mono); color: var(--muted); }
+
+.drawer-btn { font: 600 0.85rem/1 var(--font-mono); color: var(--accent); background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+
+@media (max-width: 900px) {
+  .topbar { display: flex; }
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .rail {
+    position: fixed; z-index: 30; top: 0; left: 0; bottom: 0; width: min(20rem, 86vw); height: auto;
+    transform: translateX(-102%); transition: transform 0.2s ease; box-shadow: 0 0 40px rgba(0, 0, 0, 0.18);
+    padding-top: calc(24px + env(safe-area-inset-top, 0px));
+  }
+  .rail.open { transform: none; }
+  .hero { padding-block: 24px 4px; }
+  .md h2 { font-size: 1.65rem; }
+}
+@media (prefers-reduced-motion: reduce) { .rail { transition: none; } html { scroll-behavior: auto; } }
+html { scroll-behavior: smooth; }
+</style>
+
+<div class="topbar">
+  <strong>LeetCode Playbook</strong>
+  <button class="drawer-btn" id="drawer-btn" aria-controls="rail" aria-expanded="false">Contents</button>
+</div>
+<div class="shell">
+  <nav class="rail" id="rail" aria-label="Contents">
+    <h2>Contents</h2>
+    <p class="progress" id="progress"></p>
+    <ol id="toc"></ol>
+  </nav>
+  <main>
+    <div class="page" id="page"></div>
+  </main>
+</div>
+
+<script type="application/json" id="nb">__NOTEBOOK_JSON__</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function () {
+  const data = JSON.parse(document.getElementById("nb").textContent);
+  const page = document.getElementById("page");
+  const toc = document.getElementById("toc");
+  const STORE = "playbook-studied";
+  let studied = new Set();
+  try { studied = new Set(JSON.parse(localStorage.getItem(STORE) || "[]")); } catch (e) { studied = new Set(); }
+  const save = () => { try { localStorage.setItem(STORE, JSON.stringify([...studied])); } catch (e) { /* storage unavailable */ } };
+
+  const md = (s) => (window.marked ? marked.parse(s, { gfm: true }) : "<pre>" + escapeHtml(s) + "</pre>");
+  const escapeHtml = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  const highlight = (code) => (window.hljs ? hljs.highlight(code, { language: "python" }).value : escapeHtml(code));
+
+  const sections = [];
+  let current = null, inCount = 0, part = null;
+
+  const hero = document.createElement("header");
+  hero.className = "hero";
+  hero.innerHTML = '<h1>LeetCode Playbook: <span class="hl">from idea to implementation</span></h1>' +
+    "<p>Twelve notebooks, one per family of techniques. Every technique is taught the same way: the picture, " +
+    "the seven decisions that turn the idea into code, the traps, edge cases and variations, and every problem in this repo that uses it.</p>" +
+    '<p class="runs">This page is the reading copy. The code runs in the notebooks, practice/LeetCode_Playbook/*.ipynb ' +
+    "(uv run jupyter lab); do the Try it experiments there. Every output shown here was produced by running them.</p>";
+  page.appendChild(hero);
+
+  function newSection(id) {
+    const sec = document.createElement("section");
+    sec.className = "sec";
+    sec.id = id;
+    page.appendChild(sec);
+    sections.push({ id, title: data.titles[id] || id, el: sec, part });
+    return sec;
+  }
+
+  data.cells.forEach((cell) => {
+    if (cell.t === "part") {
+      part = cell;
+      const el = document.createElement("div");
+      el.className = "part";
+      el.id = cell.id;
+      el.innerHTML = '<span class="part-num"></span><span class="part-kicker">Notebook</span><h2 class="part-title"></h2><p class="part-blurb"></p>';
+      el.querySelector(".part-num").textContent = cell.num;
+      el.querySelector(".part-title").textContent = cell.title;
+      el.querySelector(".part-blurb").textContent = cell.blurb;
+      page.appendChild(el);
+      current = null;
+      return;
+    }
+    if (cell.t === "md") {
+      const anchor = cell.s.match(/^<a id="(s\d\d|finder)"><\/a>\s*/);
+      let src = cell.s;
+      if (anchor) {
+        src = src.slice(anchor[0].length);
+        current = newSection(anchor[1]);
+      }
+      if (!current) current = newSection("intro-" + sections.length);
+      const box = document.createElement("div");
+      if (/^\*\*Try it\*\*/.test(src)) {
+        box.className = "md try";
+        box.innerHTML = '<span class="stamp">Try it</span>' + md(src.replace(/^\*\*Try it\*\*\s*/, ""));
+      } else {
+        box.className = "md";
+        box.innerHTML = md(src);
+      }
+      current.appendChild(box);
+    } else {
+      inCount += 1;
+      const wrap = document.createElement("div");
+      wrap.className = "cell";
+      const bar = document.createElement("div");
+      bar.className = "cell-bar";
+      bar.innerHTML = "<span>In [" + inCount + "]</span>";
+      const copy = document.createElement("button");
+      copy.className = "copy";
+      copy.type = "button";
+      copy.textContent = "Copy";
+      const pre = document.createElement("pre");
+      pre.innerHTML = "<code class=\"hljs\">" + highlight(cell.s) + "</code>";
+      copy.addEventListener("click", () => {
+        const done = () => { copy.textContent = "Copied"; setTimeout(() => (copy.textContent = "Copy"), 1400); };
+        const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); copy.textContent = "Selected"; };
+        try { navigator.clipboard.writeText(cell.s).then(done, fallback); } catch (e) { fallback(); }
+      });
+      bar.appendChild(copy);
+      wrap.appendChild(bar);
+      wrap.appendChild(pre);
+      if (cell.o) {
+        const out = document.createElement("div");
+        out.className = "out";
+        out.innerHTML = '<div class="out-label">Out</div>';
+        const opre = document.createElement("pre");
+        opre.textContent = cell.o;
+        out.appendChild(opre);
+        wrap.appendChild(out);
+      }
+      (current || page).appendChild(wrap);
+    }
+  });
+
+  // tables scroll inside their own box
+  page.querySelectorAll(".md table").forEach((t) => {
+    const w = document.createElement("div");
+    w.className = "table-wrap";
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // section header: kicker + studied toggle
+  const tracked = sections.filter((s) => /^s\d\d$/.test(s.id) || s.id === "finder");
+  tracked.forEach((s) => {
+    const h = s.el.querySelector(".md h2");
+    if (!h) return;
+    const head = document.createElement("div");
+    head.className = "sec-head";
+    const kicker = document.createElement("span");
+    kicker.className = "kicker";
+    kicker.textContent = s.id === "finder" ? "Index" : (s.part ? "Notebook " + s.part.num + " · " + s.part.title : "");
+    head.appendChild(kicker);
+    if (s.id !== "finder") {
+      const btn = document.createElement("button");
+      btn.className = "studied";
+      btn.type = "button";
+      const paint = () => { const on = studied.has(s.id); btn.setAttribute("aria-pressed", on); btn.textContent = on ? "Studied ✓" : "Mark as studied"; };
+      btn.addEventListener("click", () => { studied.has(s.id) ? studied.delete(s.id) : studied.add(s.id); save(); paint(); renderToc(); });
+      paint();
+      head.appendChild(btn);
+    }
+    h.parentNode.insertBefore(head, h);
+  });
+
+  // A-Z finder filter
+  const finder = document.getElementById("finder");
+  if (finder) {
+    const table = finder.querySelector("table");
+    if (table) {
+      const tools = document.createElement("div");
+      tools.className = "finder-tools";
+      tools.innerHTML = '<input id="finder-filter" type="search" placeholder="Filter problems, techniques or insights" aria-label="Filter problems"><span id="finder-count"></span>';
+      table.closest(".table-wrap").before(tools);
+      const rows = [...table.tBodies[0].rows];
+      const input = tools.querySelector("input"), count = tools.querySelector("span");
+      const apply = () => {
+        const q = input.value.trim().toLowerCase();
+        let n = 0;
+        rows.forEach((r) => { const hit = !q || r.textContent.toLowerCase().includes(q); r.hidden = !hit; n += hit; });
+        count.textContent = n + " of " + rows.length;
+      };
+      input.addEventListener("input", apply);
+      apply();
+    }
+  }
+
+  function renderToc() {
+    toc.innerHTML = "";
+    let lastPart = null;
+    tracked.forEach((s) => {
+      if (s.part && s.part !== lastPart) {
+        lastPart = s.part;
+        const g = document.createElement("li");
+        g.className = "group";
+        g.textContent = s.part.num + " · " + s.part.title;
+        toc.appendChild(g);
+      }
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = "#" + s.id;
+      a.dataset.id = s.id;
+      a.innerHTML = '<span></span><span class="tick">' + (studied.has(s.id) ? "✓" : "") + "</span>";
+      a.children[0].textContent = s.title;
+      a.addEventListener("click", () => closeDrawer());
+      li.appendChild(a);
+      toc.appendChild(li);
+    });
+    const total = tracked.filter((s) => s.id !== "finder").length;
+    document.getElementById("progress").innerHTML = "<b>" + [...studied].filter((id) => tracked.some((s) => s.id === id)).length + "</b> of " + total + " sections studied";
+    highlightHere();
+  }
+
+  // drawer on phones
+  const rail = document.getElementById("rail"), drawerBtn = document.getElementById("drawer-btn");
+  function closeDrawer() { rail.classList.remove("open"); drawerBtn.setAttribute("aria-expanded", "false"); }
+  drawerBtn.addEventListener("click", () => { const open = rail.classList.toggle("open"); drawerBtn.setAttribute("aria-expanded", String(open)); });
+
+  // current section in the rail
+  function highlightHere() {
+    let here = tracked[0];
+    tracked.forEach((s) => { if (s.el.getBoundingClientRect().top < 120) here = s; });
+    toc.querySelectorAll("a").forEach((a) => a.classList.toggle("here", here && a.dataset.id === here.id));
+  }
+  let ticking = false;
+  window.addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { highlightHere(); ticking = false; }); } }, { passive: true });
+
+  renderToc();
+  if (location.hash) { const t = document.getElementById(location.hash.slice(1)); if (t) t.scrollIntoView(); }
+})();
+</script>
