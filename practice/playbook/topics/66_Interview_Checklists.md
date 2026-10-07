@@ -1,0 +1,207 @@
+## Interview Checklists
+
+> The last mile: the edge cases to test, the bugs that cost interviews, how to test when you cannot run code, what to say, and how to spend the last week.
+
+Every section before this one taught a technique. This one is for the days around the interview, and it is short on purpose: a check to run before you type, the edge cases and bugs to recap the night before, a way to test code you cannot run, the sentences that keep an interview moving, and a plan for the last seven days.
+
+The A-Z finder closes the notebook, with every problem in the repo and the one idea that cracks it.
+
+### Before you type: the 60-second check
+
+The cheapest minute of the interview is the one before you type, so this check comes first. Restate the problem and confirm the output format. Ask about size, value ranges, duplicates, negatives, empty input and sortedness. Write two or three tiny examples, one of them an edge case.
+
+Say the brute force and its complexity. Say the seven decisions: state, definitions, invariant, step, record, init, return. Write them as comments, so the interviewer can follow and you cannot lose your place. Then ask whether the approach sounds right, and type only once the interviewer agrees.
+
+### Edge cases by input type
+
+The plan is agreed; now the edge cases decide whether the code is right, so say them before you type and walk them after. This table is a lookup: find the row for your input type and read it out loud.
+
+| Input | Test these |
+|---|---|
+| Array | empty · one item · two items · all equal · sorted / reverse sorted · negatives · zeros · duplicates · target absent · answer at index 0 or n−1 |
+| Window / subarray | k = 0 · k ≥ n · target ≤ 0 · negatives, which break a window that shrinks while its sum is too big |
+| String | empty · one character · all the same character · odd / even length · spaces, punctuation, upper / lower case |
+| Number | 0 · 1 · negative · 32-bit limits when the problem mentions them · division by zero · modulo of a negative |
+| Linked list | empty · one node · two nodes · the head is removed · cycle back to the head · odd / even length |
+| Tree | empty · one node · a skewed tree, which means deep recursion · duplicate values in a BST · negative values · the target is the root |
+| Graph | disconnected · self-loop · parallel edges · cycle · one node · target unreachable · directed vs undirected |
+| Grid | `[]` and `[[]]` · 1×1 · one row or one column · a non-square grid · all water / all land · start equals end · blocked start or end |
+| Intervals | touching ends `[1,2],[2,3]` · one inside another · unsorted input · a single interval |
+| Top-k / heap | k = 0 · k = n · ties · empty lists among the k to merge |
+| Backtracking | empty input, where the answer is `[[]]` rather than `[]` · target 0 · duplicate values |
+| Bits | 0 · negatives, masked to 32 bits · 0 in the power-of-two test |
+| Binary search | target below all / above all · duplicates · length 1 · the answer is `lo` or `hi` itself |
+| Design | capacity 0 or 1 · an operation on an empty structure · repeated keys · updates to an existing key · equal timestamps |
+
+### The bug catalogue
+
+These bugs pass the happy path and fail at the edge, which is why they cost interviews; recap them the night before.
+
+The Python traps live in one place: the *Read this first* list that opens [Python Toolkit](03_Python_Toolkit.ipynb#topic-python-toolkit), most of them with a cell you can run and break. Reread that list the night before. Two more belong beside it, because the toolkit does not show them. `Counter` subtraction with `-` drops every count that falls to zero or below, so `Counter("aab") - Counter("abbb")` keeps only `{'a': 1}`; `c.subtract(other)` keeps the negatives. And a function that edits its argument poisons the next test that reuses that list or grid: pass a copy. That second trap is why the harness below deep-copies every input.
+
+**Algorithm traps**
+
+The algorithm traps are not Python's doing. Each is one of the seven decisions landing on the wrong line, and the fix names the decision.
+
+| Bug | Symptom | Fix |
+|---|---|---|
+| `range(len(a) - 1)` when you meant every index | last item never processed | say the range out loud: "0 to n−1 inclusive" is `range(n)` |
+| window length `right - left` | off by one | `right - left + 1` for an inclusive window |
+| `if` where a `while` is needed | invariant restored only partly | ask "can one step be not enough?" |
+| BFS marks visited when popping | nodes queued many times, slow or wrong counts | mark when **pushing** |
+| graph DFS without a visited set | infinite recursion on a cycle | add `seen` before recursing |
+| Dijkstra without `if d > dist[u]: continue` | stale entries reprocessed: slow, and wrong with some variants | skip stale pops |
+| recording before the invariant is fixed | broken states counted | record after the fix, or inside it for "shortest" |
+| `best = 0` for a maximum that can be negative | all-negative inputs return 0 | start from `-math.inf` or the first item |
+| forgetting to `return` the recursive call's value | `None` bubbles up | `return helper(...)` |
+| binary search with `lo = mid` and `mid = (lo + hi) // 2` | infinite loop when `hi = lo + 1` | `mid = (lo + hi + 1) // 2` there, or the `lo = mid + 1` template |
+| un-choosing only part of a choice, such as popping `path` but leaving `used[i]` set | later branches skip a free item; answers go missing | every change before the recursive call gets its mirror line after it |
+| reading a prerequisite `[a, b]` as the edge a → b | the order comes out reversed | `[a, b]` means b before a: the edge is b → a |
+| union-find linking the two nodes instead of their roots | groups split again, and `find` disagrees with the unions | `parent[find(a)] = find(b)` |
+| Dijkstra returning when the target is first discovered | a longer path wins, because the first offer is not always the best | return when the target is popped |
+| merging intervals with `last[1] = end` | a nested interval shrinks the block | `last[1] = max(last[1], end)` |
+| keeping the k largest in a max-heap of everything | O(n) memory, and it cannot run on a stream | a min-heap capped at k, whose root is the k-th largest |
+| an LRU node that does not store its key | eviction cannot delete its dict entry | store the key in the node, then `del self.map[node.key]` |
+
+### Testing when you cannot run the code
+
+In most interviews you cannot execute anything, so testing means tracing, and tracing has an order. Pick the smallest input that makes every loop run zero times, once and several times; three or four items usually do.
+
+Under the code, write a state table as a comment: one column per variable, one row per iteration, filled in by hand. Compare the last row with the expected answer, out loud. Then say each edge case from the table above and walk only the lines it changes.
+
+While practising, add the habit that catches what tracing misses: a cross-check, which runs your optimal solution and your brute force on the same random inputs and reports the first disagreement. The inputs stay small on purpose, so that a failure is small enough to trace by hand.
+
+The harness below does exactly that. Its example is Maximum Sum Subarray of Size K, which asks for the largest sum of any k consecutive numbers; `[1, -2, 3, 4], k = 2 → 7`, from the window `[3, 4]`. The brute force sums every window and is obviously right. The sliding version adds the new number and drops the one k steps back.
+
+The buggy version is the same sliding code with `best` starting at 0 instead of `-math.inf`, and the harness finds the input that exposes it. Each input is deep-copied before a call, so a solution that edits its argument cannot poison the other's input.
+
+<!-- cell -->
+
+```python
+import copy
+
+
+def cross_check(fast, slow, make_input, trials=300, seed=0):
+    """Run both solutions on random inputs; report the first input where they disagree."""
+    rng = random.Random(seed)
+    for t in range(trials):
+        args = make_input(rng)
+        got, want = fast(*copy.deepcopy(args)), slow(*copy.deepcopy(args))
+        if got != want:
+            print(f"mismatch on trial {t}: input={args}  fast={got}  slow={want}")
+            return False
+    print(f"{trials} random inputs agree")
+    return True
+
+
+def max_window_sum_brute(nums, k):            # every window of size k: slow but obviously right
+    return max(sum(nums[i:i + k]) for i in range(len(nums) - k + 1))
+
+
+def max_window_sum_buggy(nums, k):            # best starts at 0
+    best = window = 0
+    for i, x in enumerate(nums):
+        window += x
+        if i >= k:
+            window -= nums[i - k]             # the item k steps back leaves
+        if i >= k - 1:
+            best = max(best, window)
+    return best
+
+
+def max_window_sum(nums, k):                  # best starts at -inf
+    best, window = -math.inf, 0
+    for i, x in enumerate(nums):
+        window += x
+        if i >= k:
+            window -= nums[i - k]
+        if i >= k - 1:
+            best = max(best, window)
+    return best
+
+
+small = lambda rng: ([rng.randint(-5, 5) for _ in range(rng.randint(3, 6))], rng.randint(1, 3))
+_ = cross_check(max_window_sum_buggy, max_window_sum_brute, small)
+_ = cross_check(max_window_sum, max_window_sum_brute, small)
+```
+
+<!-- cell -->
+
+**Try it**
+- Read the mismatch the harness found: `[3, -5, -4]` with k = 3 has a single window, summing to −6, and `best = 0` claims a sum no window has. That is the "`best = 0` for a maximum that can be negative" row of the catalogue.
+- Change the generator to `rng.randint(0, 5)`, no negatives, and rerun the buggy version: 300 random inputs agree. Your random inputs must be able to reach the edge cases, or the harness proves nothing.
+- Raise the list length to 50 and break `max_window_sum` on purpose, for example by dropping the `window -= nums[i - k]` line: the mismatch comes on trial 0, and the fifty-number input it prints is far harder to trace by hand. That is why the generator starts small.
+- Use `cross_check` for any problem in this playbook: write the brute force first, then the optimal, then check.
+
+<!-- cell -->
+
+### Complexity at a glance
+
+The closing minute of an interview asks for time and space, and these are the numbers to quote. The costs of Python's own operations, sort, heap, dict, list and slice, are in [Python Toolkit](03_Python_Toolkit.ipynb#topic-python-toolkit)'s cost table. This table is a lookup for the techniques; the one row to read twice is the hidden costs, because they multiply whatever loop they sit in.
+
+| Operation / algorithm | Time | Note |
+|---|---|---|
+| hidden costs inside a loop | `Counter` equality O(alphabet) · `sorted(word)` as a key O(L log L) · a substring key O(L) | they multiply your loop |
+| binary search · on the answer | O(log n) · O(log range × check) | |
+| two pointers · sliding window · monotonic stack | O(n) | each index moves / is pushed once |
+| BFS / DFS | O(V + E) | grid: O(R × C) |
+| Dijkstra with a heap | O((V + E) log V) | non-negative weights |
+| union-find with path halving and union by size | almost O(1) per operation | |
+| topological sort | O(V + E) | |
+| trie insert / search | O(word length) | |
+| subsets · permutations | O(2ⁿ · n) · O(n! · n) | the output alone is that big |
+| recursion | extra O(depth) space | the call stack counts |
+
+### What to say
+
+The words carry as much as the code, because the interviewer grades the reasoning they can hear. Open by restating the problem and asking the questions that change the code: "Can the input be empty? Can values be negative or repeated? How large is n?" Give the straightforward way with its cost: "for every … we rescan …, so it is O(…)."
+
+Name the work it repeats and the structure that remembers it: "if I keep …, each step is O(1), so O(n) overall." Then show the plan and ask for the go-ahead: "Here it is in four comments. Does that sound right? Shall I code it?"
+
+While coding, name the invariant as you write its loop, "after this loop the window has no repeats", and point at the line that records the answer. When the optimal idea will not come, say so and keep moving: "I'll code the brute force first as a correct baseline, then optimise the line that repeats work." When a detail will not come, "let me try a smaller example by hand" is always allowed; thinking out loud is what earns hints.
+
+Test out loud, in order: "the example first… now the empty case… now the case where …". If time runs out, name the remaining piece and how you would do it. Close with time, space and one follow-up you would handle: "if the input were a stream, I would …".
+
+### The night-before list
+
+Pick the five templates you are least sure of. Write each from memory in a plain editor, because interviews are typed without autocomplete, under three minutes each, saying the invariant out loud. Start from the problem, not from the template's name: the task is what you will be given.
+
+1. From [Arrays & Hashing](04_Hash_Maps_and_Sets.ipynb#topic-hash-maps-and-sets): **Two Sum** asks for the two indices whose values add up to a target, `[2, 7, 11, 15], 9 → [0, 1]`. Write the dict of values seen so far, and ask it before you join it.
+2. From [Sliding Window](07_Sliding_Window.ipynb#topic-sliding-window): **Longest Substring Without Repeating Characters** asks for the longest run of distinct letters, `"abcabcbb" → 3`, and **Minimum Size Subarray Sum** for the shortest run of non-negative numbers whose sum reaches a target, `[2, 3, 1, 2, 4, 3], 7 → 2`. Write both windows: the longest records after the shrink, the shortest records inside it.
+3. From [Binary Search](11_Binary_Search.ipynb#topic-binary-search): **Search Insert Position** asks for the first index whose value is at least the target, `[1, 3, 5, 6], 2 → 1`, and **Koko Eating Bananas** for the slowest eating speed that still finishes every pile within h hours, `[3, 6, 7, 11], h = 8 → 4`. Write "first index where the condition is true", then the same search over the candidate answers.
+4. From [Monotonic Stack](10_Monotonic_Stack.ipynb#topic-monotonic-stack): **Daily Temperatures** asks, for each day, how many days pass until a warmer one, 0 if none comes, `[73, 74, 75, 71, 69, 72, 76, 73] → [1, 1, 4, 2, 1, 1, 0, 0]`. Write the stack of waiting days that today resolves.
+5. From [Graphs I](00_Topic_Index.ipynb#s17): **Rotting Oranges** asks how many minutes pass until no orange is fresh, every rotten orange spreading at once, −1 if some never rot. Write the BFS in rings, with every source in the queue at minute 0.
+6. From [Graphs I](00_Topic_Index.ipynb#s17): **Number of Islands** asks how many groups of land cells touch up, down, left or right. Write the flood fill twice: recursive, and with an explicit stack.
+7. From [Graphs II](00_Topic_Index.ipynb#s18): **Course Schedule** asks whether every course can be finished when each pair `[a, b]` means "b before a", `2, [[1, 0]] → True`. Write Kahn's topological sort: indegrees, a queue of ready courses, and a count of how many came out.
+8. From [Graphs II](00_Topic_Index.ipynb#s18): **Redundant Connection** asks which edge, added to a tree, closed its cycle: the first edge whose two ends already share a root. Write union-find with path halving.
+9. From [Graphs III](00_Topic_Index.ipynb#s19): **Network Delay Time** asks when the last node hears a signal sent from node k, −1 if one never does. Write Dijkstra with the stale-entry check.
+10. From [Heaps](15_Heaps.ipynb#topic-heaps): **Kth Largest Element in a Stream** asks for the k-th largest value after every add. Write the min-heap capped at size k, whose root is the answer.
+11. From [Intervals & Sweep Line](16_Intervals_and_Sweep_Line.ipynb#topic-intervals-and-sweep-line): **Merge Intervals** asks to merge every overlapping pair of ranges, `[[1, 3], [2, 6], [8, 10]] → [[1, 6], [8, 10]]`. Write the sort by start and the block that only its last member can stretch.
+12. From [Backtracking](18_Backtracking.ipynb#topic-backtracking): **Subsets**, **Permutations** and **Combination Sum II** ask for every subset of distinct numbers, every ordering of them, and every combination that reaches a target when each candidate is used once and no combination repeats. Write the three backtracking shapes: a start index, used flags, and sorted input with equal siblings skipped.
+13. From [Trees](13_Trees.ipynb#topic-trees): **Diameter of Binary Tree** asks for the longest path between any two nodes, counted in edges, `[1, 2, 3, 4, 5] → 3`. Write the DFS that returns a height to its parent and records left + right on the way.
+14. From [Tries](14_Tries.ipynb#topic-tries): **Implement Trie** asks for `insert`, `search` of a whole word, and `startsWith` a prefix. Write the node as a dict of children with an end flag.
+15. From [Design Problems](00_Topic_Index.ipynb#s24): **LRU Cache** asks for `get` and `put` in O(1), evicting the key used longest ago once the capacity is full. Write the dict from key to node and the doubly linked list with sentinels.
+
+Every one of these has a solution in the repo, and the finder gives its path. Write yours first, then compare; the lines that differ point at the decision to reread.
+
+### A 7-day plan with this repo
+
+Practise in `practice/simple/`: 25 minutes per problem, in a plain editor, talking out loud, and run the code only when you think it is finished. The Read column links to the separate topic notebooks. The Practise column names the files by number and says what each one asks, half a sentence each, so that you start from the task.
+
+| Day | Read | Practise |
+|---|---|---|
+| 1 | [Start Here](01_Start_Here.ipynb#topic-start-here), [From Idea to Code](02_Idea_to_Code.ipynb#topic-idea-to-code), [Python Toolkit](03_Python_Toolkit.ipynb#topic-python-toolkit); [Arrays & Hashing](04_Hash_Maps_and_Sets.ipynb#topic-hash-maps-and-sets), [Prefix Sums](05_Prefix_Sums.ipynb#topic-prefix-sums) | `01`–`05`: Two Sum, the two indices that add up to a target; Group Anagrams, words grouped by the letters they share; Product of Array Except Self, each position's product of all the others, without division; Longest Consecutive Sequence, the longest run of consecutive values hidden in an unsorted list; Subarray Sum Equals K, how many subarrays sum to k |
+| 2 | [Two Pointers](06_Two_Pointers.ipynb#topic-two-pointers), [Sliding Window](07_Sliding_Window.ipynb#topic-sliding-window), [Strings](00_Topic_Index.ipynb#s20) | `06`–`12` and `50`: 3Sum, every distinct triple summing to zero; Container With Most Water, the two lines that hold the most water; Trapping Rain Water, how much rain the bars trap; Longest Substring Without Repeating Characters, the longest run of distinct letters; Minimum Window Substring, the shortest window of s holding every letter of t; Sliding Window Maximum, the largest value in each window of size k; Longest Repeating Character Replacement, the longest window that k replacements make uniform; Longest Palindromic Substring, the longest palindrome inside s |
+| 3 | [Stacks & Queues](00_Topic_Index.ipynb#s07), [Monotonic Stack](10_Monotonic_Stack.ipynb#topic-monotonic-stack), [Linked Lists](12_Linked_Lists.ipynb#topic-linked-lists); [Binary Search](11_Binary_Search.ipynb#topic-binary-search), [Sorting & Selection](00_Topic_Index.ipynb#s23) | `13`–`17`, `21`–`23` and `25`, then `18`–`20`: Valid Parentheses, whether the brackets match; Min Stack, a stack whose minimum is always O(1) away; Evaluate Reverse Polish Notation, the value of a postfix expression; Daily Temperatures, days until a warmer day; Largest Rectangle in Histogram, the biggest rectangle under the bars; Reverse Linked List, the list reversed in place; Merge Two Sorted Lists, one sorted list from two; Linked List Cycle II, the node where the cycle begins; Remove Nth Node From End of List, the list without its n-th node from the end; Search in Rotated Sorted Array, a target's index in a sorted array that was rotated; Koko Eating Bananas, the slowest speed that finishes in h hours; Split Array Largest Sum, the split into k parts whose largest part is smallest |
+| 4 | [Trees](13_Trees.ipynb#topic-trees), [Tries](14_Tries.ipynb#topic-tries); [Heaps](15_Heaps.ipynb#topic-heaps) | `26`–`35`: Binary Tree Level Order Traversal, the values level by level; Validate Binary Search Tree, whether the tree is a valid BST; Kth Smallest Element in a BST, the k-th value in sorted order; Lowest Common Ancestor of a BST, the deepest node above both targets; Diameter of Binary Tree, the longest path in edges; Implement Trie, insert, search and startsWith; K Closest Points to Origin, the k points nearest (0, 0); Task Scheduler, the fewest time slots when equal tasks need a cooldown between them; Find Median from Data Stream, the median after every insert; Merge k Sorted Lists, one sorted list from k |
+| 5 | [Graphs I](00_Topic_Index.ipynb#s17), [Graphs II](00_Topic_Index.ipynb#s18), [Graphs III](00_Topic_Index.ipynb#s19) | `41`–`47`: Number of Islands, how many groups of land touch; Clone Graph, a deep copy of a graph from one node; Course Schedule, whether every course can be finished given its prerequisites; Rotting Oranges, minutes until no orange is fresh; Network Delay Time, when the last node hears the signal; Min Cost to Connect All Points, the cheapest wiring that joins every point; Redundant Connection, the edge whose removal leaves a tree; then redo your two slowest |
+| 6 | [Intervals & Sweep Line](16_Intervals_and_Sweep_Line.ipynb#topic-intervals-and-sweep-line) and [Greedy](17_Greedy.ipynb#topic-greedy); [Backtracking](18_Backtracking.ipynb#topic-backtracking); [Design Problems](00_Topic_Index.ipynb#s24) | `24`, `36`–`40`, `48` and `49`: LRU Cache, get and put in O(1) with the least recently used key evicted; Palindrome Partitioning, every way to cut s into palindromes; Combination Sum II, the combinations that reach a target with each candidate used once; Letter Combinations of a Phone Number, every word the digits can spell; Word Search, whether a word traces a path on the board; N-Queens, every safe placement of n queens; Merge Intervals, the overlapping ranges merged; Meeting Rooms II, the fewest rooms that fit every meeting; then one 45-minute mock where someone else picks from the [A-Z finder](67_Problem_Finder.ipynb#finder) |
+| 7 (light) | this notebook; [Bit Manipulation](37_Bit_Manipulation.ipynb); skim [Matrices](36_Matrices.ipynb#topic-matrices) | `practice/simple/basics/bits/`; two timed problems from your miss list; the night-before list; stop early |
+
+Two daily habits make the plan stick. Every morning, spend ten minutes cold-writing yesterday's two hardest templates from their seven decisions. And put every miss on a list that you redo two days later. If the decisions come back, the code will too.
+
+After the seventh day, the A-Z finder below is the part of this playbook you will keep using. It lists every problem in the repo and the practice bank in alphabetical order, with the section that teaches its technique, the file that holds its solution, and the one idea that cracks it.
+
+When a name comes up, in a mock or on a friend's list, look it up and read its key insight first. When the insight does not click on its own, follow the technique link and reread that section's seven decisions; the section states the problem in full right before the code that solves it, and the traced file in `practice/` does too. And when you have a spare half hour, pick a row whose insight you cannot yet explain, and solve it from the task alone.
+
+That is the whole method. An idea is one sentence, code is seven decisions, and the decisions come back when you say them out loud. Walk in, restate the problem, say the brute force, write the plan as comments, and type. Good luck.

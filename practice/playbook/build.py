@@ -1,5 +1,7 @@
 """
-Build the LeetCode Playbook notebooks from the markdown sections in practice/playbook/NN_slug.md.
+Build one notebook per topic from practice/playbook/topics/.
+
+The older NN_slug.md sections remain available for --only reference builds.
 
 Each section is plain markdown. Every ```python fence becomes a code cell; everything else becomes
 markdown, and a line `<!-- cell -->` splits a markdown cell. Other fences (```text, ```py) stay as
@@ -42,6 +44,7 @@ from functools import cmp_to_key, lru_cache
 from itertools import accumulate, combinations, permutations, product
 import bisect, heapq, math, random, string"""
 
+# Legacy combined layout, retained for reference. Default builds use build_topics.py.
 # (file name, title, one-line description, section prefixes in order)
 NOTEBOOKS = [
     ("01_Start_Here.ipynb", "Start Here",
@@ -365,7 +368,8 @@ def main():
         topics = [] if folders == "none" else folders.split(",") if folders else TOPICS
         build_one(only.split(","), Path(arg("--out", HERE / "check.ipynb")), topics, run)
     else:
-        build_all(run)
+        from build_topics import build_all as build_topics
+        build_topics(run)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,13 @@
 # LeetCode Playbook (sources)
 
-The twelve notebooks in `practice/LeetCode_Playbook/` are generated from the markdown sections in this folder:
+The notebooks in `practice/LeetCode_Playbook/` are organized as **one topic per notebook**.
+Start with [the topic index](../LeetCode_Playbook/00_Topic_Index.ipynb). There are separate
+lessons for BFS, DFS, topological sort, union-find, Dijkstra, Prim, Kruskal, KMP/LPS,
+and each tracker API, as well as the other playbook topics.
+
+The editable sources are in `topics/`; `topics/manifest.json` sets their order, titles,
+filenames, and topic anchors. The active notebook folder contains the topic lessons
+and navigation notebooks.
 
 ```bash
 uv run python practice/playbook/build.py          # build + run every code cell + embed outputs
@@ -8,15 +15,24 @@ uv run jupyter lab practice/LeetCode_Playbook/    # open them
 python3 practice/playbook/build_html.py           # the one-page reading copy (artifact.html, not committed)
 ```
 
-Edit the `.md` files, never the notebooks. `NOTEBOOKS` in `build.py` says which sections go into which
-notebook; links like `[Heaps](#s13)` are rewritten to point at the right notebook file. The build also checks
-that every code cell has a **Try it** block, that every repo problem sits in exactly one Problem map row,
-that every `#sNN` link resolves, and that every `practice/simple/` file is referenced.
-To check a few sections in isolation: `build.py --only 06,07 --out /tmp/x.ipynb --folders stack,queues`.
+For durable lesson edits, edit `topics/*.md`; rebuilding replaces notebook files, including
+notebook-only edits. Each notebook gets its own setup and executes in a fresh Python namespace.
+The build fails on a code error or a broken internal notebook link. The index includes
+links to the original section groups and to the archived notebooks.
+
+To build into another directory without replacing your notebooks:
+
+```bash
+python3 practice/playbook/build_topics.py --out-dir /tmp/playbook
+```
+
+The old `NN_slug.md` files in this folder remain as reference sources for the combined
+chapters. `build.py --only 06,07 --out /tmp/x.ipynb --folders stack,queues` still supports
+checking those original sections in isolation. Default builds use `topics/`.
 
 ## File format
 
-- One file per section, `NN_slug.md`, starting with `## Title`.
+- One file per topic in `topics/`, `NN_slug.md`, normally starting with `## Title`.
 - A ` ```python ` fence becomes a runnable code cell. Cells run top to bottom in one namespace, and the setup
   cell has already imported: `Counter, defaultdict, deque, OrderedDict, cmp_to_key, lru_cache, accumulate,
   combinations, permutations, product, bisect, heapq, math, random, string`. Define every other helper
@@ -82,7 +98,8 @@ Flowing, like an essay, and definitive:
   says why it comes next. Hard or rare material comes last in Variations, introduced by the same sentence
   everywhere: "The rest of this section is a second pass: Hard problems that reuse the same moves. Skip them
   until the main path is automatic."
-- Link to a section by its title before the colon: [Design Problems](#s24), [Graphs I](#s17),
-  [Intervals & Sweep Line](#s14), [Python Toolkit](#s02).
+- Link directly to the topic notebook and its explicit anchor; filenames and anchors are in
+  `topics/manifest.json`. The topic index retains the original `sNN` family anchors for
+  references that span more than one newly separated topic.
 The notebook speaks in one voice: never mention reviewers, agents, drafts or revision history, and never
 attribute an idea to anyone; fold every improvement into the text as if it had always been there.

@@ -1,8 +1,8 @@
 # Python LeetCode Cheatsheet
 
 One-page reminder. The full guide (intuition, idea-to-code decisions, traps, edge cases, variations and
-runnable experiments for every technique) is the twelve notebooks in `practice/LeetCode_Playbook/`,
-built from `practice/playbook/` (start with `01_Start_Here.ipynb`).
+runnable experiments for every technique) has one notebook per topic in `practice/LeetCode_Playbook/`,
+built from `practice/playbook/topics/` (start with [the topic index](LeetCode_Playbook/00_Topic_Index.ipynb)).
 
 ## Built-ins you'll use constantly
 ```python

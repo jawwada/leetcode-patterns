@@ -58,7 +58,7 @@ def main():
                 blurb = re.search(r"^\*LeetCode Playbook[^*]*\* · (.+)$", text, re.M).group(1)
                 cells.append({"t": "part", "id": "nb-" + f.stem, "num": f.stem[:2], "title": title, "blurb": blurb})
                 continue
-            anchor = re.match(r'<a id="(s\d\d|finder)"></a>', text)     # starts a new section
+            anchor = re.match(r'<a id="([\w-]+)"></a>', text)     # starts a new section
             if anchor:
                 pending = anchor.group(1)
             if pending and pending not in titles and not text.startswith('<a id="notebooks">'):
