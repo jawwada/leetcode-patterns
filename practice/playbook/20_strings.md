@@ -1,8 +1,10 @@
 ## Strings
 
-> A Python string is a frozen row of characters. Reading `s[i]` costs O(1), but every "change" builds a brand-new string. So string algorithms are about **reading** cleverly (one cursor `i` that only moves right, or two pointers closing in from both ends, plus a little memory of what has been seen) and **building** the answer in a list that you `"".join` once at the end.
+> A Python string is a frozen row of characters. Reading `s[i]` costs O(1), but every "change" builds a brand-new string. So string algorithms are about **reading** cleverly, with one cursor `i` that only moves right or two pointers closing in from both ends, plus a little memory of what has been seen; and about **building** the answer in a list that you `"".join` once at the end.
 
-**Reach for it when** the input is text and you must **parse** it (split, a number, a version), **reshape** it (reverse the words, compress runs, zigzag), compare **letters** (shifted strings, palindromes), do **arithmetic on digits** given as text, or find a **repeat** (a prefix that is also a suffix, the longest repeated substring). "Longest substring such that ..." is usually a [Sliding Window](#s06) instead.
+[Sliding Window](#s06) moved two fingers to the right and kept a summary between them. A string parser needs only one finger: a cursor that never moves back. This section is that cursor and the toolbox around it: splitting, reading numbers, keys, palindromes, runs and carries.
+
+**Reach for it when** the input is text and you must **parse** it: split it, read a number or a version. Or **reshape** it: reverse the words, compress runs, write a zigzag. Or compare **letters**, as in shifted strings and palindromes; do **arithmetic on digits** given as text; or find a **repeat**, such as a prefix that is also a suffix or the longest repeated substring. "Longest substring such that ..." is usually a [Sliding Window](#s06) instead.
 
 **In this repo:** `strings/` (17 problems) · bank: `practice/simple/50_longest_palindromic_substring.py` · basics: `practice/simple/basics/strings/01_character_counting_and_anagrams.py`, `practice/simple/basics/strings/02_two_pointer_palindromes_and_reverse_words.py`, `practice/simple/basics/strings/03_kmp_prefix_function.py`, `practice/simple/basics/strings/04_rabin_karp_rolling_hash.py`, `practice/simple/basics/strings/05_encode_decode_strings_and_join.py`
 
@@ -22,7 +24,7 @@ s = "ab,,c,"   sep = ","      i = the cursor, it only moves right;  start = wher
 => ["ab", "", "c", ""]     the same as "ab,,c,".split(",")
 ```
 
-Building: collect the pieces in a list and `"".join` them once. Each `out += piece` builds a new string and may copy everything built so far, O(n²) characters over n appends in the worst case (CPython sometimes grows a string in place, but that is an implementation detail, not a promise).
+Building: collect the pieces in a list and `"".join` them once. Each `out += piece` builds a new string and may copy everything built so far, O(n²) characters over n appends in the worst case. CPython sometimes grows a string in place, but that is an implementation detail, not a promise.
 
 Why it is fast: the brute-force split calls `find`, then slices off the remainder for every piece, which copies the rest of the string each time: O(n²) characters at worst. The cursor keeps one index, `start`, instead of a copy, so each position is compared with the separator once: O(n·m) for a separator of length m, O(n) for one character.
 
@@ -30,32 +32,11 @@ Why it is fast: the brute-force split calls `find`, then slices off the remainde
 
 **The idea in one sentence:** *walk a cursor `i` from left to right; each character either extends the open token or ends it; when a token ends, emit it and open the next one, and emit the last one after the loop.*
 
-| Decision | Cursor-scan answer |
-|---|---|
-| **State**: what must I remember? | the cursor `i`, plus the **open token**: where it began (`start`) or its running value (`num`, `sign`, a few flags); and the output list |
-| **Definition**: what exactly does each variable mean? | `s[start:i]` = the token read so far; everything before `start` has been emitted |
-| **Invariant**: what is true at the end of every step? | every separator that starts before `i` has been cut, `s[start:i]` is the open piece, and `i` never moves left |
-| **Step**: how does one character change the state? | look at `s[i]` (or `s[i:i + m]`): it extends the token (`i += 1`) or ends it (emit, jump past the separator, `start = i`) |
-| **Record**: when is the answer updated? | when a token ends, **and once more after the loop**: the last token has no separator after it (atoi: clamp the moment it overflows) |
-| **Init**: starting values | `i = start = 0`, `parts = []` (or `num, sign = 0, 1`) |
-| **Return**: what comes back, and for "not found"? | `parts`, `sign * num` or a flag; say out loud what empty input gives (`[""]` for split, `0` for atoi) |
+The **State** is the cursor `i` plus the **open token**, kept as where it began, `start`, or as its running value, `num` and `sign`; and the output list. The **Definition**: `s[start:i]` is the token read so far, and everything before `start` has been emitted. The **Invariant**, true after every step: every separator that starts before `i` has been cut, and `i` never moves left. A **Step** looks at `s[i]` and either extends the token, `i += 1`, or ends it, emits it and opens the next one past the separator.
 
-The same idea, sentence by sentence:
+The **Record** happens when a token ends, **and once more after the loop**, because the last token has no separator after it; a number parser records early instead, clamping the moment it overflows. **Init** is `i = start = 0` with `parts = []`, or `num, sign = 0, 1`. The **Return** is `parts`, `sign * num` or a flag, and you say out loud what empty input gives: `[""]` for a split, 0 for a number.
 
-| In words | In code |
-|---|---|
-| "while there is still input" | `while i < n:` (check it before every `s[i]`) |
-| "could a separator start at i?" | `while i <= len(s) - m:` (`while i < len(s)` also works in Python: a slice running off the end is shorter than `sep`, never equal to it) |
-| "skip the spaces" | `while i < n and s[i] == " ": i += 1` |
-| "is it a digit?" | `"0" <= s[i] <= "9"` (not `s[i].isdigit()`, which also says yes to `"²"`) |
-| "its value" | `ord(s[i]) - ord("0")` |
-| "append the digit to the number" | `num = num * 10 + digit` |
-| "a separator starts here" | `s[i:i + m] == sep` (or `s.startswith(sep, i)`) |
-| "the piece so far" | `s[start:i]` |
-| "emit it, open the next piece" | `parts.append(s[start:i])`, then `i += m` and `start = i` |
-| "build the output" | `parts.append(piece)` ... then `"".join(parts)` once |
-
-The warm-up you are most likely to meet is a split on one character. Its sibling is `s.split()` with no argument, where a run of spaces counts as one gap and no empty words come back. In both, the order of the two middle lines is a decision: close the piece with the *old* `start` (RECORD), then move `start` (STEP).
+The warm-up you are most likely to meet is Implement String Split: cut `"ab,,c,"` at every comma into `['ab', '', 'c', '']`, exactly as `str.split(",")` does. Its sibling is `s.split()` with no argument, where a run of spaces counts as one gap and no empty word comes back. The piece so far is `s[start:i]`, and skipping a gap is `while i < n and s[i] == " ": i += 1`. In both functions the order of two lines is a decision: close the piece with the *old* `start` (RECORD), then move `start` (STEP).
 
 ```python
 def split_on_char(s, sep):                   # the 6-line answer for a one-character sep
@@ -91,7 +72,9 @@ print(split_words("  the sky   is blue "))                   # ['the', 'sky', 'i
 - Swap the two lines inside the `if` (move `start` first) and run `split_on_char("a,b", ",")`: `['', 'b']`. Every closed piece is now `s[i + 1:i]`, which is empty.
 - Drop the `if start < i:` test (append every time) and run `split_words("the sky  ")`: `['the', 'sky', '']`. A trailing gap reads an empty word.
 
-A separator of any length needs one more idea: test for a match at each position and jump past the *whole* match. Reading a number adds phases, the shape of every number parser.
+A separator of any length needs one more idea. A match can start at `i` only while `i <= len(s) - m`, it is tested with `s[i:i + m] == sep`, which is what `s.startswith(sep, i)` does, and the cursor then jumps past the *whole* match. Matches never overlap, so `"aaa"` split on `"aa"` gives `['', 'a']`, as in Python.
+
+Reading a number adds phases, the shape of every number parser. String to Integer (8), the classic atoi, reads an integer from the front of a text: skip the spaces, take at most one sign, read the digits, and clamp to the 32-bit range, so `"   -042abc"` gives −42. A digit is `"0" <= c <= "9"`, its value is `ord(c) - ord("0")`, and it joins the number as `num = num * 10 + d`. The cell holds both parsers.
 
 ```python
 def split_by_hand(s, sep):                   # any non-empty sep: the same result as s.split(sep)
@@ -138,7 +121,7 @@ print(my_atoi("   -042abc"), my_atoi("+7"), my_atoi("-91283472332"))  # -42 7 -2
 
 ### Watch it work
 
-The general split, printing each time a piece is closed: where the cursor found a separator and which slice it emitted.
+The trace runs the general split on `"ab,,c,"` and prints a line each time a piece is closed: where the cursor found a separator, which slice it emitted, and where the next piece starts. The last line is the tail, the one piece the loop itself never closes.
 
 ```python
 def trace_split(s, sep):
@@ -171,18 +154,18 @@ print(trace_split("ab,,c,", ","))   # ['ab', '', 'c', '']
 1. **Forgetting the last piece.** Emitting only when a separator is seen drops the tail: `"a,b"` gives `["a"]`. Fix: `parts.append(s[start:])` after the loop; it also makes `""` give `[""]` and `"a,"` give `["a", ""]`, like Python.
 2. **`+=` in a loop.** Each `+=` builds a new string and may copy everything so far: O(n²) characters over n appends. Fix: append pieces to a list, `"".join` once.
 3. **Reading `s[i]` before checking `i < n`.** `"-"` or `"   "` makes a parser read past the end (`IndexError`). Fix: every `while` starts with `i < n and ...`.
-4. **A branch that never moves the cursor.** Every path through the body of `while i < n` must advance `i` or leave the loop; a branch that forgets spins forever on the first character that reaches it. Fix: before running, point at the `i += ...` in each branch.
+4. **A branch that never moves the cursor.** Every path through the body of `while i < n` must advance `i` or leave the loop; a branch that forgets spins forever on the first character that reaches it. Replace the `i += 1` of phase 2 in `split_words` with `pass`, and `split_words("a")` never returns. Fix: before running, point at the `i += ...` in each branch.
 5. **`isdigit()` as the digit test.** `"²".isdigit()` is True, yet `int("²")` raises `ValueError`. Fix: `"0" <= c <= "9"`.
-6. **Clamping too late, or not at all.** Python ints never overflow, so the bug hides: `"-91283472332"` must give `-2147483648`. Fix: check after every digit (in Java or C++, check *before* multiplying: `num > (INT_MAX - d) / 10`).
+6. **Clamping too late, or not at all.** Python ints never overflow, so the bug hides: `"-91283472332"` must give `-2147483648`. Fix: check after every digit; in Java or C++, check *before* multiplying, with `num > (INT_MAX - d) / 10`.
 7. **Moving by 1 after a separator match.** Matches must not overlap: `"aaa"` split on `"aa"` is `["", "a"]`. Fix: `i += len(sep)`.
 8. **Comparing numbers as strings.** `"1.01" != "1.001"` as strings, yet they are the same version, and `"10" < "9"` is True. Fix: parse each field into an int (`x = x * 10 + d`).
-9. **A 26-slot count on text that isn't lowercase.** `counts[ord(ch) - ord("a")]` for `"Z"` is index -7, which Python quietly maps to the `'t'` slot, so `"Z"` and `"t"` look like anagrams; `"A"` (index -32) raises `IndexError`. Fix: ask the alphabet; otherwise key on `"".join(sorted(w))` or a `Counter`.
-10. **Deleting while scanning.** Removing characters from the list you are indexing shifts every later index. Fix: mark (`chars[i] = ""`) during the scan and join once at the end.
-11. **The palindrome expansion overshoots.** The `while` stops one step past the palindrome on both sides, so the palindrome is `s[lo + 1:hi]`, of length `hi - lo - 1`.
+9. **A 26-slot count on text that isn't lowercase.** `ord(ch) - ord("a")` sends `"Z"` into the `'t'` slot and `"A"` out of range ([Arrays & Hashing](#s03), trap 3). Ask the alphabet; otherwise key on `"".join(sorted(w))` or a `Counter`.
+10. **Deleting while scanning.** Removing characters from the list you are indexing shifts every later index: `del chars[i]` in Minimum Remove turns `"a)b)c"` into `'ab)'`. Fix: mark (`chars[i] = ""`) during the scan and join once at the end.
+11. **The palindrome expansion overshoots.** The `while` stops one step past the palindrome on both sides, `lo = -1` and `hi = 3` on `"aba"`, so the palindrome is `s[lo + 1:hi]`, of length `hi - lo - 1`.
 
 ### Edge cases to say out loud
 
-Empty string · only separators, only spaces · a separator at the start, at the end, twice in a row · a separator that overlaps itself (`"aaa"` on `"aa"`) · one character · a sign with no digits (`"+"`) · overflow both ways · leading zeros · uppercase, digits or spaces where the code assumes lowercase letters (ask the alphabet) · non-ASCII text (Python indexes code points; one visible character can be several of them).
+Empty string · only separators, only spaces · a separator at the start, at the end, twice in a row · a separator that overlaps itself (`"aaa"` on `"aa"`) · one character · a sign with no digits (`"+"`) · overflow both ways · leading zeros · uppercase, digits or spaces where the code assumes lowercase letters (ask the alphabet) · non-ASCII text (Python indexes code points; one visible character can be several of them). The asserts below check the splitters against Python's own `split` and walk `my_atoi` through the number cases.
 
 ```python
 for text in ["", ",", ",a,", "abc", "a,,b,"]:
@@ -209,22 +192,29 @@ print("edge cases pass")
 
 ### Variations
 
+Every variation is the same cursor with one more piece of memory: a second cursor, a flag, a key, a center, a carry. The table is the overview; its first three rows are the templates above, and the rest follow the order of the cells below.
+
 | Variation | What changes from the template | Problems |
 |---|---|---|
-| **Split on one character** | emit at each separator, and once more at the end | warm-up |
-| **Split on runs of spaces** | phases: skip the gap, read a word; drop the empty word a trailing gap reads | 151, 58 |
-| **Read a number** | phases spaces → sign → digits; `num = num * 10 + d`; clamp | 8 |
-| **Two cursors in lockstep** | read one field from each string, compare, step over the dots | 165 |
-| **Quoted fields** | a flag flips at each `"`; a separator cuts only outside quotes | split follow-up |
-| **Difference key** | the tuple of `(s[i+1] - s[i]) % 26` forgets the shift | 249 |
-| **Expand around center** | 2n − 1 centers; grow while both ends match | 5, 647 |
-| **One deletion allowed** | two pointers; at the first mismatch, try skipping either side | 680 |
-| **Runs** | `j` walks to the end of the run; the next run starts at `j` | 443, 809, 38 |
-| **Digits with a carry** | walk both strings from the right; `divmod(d, 10)`; build backwards | 415, 67, 43 |
-| **Mark, then join** | stack of open-bracket indices; blank what can't be matched | 1249 |
-| **Reverse twice** | reverse the whole list, then reverse each word back | 151, 186 |
-| **Row buckets** | a row index bouncing between 0 and numRows − 1; one list per row | 6 |
-| Hard ones (at the end) | grammar flags; chunks of three; cut + hash map; KMP borders; rolling hash + binary search; greedy packing + divmod | 65, 273, 336, 1392, 214, 28, 1044, 68 |
+| **Split on one character** | emit at each separator, and once more at the end | Implement String Split, the warm-up |
+| **Split on runs of spaces** | phases: skip the gap, read a word; drop the empty word a trailing gap reads | Reverse Words in a String (151): the words in reverse order; Length of Last Word (58) |
+| **Read a number** | phases spaces → sign → digits; `num = num * 10 + d`; clamp | String to Integer (8) |
+| **Two cursors in lockstep** | read one field from each string, compare, step over the dots | Compare Version Numbers (165): which of two versions is larger |
+| **Quoted fields** | a flag flips at each `"`; a separator cuts only outside quotes | the split follow-up |
+| **Difference key** | the tuple of `(s[i+1] - s[i]) % 26` forgets the shift | Group Shifted Strings (249): group the words that shift into each other |
+| **Expand around center** | 2n − 1 centers; grow while both ends match | Longest Palindromic Substring (5); Palindromic Substrings (647): count them all |
+| **One deletion allowed** | two pointers; at the first mismatch, try skipping either side | Valid Palindrome II (680): a palindrome after deleting at most one letter |
+| **Runs** | `j` walks to the end of the run; the next run starts at `j` | Expressive Words (809): can a word stretch into `s`; String Compression (443): `aaabb` → `a3b2` in place; Count and Say (38): read the previous term's runs aloud |
+| **Digits with a carry** | walk both strings from the right; `divmod(d, 10)`; build backwards | Add Strings (415): add two numbers given as text; Add Binary (67); Multiply Strings (43) |
+| **Mark, then join** | stack of open-bracket indices; blank what can't be matched | Minimum Remove to Make Valid Parentheses (1249) |
+| **Reverse twice** | reverse the whole list, then reverse each word back | Reverse Words in a String (151); Reverse Words in a String II (186): the same, in place |
+| **Row buckets** | a row index bouncing between 0 and numRows − 1; one list per row | Zigzag Conversion (6): write the string in a zigzag, read it row by row |
+| *Second pass:* **grammar flags** | three flags instead of a value; the `e` resets "digit seen" | Valid Number (65): is the text a decimal or scientific number |
+| *Second pass:* **chunks of three** | base 1000: each chunk is spelled alike, then its scale word | Integer to English Words (273): spell a number in English words |
+| *Second pass:* **cut + hash map** | cut each word in two; one half a palindrome, the other half's reverse a whole word | Palindrome Pairs (336): the pairs of words that join into a palindrome |
+| *Second pass:* **KMP borders** | `fail[i]` = the longest proper border of `s[:i + 1]`; on a mismatch, fall back | Longest Happy Prefix (1392): the longest prefix that is also a suffix; Shortest Palindrome (214): the fewest letters added in front; Find the Index of the First Occurrence in a String (28) |
+| *Second pass:* **rolling hash + binary search** | binary search the length; a rolling hash tests one length in O(n) | Longest Duplicate Substring (1044): the longest substring that occurs twice |
+| *Second pass:* **greedy packing + divmod** | pack words greedily; `divmod(spaces, gaps)` puts the extras on the left | Text Justification (68): lines of exactly `width` characters |
 
 Many string problems are taught where their technique lives:
 
@@ -237,7 +227,7 @@ Many string problems are taught where their technique lives:
 | word search II, word squares (212, 425) | a trie walked along the board | [Tries](#s12) |
 | phone letters, IP addresses, palindrome partitioning (17, 93, 131) | backtracking over cuts | [Backtracking](#s16) |
 
-**More parsing: two cursors, a quote flag.** Compare Version Numbers runs two cursors in lockstep, one field at a time; a string that has run out simply reads as 0, which is exactly the rule "missing revisions count as 0". Quoted fields are the classic follow-up to the split warm-up: one flag remembers whether we are inside quotes, and a separator only cuts outside them.
+**Two cursors and a quote flag.** The first variations stay with parsing. Compare Version Numbers compares two versions field by field as integers and returns −1, 0 or 1: `"1.01"` equals `"1.001"`, and `"1.0"` is smaller than `"1.0.1"`. Run two cursors in lockstep, read one field from each string as a number, and let the first different field decide. A string that has run out simply reads as 0, which is exactly the rule that missing revisions count as 0.
 
 ```python
 def compare_version(v1, v2):                 # O(n + m) time, O(1) extra space
@@ -258,30 +248,17 @@ def compare_version(v1, v2):                 # O(n + m) time, O(1) extra space
     return 0
 
 
-def split_quoted(line, sep=","):             # a sep inside "..." does not cut
-    fields, piece, in_quotes = [], [], False # STATE: piece = the characters of the open field
-    for ch in line:
-        if ch == '"':
-            in_quotes = not in_quotes        # a quote flips the mode; it is not kept
-        elif ch == sep and not in_quotes:
-            fields.append("".join(piece))    # RECORD: the field is closed
-            piece = []
-        else:
-            piece.append(ch)                 # STEP: the field grows
-    fields.append("".join(piece))            # RECORD the last field
-    return fields
-
-
 print(compare_version("1.01", "1.001"), compare_version("1.0", "1.0.1"), compare_version("1.10", "1.9"))   # 0 -1 1
-print(split_quoted('1,"Smith, John",42'))   # ['1', 'Smith, John', '42']
 ```
 
 **Try it**
 - Change `or` to `and` in `while i < len(v1) or j < len(v2)` and run `compare_version("1.0.1", "1")`: 0 instead of 1. The loop stopped when the shorter string ran out.
-- Why is `compare_version("1.10", "1.9")` 1? Compare `"10" < "9"` (True: strings compare character by character) with `10 < 9`.
-- Drop `and not in_quotes` and run `split_quoted('1,"Smith, John",42')`: `['1', 'Smith', ' John', '42']`.
+- Run `"10" < "9"` and `10 < 9`: `True` and `False`. Strings compare character by character, which is why each field is parsed into an int before `compare_version("1.10", "1.9")` can return 1.
+- Run `compare_version("1", "1.0.0.0")`: 0. The used-up string keeps reading 0 while the other one still has fields.
 
-**Keys: group by "the same up to ...".** To group words that are equal up to some change, compute a key that forgets exactly that change and let a dict do the grouping. Shifted strings forget the starting letter: the gaps between neighbours, taken mod 26 so that `z → a` is a gap of 1. Anagrams forget the order: the letter counts or the sorted letters, built in [Arrays & Hashing](#s03).
+Quoted fields are the classic follow-up to the split warm-up: `'1,"Smith, John",42'` must give `['1', 'Smith, John', '42']`. One flag remembers whether the cursor is inside quotes. A quote flips the flag and is not kept, a separator closes the field only while the flag is off, and every other character joins the open field. The last field is emitted after the loop, exactly as in the warm-up.
+
+**Keys: group by "the same up to ...".** Group Shifted Strings groups the words that turn into each other when every letter moves the same number of steps along the alphabet: `"abc"`, `"bcd"` and `"xyz"` form one group, `"az"` and `"ba"` another. Compute a key that forgets exactly that change, and a dict does the grouping. A shift forgets the starting letter but keeps the gaps between neighbours, taken mod 26 so that `z → a` is a gap of 1. Anagrams forget the order instead; their key is built in [Arrays & Hashing](#s03).
 
 ```python
 def group_by_key(words, key):
@@ -297,15 +274,16 @@ def shift_key(w):                            # the gaps between neighbours, mod 
 
 print(group_by_key(["abc", "bcd", "acef", "xyz", "az", "ba", "a", "z"], shift_key))
 # [['abc', 'bcd', 'xyz'], ['acef'], ['az', 'ba'], ['a', 'z']]
-print(group_by_key(["eat", "tea", "tan", "ate"], lambda w: "".join(sorted(w))))   # [['eat', 'tea', 'ate'], ['tan']]
 ```
 
 **Try it**
 - Drop the `% 26` from `shift_key` and rerun: `'az'` and `'ba'` land in different groups, because their gaps are now 25 and -1.
 - Print `shift_key("a")` and `shift_key("z")`: both `()`, so all one-letter words form one group. That is right: any letter shifts into any other.
-- See why a 26-slot count needs lowercase: `counts = [0] * 26; counts[ord("Z") - ord("a")] += 1; print(counts.index(1))` prints 19, the slot of `'t'`. Ask the alphabet first; otherwise key on the sorted letters, as the second print does.
+- Predict which group `"cb"` joins before adding it: `shift_key("cb")` is `(25,)`, the same as `"az"` and `"ba"`, so all three shift into each other.
 
-**Palindromes: from the middle, and from the ends.** A palindrome is decided by its center, and growing it one step on each side costs one comparison: try all 2n − 1 centers (each letter for odd lengths, each gap for even lengths) and stop at the first mismatch, since no wider palindrome can share that center. Valid Palindrome II (680) walks two pointers inward instead; at the first mismatch one of the two letters must go, so check both leftovers. (With punctuation to skip, see [Two Pointers](#s05).)
+**Palindromes: from the middle, and from the ends.** Longest Palindromic Substring asks for the longest block that reads the same both ways: `"babad"` gives `"bab"`, and `"cbbd"` gives `"bb"`. A palindrome is decided by its center, and growing it one step on each side costs one comparison. So try all 2n − 1 centers, each letter for odd lengths and each gap for even lengths, and stop at the first mismatch, since no wider palindrome can share that center.
+
+Valid Palindrome II asks whether deleting at most one letter makes the string a palindrome: `"abca"` becomes one without its `b` or its `c`, and `"abc"` never does. It walks two pointers inward instead. At the first mismatch one of the two letters must go, so check both leftovers; with punctuation to skip, the walk is in [Two Pointers](#s05).
 
 ```python
 def longest_palindrome(s):                   # O(n²) time, O(1) extra space
@@ -340,11 +318,13 @@ print(valid_palindrome_ii("abca"), valid_palindrome_ii("abc"))   # True False
 ```
 
 **Try it**
-- Delete the even center `(center, center + 1)` and run `longest_palindrome("cbbd")`: `'c'`. The palindrome `"bb"` has no middle letter, so only a gap can be its center.
+- Keep only the odd center, `for lo, hi in ((center, center),):`, and run `longest_palindrome("cbbd")`: `'c'`. The palindrome `"bb"` has no middle letter, so only a gap can be its center.
 - Add `print(center, lo, hi)` after the `while` loop and run `longest_palindrome("aba")`: the line `1 -1 3` shows the loop stopping one step outside `s[0:3]` on both sides.
 - Keep only the left skip (`return is_pal(lo + 1, hi)`) and run `valid_palindrome_ii("cbbcc")`: False instead of True. Deleting the `c` at index 3 works; deleting the `b` at index 1 does not.
 
-**Runs and carries.** A *run* is a block of equal letters: a second cursor `j` walks to its end, and the next run starts at `j`. Expressive Words (809) compares the runs of two strings; String Compression (443) and Count and Say (38) write them out. Adding numbers given as strings walks both from the right with a carry, like on paper, and builds the answer backwards. All of them are O(n).
+**Runs and carries.** A *run* is a block of equal letters: a second cursor `j` walks to its end, and the next run starts at `j`. Expressive Words asks whether a word can be stretched into `s` by growing some of its runs to length 3 or more: `"hello"` stretches into `"heeellooo"`, and `"helo"` does not. Compare the runs of the two strings pair by pair; String Compression and Count and Say write the runs out instead.
+
+Add Strings adds two non-negative numbers given as text: `"999"` plus `"1"` is `"1000"`. Walk both strings from the right with a carry, as on paper, and build the answer backwards; a string that has run out adds nothing, and a last carry needs a turn of its own. All of these are O(n).
 
 ```python
 def runs(s):                                 # "aaabcc" -> [('a', 3), ('b', 1), ('c', 2)]
@@ -389,7 +369,11 @@ print(add_strings("999", "1"), add_strings("11", "123"))   # 1000 134
 - Predict `expressive("zzzzzyyyyy", "zzyy")` and `expressive("aaa", "aaaa")`: True (both runs can grow to 5) and False (a run can't shrink).
 - Drop `or carry` from the loop and run `add_strings("999", "1")`: `'000'`. The last carry needs one more turn of the loop.
 
-**Mark, then join; reverse twice; row buckets.** Minimum Remove matches brackets with a stack of the indices of `(` still open; a `)` with nothing to close, or a `(` still open at the end, is exactly what must go, so blank them during the scan and join once. Reverse Words in place: reversing the whole character list puts the words in the right order but spells each one backwards, and a second pass reverses each word back (in Python, say `" ".join(reversed(s.split()))` first; the two reversals are the follow-up for mutable strings). Zigzag: only the *row* of each character matters, and the row bounces 0, 1, ..., numRows − 1, ..., 1, 0.
+**Mark, then join; reverse twice; row buckets.** The last three reshape a string in one pass each. Minimum Remove to Make Valid Parentheses deletes the fewest brackets so that the rest is balanced: `"lee(t(c)o)de)"` loses its last `)`. A stack of the indices of `(` still open finds exactly what must go: a `)` with nothing to close, and every `(` still open at the end. Blank them during the scan, and join once.
+
+Reverse Words in a String puts the words in reverse order with single spaces: `"  the sky   is blue "` becomes `"blue is sky the"`. In Python, say `" ".join(reversed(s.split()))` first; reversing twice is the follow-up for a mutable list of characters. Reversing the whole list puts the words in the right order but spells each one backwards, and a second sweep reverses each word back.
+
+Zigzag Conversion writes the string down and up across `num_rows` rows and reads it row by row: `"PAYPALISHIRING"` on 3 rows reads `"PAHNAPLSIIGYIR"`. Only the *row* of each character matters, and the row bounces 0, 1, ..., num_rows − 1, ..., 1, 0, so keep one list per row and a step of +1 or −1.
 
 ```python
 def min_remove_to_make_valid(s):
@@ -446,11 +430,13 @@ print(reverse_words("  the sky   is blue "), zigzag("PAYPALISHIRING", 3))       
 - Remove the second loop (the per-word flips) and run `reverse_words("the sky is blue")`: `'eulb si yks eht'`, halfway there.
 - Remove the early `return s` (the first `if` in `zigzag`) and run `zigzag("AB", 1)`: `IndexError`. With one row the step never flips, so `r` walks off to row 1.
 
-**Optional: the Hard ones.** Each is the same cursor with heavier bookkeeping. Read them once the mediums above feel easy.
+The rest of this section is a second pass: Hard problems that reuse the same moves. Skip them until the main path is automatic.
 
-Valid Number (65) keeps three flags instead of a value: each character is legal or not depending only on what has been seen. Integer to English Words (273) works in base 1000: every 3-digit chunk is spelled the same way, followed by its scale word.
+Valid Number asks whether a text is a number in decimal or scientific notation: `"2"`, `"-.9"`, `"4."` and `"3e+7"` are, while `"e3"`, `"99e2.5"`, `"."` and `"1e"` are not. It keeps three flags instead of a value, because each character is legal or not depending only on what has been seen. A sign stands only at the start or right after the `e`; there is one dot, never inside the exponent; and one `e`, with digits before it. The exponent needs digits of its own, so the `e` resets "digit seen".
 
-```python
+<details><summary>Valid Number in code</summary>
+
+```py
 def is_number(s):
     seen_digit = seen_dot = seen_exp = False # the whole memory of this state machine
     for i, c in enumerate(s):
@@ -471,7 +457,16 @@ def is_number(s):
             return False                     # a space, a letter, anything else
     return seen_digit
 
+# [is_number(t) for t in ["2", "-.9", "4.", "3e+7", "e3", "99e2.5", ".", "1e"]]
+#  -> [True, True, True, True, False, False, False, False]
+# without the reset of seen_digit at the e, "1e" would pass
+```
 
+</details>
+
+Integer to English Words spells a number in English: 12345 is `"Twelve Thousand Three Hundred Forty Five"`. Work in base 1000, because every 3-digit chunk is spelled the same way and then followed by its scale word, Thousand, Million or Billion. Read the chunks lowest first and put each new one in front of the words so far. An all-zero chunk adds nothing, not even its scale word.
+
+```python
 ONES = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven",
         "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
 TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
@@ -498,28 +493,19 @@ def number_to_words(num):
     return " ".join(out)
 
 
-print([is_number(t) for t in ["2", "-.9", "4.", "3e+7", "e3", "99e2.5", ".", "1e"]])
-# [True, True, True, True, False, False, False, False]
 print(number_to_words(12345), "|", number_to_words(1000010))   # Twelve Thousand Three Hundred Forty Five | One Million Ten
 ```
 
 **Try it**
-- Change `seen_exp, seen_digit = True, False` to `seen_exp = True` and run `is_number("1e")`: True. The exponent now borrows the mantissa's digits.
-- Predict `[is_number(t) for t in ["+.8", "-e5", "1e5.", " 1"]]` before running: `[True, False, False, False]`.
 - Remove the `if num % 1000:` guard and run `number_to_words(1000000)`: `'Billion One Million Thousand'`. Empty chunks must stay silent, scale word included.
+- Change `if n >= 20:` to `if n > 20:` and run `number_to_words(20)`: `IndexError`. Twenty now falls through to `ONES[20]`, and `ONES` stops at Nineteen.
+- Append each chunk instead, `out = out + chunk(num % 1000) + ...`, and run `number_to_words(12345)`: `'Three Hundred Forty Five Twelve Thousand'`. The chunks arrive lowest first, so each new one belongs in front.
 
-Palindrome Pairs (336) cuts each word in two: if one half is a palindrome, the other half's reverse must be a whole word, and a dict of reversed words finds it with one lookup, O(n·L²) for n words of length L. The **KMP prefix function** asks, at every position, how much of the start of the string reappears just before it. `fail[i]` is the length of the longest *border* of `s[:i + 1]`, a prefix that is also a suffix and is *proper* (shorter than the whole string). When the next letter does not extend the current border, fall back to the border of the border, `fail[k - 1]`, instead of starting over:
+Palindrome Pairs asks for every pair of different words whose concatenation is a palindrome: in `["abcd", "dcba", "lls", "s", "sssll"]`, `"s" + "lls"` and `"lls" + "sssll"` are two of the four. Cut each word in two. If one half is a palindrome, the other half's reverse must be a whole word, and a dict of reversed words finds it with one lookup: O(n·L²) for n words of length L.
 
-```text
-s = a a b a a a b        fail so far = [0, 1, 0, 1, 2]
-i=5 ('a'): extend the border "aa"? its next letter s[2] = 'b' != 'a'
-           fall back to the border of "aa", which is "a": s[1] = 'a' == 'a'  ->  "aa", fail[5] = 2
-i=6 ('b'): extend "aa": s[2] = 'b' == 'b'  ->  "aab", fail[6] = 3
-```
+<details><summary>Palindrome Pairs in code</summary>
 
-Each fall-back pays for an earlier step forward, so the table costs O(n) and a search O(n + m). Longest Happy Prefix is `fail[-1]`. Shortest Palindrome needs the longest palindromic *prefix*, which is the border of `s + "#" + reverse(s)`. `kmp_find` glues pattern and text with `"\0"`, a character in neither string, so no border can cross it.
-
-```python
+```py
 def palindrome_pairs(words):                 # O(n·L²): n words, L + 1 cuts, O(L) per test
     index = {w[::-1]: i for i, w in enumerate(words)}   # reversed word -> its index
     pairs = []
@@ -532,7 +518,24 @@ def palindrome_pairs(words):                 # O(n·L²): n words, L + 1 cuts, O
                 pairs.append([i, index[pre]])    # pre + suf + reverse(pre); cut < len(w) avoids doubles
     return pairs
 
+# palindrome_pairs(["abcd", "dcba", "lls", "s", "sssll"])  -> [[1, 0], [0, 1], [3, 2], [2, 4]]
+# without "cut < len(w) and", ["abcd", "dcba"] gives every pair twice
+```
 
+</details>
+
+The **KMP prefix function** asks, at every position, how much of the start of the string reappears just before it. Longest Happy Prefix asks it once, for the whole string: `"level"` gives `"l"`. `fail[i]` is the length of the longest *border* of `s[:i + 1]`, a prefix that is also a suffix and is *proper*, shorter than the whole string. When the next letter does not extend the current border, fall back to the border of the border, `fail[k - 1]`, instead of starting over:
+
+```text
+s = a a b a a a b        fail so far = [0, 1, 0, 1, 2]
+i=5 ('a'): extend the border "aa"? its next letter s[2] = 'b' != 'a'
+           fall back to the border of "aa", which is "a": s[1] = 'a' == 'a'  ->  "aa", fail[5] = 2
+i=6 ('b'): extend "aa": s[2] = 'b' == 'b'  ->  "aab", fail[6] = 3
+```
+
+Each fall-back pays for an earlier step forward, so the table costs O(n) and a search O(n + m). Longest Happy Prefix is `fail[-1]`. Shortest Palindrome adds the fewest letters in front of `s`, `"aacecaaa"` → `"aaacecaaa"`, so it needs the longest palindromic *prefix*: the border of `s + "#" + reverse(s)`. `kmp_find` returns every start of a pattern in a text; it glues the two with `"\0"`, a character in neither string, so no border can cross it.
+
+```python
 def prefix_function(s):
     fail = [0] * len(s)                      # fail[i] = longest proper border of s[:i + 1]
     for i in range(1, len(s)):
@@ -559,7 +562,6 @@ def kmp_find(text, pattern):                 # every start of pattern in text, o
     return [i - 2 * m for i, k in enumerate(fail) if k == m]
 
 
-print(palindrome_pairs(["abcd", "dcba", "lls", "s", "sssll"]))         # [[1, 0], [0, 1], [3, 2], [2, 4]]
 print(prefix_function("aabaaab"))                                      # [0, 1, 0, 1, 2, 2, 3]
 print(longest_happy_prefix("ababab"), longest_happy_prefix("level"))   # abab l
 print(shortest_palindrome("aacecaaa"), shortest_palindrome("abcd"))    # aaacecaaa dcbabcd
@@ -567,52 +569,17 @@ print(kmp_find("aabaaabaab", "aab"))                                   # [0, 4, 
 ```
 
 **Try it**
-- Remove `cut < len(w) and` and run `palindrome_pairs(["abcd", "dcba"])`: `[[1, 0], [0, 1], [0, 1], [1, 0]]`, each pair found twice, once from each word.
 - Replace `k = fail[k - 1]` with `k = 0` (start over on a mismatch) and rerun: `prefix_function("aabaaab")` is `[0, 1, 0, 1, 2, 1, 0]`. The borders `"aa"` and `"aab"` at the end are missed.
 - Remove the `"#"` in `shortest_palindrome` and run it on `"aaba"`: `'aaba'`, which is not a palindrome. The border of `"aabaabaa"` is 5, longer than `s`; the separator caps it at `len(s)`. The right answer is `'abaaba'`.
 - Run `kmp_find("aaaa", "aa")`: `[0, 1, 2]`. Overlapping matches are found because a full match keeps its border.
 
-Longest Duplicate Substring (1044) stacks two ideas. If some substring of length L occurs twice, so does its prefix of length L − 1, so "a repeat of length L exists" is true up to the answer and false after it: binary search the length. To test one length in O(n), read each window as a number in base B (mod a big prime) and *roll* it one step in O(1); in base 10 the window `"123"` becomes `"234"` as 123 · 10 − 1 · 1000 + 4 = 234. Equal strings have equal hashes, and equal hashes are confirmed by comparing letters: O(n log n) expected. (In Java or C++, add `MOD` after the subtraction; Python's `%` never returns a negative number here.)
+Longest Duplicate Substring asks for the longest substring that occurs at least twice, overlaps allowed: `"banana"` gives `"ana"`. It stacks two ideas. If a substring of length L occurs twice, so does its prefix of length L − 1, so "a repeat of length L exists" is true up to the answer and false after it: binary search the length, as in [Binary Search](#s09).
 
-```python
-def longest_dup_substring(s):
-    n, MOD, BASE = len(s), (1 << 61) - 1, 131
-    codes = [ord(c) for c in s]
+To test one length in O(n), read each window as a number in base B, modulo a big prime, and *roll* it one step in O(1): in base 10 the window `"123"` becomes `"234"` as 123 · 10 − 1 · 1000 + 4 = 234. Equal strings have equal hashes, and an equal hash is confirmed by comparing letters, because different strings can share one: collisions cost time, never correctness. The whole search is O(n log n) expected.
 
-    def repeat_of_length(L):                 # start of a length-L substring seen earlier, or -1
-        h = 0
-        for c in codes[:L]:
-            h = (h * BASE + c) % MOD         # hash of the first window
-        top = pow(BASE, L, MOD)              # weight of the leaving char after the shift
-        seen = {h: [0]}
-        for i in range(1, n - L + 1):
-            h = (h * BASE - codes[i - 1] * top + codes[i + L - 1]) % MOD   # roll one step right
-            for j in seen.get(h, []):
-                if s[j:j + L] == s[i:i + L]: # verify: different strings can share a hash
-                    return i
-            seen.setdefault(h, []).append(i)
-        return -1
+In Java or C++, add the modulus back after the subtraction; Python's `%` never returns a negative number. The rolling hash itself is coded in `practice/simple/basics/strings/04_rabin_karp_rolling_hash.py`, with a tiny modulus that makes the collisions visible.
 
-    lo, hi, best = 1, n - 1, ""              # a length-n substring can't occur twice
-    while lo <= hi:
-        mid = (lo + hi) // 2
-        i = repeat_of_length(mid)
-        if i >= 0:
-            best, lo = s[i:i + mid], mid + 1 # works: try longer
-        else:
-            hi = mid - 1                     # fails, and so does every longer length
-    return best
-
-
-print(longest_dup_substring("banana"), repr(longest_dup_substring("abcd")))   # ana ''
-```
-
-**Try it**
-- Add `print(mid, i)` right after `i = repeat_of_length(mid)` and run `longest_dup_substring("banana")`: `3 3` (the second `"ana"` starts at 3), then `4 -1`. Two probes settle the answer.
-- Set `MOD = 5`, so hashes collide all the time, and rerun: still `ana ''`, because every hash hit is checked letter by letter. Collisions cost time, never correctness.
-- Keep `MOD = 5` and change `if s[j:j + L] == s[i:i + L]:` to `if True:` (trust the hash): `longest_dup_substring("aba")` returns `'ba'`, which occurs once. Since `131 % 5 == 1`, this hash is just the letter sum mod 5, so `"ab"` and `"ba"` collide.
-
-Text Justification (68) has no trick, just two jobs done cleanly in O(total characters): which words fit on this line (greedy), and how to spread the spare spaces, which is one `divmod`: every gap gets the quotient and the leftmost `remainder` gaps get one more.
+Text Justification lays words out in lines of exactly `width` characters with straight edges: at width 16, `["This", "is", "an", "example", "of", "text", "justification."]` becomes three lines, the first `'This    is    an'`. There is no trick, just two jobs done cleanly in O(total characters). Pack as many words as fit on the line, greedily, and spread the spare spaces with one `divmod`: every gap gets the quotient, and the leftmost `remainder` gaps get one more. The last line, and a line with one word, are left-justified.
 
 ```python
 def full_justify(words, width):
@@ -647,7 +614,9 @@ print(full_justify(["This", "is", "an", "example", "of", "text", "justification.
 
 ### Say it in the interview
 
-> "Two questions first: if two separators are adjacent, do you want an empty string between them, like `split(",")`, or should a run count as one, like `split()`? And can the separator be longer than one character? I'll walk the string once with an index and remember where the current piece started. When the separator starts at `i` I emit `s[start:i]`, which may be empty, jump past the whole separator, and start the next piece there. After the loop I emit the tail; that line makes `"a,"` give `["a", ""]` and `""` give `[""]`. Each position compares up to m characters, so O(n·m), which is O(n) for one character, plus O(n) for the output. Using `find` and slicing off the remainder copies the rest of the string per piece, which is O(n²) at worst."
+> "Two questions first: if two separators are adjacent, do you want an empty string between them, like `split(",")`, or should a run count as one, like `split()`? And can the separator be longer than one character? I'll walk the string once with an index and remember where the current piece started."
+
+> "When the separator starts at `i` I emit `s[start:i]`, which may be empty, jump past the whole separator, and start the next piece there. After the loop I emit the tail; that line makes `"a,"` give `["a", ""]` and `""` give `[""]`. Each position compares up to m characters, so O(n·m), which is O(n) for one character, plus O(n) for the output. Using `find` and slicing off the remainder copies the rest of the string per piece, which is O(n²) at worst."
 
 For any string problem, ask: which alphabet, case-sensitive or not, can it be empty? Then say the edge cases *before* coding (empty string, separator at both ends, two in a row) and point at the final `append` after the loop: it is the line most people forget. For a parser, name the phases out loud ("spaces, then one sign, then digits") and write one `while` per phase.
 

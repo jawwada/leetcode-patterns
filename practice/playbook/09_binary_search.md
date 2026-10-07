@@ -2,11 +2,15 @@
 
 > Every binary search answers one question: **where does a yes/no answer flip?** Line the candidates up so the answers read `F F F F T T T T`, keep a window that always contains the first `T`, and look at the middle: one look throws away half the window.
 
-**Reach for it when** the input is sorted, or sorted in pieces (rotated, a mountain, a matrix whose rows continue each other); when the problem demands O(log n); or when it asks for the **minimum X such that ...** or the **maximum X such that ...** and making X bigger only ever makes the condition easier (or only harder): that is binary search on the answer. Also "the k-th smallest" in something too big to list, when you can *count* how many items are ≤ v quickly.
+**Reach for it when** the input is sorted, or sorted in pieces: a rotated array, a mountain, a matrix whose rows continue each other. The same holds when the problem demands O(log n).
+
+Reach for it above all when the problem asks for the **minimum X such that ...** or the **maximum X such that ...** and a bigger X only ever makes the condition easier, or only ever harder. That is binary search on the answer, and it needs no sorted data at all. It also finds "the k-th smallest" in something too big to list, as long as you can *count* the items ≤ v quickly.
 
 **In this repo:** `binary_search/` (16 problems) · bank: `practice/simple/18_search_in_rotated_sorted_array.py`, `practice/simple/19_koko_eating_bananas.py`, `practice/simple/20_split_array_largest_sum.py` · basics: `practice/simple/basics/searches/01_binary_search_variants.py`, `practice/simple/basics/searches/02_binary_search_on_answer.py`, `practice/simple/basics/matrices/04_search_2d_matrix_staircase.py`
 
 ### The picture
+
+Binary search does not care about the numbers themselves. It cares about the answers to one question about them, and those answers form a landscape with a single flip:
 
 ```text
 nums      1    3    3    5    8    9   12       question: the first index with nums[i] >= 4
@@ -20,38 +24,25 @@ look at index 1: F  ->  the answer is right of 1: indices 0 and 1 are settled
 look at index 2: F  ->  only index 3 is left, so it is the answer
 ```
 
-**Why it is fast:** a linear scan learns about one cell per look. But in `F F F T T T`, a `T` in the middle tells you that every cell to its right is `T` too, and an `F` tells you every cell to its left is `F`. So each look settles half of the remaining candidates: a million candidates need 20 looks, a billion need 30. Notice what binary search really needs: not sorted *data*, but a *question* whose answers are sorted. That is why it also works on rotated arrays, on peaks, and on the answer itself.
+A linear scan learns about one cell per look. In `F F F T T T`, a `T` in the middle says that every cell to its right is `T` too, and an `F` says that every cell to its left is `F`, so each look settles half of the remaining candidates. A million candidates need 20 looks, a billion need 30.
 
-**Why it is correct:** the window always contains the first `T`: every candidate left of `lo` is known to be `F`, and `hi` is known to be `T` (or is past the end). A probe keeps both facts true on either branch, and every probe makes the window smaller, so the loop ends with `lo == hi` sitting on the first `T`.
+Notice what the search really needs: not sorted *data*, but a *question* whose answers are sorted, False up to some point and True from then on. A question with that shape is called monotone. That is why binary search also works on rotated arrays, on peaks, and on the answer itself.
+
+It is correct because the window always contains the first `T`. Every candidate left of `lo` is known to be `F`, and `hi` is known to be `T` or is past the end. A probe keeps both facts true on either branch, and every probe makes the window smaller, so the loop ends with `lo == hi` sitting on the first `T`.
 
 ### From idea to code
 
 **The idea in one sentence:** *write `ok(x)`, which is False for small x and True from some point on; keep `[lo, hi]` so that the first True is always inside; test the middle and move the side that the test proves.*
 
-| Decision | Binary-search answer |
-|---|---|
-| **State / Definition** | two integers: the first True lies in `[lo, hi]`. `hi` itself is never tested: it is one past the last candidate, or a value already known to be True |
-| **Invariant** | every candidate left of `lo` is F; `hi` is T (or past the end); the window shrinks every step |
-| **Step** | probe `mid = (lo + hi) // 2`: `if ok(mid): hi = mid` (mid might be the first T, keep it) `else: lo = mid + 1` (mid is F, drop it) |
-| **Fix** | none: each probe moves one side and keeps the invariant by itself |
-| **Record** | never during the loop: when `lo == hi` the window has shrunk onto the answer |
-| **Init** | `lo` = the smallest candidate; `hi` = the fallback answer: one past the largest (`len(nums)`), or a value that surely works |
-| **Return** | `lo`; then turn "no True at all" (`lo == len(nums)`, or `nums[lo] != target`) into `-1` |
+The picture dictates the seven decisions. **State** is two integers, `lo` and `hi`, and **Definition** says what they mean in one sentence: the first True lies in `[lo, hi]`. **Invariant** is the fact that holds every time the loop comes round: every candidate left of `lo` is False, `hi` is True or past the end, and the window is smaller than last time. **Init** sets this up: `lo` on the smallest candidate, `hi` on the fallback answer, which is never tested because it is one past the last candidate or a value already known to work.
 
-The same idea, sentence by sentence:
+**Step** probes the middle, `mid = (lo + hi) // 2`: if `ok(mid)` is True, mid might be the first True and `hi = mid` keeps it; if not, `lo = mid + 1` drops it. Each probe keeps the invariant by itself, so there is no **Fix**, and **Record** waits for `lo == hi`, the window shrunk onto the answer. **Return** is `lo`, and the caller turns "no True at all" into −1 by checking `lo == len(nums)` or `nums[lo] != target`.
 
-| In words | In code |
-|---|---|
-| "the answer is somewhere from lo up to hi" | `lo, hi = 0, len(nums)` |
-| "something is still untested" | `while lo < hi:` |
-| "look in the middle" | `mid = (lo + hi) // 2` (rounds down, so `lo <= mid < hi`) |
-| "mid works, so the first one that works is mid or earlier" | `hi = mid` |
-| "mid fails, so the first one that works is after mid" | `lo = mid + 1` |
-| "the first one that works" | `return lo` |
-| "is the target really there?" | `lo < len(nums) and nums[lo] == target` |
-| "the last one that works" | the first one that fails, minus 1 |
+Read the template as those sentences. `lo, hi = 0, len(nums)` says the answer is one of `lo..hi`, with `len(nums)` meaning "none"; the cells still untested are `lo..hi-1`, and `while lo < hi` runs while one is left. `mid = (lo + hi) // 2` rounds down, so `lo <= mid < hi`: `nums[mid]` always exists, and `hi = mid` still shrinks the window. `return lo` is the first one that works, and the last one that works is the first one that fails, minus 1.
 
-The template, then the same loop with the question passed in (`first_true`), so that every later problem is just "write `ok`". Exact search, which can stop the moment it finds the target, is where the closed `lo <= hi` window fits naturally:
+The cell holds two problems and one helper. Search Insert Position asks where a target sits in a sorted array, or where it would be inserted: `[1, 3, 5, 6]` with target 2 → 1, with target 7 → 4. That is `lower_bound`, the first index whose value is ≥ x, with `len(nums)` meaning "after everything". The helper `first_true` is the same loop with the question passed in, so that every later problem is only "write `ok`".
+
+Binary Search itself asks for the index of a target in a sorted array of distinct values, or −1: `[-1, 0, 3, 5, 9, 12]` with target 9 → 4. It may stop the moment it finds the target, and that is where the closed window `[lo, hi]`, with both ends still candidates, fits naturally.
 
 ```python
 def lower_bound(nums, x):
@@ -98,20 +89,17 @@ print(search(nums, 8), search(nums, 4))                                    # 4 -
 
 **Try it**
 - Change `hi = mid` to `hi = mid - 1` in `lower_bound` and run `lower_bound([1, 5], 4)`: 0 instead of 1. Mid *was* the first True, and you threw it away.
-- Predict what `while lo <= hi` would do in `lower_bound([1, 5], 4)`: once `lo == hi == 1`, mid is 1, `ok(1)` is True, and `hi = mid` changes nothing, so it loops forever. (If you run it, interrupt the kernel.)
+- Change `while lo < hi` to `while lo <= hi` in `lower_bound`, with a guard, `steps = 0` before the loop and `steps += 1; assert steps < 50` inside it, and rerun the cell: the assert fires on the first call. Trace the smallest case, `lower_bound([1, 5], 4)`: once `lo == hi == 1`, mid is 1, `nums[1] >= 4` is True, and `hi = mid` changes nothing, forever.
 - Print `lo, hi` at the top of the loop in `search(nums, 4)`: `0 6`, `0 2`, `2 2`. The window holds 7, then 3, then 1 candidate, and the loop stops when `lo` passes `hi`.
 - Compare with the library: `bisect.bisect_left(nums, 4)` is 3, the same as `lower_bound`, and `bisect.bisect_right(nums, 3)` is 3, the first index with a value `> 3`.
 
-**The recipe: never edit the loop.** Every problem in this section is four decisions around `first_true`:
+Every problem in this section is four decisions around `first_true`, and the loop itself is never edited. First, write `ok(x)` so the candidates read F…F T…T; for a *maximum*, search the first False and subtract 1. Second, check it out loud: if `ok(x)` is True, is `ok(x + 1)` True too? Third, choose `lo`, the smallest candidate, and `hi`, the fallback answer returned when nothing in `[lo, hi)` is True. Fourth, call `i = first_true(lo, hi, ok)`, and check `i < len(nums)` before reading `nums[i]`.
 
-1. Write `ok(x)` so the candidates read F…F T…T. For a *maximum*, search the first False and subtract 1.
-2. Check it out loud: "if `ok(x)` is True, is `ok(x + 1)` True too?"
-3. `lo` = the smallest candidate; `hi` = the fallback answer, returned when nothing in `[lo, hi)` is True: `len(nums)` for "none", or a value that surely works (`max(piles)`).
-4. `i = first_true(lo, hi, ok)`, and check `i < len(nums)` before reading `nums[i]`.
+Find First and Last Position of Element in Sorted Array runs the loop twice. It asks for the first and last index of a target, or `[-1, -1]`: `[5, 7, 7, 8, 8, 10]` with target 8 → `[3, 4]`. The first index is `lower_bound(target)`, the last is the first index with a value `> target`, minus 1, and the target is absent when the first index is past the end or holds another value.
 
-Two views of the same window help: the answer is one of `lo..hi`, the untested cells are `lo..hi-1`, and the loop runs while something is untested. In Python you rarely write the loop for a sorted list: `bisect.bisect_left(a, x)` is `lower_bound`, `bisect.bisect_right(a, x)` is the first index `> x`, and on Python 3.10+ `lo + bisect.bisect_left(range(lo, hi), True, key=ok)` equals `first_true(lo, hi, ok)` (more in [Python Toolkit](#s02)). In an interview, say you'd use `bisect`, write the loop if asked, and use `bisect` as your tester.
+In Python you rarely write the loop for a sorted list. `bisect.bisect_left(a, x)` is `lower_bound`, `bisect.bisect_right(a, x)` is the first index `> x`, and on Python 3.10+ `lo + bisect.bisect_left(range(lo, hi), True, key=ok)` equals `first_true(lo, hi, ok)`; more in [Python Toolkit](#s02). In an interview, say you would use `bisect`, write the loop if asked, and use `bisect` as your tester.
 
-The loop styles you will meet, and why none of them hangs:
+The loop styles you will meet all end for a reason, and this is the table to look up when you read someone else's search:
 
 | Style | Loop | Moves | Why it ends | Use it for |
 |---|---|---|---|---|
@@ -124,7 +112,7 @@ Never mix them: `while lo <= hi` with `hi = mid` loops forever once `lo == hi` a
 
 ### Watch it work
 
-Each row is one probe. The window `[lo, hi)` shows its letters, everything already settled is a dot, and `[ ]` marks mid:
+Seeing the window shrink once makes the invariant concrete. The trace below runs `lower_bound` on the picture's array for x = 4 and prints one row per probe: the window `[lo, hi)` shows its letters, every settled cell becomes a dot, and `[ ]` marks mid.
 
 ```python
 def trace_lower_bound(nums, x):
@@ -159,22 +147,22 @@ trace_lower_bound([1, 3, 3, 5, 8, 9, 12], 4)
 
 ### Where it goes wrong
 
+Binary search is five lines, so nearly every bug is one line off, and each one has a tiny input that shows it.
+
 1. **`hi = mid - 1` in the first-True loop.** If mid *is* the first True, you just threw the answer away: `lower_bound([1, 5], 4)` returns 0 instead of 1. Only a test that proves "mid is wrong" may skip mid.
-2. **Mixing the loop styles.** `while lo <= hi` with `hi = mid` never ends once `lo == hi` and `ok(mid)` is True. `lo = mid` with `mid = (lo + hi) // 2` never ends when `hi == lo + 1` and `ok(mid)` is True. Rule: `lo = mid` needs `mid = (lo + hi + 1) // 2`.
+2. **Mixing the loop styles.** `while lo <= hi` with `hi = mid` never ends once `lo == hi` and `ok(mid)` is True: `lower_bound([1, 5], 4)` spins forever at `lo = hi = 1`. `lo = mid` with `mid = (lo + hi) // 2` never ends when `hi == lo + 1` and `ok(mid)` is True. Rule: `lo = mid` needs `mid = (lo + hi + 1) // 2`.
 3. **`hi = len(nums) - 1` when "nothing qualifies" is possible.** Search Insert Position on `[1, 3, 5, 6]` with target 7 must return 4, which only exists if `hi` starts at `len(nums)`.
-4. **A question that isn't monotone.** Binary search never complains; it quietly returns garbage. Before coding, say out loud: "if `ok(x)` is True, is `ok(x + 1)` True too?" (Koko: a faster speed never needs more hours.)
-5. **Bad bounds on the answer.** `lo` must be a real candidate and `hi` must surely work. Koko's speed starts at 1 (speed 0 divides by zero) and `max(piles)` always works. Split Array's cap starts at `max(nums)`: with a smaller cap, the greedy count goes wrong (`[1, 4, 4]`, k = 3 would answer 1).
-6. **Rotated arrays: `<` instead of `<=`.** In the classic one-pass search, `nums[lo] <= nums[mid]` needs the `=` when `lo == mid` (two items left): with `<`, `[3, 1]` never finds the 1.
-7. **Integer moves on real numbers.** On a real-valued answer, `lo = mid + 1` jumps right over the answer. Move `lo = mid` / `hi = mid`, and stop after a fixed number of rounds (50 to 100) or once `hi - lo` is tiny.
-8. **Midpoints in other languages.** In Java or C++, `/` truncates toward zero, so with negative bounds `(lo + hi) / 2` rounds *up* and `hi = mid` can stall, and `lo + hi` can overflow. `lo + (hi - lo) / 2` fixes both. Python's `//` floors, so `first_true(-10, -2, ok)` is fine.
-9. **A T…T F…F question fed to `first_true`.** It returns garbage without complaint: in `max_min_gap` below, passing `fits` instead of `not fits` gives 6 instead of 3 for `[1, 2, 3, 4, 7]`, m = 3. For a maximum, search the first False and subtract 1.
-10. **Reading `nums[lo]` unchecked.** When nothing qualifies, `lo == len(nums)`: `lower_bound([1, 3], 5)` is 2, and `nums[2]` raises `IndexError`. Check `lo < len(nums)` first.
-11. **Duplicates break the rotated questions.** With repeats, `nums[i] <= nums[-1]` no longer separates the two runs: `find_min_rotated([1, 1, 0, 1])` returns 1 (the minimum is 0), and `search_rotated([1, 0, 1, 1, 1], 0)` returns -1. The follow-ups (154, 81) shrink `hi -= 1` when `nums[mid] == nums[hi]`, which costs O(n) in the worst case.
-12. **"The last copy is `lower_bound(x + 1) - 1`" only works for integers.** For `[1.0, 1.5, 1.5, 2.0]` and x = 1.5 it gives 3 instead of 2. The general form is "the first index with `nums[i] > x`, minus 1" (`bisect_right(nums, x) - 1`).
+4. **A question that isn't monotone.** Binary search never complains; it quietly returns garbage. `lower_bound([5, 1, 2, 3], 4)` returns 4, "none", although `nums[0] = 5` qualifies: the unsorted array reads `T F F F`. Before coding, say out loud: "if `ok(x)` is True, is `ok(x + 1)` True too?" For Koko Eating Bananas, the slowest eating speed that finishes every pile within h hours, the answer is yes: a faster speed never needs more hours.
+5. **Bad bounds on the answer.** `lo` must be a real candidate and `hi` must surely work. Koko's speed starts at 1: from 0, `min_eating_speed([1], 1)` probes speed 0 and divides by zero. Split Array Largest Sum, which cuts an array into k pieces with the smallest possible largest sum, starts its cap at `max(nums)`: from 0, the greedy count goes wrong, and `[1, 4, 4]` with k = 3 answers 1.
+6. **Rotated arrays: `<` instead of `<=`.** In the classic one-pass search, `nums[lo] <= nums[mid]` needs the `=` when `lo == mid`, that is, with two items left: with `<`, `[3, 1]` never finds the 1.
+7. **Integer moves on real numbers.** `first_true(0, 2, lambda x: x * x >= 2)` returns 2, the first *integer* whose square reaches 2, while the real answer is √2 ≈ 1.414: `lo = mid + 1` jumps right over it. On a real-valued answer, use `mid = (lo + hi) / 2`, move `lo = mid` or `hi = mid`, and stop after a fixed number of rounds, 50 to 100, or once `hi - lo` is tiny.
+8. **A T…T F…F question fed to `first_true`.** It returns garbage without complaint: in `max_min_gap` below, passing `fits` instead of `not fits` gives 6 instead of 3 for `[1, 2, 3, 4, 7]`, m = 3. For a maximum, search the first False and subtract 1.
+9. **Reading `nums[lo]` unchecked.** When nothing qualifies, `lo == len(nums)`: `lower_bound([1, 3], 5)` is 2, and `nums[2]` raises `IndexError`. Check `lo < len(nums)` first.
+10. **Duplicates break the rotated questions.** With repeats, `nums[i] <= nums[-1]` no longer separates the two runs: `find_min_rotated([1, 1, 0, 1])` returns 1 while the minimum is 0, and `search_rotated([1, 0, 1, 1, 1], 0)` returns -1. Find Minimum in Rotated Sorted Array II (154) and Search in Rotated Sorted Array II (81), the same questions with duplicates allowed, shrink `hi -= 1` when `nums[mid] == nums[hi]`, which costs O(n) in the worst case.
 
 ### Edge cases to say out loud
 
-Empty array · one element · target below everything / above everything · all equal · duplicates (the first copy or the last?) · two elements (where infinite loops show up) · the answer at index 0 or at `len(nums)`.
+Say them before you type: empty array, one element, target below everything or above everything, all equal, duplicates and whether you want the first copy or the last, two elements, where infinite loops show up, and the answer at index 0 or at `len(nums)`. Then let the asserts say them for you:
 
 ```python
 assert lower_bound([], 5) == 0
@@ -196,29 +184,36 @@ print("edge cases pass")
 
 ### Variations
 
+Every variation below keeps the loop and changes only `ok`, `lo` and `hi`. The table is the overview; the paragraphs after it work through each variation with the problems it solves.
+
 | Variation | What changes from the template | Problems |
 |---|---|---|
-| **Exact match** | closed window, return on `==` | 704 |
-| **Lower / upper bound** | `ok = nums[i] >= x` or `nums[i] > x`; all copies of x sit in `[lower, upper)` | 35, 34 |
-| **Rotated array** | `ok(i) = nums[i] <= nums[-1]` finds the drop; then search the one run that can hold the target | 153, 33 |
-| **A question about neighbours** | `ok` compares `nums[i]` with another cell: the next one, its pair partner, the cell k ahead | 162, 540, 658 |
-| **2D matrix** | rows continue each other: position k is cell `divmod(k, cols)` | 74 (240 uses a staircase walk instead) |
-| **On the answer, minimise** | the candidates are answers; `ok = feasible(x)`, often one greedy pass | 875, 410 |
-| **The same code, a different `ok`** | ship within days, smallest divisor, make m bouquets, minimum time for trips | 1011, 1283, 1482, 2187 |
-| **On the answer, maximise** | the last True = the first False − 1 | 1552, 2141 |
-| **Mountain** | find the peak, then a normal search on each side | 1095 |
-| **K-th smallest by counting** | `ok(v) = count(items <= v) >= k` | 668, 719; 378 counts with a staircase, in [Matrices](#s21) |
-| **Real numbers** | `lo = mid` / `hi = mid`, a fixed number of rounds | 644 |
-| **Cut two sorted arrays** | binary search how many items of the shorter array go left | 4 |
-| **A key's history** | `bisect_right(times, t) - 1` is the latest entry at or before t | 981, in [Design](#s24) |
-| **Weighted random pick** | the first prefix sum ≥ a random ticket | 528, in [Prefix Sums](#s04) |
+| **Exact match** | closed window, return on `==` | Binary Search (704) |
+| **Lower / upper bound** | `ok = nums[i] >= x` or `nums[i] > x`; all copies of x sit in `[lower, upper)` | Search Insert Position (35), Find First and Last Position of Element in Sorted Array (34) |
+| **Rotated array** | `ok(i) = nums[i] <= nums[-1]` finds the drop; then search the one run that can hold the target | Find Minimum in Rotated Sorted Array (153), Search in Rotated Sorted Array (33) |
+| **A question about neighbours** | `ok` compares `nums[i]` with another cell: the next one, its pair partner, the cell k ahead | Find Peak Element (162), Single Element in a Sorted Array (540), Find K Closest Elements (658) |
+| **2D matrix** | rows continue each other: position k is cell `divmod(k, cols)` | Search a 2D Matrix (74); Search a 2D Matrix II (240), whose rows and columns are only sorted separately, walks a staircase instead |
+| **On the answer, minimise** | the candidates are answers; `ok = feasible(x)`, often one greedy pass | Koko Eating Bananas (875), Split Array Largest Sum (410) |
+| **The same code, a different `ok`** | only `ok` changes: a greedy pass like Split Array's, or a sum of divisions like Koko's | Capacity To Ship Packages Within D Days (1011): the smallest capacity that ships in D days; Smallest Divisor Given a Threshold (1283): the smallest d with the sum of ⌈x / d⌉ at most the threshold; Minimum Number of Days to Make m Bouquets (1482): the first day with m bouquets of k adjacent flowers; Minimum Time to Complete Trips (2187): the least time for the buses to make the trips |
+| **On the answer, maximise** | the last True = the first False − 1 | Magnetic Force Between Two Balls (1552): place m balls so that the smallest gap is as large as possible |
+| **A key's history** | `bisect_right(times, t) - 1` is the latest entry at or before t | Time Based Key-Value Store (981): a key's value at time t, in [Design Problems](#s24) |
+| **Weighted random pick** | the first prefix sum ≥ a random ticket | Random Pick with Weight (528): an index drawn in proportion to its weight, in [Prefix Sums](#s04) |
+| *Second pass:* **Mountain** | find the peak, then a normal search on each side | Find in Mountain Array (1095): the smallest index of a target in an array that rises, then falls |
+| *Second pass:* **Maximise with a capped sum** | t works while `sum(min(b, t)) >= n * t`; the answer is the first failing t − 1 | Maximum Running Time of N Computers (2141): how long n computers run at once on shared batteries |
+| *Second pass:* **Real numbers** | `lo = mid` / `hi = mid`, a fixed number of rounds (trap 7) | Maximum Average Subarray II (644): the best average over windows of length ≥ k |
+| *Second pass:* **K-th smallest by counting** | `ok(v) = count(items <= v) >= k` | Kth Smallest Number in Multiplication Table (668), Find K-th Smallest Pair Distance (719); Kth Smallest Element in a Sorted Matrix (378) counts with a staircase, in [Matrices](#s21) |
+| *Second pass:* **Cut two sorted arrays** | binary search how many items of the shorter array go left | Median of Two Sorted Arrays (4) |
 
-**Rotated arrays** (153, 33): a rotated array is two sorted runs with a drop between them. Compare every value with the *last* one: the left run is all bigger, the right run all smaller or equal. That is `F F F F T T T`, and the first T is the minimum, also called the drop. To search, find the drop first; then the target can only live in one run (the right run if `target <= nums[-1]`, the left run otherwise), and that run is plain sorted. The classic one-pass version is shown too, because interviewers know it: at least one half around `mid` is a sorted run, so test whether the target lies inside that half's range.
+The first variation keeps the data sorted but hides it. Find Minimum in Rotated Sorted Array asks for the smallest value of a sorted array that was rotated: `[3, 4, 5, 1, 2]` → 1. Search in Rotated Sorted Array asks for the index of a target in such an array, or −1: `[4, 5, 6, 7, 0, 1, 2]` with target 0 → 4.
+
+A **rotated array** is two sorted runs with a drop between them. Compare every value with the *last* one: the left run is all bigger, the right run all smaller or equal. That reads `F F F F T T T`, and the first T is the minimum, also called the drop; its index is the rotation count.
 
 ```text
 nums      4  5  6  7  0  1  2
 <= 2 ?    F  F  F  F  T  T  T        the first T (index 4) is the minimum, and the rotation count
 ```
+
+To search, find the drop first. The target can then live in only one run, the right run if `target <= nums[-1]` and the left run otherwise, and that run is plain sorted. The classic one-pass version follows, because interviewers know it: at least one half around `mid` is a sorted run, so test whether the target lies inside that half's range and move accordingly.
 
 ```python
 def find_min_rotated(nums):                  # 153: the last index surely works, so hi = n - 1
@@ -261,9 +256,15 @@ print(search_rotated_classic([4, 5, 6, 7, 0, 1, 2], 0), search_rotated_classic([
 - In `find_min_rotated`, compare with `nums[0]` instead of `nums[-1]` and run `[1, 2, 3]`: 3 instead of 1. An unrotated array reads `T F F` against its first value, which is not F…F T…T.
 - Print `drop, lo, hi` in `search_rotated([4, 5, 6, 7, 0, 1, 2], 0)`: `4 4 7`, the right run. For target 5 it is `4 0 4`, the left run.
 - In `search_rotated_classic`, change `<=` to `<` in `nums[lo] <= nums[mid]` and run `([3, 1], 1)`: -1 instead of 1.
-- Feed duplicates to both versions: `search_rotated([1, 0, 1, 1, 1], 0)` and `search_rotated_classic([1, 0, 1, 1, 1], 0)` both return -1 (trap 11).
+- Feed duplicates to both versions: `search_rotated([1, 0, 1, 1, 1], 0)` and `search_rotated_classic([1, 0, 1, 1, 1], 0)` both return -1 (trap 10).
 
-**A question about neighbours** (162, 540, 658): `ok` doesn't have to compare `nums[i]` with a target; it can compare it with another cell. Find Peak asks "am I going downhill?" (`nums[i] > nums[i + 1]`). Over a whole array that question is not F…F T…T, yet `first_true` still lands on a peak: each probe keeps a climb into the window and a descent out of it (`lo == 0 or nums[lo - 1] < nums[lo]`, and `hi == n - 1 or nums[hi] > nums[hi + 1]`), and a one-cell window with both is a peak. Single Element in a Sorted Array compares each cell with its pair partner `i ^ 1`; K Closest Elements compares the two ends of a window of size k starting at `s`.
+The next variation changes what `ok` compares. Nothing says it has to compare `nums[i]` with a target: **a question about neighbours** compares it with another cell. Find Peak Element asks for any index whose value is bigger than both neighbours, where the outside of the array counts as −∞: `[1, 2, 1, 3, 5, 6, 4]` → 1 or 5. Its question is "am I going downhill?", `nums[i] > nums[i + 1]`.
+
+Over a whole array that question is not F…F T…T, yet `first_true` still lands on a peak. Each probe keeps a climb into the window and a descent out of it: `lo == 0 or nums[lo - 1] < nums[lo]` stays true, and so does `hi == n - 1 or nums[hi] > nums[hi + 1]`. A one-cell window with both is a peak.
+
+Single Element in a Sorted Array asks for the one value without a twin in a sorted array where every other value appears exactly twice: `[1, 1, 2, 3, 3, 4, 4, 8, 8]` → 2. Its question compares each cell with its pair partner `i ^ 1`, the index with the lowest bit flipped: the pairs match up to the single element and are shifted by one after it.
+
+Find K Closest Elements asks for the k values nearest to x, in sorted order, with the smaller value winning a tie: `[1, 2, 3, 4, 5]` with k = 4 and x = 3 → `[1, 2, 3, 4]`. The answer is a window of k neighbours, so the search runs over its start `s`. Its question compares the window's first item, `arr[s]`, with the first item past its end, `arr[s + k]`: it turns True once the left one is no farther from x, and stays True for every later start.
 
 ```python
 def find_peak(nums):                         # 162: "am I going downhill?"
@@ -291,7 +292,9 @@ print(find_closest_elements([1, 2, 3, 4, 5], 4, 3), find_closest_elements([1, 1,
 - With `a = [1, 1, 2, 3, 3, 4, 4, 8, 8]`, print `[a[i] != a[i ^ 1] for i in range(8)]`: `F F T T T T T T`. Before the single element, pairs start at even indices; from it on, they are shifted by one.
 - In `find_closest_elements`, change `<=` to `<` and rerun the first call: `[2, 3, 4, 5]`. On a tie (1 and 5 are both 2 away from 3) the problem wants the smaller elements.
 
-**2D matrix** (74): when each row starts after the previous one ends, the rows glued end to end form one sorted list of `rows * cols` items. Don't build it: position k of that list lives at row `k // cols`, column `k % cols`. (When rows and columns are only sorted separately, as in 240, the glued list isn't sorted; walk a staircase from the top-right corner instead, dropping a row or a column per step: O(m + n).)
+A sorted matrix is the same idea in **two dimensions**. Search a 2D Matrix asks whether a target is in a matrix whose rows are sorted and where each row starts above the previous row's end: `[[1, 3, 5, 7], [10, 11, 16, 20], [23, 30, 34, 60]]` with target 3 → True. Search a 2D Matrix II asks the same of a matrix whose rows and columns are only sorted separately; it walks a staircase from the top-right corner instead, dropping a row or a column per step, in O(m + n), as in [Matrices](#s21).
+
+Because each row starts after the previous one ends, the rows glued end to end form one sorted list of `rows * cols` items. Don't build it: position k of that list lives at row `k // cols`, column `k % cols`, so `first_true` runs over k and reads each probe straight from the matrix.
 
 ```python
 def search_matrix(matrix, target):           # 74
@@ -316,15 +319,11 @@ print(search_matrix(grid, 3), search_matrix(grid, 13), search_matrix(grid, 60)) 
 - Run `search_matrix([[1, 4], [2, 5]], 2)`: `False`, although 2 is there. Those rows don't continue each other, so the glued list `[1, 4, 2, 5]` isn't sorted: that shape needs the staircase walk.
 - Predict `search_matrix([[1]], 1)` and `search_matrix([[]], 1)`: `True` and `False`.
 
-**Binary search on the answer** (875, 410, 1552, 2141): when the problem asks for the *minimum* X that works and a bigger X only makes things easier, don't construct the answer: guess it, and check the guess. The candidates are the possible answers, and `ok(x)` is a quick feasibility check, often one greedy pass. The recipe's decisions for three classics:
+The most important variation searches **the answer itself**. When the problem asks for the *minimum* X that works and a bigger X only makes things easier, don't construct the answer: guess it, and check the guess. The candidates are the possible answers, and `ok(x)` is a quick feasibility check, often one greedy pass.
 
-| Decision | Koko (875) | Split Array (410) | Magnetic Force (1552) |
-|---|---|---|---|
-| **Candidates** | speeds `1 .. max(piles)` | caps `max(nums) .. sum(nums)` | gaps `1 .. span` (span = last − first position) |
-| **ok** | `hours(k) <= h` | `pieces(cap) <= k` | `not fits(d)` |
-| **Monotone because** | a faster speed never needs more hours | a bigger cap never needs more pieces | a bigger gap never fits more balls |
-| **hi (fallback)** | `max(piles)`: always works | `sum(nums)`: one piece always works | `span + 1`: never fits |
-| **Return** | `first_true(...)` | `first_true(...)` | `first_true(...) - 1` |
+Koko Eating Bananas asks for the slowest eating speed k that still finishes every pile within h hours, eating from one pile per hour and at most k bananas from it: `[3, 6, 7, 11]` with h = 8 → 4, because the hours are 1 + 2 + 2 + 3. The candidates are the speeds `1 .. max(piles)`, `ok(k)` is `hours(k) <= h`, and it is monotone because a faster speed never needs more hours. The fallback `max(piles)` always works, one hour per pile, and the answer is `first_true` itself.
+
+Split Array Largest Sum asks to cut the array into k contiguous pieces so that the largest piece sum is as small as possible: `[7, 2, 5, 10, 8]` with k = 2 → 18, the split `[7, 2, 5] | [10, 8]`. The candidates are caps `max(nums) .. sum(nums)`, and `ok(cap)` is `pieces(cap) <= k`, where a greedy pass fills each piece until the next number would overflow it. It is monotone because a bigger cap never needs more pieces, and the fallback `sum(nums)` is one piece, which always works.
 
 ```python
 def min_eating_speed(piles, h):              # 875: the slowest speed that finishes within h hours
@@ -352,9 +351,15 @@ print(split_array([7, 2, 5, 10, 8], 2), split_array([1, 2, 3, 4, 5], 2))        
 - Print Koko's landscape: `[sum((p + k - 1) // k for p in [3, 6, 7, 11]) <= 8 for k in range(1, 12)]` reads three `False`s, then `True` from k = 4 on.
 - Replace the ceiling `(p + k - 1) // k` with `p // k` and rerun: 3 instead of 4. Eating 7 bananas at 3 per hour takes 3 hours, not `7 // 3 = 2`.
 - Start Split Array's search at 0 instead of `max(nums)` and run `split_array([1, 4, 4], 3)`: 1 instead of 4. Below the biggest number the greedy count still says "3 pieces", but every piece holding a 4 breaks the cap.
-- Capacity To Ship Packages (1011) is this same function: predict `split_array(list(range(1, 11)), 5)` before running (15).
+- Capacity To Ship Packages Within D Days (1011) is this same function: predict `split_array(list(range(1, 11)), 5)` before running (15).
 
-**Maximise** (1552, 2141): now the landscape reads `T T T F F F` ("this gap still fits", "this many minutes still works"). Don't flip the loop: search the first False and subtract 1.
+The same two lines, with a different `ok`, solve a whole family. Capacity To Ship Packages Within D Days asks for the smallest ship capacity that delivers the packages, in order, within D days: weights `1 .. 10` and 5 days → 15, and its `ok` is Split Array's greedy pass with days for pieces. Smallest Divisor Given a Threshold asks for the smallest divisor d with the sum of `ceil(x / d)` at most the threshold: `[1, 2, 5, 9]` with threshold 6 → 5, and its `ok` is Koko's.
+
+Minimum Number of Days to Make m Bouquets asks for the first day on which m bouquets of k adjacent bloomed flowers exist: bloom days `[1, 10, 3, 10, 2]` with m = 3 and k = 1 → 3, and its `ok` is one pass over the garden counting bouquets. Minimum Time to Complete Trips asks for the least time in which buses with given round-trip times finish `totalTrips` trips together: `[1, 2, 3]` and 5 trips → 3, because `sum(t // time)` first reaches 5 at t = 3.
+
+Maximising turns the landscape over: now it reads `T T T F F F`, "this gap still fits". Don't flip the loop; search the first False and subtract 1. Magnetic Force Between Two Balls asks to put m balls into baskets at given positions so that the smallest gap between two balls is as large as possible: `[1, 2, 3, 4, 7]` with m = 3 → 3, balls at 1, 4 and 7.
+
+The candidates are gaps `1 .. span`, where span is the last position minus the first. `fits(d)` places greedily, each ball in the first basket at least d past the previous one, and it is monotone because a bigger gap never fits more balls. The fallback `span + 1` never fits, and the answer is `first_true(..., not fits) - 1`.
 
 ```python
 def max_min_gap(position, m):                # 1552: the largest gap d that still fits m balls
@@ -369,24 +374,20 @@ def max_min_gap(position, m):                # 1552: the largest gap d that stil
     return first_true(1, span + 1, lambda d: not fits(d)) - 1      # the last True = the first False - 1
 
 
-def max_run_time(n, batteries):              # 2141: can all n computers run for t minutes?
-    fails = lambda t: sum(min(b, t) for b in batteries) < n * t   # a battery gives at most t minutes
-    return first_true(1, sum(batteries) // n + 1, fails) - 1
-
-
 print(max_min_gap([1, 2, 3, 4, 7], 3), max_min_gap([5, 4, 3, 2, 1, 1000000000], 2))   # 3 999999999
-print(max_run_time(2, [3, 3, 3]), max_run_time(2, [1, 1, 1, 1]))                      # 4 2
 ```
 
 **Try it**
-- Pass `fits` instead of `not fits` and run `max_min_gap([1, 2, 3, 4, 7], 3)`: 6 instead of 3. A T…T F…F question fed to `first_true` gives garbage (trap 9).
-- Print the landscape of `max_run_time(2, [3, 3, 3])`: `[sum(min(3, t) for _ in range(3)) < 2 * t for t in range(1, 6)]` is `F F F F T`. The first failure is t = 5, so the answer is 4.
-- Why is `sum(batteries) // n + 1` a safe fallback? Running n computers that long needs more battery-minutes than exist, so it always fails.
+- Pass `fits` instead of `not fits` and run `max_min_gap([1, 2, 3, 4, 7], 3)`: 6 instead of 3. A T…T F…F question fed to `first_true` gives garbage (trap 8).
+- Add `print([fits(d) for d in range(1, span + 1)])` before the final `return` and run `max_min_gap([1, 2, 3, 4, 7], 3)`: three `True`s, then three `False`s. The first False is at d = 4, so the answer is 3.
+- Use `pos = position` instead of sorting and run `max_min_gap([7, 1, 4, 2, 3], 3)`: 0 instead of 3. The greedy pass walks the baskets left to right, so they must be in order.
 - Predict `max_min_gap([1, 2, 3, 4, 7], 2)` and `max_min_gap([1, 2, 3, 4, 7], 5)` before running: 6 (the two ends) and 1.
 
-**Harder variations (second pass).** Mountain arrays, k-th smallest by counting, real-valued answers and the median of two arrays come up less often; read them once the first pass feels easy.
+Two more searches live in other sections. Time Based Key-Value Store asks for the value a key had at time t, given sets at increasing timestamps; `bisect_right(times, t) - 1` is the latest entry at or before t, in [Design Problems](#s24). Random Pick with Weight asks for an index drawn with probability proportional to its weight; the first prefix sum ≥ a random ticket is the pick, in [Prefix Sums](#s04).
 
-**Mountain** (1095): a mountain has exactly one peak, so "am I going downhill?" *is* F…F T…T there. Find the peak, then binary search each sorted side. Search the rising side first: it holds the smaller index.
+The rest of this section is a second pass: Hard problems that reuse the same moves. Skip them until the main path is automatic.
+
+A **mountain** comes first, because it only glues two searches together. Find in Mountain Array asks for the smallest index holding a target in an array that strictly rises to one peak and then strictly falls, reading at most 100 cells through `get(i)`: `[1, 2, 3, 4, 5, 3, 1]` with target 3 → 2, not 5. A mountain has exactly one peak, so "am I going downhill?" *is* F…F T…T there. Find the peak, then binary search each sorted side, the rising side first because it holds the smaller index.
 
 ```python
 def find_in_mountain(arr, target):           # 1095 (each arr[i] stands for a get(i) call)
@@ -407,7 +408,31 @@ print(find_in_mountain([1, 2, 3, 4, 5, 3, 1], 3), find_in_mountain([0, 5, 3, 1],
 - Predict `find_in_mountain([1, 5, 2], 5)` and `find_in_mountain([1, 5, 2], 2)`: 1 (the peak itself) and 2 (on the falling side).
 - Print `peak` and `i` for `([1, 2, 3, 4, 5, 3, 1], 3)`: 4 and 2. Three searches of about log₂ n probes each stay far below the 100-call budget.
 
-**K-th smallest by counting** (668, 719): the k-th smallest value is the smallest v with at least k items ≤ v. So you never list the items; you only *count* those ≤ v, and binary search v. Counting is cheap thanks to structure: row i of a multiplication table is `i, 2i, ..., n·i`, so it has `min(n, v // i)` entries ≤ v; in a sorted array, the pairs at distance ≤ d are counted with a sliding window. The result always occurs in the data: the count only grows at values that occur, so the first v where it reaches k is one of them.
+Maximising returns with a sharper check. Maximum Running Time of N Computers asks how long all n computers can run at once when batteries can be swapped between them freely: n = 2 and `[3, 3, 3]` → 4. A battery powers one computer at a time, so in t minutes it gives at most `min(b, t)` minutes, and t fails exactly when `sum(min(b, t)) < n * t`. That failure is monotone in t, `sum(batteries) // n + 1` always fails, and the answer is the first failure minus 1.
+
+```python
+def max_run_time(n, batteries):              # 2141: can all n computers run for t minutes?
+    fails = lambda t: sum(min(b, t) for b in batteries) < n * t   # a battery gives at most t minutes
+    return first_true(1, sum(batteries) // n + 1, fails) - 1
+
+
+print(max_run_time(2, [3, 3, 3]), max_run_time(2, [1, 1, 1, 1]))   # 4 2
+```
+
+**Try it**
+- Print the landscape of `max_run_time(2, [3, 3, 3])`: `[sum(min(3, t) for _ in range(3)) < 2 * t for t in range(1, 6)]` is `F F F F T`. The first failure is t = 5, so the answer is 4.
+- Drop the `min` and count every battery in full, `sum(batteries) < n * t`, then run `max_run_time(2, [10, 1])`: 5 instead of 1. The 10-minute battery cannot power both computers at once.
+- Check the fallback for `max_run_time(2, [3, 3, 3])`: `sum(batteries) // n + 1` is 5, and `sum(min(b, 5) for b in [3, 3, 3]) < 2 * 5` is `True`. Any t above `sum(batteries) // n` needs more battery-minutes than exist, so the fallback always fails.
+
+Real-valued answers have no "next candidate", so `mid + 1` and `first_true` don't apply (trap 7). Maximum Average Subarray II asks for the largest average of a contiguous subarray of length at least k: `[1, 12, -5, -6, 50, 3]` with k = 4 → 12.75, from `[12, -5, -6, 50]`. Binary search the average x with `mid = (lo + hi) / 2` and `lo = mid` or `hi = mid`, for a fixed number of rounds: 50 rounds shrink the gap by 2⁵⁰ ≈ 10¹⁵.
+
+Its check is a trick worth keeping: a window averages at least x exactly when the sum of (value − x) over it is at least 0. "Does some window of length ≥ k have a sum ≥ 0?" is one pass over prefix sums, each prefix compared with the smallest prefix at least k positions earlier.
+
+Counting replaces listing when the **k-th smallest** lives in something too big to write out. The k-th smallest value is the smallest v with at least k items ≤ v, so you never list the items: you *count* those ≤ v and binary search v. The answer always occurs in the data, because the count grows only at values that occur, so the first v where it reaches k is one of them.
+
+Kth Smallest Number in Multiplication Table asks for the k-th smallest entry of the m × n table of products: m = n = 3 with k = 5 → 3. Row i holds `i, 2i, ..., n·i`, so it has `min(n, v // i)` entries ≤ v, one division per row. Kth Smallest Element in a Sorted Matrix (378) asks the same of a matrix with sorted rows and columns, and counts with a staircase in [Matrices](#s21).
+
+Find K-th Smallest Pair Distance asks for the k-th smallest `|nums[i] - nums[j]|` over all pairs: `[1, 3, 1]` with k = 1 → 0. Once the array is sorted, the pairs at distance ≤ d are counted with a sliding window (the window from [Sliding Window](#s06)): for each right end, every item from `left` on is close enough to pair with it.
 
 ```python
 def kth_in_mult_table(m, n, k):              # 668
@@ -438,47 +463,15 @@ print(kth_pair_distance([1, 3, 1], 1), kth_pair_distance([1, 6, 1], 3))   # 0 5
 - List the pair distances of `[1, 6, 1]` by hand (0, 5, 5), then check `kth_pair_distance([1, 6, 1], k)` for k = 1, 2, 3: 0, 5, 5.
 - Predict `kth_pair_distance([1, 1, 1], 2)`: 0. Duplicates give distance 0, which is why the search starts at 0.
 
-**Real numbers** (644): with a real-valued answer there is no "next candidate", so `first_true` and `mid + 1` don't apply: move `lo = mid` or `hi = mid`, and stop after a fixed number of rounds. Each round halves the gap, so 50 rounds shrink it by 2⁵⁰ ≈ 10¹⁵. The check for Maximum Average Subarray II is a trick worth keeping: *a window's average is ≥ x exactly when the sum of (value − x) over it is ≥ 0*, and "does some window of length ≥ k have a sum ≥ 0" is one pass over prefix sums.
-
-```python
-def avg_at_least(nums, k, x):                # does some window of length >= k average >= x?
-    prefix, lowest = [0.0], math.inf
-    for v in nums:
-        prefix.append(prefix[-1] + v - x)    # average >= x  <=>  the sum of (v - x) is >= 0
-    for j in range(k, len(nums) + 1):
-        lowest = min(lowest, prefix[j - k])  # the best start at least k items before j
-        if prefix[j] >= lowest:
-            return True
-    return False
-
-
-def max_average(nums, k):                    # 644
-    lo, hi = min(nums), max(nums)            # every average lies between these
-    for _ in range(50):                      # each round halves [lo, hi]
-        mid = (lo + hi) / 2
-        if avg_at_least(nums, k, mid):
-            lo = mid                         # mid is reachable: the answer is >= mid
-        else:
-            hi = mid
-    return lo
-
-
-print(round(max_average([1, 12, -5, -6, 50, 3], 4), 5), round(max_average([5], 1), 5))   # 12.75 5.0
-```
-
-**Try it**
-- With `nums = [1, 12, -5, -6, 50, 3]`, print `avg_at_least(nums, 4, 12.75)` and `avg_at_least(nums, 4, 12.76)`: `True`, then `False`. That flip is the answer.
-- Add `print(hi - lo)` before the `return`: about 5e-14. The starting gap of 56 was halved 50 times.
-- Change `range(50)` to `range(10)` and print the raw result: about 12.70, because after 10 halvings the window is still 56 / 1024 ≈ 0.055 wide.
-- Run `round(max_average([1, 12, -5, -6, 50, 3], 1), 5)`: 50.0, a window of one item. The length rule is what makes the problem hard.
-
-**Median of two sorted arrays** (4): don't merge. The median splits all m + n items into a left half of `half = (m + n + 1) // 2` items and a right half. The left half is a prefix of `a` (i items) plus a prefix of `b` (`half - i` items), so the whole problem is choosing i. Taking one more item from `a` can only raise `a`'s right edge and lower `b`'s left edge, so "the last item of `b`'s left part ≤ the first item of `a`'s right part" reads F..F T..T in i, and its first True is the cut where everything on the left is ≤ everything on the right.
+The last variation binary searches a cut rather than a value. Median of Two Sorted Arrays asks for the median of **two sorted arrays** taken together, in O(log(m + n)): `[1, 3]` and `[2]` → 2.0, `[1, 2]` and `[3, 4]` → 2.5. Don't merge: the median splits all m + n items into a left half of `half = (m + n + 1) // 2` items and a right half, like this:
 
 ```text
 a:  1  3 | 8  9            i = 2 items from a                     half = (4 + 5 + 1) // 2 = 5
 b:  2  4  5 | 7  10        j = half - i = 3 items from b
 left = {1, 3, 2, 4, 5}, right = {8, 9, 7, 10}:  max(left) = 5 <= 7 = min(right), so the median is 5
 ```
+
+The left half is a prefix of `a` with i items plus a prefix of `b` with `half - i` items, so the whole problem is choosing i. Taking one more item from `a` can only raise `a`'s right edge and lower `b`'s left edge, so "the last item of `b`'s left part ≤ the first item of `a`'s right part" reads F…F T…T in i. Its first True is the cut where everything on the left is ≤ everything on the right.
 
 ```python
 def find_median(a, b):                       # 4
@@ -509,22 +502,21 @@ print(find_median([1, 3, 8, 9], [2, 4, 5, 7, 10]))                              
 
 ### Say it in the interview
 
+Koko is the version most interviewers ask, so the script uses it:
+
 > "The brute force tries every speed from 1 upward and checks each one: O(max · n). But the check is monotone: if speed k finishes in time, every faster speed does too. So the answers look like F F F T T T, and I'll binary search for the first T between 1 and max(piles). That's O(n log max) time and O(1) space."
 
-Then point at three things while you code: the definition of `ok` and why it is monotone; the invariant ("the first True is in `[lo, hi]`, and `hi` is known to work"); and why `hi = mid` keeps mid while the loop still ends (`mid < hi`). Likely follow-ups and your answers:
+Then point at three things while you code: the definition of `ok` and why it is monotone; the invariant, "the first True is in `[lo, hi]`, and `hi` is known to work"; and why `hi = mid` keeps mid while the loop still ends, because `mid < hi`.
 
-- *Why is max(piles) enough?* At that speed every pile takes one hour, and `h` is at least the number of piles.
-- *A tighter lower bound?* `ceil(sum(piles) / h)`: any slower speed can't eat everything in h hours, even before rounding each pile up.
-- *How many checks for values up to 10⁹?* About 30, since 2³⁰ ≈ 10⁹.
-- *What if `h < len(piles)`?* No speed works, because every pile needs at least an hour; say so and return -1 (the problem rules it out).
+The follow-ups are predictable. `max(piles)` is enough because at that speed every pile takes one hour, and `h` is at least the number of piles. A tighter lower bound is `ceil(sum(piles) / h)`, since any slower speed cannot eat everything in h hours, even before rounding each pile up. Values up to 10⁹ need about 30 checks, since 2³⁰ ≈ 10⁹. If `h < len(piles)`, no speed works, because every pile needs at least an hour; say so and return -1, although the problem rules it out.
 
 ### Problem map
 
 | Problem | Where | Key insight |
 |---|---|---|
-| Binary Search | `binary_search/binary_search.py` | closed window `[lo, hi]` with `while lo <= hi`; both moves skip mid |
+| Binary Search | `binary_search/binary_search.py` · `practice/simple/basics/searches/01_binary_search_variants.py` | closed window `[lo, hi]` with `while lo <= hi`; both moves skip mid |
 | Capacity To Ship Packages Within D Days | `practice/simple/basics/searches/02_binary_search_on_answer.py` | first capacity in [max(w), sum(w)] whose greedy day count fits within days |
-| Find First and Last Position of Element in Sorted Array | `binary_search/find_first_and_last_position.py` | first = the first index ≥ target; last = the first index > target, minus 1 (for integers, lb(target + 1) − 1) |
+| Find First and Last Position of Element in Sorted Array | `binary_search/find_first_and_last_position.py` | first = first index ≥ target; last = first index > target, minus 1; absent when nums[first] ≠ target |
 | Find in Mountain Array | `binary_search/find_in_mountain_array.py` | find the peak with `arr[i] > arr[i+1]`, search the rising side first, then the falling side |
 | Find K-th Smallest Pair Distance | `binary_search/find_kth_smallest_pair_distance.py` | binary search the distance d; count pairs ≤ d with a sliding window on the sorted array |
 | Find Minimum in Rotated Sorted Array | `binary_search/find_min_rotated_sorted_array.py` | `nums[i] <= nums[-1]` reads F…F T…T; the first T is the minimum |

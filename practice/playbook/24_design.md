@@ -2,11 +2,21 @@
 
 > A design problem is a contract: a list of operations, each with a price ("O(1)", "O(log n)"). Give every operation a structure that answers its question at that price, write down the one sentence that keeps the structures in sync, and the methods nearly write themselves.
 
+By the end of this section you will take a prompt like *"design a hit counter"*, a class that counts the hits of the last five minutes, and turn it into a working class inside 25 minutes. You will ask the questions that settle the requirements, give every operation a structure that answers it at the asked price, write the invariant that keeps those structures agreeing, and type the methods as calls to two or three small helpers.
+
+Every class here is built by that one procedure, and the section ends with the script for saying it out loud.
+
 **Reach for it when** the prompt says *Design ...* or *Implement a class ...*, describes a **tracker, counter, rate limiter, cache or store**, lists method signatures, or puts a cost on every call ("each in O(1)", "many queries after one construction").
 
-**In this repo:** `design/` (22 problems) · bank: `practice/simple/24_lru_cache.py` · basics: `practice/simple/basics/stacks/01_array_stack_and_queue_via_two_stacks.py` · design classes taught in other sections: Min Stack (`stack/min_stack.py`, `practice/simple/14_min_stack.py`), `queues/number_of_recent_calls.py`, `queues/design_circular_queue.py`, `queues/design_circular_deque.py` and `queues/implement_queue_using_stacks.py` in [Stacks & Queues](#s07); MedianFinder (`heap/find_median_from_data_stream.py`, `practice/simple/34_find_median_from_data_stream.py`), `heap/design_twitter.py` and `heap/kth_largest_element_in_a_stream.py` in [Heaps](#s13); `intervals/my_calendar_iii.py` in [Intervals](#s14); `tries/implement_trie_prefix_tree.py`, `tries/design_search_autocomplete_system.py` and `tries/stream_of_characters.py` in [Tries](#s12); `trees/serialize_and_deserialize_binary_tree.py` in [Trees](#s11)
+**In this repo:** `design/` (22 problems) · bank: `practice/simple/24_lru_cache.py` · basics: `practice/simple/basics/stacks/01_array_stack_and_queue_via_two_stacks.py`.
+
+Several design classes live with the structure they are built on. Min Stack, a stack that also reports its minimum in O(1) (`stack/min_stack.py`, `practice/simple/14_min_stack.py`), and `queues/number_of_recent_calls.py`, `queues/design_circular_queue.py`, `queues/design_circular_deque.py` and `queues/implement_queue_using_stacks.py` are in [Stacks & Queues](#s07). MedianFinder, the running median of a stream (`heap/find_median_from_data_stream.py`, `practice/simple/34_find_median_from_data_stream.py`), `heap/design_twitter.py` and `heap/kth_largest_element_in_a_stream.py` are in [Heaps](#s13).
+
+The others sit in three more sections: `intervals/my_calendar_iii.py` in [Intervals & Sweep Line](#s14); `tries/implement_trie_prefix_tree.py`, `tries/design_search_autocomplete_system.py` and `tries/stream_of_characters.py` in [Tries](#s12); and `trees/serialize_and_deserialize_binary_tree.py` in [Trees](#s11).
 
 ### The picture
+
+LRU Cache is the showcase, so the picture is drawn for it. `get(key)` returns the value or −1 and `put(key, value)` stores one, both in O(1), and when the cache is full a `put` of a new key evicts the key that was used longest ago. The picture is the whole method on one problem: each operation becomes a question, each question gets a structure, and one sentence ties the structures together.
 
 ```text
 THE METHOD, drawn for LRU Cache
@@ -24,77 +34,87 @@ THE METHOD, drawn for LRU Cache
   and the list order is the recency order
 ```
 
-Why it is fast: the brute force keeps one list of `(key, value)` pairs in recency order, so every `get` scans it (O(n)) and moving a pair to the front shifts everything behind it (O(n)). The dict removes the scan. The doubly linked list removes the shift: a node knows both of its neighbours, so unlinking it is two pointer writes, and the dict hands us the node directly.
+Why it is fast: the brute force keeps one list of `(key, value)` pairs in recency order. Every `get` scans it to find the key, which is O(n), and moving the pair to the front shifts everything behind it, another O(n).
+
+The two structures remove the two costs. The dict removes the scan, because it hands us the node directly. The doubly linked list removes the shift, because a node knows both of its neighbours, so unlinking it is two pointer writes and no other node moves.
 
 ### From idea to code
 
 **The idea in one sentence:** *for each operation, ask which question it must answer and pick the structure that answers it at the required price; then write the invariant that keeps all the structures describing the same items.*
 
-The method, in the order you work (with a 25-minute budget):
+The seven decisions of [From Idea to Code](#s01) apply to a class as they apply to a loop: the items are now calls, the state lives in `self`, and every decision has a fixed place. **State** is the structures in `self`, one `# STATE` line in `__init__` for each, with its **Definition** as the comment, and **Init** is what those lines assign. The **Invariant** is the sentence that is true between any two calls, written as the last comment of `__init__`.
 
-0. **Pin down the requirements (2-3 min)** and write the answers as the class docstring. Do timestamps only increase? Can two events share one? Can a write correct an earlier one? What does a query return when nothing matches? Which call is the most frequent? Is memory or capacity bounded, and can capacity be 0?
-1. **List the operations and their price.**
-2. **Pick one structure per question** (the table below). Usually one dict is the **source of truth** and every other structure is an **index** that answers one query fast.
-3. **Write the invariant** that keeps the indexes in agreement with the truth, as a comment in `__init__`.
-4. **Name the helpers and give each a one-line contract** (`_expire(t)`: afterwards every stored event is younger than the window). Write the public methods as helper calls, then fill in the helper bodies.
-5. **Trace 4-5 calls**, printing the structures after each.
-6. **Walk the edge cases out loud**, then state the cost of each operation and the memory.
+A **Step** is what a public method does to the state, and a **Fix** is the private helper that makes the invariant true again, such as `_expire` or `_evict`. **Record** is the running value a write keeps current, a total or a minimum, and **Return** is what each query hands back, including its answer when nothing matches.
 
-```text
- 0-3   requirements -> docstring        3-6   operation -> question -> structure, with costs
- 6-8   invariant + helper names         8-18  public methods as helper calls, then helper bodies
-18-23  trace 4-5 calls, printing the structures        23-25  edge cases, cost per operation, memory
-```
+The procedure below makes those decisions in the order you work, against a 25-minute clock. Each step leaves something written down, so you hold one decision in your head at a time, and the same procedure builds every class in this section.
 
-**Who pays, the write or the read?** Keep the answer up to date on every write when reads must be O(1) (MovingAverage's total, Bitset's count of ones, LFU's `min_freq`, StockPrice's `latest`). Leave the cleanup to the reads when writes must stay cheap (HitCounter's expiry, a heap's stale tops). Say which one you chose.
+1. **Requirements, minutes 0-3.** Ask before you design, and write the answers as the class docstring. Ask whether timestamps only increase, whether two events can share one, whether a write can correct an earlier one, what a query returns when nothing matches, which call is the most frequent, and whether the capacity is bounded and can be 0. Each answer changes a structure, so each is worth its sentence.
+2. **Operations and costs, minutes 3-5.** List every public method with the price the prompt puts on it, or the price you propose when it names none. Then turn each into the question it must answer: `get(key)` asks "where is key's entry?", and eviction asks "who is the oldest?".
+3. **One structure per question, minutes 5-7.** Pick each structure from the table below by its question and its price, never by the problem's name. One structure, usually a dict, holds the truth, and every other one is an index that answers one question fast. Write them as `# STATE` lines in `__init__`, each with its definition.
+4. **The invariant, minutes 7-8.** Write the one sentence that is true between any two calls as the last comment of `__init__`. In a design it almost always reads "the indexes agree with the truth", and every method must leave it true.
+5. **Helpers, minutes 8-10.** Name the repairs, `_expire(t)`, `_unlink(node)`, `_evict()`, and give each a one-line contract that says what is true after it runs. A helper is the invariant restored, with a name.
+6. **Methods, minutes 10-18.** Write each public method as two or three helper calls, then fill in the helper bodies. After each method, say which helper restored the invariant.
+7. **Trace and edge cases, minutes 18-25.** Trace four or five calls on paper, writing down the structures after each. Then say the edge cases out loud: the empty structure, capacity 0 and 1, a missing key, a key written twice, a burst at one timestamp. Close with the cost of each operation and the memory.
 
-**Source of truth + indexes.** One dict holds the truth; every other structure is an index for one query, updated eagerly (LRU relinks a node on every use) or validated lazily (a heap entry that disagrees with the dict is stale and skipped). The invariant always says the same thing: *the indexes agree with the truth*. LRU, LFU, RandomizedSet and Stock Price below are this one recipe.
+| Minutes | You are doing | You have written |
+|---|---|---|
+| 0-3 | asking the requirement questions | the class docstring |
+| 3-7 | operation → question → structure, with costs | `__init__`, one `# STATE` line per structure |
+| 7-10 | the invariant and the helper names | the last comment of `__init__`, the helper signatures |
+| 10-18 | public methods as helper calls, then the helper bodies | the class |
+| 18-25 | a trace of 4-5 calls, the edge cases, the costs | a state table and the closing sentence |
+
+Every design makes one more choice: who pays, the write or the read? Keep the answer current on every write when reads must be O(1): a running total for the mean of the last k values, a count of ones for a bitset that flips, the smallest use count for a cache that evicts its rarest key, the latest timestamp for a price feed.
+
+Leave the cleanup to the reads when writes must stay cheap: a hit counter expires old seconds when someone asks, and a heap drops stale tops when they surface. Say which one you chose; it is the sentence the interviewer is listening for.
+
+Two words carry the method. The **source of truth** is the one structure that is always right, usually a dict: when structures disagree, the truth wins. An **index** is any extra structure kept only so that one question is fast, a heap for "what is the smallest?", a linked list for "who is the oldest?".
+
+An index is updated eagerly, as LRU relinks a node on every use, or checked lazily, as a heap entry that disagrees with the dict is skipped. Either way the invariant is the same sentence, *the indexes agree with the truth*, and every class in this section is this one recipe.
+
+**Lazy deletion** is the second way made precise: nothing leaves the heap at the moment it dies. The dict is corrected, the old heap entry stays behind as a **stale** entry, and whoever reads the heap's top first checks it against the dict and pops it if it disagrees.
+
+Some prices in the table are **amortised**: one call may do a lot of work, such as popping many expired events, but every item is added once and removed at most once, so n calls cost O(n) in total, O(1) per call averaged over the run. The table is the lookup for step 3: find the question, then read off the structure and its price.
 
 | I need to do this fast | The question it answers | Use | Cost |
 |---|---|---|---|
 | lookup by key, membership | "where is x? have I seen x?" | `dict` / `set` | O(1) |
 | count occurrences | "how many x so far?" | `Counter` / `dict` | O(1) per update |
-| min or max, with inserts | "what is the smallest now?" | heap | O(log n) |
-| min or max, with inserts and arbitrary deletes or corrections | "what is the smallest *live* item?" | heap + lazy deletion (skip stale tops) | O(log n) amortized |
-| min or max of a sliding window | "what is the max of the last k?" | monotonic deque | O(1) amortized |
-| next greater / previous smaller | "who resolves me?" | monotonic stack | O(1) amortized |
+| min or max, with inserts | "what is the smallest now?" | heap ([Heaps](#s13)) | O(log n) |
+| min or max, with inserts and arbitrary deletes or corrections | "what is the smallest *live* item?" | heap + lazy deletion (skip stale tops) | O(log n) amortised |
+| min or max of a sliding window | "what is the max of the last k?" | monotonic deque ([Sliding Window](#s06)) | O(1) amortised |
+| next greater / previous smaller | "who resolves me?" | monotonic stack ([Monotonic Stack](#s08)) | O(1) amortised |
 | median of a stream | "what is the middle?" | two heaps | O(log n) |
-| events inside a time window | "how many in the last w seconds?" | `deque` + a running total | O(1) amortized |
-| first position ≥ x in a sorted list | "where would x go?" | `bisect` | O(log n) |
+| events inside a time window | "how many in the last w seconds?" | `deque` + a running total | O(1) amortised |
+| first position ≥ x in a sorted list | "where would x go?" | `bisect` ([Binary Search](#s09)) | O(log n) |
 | "the value as of time t" | "what was the last write at or before t?" | per-key list of (t, value) + `bisect` | O(log n) |
 | a sorted set of disjoint intervals | "which intervals touch x?" | sorted list(s) + `bisect` | O(log n) search, O(n) insert |
-| range sum, no updates / with point updates | "what is sum(a[i:j])?" | prefix sums / Fenwick tree | O(1) / O(log n) |
+| range sum, no updates / with point updates | "what is sum(a[i:j])?" | prefix sums / Fenwick tree ([Prefix Sums](#s04)) | O(1) / O(log n) |
 | "are a and b connected?" with merges | "same group?" | union-find | almost O(1) |
-| prefix lookups among many words | "which words start with p?" | trie of dicts | O(length) |
+| prefix lookups among many words | "which words start with p?" | trie of dicts ([Tries](#s12)) | O(length) |
 | add and remove at both ends | "oldest? newest?" | `deque` | O(1) |
 | undo, nesting, most recent | "what is the latest unresolved item?" | `list` as a stack | O(1) |
 | lookup + order by recency | "which key was used longest ago?" | `dict` + doubly linked list, or `OrderedDict` | O(1) |
 | a uniformly random element, with deletes | "pick any stored item" | dense `list` + `dict` value → index (swap with last) | O(1) |
 | min or max of counts that change by ±1 | "which key has the smallest count?" | count buckets + a pointer to the min or max count | O(1) |
 
-"Amortized O(1)" means: one call may do a lot of work (pop many expired events), but every item is added once and removed at most once, so n calls cost O(n) in total.
-
 ### Worked example: Stock Price Fluctuation (2034)
 
-*A stream of `update(timestamp, price)` records; some records are corrections of an earlier timestamp. Answer `current()` (the price at the latest timestamp), `maximum()` and `minimum()` over the current prices.*
+The first full run of the method is a problem where the truth changes under its indexes, so you can watch the invariant earn its keep. Stock Price Fluctuation receives a stream of `update(timestamp, price)` records, and a record may correct the price of an earlier timestamp. `current()` returns the price at the latest timestamp, and `maximum()` and `minimum()` return the largest and the smallest price among the current records.
 
-**Step 0, by asking:** can an update correct a past timestamp? *Yes*, so a price can go stale. Do timestamps arrive in order? *No*, so "current" means the largest timestamp seen, not the last call. Which call dominates? *All four are frequent*, so none of them may scan.
+After `update(1, 10)`, `update(2, 5)` and `update(1, 3)`, the current price is 5 and the maximum is 5, because the 10 was corrected away. That example settles the requirements before a line is typed. An update can correct a past timestamp, so a stored price can go stale. Timestamps arrive in any order, so "current" means the largest timestamp seen, not the last call. All four calls are frequent, so none of them may scan: each costs O(log n) at most.
 
-| Operation | The question it asks | Structure |
-|---|---|---|
-| `update(t, p)` | what is the price at t now? | dict `price`: t → latest price (the truth) |
-| `current()` | which t is the latest? | `latest`, kept current on every write |
-| `maximum()` / `minimum()` | which live price is the largest / smallest? | max-heap of `(-p, t)` / min-heap of `(p, t)`, stale entries skipped |
+Each operation now names its question and its structure. `update(t, p)` asks what the price at t is now, so a dict `price` from timestamp to latest price is the truth. `current()` asks which timestamp is the latest, so one integer `latest` is kept current on every write.
 
-| Decision | Stock Price |
-|---|---|
-| **State** | `price` (the source of truth), `latest`, and two heaps as indexes: `hi` for the max, `lo` for the min |
-| **Definition** | `price[t]` = the latest price recorded for t; a heap entry `(±p, t)` is live iff `p == price[t]` |
-| **Invariant** | every live `(t, price[t])` is in both heaps; any other entry is stale, and reads pop stale tops first (the FIX) |
-| **Step** | `update`: overwrite the truth, push one entry into each heap; the old entry for t silently becomes stale |
-| **Record** | `latest = max(latest, t)` on every write, so `current()` is O(1) |
-| **Init** | an empty dict, `latest = 0`, two empty heaps |
-| **Return / edge cases** | `current()` reads `price[latest]`; a correction of the latest timestamp; a correction that moves the max; many corrections of one t (memory) |
+`maximum()` and `minimum()` ask which live price is the largest and the smallest, so a max-heap of `(-p, t)` and a min-heap of `(p, t)` serve as indexes, with stale entries skipped when they reach the top.
+
+The seven decisions follow from that. The state is `price`, the source of truth, `latest`, and the two heaps `hi` and `lo` as indexes. The definition: `price[t]` is the latest price recorded for t, and a heap entry `(±p, t)` is live exactly when `p == price[t]`. The invariant: every live `(t, price[t])` is in both heaps, any other entry is stale, and reads pop stale tops first; that popping is the fix.
+
+The step, in `update`, overwrites the truth and pushes one entry into each heap, so the old entry for t silently becomes stale. Record is what each method returns, plus the running value kept current on every write, `latest = max(latest, t)`, so `current()` is O(1). Init is an empty dict, `latest = 0` and two empty heaps.
+
+The edge cases to say out loud are a correction of the latest timestamp itself, a correction that moves the maximum, and many corrections of one timestamp, which is a question about memory.
+
+So the class below keeps the dict, the integer and the two heaps. `update` writes the truth and pushes, O(log n), and the one helper `_top` pops stale tops until the top is live, so `maximum` and `minimum` are one call each, O(log n) amortised, because every entry is popped at most once. The prints replay the example and show a stale top leaving the max-heap.
 
 ```python
 class StockPrice:
@@ -144,9 +164,11 @@ print(s.minimum(), s.current())              # 2 2
 
 ### Your turn: a per-user rate limiter
 
-*`RateLimiter(limit, window)`; `allow(user, t)` returns whether the request is accepted. Each user may have at most `limit` **accepted** requests in any `window` seconds, i.e. with timestamps in `(t - window, t]`; refused requests don't count. Calls arrive with non-decreasing `t`.*
+Now run the procedure yourself, on a tracker-shaped problem, before reading the tracker family. `RateLimiter(limit, window)` has one method, `allow(user, t)`, which returns whether the request is accepted; it runs on every request, so it should cost O(1) amortised. Each user may have at most `limit` **accepted** requests in any `window` seconds, that is with timestamps in `(t - window, t]`, and refused requests do not count. Calls arrive with non-decreasing `t`.
 
-Run the method on paper first: what do you remember per user, what can you forget and when, and who pays (the write or the read)? Then fill in the class and run the cell; the checker runs a fixed case and 300 random sequences against a brute force.
+With `limit = 2` and `window = 10`, user a at times 1, 2, 3 is accepted, accepted, refused, and accepted again at 11, because the request from time 1 has left the window.
+
+Run the method on paper first: what do you remember per user, what can you forget and when, and who pays, the write or the read? Then fill in the class in the cell below and run it. The checker runs that fixed case and 300 random sequences against a brute force.
 
 ```python
 class RateLimiter:
@@ -200,23 +222,31 @@ class RateLimiter:
 
     def allow(self, user, t):
         q = self.log[user]
-        while q and q[0] <= t - self.window:     # FIX: the read pays for the cleanup
-            q.popleft()
+        while q and q[0] <= t - self.window:
+            q.popleft()                          # FIX: the read pays for the cleanup
         if len(q) < self.limit:
             q.append(t)                          # STEP: only accepted requests count
             return True
         return False                             # RETURN
 ```
 
-Each accepted request is appended once and popped once: O(1) amortized per call, O(limit) memory per active user (a user who goes quiet keeps an empty deque; delete it when it empties if memory matters).
+Each accepted request is appended once and popped once: O(1) amortised per call, O(limit) memory per active user. A user who goes quiet keeps an empty deque; delete it when it empties if memory matters.
 
 </details>
 
 ### The tracker family
 
-Google-style "implement a tracker" questions are small design problems over a **stream of events**: hits, log lines, values, check-ins, writes. Each comes down to two questions: *what must I remember to answer the queries?* and *what can I forget, and when?*
+Most "implement a tracker" questions are small cousins of the worked example, and this is where the procedure starts to pay for itself. A tracker watches a **stream of events**: hits, log lines, values, check-ins, writes. Every one of them comes down to two questions: *what must I remember to answer the queries?* and *what can I forget, and when?*
 
-**Time windows.** Time only moves forward, so an event that left the window is gone for good. The HitCounter here is the follow-up from [From Idea to Code](#s01): a million hits in one second must not mean a million deque entries, so equal timestamps share one `(t, count)` pair, and a running `total` answers `getHits` without counting.
+Time windows come first, because time only moves forward: an event that left the window is gone for good, so forgetting is safe. Logger Rate Limiter asks for `shouldPrintMessage(t, message)` in O(1), true when the same message was not printed in the last 10 seconds: a message printed at 1 is refused at 3 and allowed again at 11. One dict from message to the earliest time it may print again answers it, with no window kept at all.
+
+Moving Average from Data Stream asks for `next(v)` in O(1), the mean of the last `size` values: with `size = 3` the stream 1, 10, 3, 5 answers 1.0, 5.5, 4.67, 6.0. A deque of the last `size` values plus their running sum answers it, and during warm-up the mean divides by the current length.
+
+Design Hit Counter asks for `hit(t)` and `getHits(t)` in O(1) amortised, the number of hits in the last 300 seconds, `(t - 300, t]`, with timestamps that never decrease and any number of hits per second: after hits at 1, 1, 1, 2 and 300, `getHits(300)` is 5 and `getHits(301)` is 2.
+
+It is the follow-up from [From Idea to Code](#s01): a million hits in one second must not mean a million deque entries, so equal timestamps share one `(t, count)` pair, and a running `total` answers `getHits` without counting.
+
+All three classes below answer each call in O(1), the hit counter amortised. In each the write keeps a running value current, and in the hit counter the read also pays for the expiry. The prints replay the three examples, and the last number is the hit counter's deque length, one pair per second still inside the window.
 
 ```python
 class Logger:                                    # print each message at most once per 10 seconds
@@ -280,7 +310,9 @@ print(hits.getHits(300), hits.getHits(301), len(hits.window))  # 5 2 2
 - After the cell, `log.shouldPrintMessage(21, "foo")` is `True` (exactly 10 seconds after the print at 11). Change `<` to `<=` in the check and rerun: `[True, False, False]`, the call at 11 is wrongly refused.
 - In `MovingAverage.next`, divide by `self.size` instead: the first two answers become 0.33 and 3.67 instead of 1.0 and 5.5. During warm-up the window is not full yet.
 
-**Versions over time.** If writes arrive in time order (ask!), each per-key history is sorted for free, and "the value as of time t" is a `bisect_right` followed by one step back. Snapshot Array (1146) is the same idea per index: each cell keeps a list of `(snap_id, value)` pairs (overwriting the last pair when it is written twice in one snapshot), and `get(i, snap)` bisects for `(snap, math.inf)`.
+Versions over time are the next family, because here nothing is ever forgotten and the question becomes "what was true at time t?". Time Based Key-Value Store asks for `set(key, value, t)` and `get(key, t)`, the value with the largest timestamp at or below t, or `""` when there is none: after `set("foo", "bar", 1)` and `set("foo", "bar2", 4)`, `get("foo", 3)` is `"bar"` and `get("foo", 0)` is `""`.
+
+Ask first whether `set` timestamps only increase. They do, so appending keeps each key's history sorted for free and `set` is O(1). A read is `bisect_right` for the first timestamp after t, then one step back, O(log n). The prints read the history at, between and before its two writes.
 
 ```python
 class TimeMap:
@@ -312,54 +344,27 @@ print(tm.get("foo", 1), tm.get("foo", 3), tm.get("foo", 4), repr(tm.get("foo", 0
 - Read with `self.times[key]` instead of `self.times.get(key, [])`: `tm.get("nope", 5)` still returns `''`, but now `"nope" in tm.times` is `True`. On a `defaultdict`, every key ever asked about leaves an empty list behind.
 - If `set` may arrive out of order, insert instead of appending: `i = bisect.bisect_right(self.times[key], timestamp)`, then `insert(i, ...)` into both lists. Reads stay O(log n); each write becomes O(n).
 
-**Two lifetimes.** Some data lives briefly (an open journey), some lives forever but compresses (a route's total time and trip count): give each lifetime its own structure. Browser History (1472) splits the same way: the list of pages lives on, while "clear the forward history" is a bound (`last = cur`) rather than a deletion, so `back(k)` and `forward(k)` are index arithmetic, `max(0, cur - k)` and `min(last, cur + k)`.
+Snapshot Array is the same idea per index. `SnapshotArray(n)` starts as n zeros; `set(i, v)` writes a cell, `snap()` returns the id of the snapshot just taken, counting from 0, and `get(i, snap_id)` returns the cell as it was in that snapshot, and no call may copy the array: after `set(0, 5)`, `snap()` → 0 and `set(0, 6)`, the call `get(0, 0)` is 5.
 
-```python
-class UndergroundSystem:
-    def __init__(self):
-        self.open_trips = {}                     # STATE: id -> (start station, check-in time), short-lived
-        self.stats = {}                          # STATE: (start, end) -> [total time, trips], kept forever
+Give each cell its own history, a list of `(snap_id, value)` pairs that starts as `[(0, 0)]`, and keep one counter `snap_id`, the id of the snapshot still open. The invariant: every history is sorted by id and holds one pair per id at most. So `set` overwrites the last pair when its id is the open one and appends otherwise, `snap` returns the counter and adds one, and `get` is `bisect_right(hist[i], (snap_id, inf))` and one step back, the TimeMap read. Writes are O(1), a read O(log n).
 
-    def checkIn(self, id, stationName, t):
-        self.open_trips[id] = (stationName, t)   # STEP
+Some trackers hold two kinds of data with two lifetimes, and each lifetime gets its own structure. Design Underground System asks for `checkIn(id, station, t)`, `checkOut(id, station, t)` and `getAverageTime(start, end)` in O(1), the mean time of the completed trips on a route: trips from Leyton to Waterloo of 12 and 10 minutes average 11.0.
 
-    def checkOut(self, id, stationName, t):
-        start, t0 = self.open_trips.pop(id)      # STEP: the journey is over, forget it
-        cell = self.stats.setdefault((start, stationName), [0, 0])
-        cell[0] += t - t0                        # RECORD: running totals, kept current on every write
-        cell[1] += 1
+An open journey lives briefly, so it sits in a dict by id until its check-out pops it. A route's statistics live forever but compress to two numbers, so a second dict keyed by `(start, end)` keeps the total time and the trip count current on every check-out, the running sum of MovingAverage, and the average is one division.
 
-    def getAverageTime(self, startStation, endStation):
-        total, trips = self.stats[(startStation, endStation)]
-        return total / trips                     # RETURN
+Design Browser History splits the same way, with a bound in place of a deletion. `visit(url)` opens a page and clears the forward history, and `back(k)` and `forward(k)` move at most k pages and return the page they land on, each in O(1): from home, after visiting a and then b, `back(1)` is a and `forward(5)` is b.
 
+One list holds the pages, a cursor marks the current one, and clearing the forward history only moves a logical end, `last = cur`. So `visit` overwrites the slot after the cursor, appending when the list ends there, `back(k)` is `max(0, cur - k)` and `forward(k)` is `min(last, cur + k)`: index arithmetic.
 
-u = UndergroundSystem()
-u.checkIn(45, "Leyton", 3)
-u.checkIn(27, "Leyton", 10)
-u.checkOut(45, "Waterloo", 15)
-u.checkOut(27, "Waterloo", 20)
-print(u.getAverageTime("Leyton", "Waterloo"), u.open_trips)   # 11.0 {}
-```
+### The LRU cache
 
-**Try it**
-- In `checkOut`, read with `self.open_trips[id]` instead of `pop`: the average is unchanged, but `u.open_trips` keeps both finished journeys forever.
-- `u.getAverageTime("Waterloo", "Leyton")` raises `KeyError`: a route is an ordered pair, so the dict key is the tuple `(start, end)`.
-- Use `//` instead of `/` and record trips of 12 and 9 minutes on a fresh route: 10 instead of 10.5.
+A cache is the classic design question, and LRU is the method's showcase: two structures, one invariant, three helpers. LRU Cache asks for `get(key)`, the value or −1, and `put(key, value)`, both in O(1); when a `put` of a new key would exceed the capacity, the key whose last `get` or `put` is the oldest is evicted. With capacity 2, `put(1, 1)`, `put(2, 2)`, `get(1)`, `put(3, 3)` evicts key 2, because key 1 was used more recently.
 
-### Caches: LRU, then LFU
+The design, sentence by sentence, is the code. Finding the key's node is `node = self.map.get(key)`. Taking it out of the line is two pointer writes, `node.prev.next, node.next.prev = node.next, node.prev`, which join its neighbours to each other. Putting it at the front, where the newest sits, sets the node's own two pointers first, `node.prev, node.next = self.head, self.head.next`, then `self.head.next.prev = node`, and only then `self.head.next = node`.
 
-LRU (146) is the method's showcase: two structures, one invariant, three helpers. The same design, sentence by sentence:
+The oldest item is `self.tail.prev`. Forgetting it completely means unlinking it and `del self.map[victim.key]`, which is why every node stores its key. "Too full" is `len(self.map) > self.cap`.
 
-| In words | In code |
-|---|---|
-| "find the key's node" | `node = self.map.get(key)` |
-| "take it out of the line" | `node.prev.next, node.next.prev = node.next, node.prev` |
-| "put it at the front (newest)" | `node.prev, node.next = self.head, self.head.next`, then `self.head.next.prev = node` and `self.head.next = node` |
-| "the oldest item" | `self.tail.prev` |
-| "forget it completely" | unlink it and `del self.map[victim.key]` (this is why a node stores its key) |
-| "too full" | `len(self.map) > self.cap` |
-| "an empty list with no None checks" | `self.head.next, self.tail.prev = self.tail, self.head` |
+`head` and `tail` are **sentinels**, the dummy nodes of [Linked Lists](#s10): they never hold data, so every real node has a neighbour on both sides and no method ever checks for `None`. The empty list is `self.head.next, self.tail.prev = self.tail, self.head`. Each helper below restores the invariant its contract names, and `get` and `put` are a few helper calls each. The prints replay the example, then one more `put` that evicts key 1.
 
 ```python
 class Node:
@@ -425,13 +430,13 @@ print(cache.get(1), cache.get(3), cache.get(4))  # -1 3 4
 
 **Try it**
 - Delete the line `del self.map[victim.key]` and rerun: the second print shows `2` instead of `-1`. The dict still points at a node that left the list; the invariant broke, and the answer is wrong without any error.
-- Swap the last two lines of `_push_front` and rerun: the cell prints `1`, then `2` instead of `-1`, then crashes with `KeyError: 1`. After `self.head.next = node`, the line `self.head.next.prev = node` points the node at itself. (Swap them back before the trace below: on the broken list its walk would never end.)
+- Swap the last two lines of `_push_front` and rerun: the cell prints `1`, then `2` instead of `-1`, then crashes with `KeyError: 1`. After `self.head.next = node`, the line `self.head.next.prev = node` points the node at itself. Swap them back before the trace below: on the broken list its walk never ends.
 - Move the two eviction lines above `self._push_front(node)` (evict first, as `practice/simple/24_lru_cache.py` does) and run `LRUCache(0).put(1, 1)`: `AttributeError`. In an empty list `tail.prev` is the head sentinel, whose `prev` is `None`. With capacity ≥ 1 both orders work.
 - Predict, then check: `c = LRUCache(2)`, `put(1, 1)`, `put(2, 2)`, `put(1, 10)`, `put(3, 3)`. Key 2 is evicted, because updating key 1 also refreshed it: `c.get(2)` is -1 and `c.get(1)` is 10.
 
 ### Watch it work
 
-The list from newest to oldest after each call:
+The invariant is easiest to believe when you can see it. The helper below walks the list from `head` to `tail` and prints the keys from newest to oldest after each call, next to what the call returned. The calls are the example's four, then `get(2)`, an update of key 1 and `get(3)`.
 
 ```python
 def recency(c):                                  # keys from newest to oldest
@@ -455,9 +460,93 @@ for op, *args in [("put", 1, 1), ("put", 2, 2), ("get", 1), ("put", 3, 3),
 - Print `sorted(c.map)` next to `recency(c)`: always the same keys. That is the invariant, made visible.
 - Run it with `LRUCache(1)`: the list never holds more than one key, and every `get` returns -1, because each one asks for a key that the previous `put` pushed out.
 
-**LFU (460)** changes one requirement: evict the key with the **fewest uses**, and among those the least recently used one. Run the method again: `freq_of` (key → count) is the truth; `bucket` (count → `OrderedDict` of keys, oldest first) is the index that answers "who is oldest among the rarest?"; one integer `min_freq` says which bucket that is.
+### Where it goes wrong
 
-**Invariant:** every key lives in exactly one bucket, `bucket[freq_of[key]]`, and `min_freq` is the smallest non-empty bucket whenever the cache is not empty. One integer can track the minimum because counts only ever go **up by one**: the minimum changes when a brand-new key arrives (it becomes 1), or when the last key of the minimum bucket moves up (it becomes `min_freq + 1`, exactly where that key went). An eviction can empty the lowest floor too, but it only happens right before a new key arrives, so the first case covers it.
+1. **The node does not store its key.** Eviction finds the oldest node as `tail.prev` and must then delete its dict entry, which needs the key. An eviction that skips `del map[key]` leaves a ghost: in `LRUCache(1)`, `put(1, 1)`, `put(2, 2)`, `get(1)` returns 1 instead of −1.
+2. **Updating the truth and forgetting an index**, or the other way round. Every helper must leave the invariant true: unlink *and* `del map[key]`, pop the deque *and* subtract from the total. A HitCounter whose `_expire` pops without subtracting answers `getHits(301)` with 2 instead of 1 after hits at 1 and 301.
+3. **Pointer order in `_push_front`.** Set the node's own two pointers first, then `head.next.prev = node`, then `head.next = node`; swapping the last two points the node at itself. The LRU example then answers `get(2)` with 2 instead of −1 and crashes on the next `put`.
+4. **`put` of an existing key that only updates the value.** A write is a use, so it must refresh the key as well. With capacity 2, `put(1, 1)`, `put(2, 2)`, `put(1, 10)`, `put(3, 3)` must evict key 2; a value-only update evicts key 1, and `get(1)` returns −1 instead of 10.
+5. **A running value left stale by a write.** Every write must update `latest` or `total` in the same method, or a read answers from the past. In StockPrice, `latest = t` in place of `max(latest, t)` lets a correction move "now" backwards: after `update(1, 10)`, `update(2, 5)`, `update(1, 3)`, `current()` returns 3 instead of 5.
+6. **Trusting a lazily deleted heap top**, or cleaning it with `if` instead of `while`. After the updates (1, 10), (2, 9), (1, 1), (2, 2), a trusted top says the maximum is 10 and a single `if` says 9; the `while` loop gives 2.
+7. **Window boundaries.** "The last 300 seconds" is `(t - 300, t]`, so pop while `timestamp <= now - 300`: with `<`, a hit at 1 still counts in `getHits(301)`. A logger's "10 seconds" allows the same message again at exactly `t + 10`, so a message printed at 1 prints again at 11.
+8. **`bisect_left` for "as of time t".** Use `bisect_right`, or probe with `(t, inf)`, or an exact match is skipped: with writes at 1 and 4, `bisect_left` makes `get("foo", 1)` return `""` instead of `"bar"`.
+9. **Reads that write.** `self.times[key]` on a `defaultdict` inside a query creates an entry for every key ever asked about: after `tm.get("nope", 5)`, `"nope" in tm.times` is True. Read with `.get(key, [])`.
+10. **Class-level state and name clashes** ([Python Toolkit](#s02)). `next_ok = {}` in the class body is shared by every Logger, so a fresh logger refuses `"foo"` at time 2 because another one printed it at 1. An attribute named like a method hides the method: `self.next = 0` in `MovingAverage.__init__` makes `avg.next(1)` raise `TypeError`.
+11. **Insert-then-evict in LFU Cache**, the variation below that evicts the key with the fewest uses. There the newcomer has the smallest count and can evict itself, so LFU must evict first, while LRU may do either. In `LFUCache(1)`, `put(1, 1)`, `get(1)`, `put(2, 2)` must evict key 1; insert-first evicts the newcomer, and `get(2)` returns −1.
+12. **Swap-with-last deletion in the wrong order**, in Insert Delete GetRandom O(1), the set below with O(1) insert, remove and random pick. Write `pos[last] = i` before `del pos[val]`, or removing the last element leaves a ghost: `insert(1)`, `remove(1)`, `insert(1)` returns False.
+
+### Edge cases to say out loud
+
+Capacity 0 and 1 · `get` of a missing key · `put` of an existing key (refresh, no eviction) · an empty structure · a burst of events at one timestamp · a query before the first timestamp · a correction of the latest timestamp · removing the only element, which is also the last one.
+
+The cell asserts each of them on the classes above, and every line is one sentence you would say while coding. The two caches of Variations check their own.
+
+```python
+c = LRUCache(1)
+c.put(5, 5)
+c.put(5, 6)                                      # update an existing key: no eviction
+assert c.get(5) == 6 and c.get(7) == -1          # a missing key reads -1
+c.put(7, 7)                                      # capacity 1: the only stored key is evicted
+assert c.get(5) == -1 and recency(c) == [7]
+z = LRUCache(0)                                  # capacity 0: insert, then evict at once
+z.put(1, 1)
+assert z.get(1) == -1 and z.map == {}
+tm0 = TimeMap()
+tm0.set("k", "v", 5)
+assert tm0.get("missing", 9) == "" and tm0.get("k", 4) == ""   # a missing key; a query before the first write
+burst = HitCounter()
+for _ in range(5):
+    burst.hit(10)                                # a burst at one timestamp shares one pair
+assert len(burst.window) == 1 and burst.getHits(309) == 5
+assert burst.getHits(310) == 0 and len(burst.window) == 0      # and it expires all at once
+sp = StockPrice()
+sp.update(5, 7)
+sp.update(5, 1)                                  # correct the latest timestamp itself
+assert sp.current() == 1 and sp.maximum() == 1 and sp.minimum() == 1
+print("edge cases pass")
+```
+
+**Try it**
+- What should `HitCounter().getHits(5)` return with no hits at all? Predict, then assert it (0).
+- A window of one is always the latest value: `m1 = MovingAverage(1)`, then `[m1.next(v) for v in (4, -2)]` is `[4.0, -2.0]`.
+- Correct a maximum away: on a fresh `StockPrice`, run `update(1, 9)`, `update(2, 4)`, `update(1, 1)`, then predict `len(sp.hi)` before and after `maximum()`. It is 3, then 2, and the maximum is 4.
+
+### Variations
+
+Every variation is the method again with one different structure, or a different answer to who pays. The table is the overview and a lookup: find the trick, then the problems that use it. The classes after it follow its order, and the first two, LFU Cache and Insert Delete GetRandom O(1), are the designs to know right after LRU.
+
+| Variation | What changes from the template | Problems |
+|---|---|---|
+| **Count buckets + a minimum pointer** | the truth is key → count; each count has a bucket of keys, oldest first; `min_freq` only resets to 1 or steps up by 1 | LFU Cache (460, below): evict the least frequently used key, ties to the least recently used |
+| **Dense list + index map** | a list with no holes answers the random pick; value → index answers membership; delete by moving the last value into the hole | Insert Delete GetRandom O(1) (380, below): insert, remove and a uniform random pick |
+| **Heap + lazy deletion** | the dict is the truth; heap entries that disagree with it are skipped when they surface | Stock Price Fluctuation (2034, above); Number Container System (2349): `change(i, x)` fills slot i, `find(x)` is the smallest index holding x; Design a Food Rating System (2353): the best-rated food of a cuisine while ratings change |
+| **A heap of free items** | the smallest free seat or id is the heap's top; freeing pushes it back | Seat Reservation Manager (1845): `reserve()` hands out the smallest free seat, `unreserve(s)` gives it back |
+| **Counters per line** | row, column and both diagonal sums; a move updates at most 4 counters, a win is a counter reaching ±n | Design Tic-Tac-Toe (348): `move(row, col, player)` returns the winner after the move, or 0 |
+| **Deque + set** | the snake's body is a deque (head in, tail out) plus a set for O(1) self-collision checks | Design Snake Game (353): `move(direction)` returns the score, or −1 when the snake hits a wall or itself |
+| **Hashing by hand** | an array of short chains at `hash(key) % B`; double B and rehash when chains get long | Design HashMap (706): `put`, `get`, `remove` without built-in hash tables |
+| **A cursor and a logical end** | back/forward are index arithmetic; visit overwrites and moves the end | Design Browser History (1472, above) |
+| **A snapshot next to each entry** | push (value, min so far) together | Min Stack (155): `push`, `pop`, `top`, `getMin`, all O(1), in [Stacks & Queues](#s07) |
+| **Two heaps around the middle** | a max-heap for the low half, a min-heap for the high half, sizes within one | Find Median from Data Stream (295): `addNum`, `findMedian`, in [Heaps](#s13) |
+| **A flag and a maintained count** | flip-all toggles one flag; the count of ones is kept current on every write | Design Bitset (2166, below): fix, unfix, flip all and count, each O(1) |
+| **Two numbers instead of a log** | tokens left and the time they were counted; each call adds the refill first | a token-bucket rate limiter (below), which allows short bursts |
+| **A one-item buffer** | the next item is fetched ahead and kept beside a `done` flag | Peeking Iterator (284): `peek()` without consuming; Flatten Nested List Iterator (341); Zigzag Iterator (281) |
+| *Second pass:* **One stack per frequency** | a value pushed c times sits on floors 1..c; pop the top of the highest floor | Maximum Frequency Stack (895, below): pop the most frequent value, the most recent on a tie |
+| *Second pass:* **Sorted boundaries + bisect** | intervals stay disjoint and sorted; a change only touches its neighbours | Range Module (715, below): track, untrack and query half-open ranges; Data Stream as Disjoint Intervals (352): `addNum(v)`, `getIntervals()` as merged `[start, end]` pairs |
+| *Second pass:* **Count buckets in a linked list** | LRU's list, but each node is a *count* holding a set of keys; ±1 moves a key to the neighbouring bucket | All O'one Data Structure (432): `inc` and `dec` a key's count, `getMaxKey` and `getMinKey`, all O(1) |
+| *Second pass:* **Heap of candidates, validated lazily** | a min-heap of indices that may have room; check the top before trusting it | Dinner Plate Stacks (1172): `push` onto the leftmost stack with room, `pop` from the rightmost, `popAtStack(i)` |
+| *Second pass:* **Heaps + version stamps** | every state change pushes a fresh entry; stale entries are skipped when they surface | Design Movie Rental System (1912): `search` the five cheapest unrented copies of a movie, `rent`, `drop`, `report` the five cheapest rented |
+| *Second pass:* **Trie of dicts** | each path component is an edge; a node is a directory (children) or a file (content) | Design In-Memory File System (588): `ls`, `mkdir`, `addContentToFile`, `readContentFromFile` |
+| *Second pass:* **Express lanes** | a sorted linked list plus random-height towers; a search drops a level when it cannot move right | Design Skiplist (1206): `search`, `add`, `erase` in O(log n) expected, no built-in ordered structure |
+| *Second pass:* **Positions + random sampling** | value → sorted positions; sample a few indices, verify each with two bisects | Online Majority Element In Subarray (1157): `query(l, r, threshold)`, a value occurring at least `threshold` times in `arr[l..r]`, where `threshold` is more than half its length, or −1 |
+| *Second pass:* **Fenwick tree** | point update and prefix sum in O(log n) per axis; a rectangle is 4 prefixes | Range Sum Query 2D - Mutable (308): `update(r, c, v)` and `sumRegion` of a rectangle, interleaved |
+
+LFU Cache comes first because it is the follow-up to LRU: it changes one requirement, and the procedure absorbs it. `get` and `put` stay O(1), every `get` or `put` of a key counts as a use, and when the cache is full the key with the **fewest uses** is evicted, ties going to the least recently used among them. With capacity 2, `put(1, 1)`, `put(2, 2)`, `get(1)`, `put(3, 3)` evicts key 2, which has one use against key 1's two.
+
+Run the method again. `freq_of`, key → count, is the truth; `bucket`, count → an `OrderedDict` of keys, oldest first, is the index that answers "who is the oldest among the rarest?"; one integer `min_freq` says which bucket that is.
+
+The invariant: every key lives in exactly one bucket, `bucket[freq_of[key]]`, and `min_freq` is the smallest non-empty bucket whenever the cache is not empty. One integer can track the minimum because counts only ever go up by one.
+
+The minimum changes in two cases: a brand-new key arrives and `min_freq` becomes 1, or the last key of the minimum bucket moves up and `min_freq` becomes `min_freq + 1`, exactly where that key went. An eviction can empty the lowest floor too, but it only happens right before a new key arrives, so the first case covers it.
 
 ```text
 counts as floors, each floor a queue (oldest on the left):
@@ -468,6 +557,8 @@ freq 2: [1, 3, 2]                        min_freq = 2
 put(4) when full: evict the oldest on the lowest floor (1), THEN 4 enters floor 1   ->  min_freq = 1
 freq 1: [4]        freq 2: [3, 2]
 ```
+
+The class below has two helpers. `_touch` moves a key one floor up and fixes `min_freq` if it emptied the lowest floor; `_evict` pops the oldest key of floor `min_freq`. `put` must evict *before* inserting, because the newcomer, alone on floor 1, would otherwise be its own victim. The prints replay the example, then a tie: keys 1 and 3 both have two uses when key 4 arrives, and the older one leaves.
 
 ```python
 class LFUCache:
@@ -529,9 +620,12 @@ print(lfu.get(1), lfu.get(3), lfu.get(4))        # -1 3 4
 **Try it**
 - Insert before evicting: move the eviction below the three insert lines (as `if len(self.freq_of) > self.cap: self._evict()`) and rerun. The last line prints `1 3 -1` instead of `-1 3 4`: the newcomer 4 sat alone on floor 1, so it was evicted instead of key 1.
 - Delete `self.min_freq = 1` at the end of `put` and rerun: `KeyError: 'dictionary is empty'` at the first eviction. `min_freq` was still 0, a floor with no keys.
+- Delete the two capacity-0 lines at the top of `put` and run `LFUCache(0).put(1, 1)`: `KeyError` again, because the eviction looks for a victim in an empty cache.
 - Add `print({f: list(b) for f, b in lfu.bucket.items()}, lfu.min_freq)` after every call and watch keys climb one floor per use.
 
-**RandomizedSet (380)** is the same recipe for uniform random picks: a dense list answers `getRandom` (`random.choice` needs no holes), a dict value → index answers membership, and a delete moves the last value into the hole so the list stays dense.
+Insert Delete GetRandom O(1) comes next because it is the same truth-and-index recipe with a new question, a uniform random pick. `insert(v)` and `remove(v)` return whether anything changed, and `getRandom()` returns a uniformly random stored value, each in O(1) on average: `insert(5)`, `insert(8)`, `insert(2)`, `remove(5)` leaves 8 and 2, and `getRandom()` is one of them.
+
+A dense list answers `getRandom`, since `random.choice` needs no holes, and a dict from value to its index answers membership and says where a value sits. A delete moves the last value into the hole, so the list stays dense and nothing shifts. The invariant is `vals[pos[v]] == v` for every stored v, and the last print removes the only element, which is also the last one.
 
 ```python
 class RandomizedSet:
@@ -564,6 +658,8 @@ random.seed(0)
 rs = RandomizedSet()
 print(rs.insert(5), rs.insert(8), rs.insert(2), rs.remove(5), rs.vals, rs.pos)   # True True True True [2, 8] {8: 1, 2: 0}
 print(sorted({rs.getRandom() for _ in range(50)}))                              # [2, 8]
+one = RandomizedSet()
+print(one.insert(7), one.remove(7), one.vals, one.pos)                          # True True [] {}
 ```
 
 **Try it**
@@ -571,83 +667,13 @@ print(sorted({rs.getRandom() for _ in range(50)}))                              
 - `Counter(rs.getRandom() for _ in range(3000))`: each of the two values comes up about 1,500 times.
 - Delete the line `del self.pos[val]` and rerun: `rs.pos` still lists 5, so `rs.insert(5)` returns `False` although `getRandom` can never return 5. The index (`vals`) and the truth (`pos`) disagree.
 
-### Where it goes wrong
+Design Bitset comes next because it settles "who pays" with a single flag. `Bitset(size)` starts as all zeros, with `fix(i)` to set a bit, `unfix(i)` to clear it, `flip()` to invert every bit, and `all()`, `one()` and `count()`, each O(1), plus `toString()`, which may walk the bits: `Bitset(5)`, `fix(3)`, `fix(1)`, `flip()` reads `"10101"`.
 
-1. **The node does not store its key.** Eviction finds `tail.prev` but cannot delete it from the dict.
-2. **Updating the truth and forgetting an index** (or the other way round). Every helper must leave the invariant true: unlink *and* `del map[key]`, pop the deque *and* subtract from the total.
-3. **Pointer order in `_push_front`.** Set the node's own two pointers first, then `head.next.prev = node`, then `head.next = node`; swapping the last two points the node at itself.
-4. **`put` of an existing key that only updates the value.** It must refresh recency (LRU) or count as a use (LFU) as well.
-5. **Insert-then-evict in LFU.** The newcomer has the smallest count and can evict itself. LFU must evict first; LRU may do either.
-6. **Forgetting a running value on a write** (`min_freq = 1`, `latest`, `total`), so a read answers with stale data.
-7. **Trusting a lazily deleted heap top**, or cleaning it with `if` instead of `while`.
-8. **Window boundaries.** "The last 300 seconds" is `(t - 300, t]`: pop while `timestamp <= now - 300`. A logger's "10 seconds" allows the same message again at exactly `t + 10`.
-9. **`bisect_left` for "as of time t".** Use `bisect_right` (or probe with `(t, inf)`), or an exact match is skipped.
-10. **Reads that write.** `self.times[key]` on a `defaultdict` inside a query creates an entry for every key ever asked about: read with `.get(key, [])`.
-11. **Swap-with-last deletion in the wrong order.** Write `pos[last] = i` before `del pos[val]`, or removing the last element leaves a ghost.
-12. **Class-level state and name clashes.** `seen = set()` in the class body is shared by every instance; an attribute named like a method hides the method ([Python Toolkit](#s02)).
+Flipping every bit is a change of viewpoint, not of data, so keep the physical `bits`, one `flipped` flag and a count `ones`. The invariant: the bit you see at i is `bits[i] ^ flipped`, and `ones` counts the visible ones. `fix(i)` acts only when the visible bit is 0, toggling `bits[i]` and adding one to `ones`, and `unfix` is its mirror. `flip()` toggles the flag and sets `ones = size - ones`; `all`, `one` and `count` read `ones`, and only `toString` walks the bits.
 
-### Edge cases to say out loud
+A token bucket comes next because it shows how little state a tracker needs: it is the rate limiter that allows bursts. The bucket holds at most `capacity` tokens and refills at `rate` tokens per second, and `allow(t)` spends one token if there is one, in O(1) time and memory. Instead of remembering requests it keeps two numbers, the tokens left and the time they were last counted, and each call first adds the refill a timer would have added.
 
-Capacity 0 and 1 · `get` of a missing key · `put` of an existing key (refresh, no eviction) · an empty structure · a burst of events at one timestamp · a query before the first timestamp · a correction of the latest timestamp · removing the only (= last) element.
-
-```python
-c = LRUCache(1)
-c.put(5, 5)
-c.put(5, 6)                                      # update an existing key: no eviction
-assert c.get(5) == 6
-z = LRUCache(0)                                  # capacity 0: insert, then evict at once
-z.put(1, 1)
-assert z.get(1) == -1 and z.map == {}
-lf = LFUCache(1)
-lf.put(1, 1)
-lf.get(1)                                        # key 1 now has 2 uses
-lf.put(2, 2)                                     # evicts 1, not the newcomer
-assert lf.get(1) == -1 and lf.get(2) == 2 and LFUCache(0).get(3) == -1
-assert TimeMap().get("missing", 9) == ""
-burst = HitCounter()
-for _ in range(5):
-    burst.hit(10)
-assert burst.getHits(309) == 5 and burst.getHits(310) == 0 and len(burst.window) == 0
-sp = StockPrice()
-sp.update(5, 7)
-sp.update(5, 1)                                  # correct the latest timestamp itself
-assert sp.current() == 1 and sp.maximum() == 1 and sp.minimum() == 1
-r = RandomizedSet()
-assert r.insert(7) and r.remove(7) and r.vals == [] and r.pos == {}   # remove the only (= last) element
-print("edge cases pass")
-```
-
-**Try it**
-- An LFU tie: `f = LFUCache(2)`, `put(1, 1)`, `put(2, 2)`, `get(1)`, `get(2)`, `put(3, 3)`. Both old keys have 2 uses, so the least recently used one (1) leaves: `f.get(1), f.get(2), f.get(3)` gives `-1 2 3`.
-- What should `HitCounter().getHits(5)` return with no hits at all? Predict, then assert it (0).
-- A window of one is always the latest value: `m1 = MovingAverage(1)`, then `[m1.next(v) for v in (4, -2)]` is `[4.0, -2.0]`.
-
-### Variations
-
-| Variation | What changes from the template | Problems |
-|---|---|---|
-| **Heap + lazy deletion** | the dict is the truth; heap entries that disagree with it are skipped when they surface | Stock Price Fluctuation (2034), Number Container System (2349), Food Rating System (2353) |
-| **A heap of free items** | the smallest free seat or id is the heap's top; freeing pushes it back | Seat Reservation Manager (1845) |
-| **Counters per line** | row, column and both diagonal sums; a move updates at most 4 counters, a win is a counter reaching ±n | Design Tic-Tac-Toe (348) |
-| **Deque + set** | the snake's body is a deque (head in, tail out) plus a set for O(1) self-collision checks | Design Snake Game (353) |
-| **Count buckets in a linked list** | LRU's list, but each node is a *count* holding a set of keys; ±1 moves a key to the neighbouring bucket | All O'one Data Structure (432) |
-| **Heap of candidates, validated lazily** | a min-heap of indices that may have room; check the top before trusting it | Dinner Plate Stacks (1172) |
-| **Heaps + version stamps** | every state change pushes a fresh entry; stale entries are skipped when they surface | Design Movie Rental System (1912) |
-| **Sorted boundaries + bisect** | intervals stay disjoint and sorted; a change only touches its neighbours | Range Module (715), Data Stream as Disjoint Intervals (352) |
-| **Hashing by hand** | an array of short chains at `hash(key) % B`; double B and rehash when chains get long | Design HashMap (706) |
-| **Trie of dicts** | each path component is an edge; a node is a directory (children) or a file (content) | Design In-Memory File System (588) |
-| **Express lanes** | a sorted linked list plus random-height towers; a search drops a level when it cannot move right | Design Skiplist (1206) |
-| **Positions + random sampling** | value → sorted positions; sample a few indices, verify each with two bisects | Online Majority Element In Subarray (1157) |
-| **Fenwick tree** | point update and prefix sum in O(log n) per axis; a rectangle is 4 prefixes | Range Sum Query 2D - Mutable (308) |
-| **A cursor and a logical end** | back/forward are index arithmetic; visit overwrites and moves the end | Design Browser History (1472) |
-| **A snapshot next to each entry** | push (value, min so far) together | Min Stack (155), in [Stacks & Queues](#s07) |
-| **Two heaps around the middle** | a max-heap for the low half, a min-heap for the high half, sizes within one | Find Median from Data Stream (295), in [Heaps](#s13) |
-
-Follow-ups interviewers like: **memory** (the Logger's dict keeps every message forever; a deque of `(t, message)` lets you delete entries older than 10 seconds), **O(1)-memory windows** (HitCounter's 300-slot arrays, above), and **concurrency** (guard each public method with one `threading.Lock`, so no caller sees the truth and an index half-updated).
-
-An **iterator with lookahead** (Peeking Iterator, 284) keeps the next item in a buffer, refilled by `next(self.it)` inside `try / except StopIteration`, plus a separate `done` flag: `hasNext()` must return `not self.done`, never `self.buffered is not None`, because `None` and `0` are real items. Flatten Nested List Iterator (341) and Zigzag Iterator (281) use the same buffer, with `hasNext` doing the work of finding the next real item.
-
-A **token bucket** is the rate limiter that allows bursts: instead of remembering requests it keeps two numbers, and each call adds the refill a timer would have added:
+With capacity 2 and rate 0.5, three requests at time 0 get yes, yes, no. At time 1 only half a token has dripped in, so no; at time 2 a whole token has, so yes, and the next request at 2 is refused again. By time 6 the bucket has refilled, and the last request passes.
 
 ```python
 class TokenBucket:                               # up to `capacity` tokens, refilled at `rate` per second
@@ -671,17 +697,25 @@ print([tb.allow(t) for t in (0, 0, 0, 1, 2, 2, 6)])   # [True, True, False, Fals
 **Try it**
 - Set `self.last = t` *before* computing the refill: `[True, True, False, False, False, False, False]`. The refill always saw `t - last == 0`.
 - Drop the `min(self.capacity, ...)` cap and call `allow(100)` five times on a fresh bucket: all `True`, because 100 quiet seconds banked 52 tokens. The cap is what limits a burst.
-- Compare with the sliding log of the RateLimiter above: the log is exact but remembers up to `limit` timestamps per user; the bucket remembers two numbers and allows short bursts.
+- Make it strict: `TokenBucket(capacity=1, rate=0.5)` on the same calls gives `[True, False, False, False, True, False, True]`: capacity 1 allows no burst.
 
-### Stretch (Hard)
+Three follow-ups come up again and again after any tracker. Memory: the Logger's dict keeps every message forever, and a deque of `(t, message)` beside it lets you delete entries older than 10 seconds. O(1)-memory windows: HitCounter's two 300-slot lists, in its Try it above. Concurrency: guard each public method with one `threading.Lock`, so no caller ever sees the truth and an index half-updated.
 
-Three designs that are rarer in interviews, each teaching one trick.
+An iterator with lookahead closes the main path, because it is a design in miniature. Peeking Iterator (284) wraps an ordinary iterator and adds `peek()`, which shows the next item without consuming it, next to `next()` and `hasNext()`, all O(1): over `[1, 2, 3]`, `next()` is 1, `peek()` is 2, and the following `next()` is that same 2.
 
-**One stack per frequency** (Maximum Frequency Stack, 895): keep `freq[val]` and one stack per frequency, `group[f]`, holding the values in the order they *reached* f. A value pushed three times sits on floors 1, 2 and 3, so popping the top floor's stack is exactly "the most frequent, most recent value loses one copy"; when that stack empties, `max_freq -= 1` is always right, because frequencies are reached one step at a time.
+Keep the next item in a buffer, refilled by `next(self.it)` inside `try / except StopIteration`, plus a separate `done` flag. `hasNext()` returns `not self.done`: a test like `self.buffered is not None` fails when `None` is a real item, and `if self.buffered` fails on 0.
 
-**A lazy flag** (Design Bitset, 2166): flipping every bit is a change of *viewpoint*, not of data. Keep the physical `bits`, one `flipped` flag and a count of `ones`; the bit you see is `bits[i] ^ flipped`. `fix(i)` toggles only when the visible bit is 0 (and adds 1 to `ones`), `flip()` toggles the flag and sets `ones = size - ones`, and `all`, `one`, `count` just read `ones`: every call is O(1) except `toString`.
+Flatten Nested List Iterator (341) runs `next()` and `hasNext()` over lists nested inside lists, `[[1, 1], 2, [1, 1]]` giving 1, 1, 2, 1, 1, and Zigzag Iterator (281) reads two lists alternately, `[1, 2]` and `[3, 4, 5, 6]` giving 1, 3, 2, 4, 5, 6. Both use the same buffer, and there `hasNext` does the work of finding the next real item.
 
-**Sorted boundaries** (Range Module, 715): a union of disjoint half-open blocks `[l, r)` is fully described by its sorted boundaries `[l0, r0, l1, r1, ...]`, and the parity of a bisect position tells you where you are. `addRange(l, r)` replaces the boundaries between `bisect_left(ends, l)` and `bisect_right(ends, r)` with `l` (only if l was in a gap) and `r` (only if r was in a gap); `removeRange` is the mirror image.
+The rest of this section is a second pass: Hard problems that reuse the same moves. Skip them until the main path is automatic.
+
+Maximum Frequency Stack asks for `push(v)` and a `pop()` that removes and returns the most frequent value, the most recently pushed one on a tie, both in O(1): push 5, 7, 5, 7, 4, 5, and the pops return 5, 7, 5, 4.
+
+Keep `freq[v]`, the truth, one stack per frequency, `group[f]`, holding the values in the order they *reached* f, and `max_freq`. The invariant: a value pushed c times sits once on each floor from 1 to c, so the top of `group[max_freq]` is the most recent of the most frequent values. `push` adds one to `freq[v]`, appends v to that floor and lifts `max_freq` to it. `pop` takes the top of floor `max_freq` and lowers its count; when the floor empties, `max_freq -= 1` is always right, because the floor below still holds the popped value.
+
+Range Module asks for `addRange(l, r)`, `removeRange(l, r)` and `queryRange(l, r)` over half-open ranges `[l, r)` of real numbers, interleaved in any order, where `queryRange` is true when every point of `[l, r)` is tracked: add `[10, 20)`, remove `[14, 16)`, and `[10, 14)` is tracked while `[13, 15)` is not. Adding and removing cost an O(log n) search plus an O(n) splice of a list, and a query two O(log n) searches.
+
+Keep one flat sorted list `ends = [l0, r0, l1, r1, ...]` of disjoint blocks that never touch; the invariant is that `bisect_right(ends, x)` is odd exactly when x lies inside a block. With `i = bisect_left(ends, l)` and `j = bisect_right(ends, r)`, `addRange` replaces `ends[i:j]` with `l` if `i` is even and `r` if `j` is even, which also merges blocks that touch; `removeRange` replaces the same slice with `l` if `i` is odd and `r` if `j` is odd. `queryRange` is true when `bisect_right(ends, l)` and `bisect_left(ends, r)` are the same odd number.
 
 ```text
 ends = [10, 14, 16, 20]        tracked: [10, 14) and [16, 20)
@@ -695,7 +729,9 @@ ends = [10, 14, 16, 20]        tracked: [10, 14) and [16, 20)
 
 > "Let me pin down the operations and how often each is called, and ask whether timestamps only increase and whether a write can correct an earlier one. So operation A needs structure X and operation B needs Y. The dict is the source of truth and the others are indexes; the invariant is that they agree. Helpers like `_expire` and `_evict` keep it true, so each public method is a few calls. Cost per operation is ..., and memory is ..."
 
-For LRU that becomes: "`get` and `put` are both O(1). Finding a key means a dict; recency order with O(1) move-to-front and O(1) remove-oldest means a doubly linked list whose nodes the dict points at. The invariant: the dict and the list hold the same keys. Two helpers, unlink and push-front, make `get` and `put` a few lines each; O(1) time, O(capacity) space." While coding, keep the invariant comment visible in `__init__` and, after each public method, say which helper restored it. If the interviewer allows libraries, `OrderedDict` with `move_to_end` and `popitem(last=False)` is the short version; offer to write the linked list yourself.
+For LRU that becomes: "`get` and `put` are both O(1). Finding a key means a dict; recency order with O(1) move-to-front and O(1) remove-oldest means a doubly linked list whose nodes the dict points at. The invariant: the dict and the list hold the same keys. Two helpers, unlink and push-front, make `get` and `put` a few lines each; O(1) time, O(capacity) space."
+
+While coding, keep the invariant comment visible in `__init__`, and after each public method say which helper restored it. If the interviewer allows libraries, `OrderedDict` with `move_to_end` and `popitem(last=False)` is the short version; offer to write the linked list yourself.
 
 ### Problem map
 
@@ -716,7 +752,7 @@ For LRU that becomes: "`get` and `put` are both O(1). Finding a key means a dict
 | LFU Cache | `design/lfu_cache.py` | count → OrderedDict buckets + min_freq, which only resets to 1 or steps up by 1 |
 | Logger Rate Limiter | `design/logger_rate_limiter.py` | dict message → next allowed timestamp |
 | LRU Cache | `design/lru_cache.py` · `practice/simple/24_lru_cache.py` | dict key → node + doubly linked list with sentinels; the node stores its key for eviction |
-| Maximum Frequency Stack | `design/maximum_frequency_stack.py` | one stack per frequency; pop from the stack of the max frequency |
+| Maximum Frequency Stack | `design/maximum_frequency_stack.py` | one stack per frequency, a value with count c on floors 1..c; pop the top floor, and max_freq steps down when it empties |
 | Moving Average from Data Stream | `design/moving_average_from_data_stream.py` | deque of the last `size` values + running sum |
 | Online Majority Element In Subarray | `design/online_majority_element_in_subarray.py` | value → sorted positions; random samples verified with two bisects |
 | Range Module | `design/range_module.py` | one flat sorted boundary list; an odd bisect position means "inside a block" |

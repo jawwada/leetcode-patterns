@@ -1,8 +1,8 @@
 ## Heaps
 
-> A heap is a pile that always hands you the smallest item first. It keeps only a *partial* order (every parent ≤ its children), which is exactly enough to read the minimum in O(1) and to add or remove an item in O(log n).
+> A heap is a pile that always hands you the smallest item first. It keeps only a *partial* order, every parent at most its children, which is exactly enough to read the minimum in O(1) and to add or remove an item in O(log n).
 
-**Reach for it when** you need the smallest or largest item *again and again* while items keep arriving or leaving: **top k, k-th largest, k closest**, **merge k sorted** lists, the **median of a stream**, "always process the cheapest / earliest / most frequent next", scheduling with deadlines or cooldowns, or growing a frontier from its lowest point (Dijkstra-style).
+**Reach for it when** you need the smallest or largest item *again and again* while items keep arriving or leaving: **top k, k-th largest, k closest**, **merge k sorted** lists, the **median of a stream**, "always process the cheapest / earliest / most frequent next", scheduling with deadlines or cooldowns, or growing a frontier from its lowest point, which is the shape of Dijkstra's algorithm in [Graphs III](#s19).
 
 **In this repo:** `heap/` (20 problems) · bank: `practice/simple/32_k_closest_points_to_origin.py`, `practice/simple/33_task_scheduler.py`, `practice/simple/34_find_median_from_data_stream.py`, `practice/simple/35_merge_k_sorted_lists.py` · basics: `practice/simple/basics/heaps/` (`01_heapify_by_hand.py`, `02_push_and_pop_by_hand.py`, `03_top_k_with_size_k_min_heap.py`, `04_max_heap_by_negation_and_tuples.py`, `05_kth_largest_in_a_stream.py`, `06_merge_k_sorted_arrays.py`), `practice/simple/basics/sorting/04_heap_sort.py`
 
@@ -23,77 +23,49 @@ pop:     take heap[0], move the last leaf to the root, swap it DOWN toward its s
          both walk a single root-to-leaf path: at most log2(n) swaps
 ```
 
-**Why it is fast:** the brute-force answer to "give me the smallest" is a scan, O(n) every time you ask, or a full sort, O(n log n), most of whose order you never use. A heap keeps just enough order to answer one question (what is the smallest?) and repairs it along one path after each change: O(1) to peek, O(log n) to push or pop. Capped at k items, it answers "top k of n" in O(n log k) time and O(k) memory, even on a stream you can't store. `heapify` builds a heap from a whole list in O(n), not O(n log n): it sifts each parent *down*, and a node can only sink as far as its height. Half the nodes are leaves that don't move, a quarter sink at most one level, an eighth at most two, and that sum stays below n.
+Ask a plain list for its smallest item and it scans everything, O(n), every time you ask. Sort the list first and you pay O(n log n) for an order you mostly never use. A heap keeps just enough order to answer one question, "what is the smallest?", and repairs that order along a single root-to-leaf path after each change: O(1) to peek, O(log n) to push or pop.
 
-### heapq in one cell
+Capped at k items, a heap answers "the top k of n" in O(n log k) time and O(k) memory, even on a stream too big to store.
 
-Python's `heapq` works on a plain list, and its classic functions give you a **min**-heap. Everything else (max-heaps, priorities, ties) is done with what you push.
+`heapify` builds a heap from a whole list in O(n), not O(n log n). It sifts each parent *down*, and a node can only sink as far as its height: half the nodes are leaves that never move, a quarter sink at most one level, an eighth at most two, and that sum stays below n.
+
+Python's `heapq` keeps a min-heap in a plain list, and [Python Toolkit](#s02) already shows its everyday calls: push, pop, `heapify`, `nlargest`, negation for a max-heap, and a counter in the tuple so that a tie never compares the payload. Three more calls earn their place in this section. `heappushpop` pushes and then pops in a single sift, `heapreplace` pops first and then pushes, and `merge` is a ready-made, lazy k-way merge of sorted lists, the second template below.
 
 ```python
-h = []
-for x in [5, 1, 2, 8]:
-    heapq.heappush(h, x)                     # O(log n): append, then sift up
-print(h, h[0])                               # [1, 5, 2, 8] 1   (only h[0] has a meaning)
-print(heapq.heappop(h), h)                   # 1 [2, 5, 8]
-
-nums = [4, 1, 7, 3]
-heapq.heapify(nums)                          # O(n), in place, returns None
-print(nums)                                  # [1, 3, 7, 4]
-
-mx = [-x for x in [4, 1, 7, 3]]              # max-heap: store -x ...
-heapq.heapify(mx)
-print(-heapq.heappop(mx), -mx[0])            # 7 4   ... and negate on the way out
-
-jobs = [(2, "write"), (1, "deploy"), (2, "test")]
-heap = []
-for order, (prio, name) in enumerate(jobs):
-    heapq.heappush(heap, (prio, order, name))   # tuples compare left to right: order breaks ties
-print([heapq.heappop(heap)[2] for _ in range(3)])   # ['deploy', 'write', 'test']
-
-try:
-    heapq.heappush([(1, {"id": 1})], (1, {"id": 2}))   # equal priorities -> Python compares the dicts
-except TypeError as e:
-    print("TypeError:", e)                   # '<' not supported between instances of 'dict' and 'dict'
-print(heapq.nlargest(2, [4, 1, 7, 3]), heapq.nsmallest(2, [4, 1, 7, 3]))   # [7, 4] [1, 3]
-print(list(heapq.merge([1, 4, 5], [1, 3, 4], [2, 6])))    # [1, 1, 2, 3, 4, 4, 5, 6]  (lazy k-way merge)
+h = [2, 5, 8]
+print(heapq.heappushpop(h, 0), h)                        # 0 [2, 5, 8]  push, then pop
+h = [2, 5, 8]
+print(heapq.heapreplace(h, 0), h)                        # 2 [0, 5, 8]  pop, then push
+print(list(heapq.merge([1, 4, 5], [1, 3, 4], [2, 6])))   # [1, 1, 2, 3, 4, 4, 5, 6]
 ```
 
 **Try it**
-- Print `h[1]` and `sorted(h)[1]` right after the four pushes: 5 versus 2. Only `h[0]` is guaranteed; to read the k smallest in order, pop k times or sort.
-- Push `(prio, name)` without `order`: it still runs (names are strings), but the tie now comes out alphabetically, `['deploy', 'test', 'write']`, not in arrival order.
-- Push `(1, {"id": 1})` and then `(2, {"id": 2})` into an empty heap: no error. The dicts are only compared when two priorities tie, which is why this bug hides until the first tie.
-- Predict, then run: `heapq.heappushpop([2, 5, 8], 0)` returns 0 (push first, so 0 comes straight back out) and `heapq.heapreplace([2, 5, 8], 0)` returns 2 (pop first, then push).
+- Run `heapq.heappushpop(h, 9)` on a fresh `h = [2, 5, 8]`: it returns 2 and leaves `[5, 9, 8]`. The newcomer stays and the weakest leaves, which is the keep-k template below in one call.
+- Call `heapq.heapreplace([], 1)`: `IndexError`, because it pops before it pushes. `heapq.heappushpop([], 1)` returns 1, because it pushes first.
+- Feed `merge` a list that is not sorted: `list(heapq.merge([3, 1], [2]))` gives `[2, 3, 1]`. It trusts every input to be sorted and never checks.
+- Replace `list(...)` with `next(...)` in the last line: it prints 1. `merge` hands out one item per request, so it also merges streams too long to hold.
 
 ### From idea to code
 
-**The idea in one sentence:** *keep the candidates in a heap keyed by "who should go next"; pop the best, deal with it, push any new candidates it creates; and when only the best k matter, let the heap throw out its weakest member whenever it holds k + 1.*
+*Keep the candidates in a heap keyed by "who should go next"; pop the best, deal with it, push any new candidates it creates; and when only the best k matter, let the heap throw out its weakest member whenever it holds k + 1.*
 
-**Why a min-heap for the k *largest*?** Each newcomer asks one question: "am I better than the weakest of the k?" The weakest of the k largest is their *minimum*, so the minimum must sit on top. A max-heap of all n items would also work (pop k times), but it holds all n: O(n) memory, and useless for a stream.
+Start with the question the k *largest* raise: why a *min*-heap? Each newcomer asks one thing, "am I better than the weakest of the k?" The weakest of the k largest is their minimum, so the minimum must sit on top, and a min-heap puts it there. A max-heap of all n items would also work, popped k times, but it holds all n: O(n) memory, and useless on a stream. When the largest must sit on top instead, push `-key` and read `-heap[0]`.
 
-| Decision | Keep the k best (215, 703, 973) | Next from a frontier (23, 632, 407) |
-|---|---|---|
-| **State / Definition** | `heap` = min-heap of the k largest so far; `heap[0]` = the weakest of them | `heap` = one candidate per source that could come next, e.g. `(value, list i, index j)` |
-| **Invariant** | after the fix, the heap holds the k largest items seen so far (all of them while fewer than k have arrived) | every item not yet popped is in the heap or waits behind one (later in the same list), so the root is the next item overall |
-| **Step** | push the newcomer | pop the root: it is the next item overall |
-| **Fix** | `if len(heap) > k: heappop(heap)`: the weakest of k + 1 leaves, maybe the newcomer itself | push the popped item's successor: its list's next item, its unvisited neighbours |
-| **Record** | `heap[0]` is the k-th largest (in Kth Largest in a Stream: `return heap[0]` at the end of `add`) | right after each pop, because pops come out in order (or when an item is first reached, if its value is final then: Trapping Rain Water II banks water at the push) |
-| **Init** | `heap = []` | `heapify` one head per list, or the whole border, in O(n) |
-| **Return** | the heap's items (in heap order: sort them if order matters) or `heap[0]` | the pops, or the value recorded when the target shows up; needing a pop from an empty heap means "impossible" (−1, `""`) |
+Two templates cover the whole section. The first keeps the k best, as in Kth Largest Element in an Array, the k-th largest value of a list, in Kth Largest Element in a Stream, the same after every `add`, and in K Closest Points to Origin, the k points nearest the origin.
 
-The same idea, sentence by sentence:
+Its **State** is a min-heap of the k largest items seen so far, and its **Definition** gives the root its meaning: `heap[0]` is the weakest of them. The **Invariant**, true after every step, is that the heap holds exactly the k largest items seen so far, or all of them while fewer than k have arrived. A **Step** pushes the newcomer; if that makes k + 1, the **Fix** pops the weakest of them, which may be the newcomer itself.
 
-| In words | In code |
-|---|---|
-| "the smallest candidate" (just look) | `heap[0]` |
-| "take the smallest out" | `heapq.heappop(heap)` |
-| "add a candidate; ties go to the earlier one" | `heapq.heappush(heap, (key, i, item))` |
-| "the largest instead" | push `-key`; the largest is `-heap[0]` |
-| "keep only the k largest" | `heappush(heap, x)`, then `if len(heap) > k: heappop(heap)` |
-| "the k-th largest so far" | `heap[0]` of that size-k min-heap |
-| "push, then pop" / "pop, then push" (one call) | `heapq.heappushpop(heap, x)` / `heapq.heapreplace(heap, x)` |
-| "the next item from the list I just used" | `if j + 1 < len(lists[i]): heappush(heap, (lists[i][j + 1], i, j + 1))` |
+The **Record** is the root: after the fix, `heap[0]` is the k-th largest so far, which is exactly what Kth Largest Element in a Stream returns at the end of each `add`. The **Init** is an empty heap. The **Return** is the root, or the heap's items, sorted first when order matters, because a heap keeps only a partial order.
 
-**Push first, then evict.** The heap compares the newcomer with the weakest of the k for you: if the newcomer is the weakest of the k + 1, it is the one that leaves. Evicting first throws out a kept item before anyone has checked that the newcomer is better. In the merge the order is pop, record, refill: only after the pop do you know which list needs a new head.
+The second template takes the next item from a frontier, as in Merge k Sorted Lists, which merges k sorted lists into one. Its state is one candidate per source, for a merge the tuple `(value, list i, index j)`, so that the root is the next item overall. The invariant is that every item not yet popped is in the heap or waits behind one in its own list.
+
+A step pops the root and records it at once, because pops come out in sorted order. The fix pushes the popped item's successor, the next item of the same list, and the invariant holds again. Init is `heapify` on one head per list, in O(n). The return is the sequence of pops, or the value recorded when the target shows up; a pop needed from an empty heap means the input was impossible, −1 or `""`.
+
+The same loop drives two Hard problems at the end of the section: one finger per list finds the smallest range that covers k lists, and a wall that starts at the border measures the water a height map traps. The flood records earlier, at the push, because a cell's level is final the moment it is first reached.
+
+The order of the two lines is a decision too. Push first, then evict: the heap compares the newcomer with the weakest of the k for you, and if the newcomer is the weakest of the k + 1, it is the one that leaves. Evict first and you throw out a kept item before anyone has checked that the newcomer is better. In the merge the order is pop, record, refill, because only after the pop do you know which list needs a new head.
+
+The cell below holds both templates. `k_largest` returns the k largest numbers of a list, largest first: `[3, 1, 5, 12, 2, 11]` with k = 3 gives `[12, 11, 5]`. `merge_sorted` is a k-way merge, which merges k sorted lists into one sorted list by always taking the smallest head: `[[1, 4, 5], [1, 3, 4], [2, 6]]` becomes `[1, 1, 2, 3, 4, 4, 5, 6]`. The list index sits in the middle of each tuple so that equal values never compare the payload.
 
 ```python
 def k_largest(nums, k):
@@ -129,7 +101,7 @@ print(merge_sorted([[1, 4, 5], [1, 3, 4], [2, 6]]))  # [1, 1, 2, 3, 4, 4, 5, 6]
 
 ### Watch it work
 
-The trace runs the template's own two lines, push then evict, and says who left. Once the heap holds k items, its root is a doorman: a newcomer stays only if it beats the root, and then the root leaves.
+The trace runs the template's own two lines, push then evict, and says who left at each step. Once the heap holds k items its root is a doorman: a newcomer stays only if it beats the root, and then the root leaves. Watch `[3, 1, 5, 12, 2, 11]` with k = 3 fill up for three steps and then bounce or admit each newcomer.
 
 ```python
 def trace_k_largest(nums, k):
@@ -148,23 +120,25 @@ trace_k_largest([3, 1, 5, 12, 2, 11], 3)
 **Try it**
 - Run it with `k = 1`: the heap is a single "best so far", and the root only climbs (3, then 5, then 12).
 - Run `[1, 2, 3, 4, 5]` and then `[5, 4, 3, 2, 1]` with `k = 2`: once the heap is full, every newcomer stays on the rising list and every newcomer bounces on the falling one. Same O(n log k) bound, very different traffic.
-- Rewrite the FIX compare-first: `if len(heap) < k: heapq.heappush(heap, x)` / `elif x > heap[0]: heapq.heapreplace(heap, x)`. The `root` column is the same at every step, but a newcomer that can't beat the root never enters. (With `>=` there, `[5, 5, 5, 5]`, k = 2 swaps equal values in and out for nothing.)
+- Rewrite the FIX compare-first: `if len(heap) < k: heapq.heappush(heap, x)` / `elif x > heap[0]: heapq.heapreplace(heap, x)`. The `root` column is the same at every step, but a newcomer that can't beat the root never enters. With `>=` in place of `>`, `[5, 5, 5, 5]` and k = 2 swap equal values in and out for nothing.
 - Read the `heap=` column: it need not be sorted (`[3, 12, 5]`), yet once the heap is full, `root` is always the k-th largest so far.
 
 ### Where it goes wrong
 
-1. **Ties compare the payload.** `(dist, node)` raises `TypeError` the first time two distances are equal and the nodes can't be compared: that is the `{"id": ...}` error in the heapq cell. Push `(dist, i, node)` with a unique `i`, the list index or a running counter.
+The heap's rules are few, so nearly every bug is one of these eight.
+
+1. **Ties compare the payload.** `(dist, node)` raises `TypeError` the first time two distances are equal and the nodes can't be compared: `heapq.heappush([(1, {"id": 1})], (1, {"id": 2}))` crashes on the two dicts, as the two `Job`s crash in [Python Toolkit](#s02). Push `(dist, i, node)` with a unique `i`, the list index or a running counter.
 2. **Negating only half of the time.** Push `-x`, read `-heap[0]`, negate what you pop. In the median finder below, dropping the minus in step 2 (`heappush(self.high, heappop(self.low))`) makes `median()` return −5.0 after `add(5)`. A missing minus gives a silently wrong answer, never an error.
 3. **The wrong heap for top-k.** k largest → *min*-heap capped at k; k smallest or k closest → *max*-heap capped at k. The other way round evicts your best items: `[3, 1, 5]`, k = 1, with a max-heap keeps 1.
-4. **Changing a key that is already in the heap.** The heap never notices: `h = [[1, "a"], [2, "b"]]; h[1][0] = 0; heapq.heappop(h)` returns `[1, "a"]`. Push a fresh entry instead and skip the stale one when it surfaces (lazy deletion: right after a pop, ask "is this entry still valid?").
-5. **Popping an empty heap.** `IndexError`. IPO below crashes on `max_capital(1, 0, [5], [1])` without its `if not heap: break`. An empty heap is often the "impossible" answer.
+4. **Changing a key that is already in the heap.** The heap never notices: `h = [[1, "a"], [2, "b"]]; h[1][0] = 0; heapq.heappop(h)` returns `[1, "a"]`. Push a fresh entry instead and skip the stale one when it surfaces: that is lazy deletion, which asks right after each pop whether the entry is still valid.
+5. **Popping an empty heap.** `IndexError`. IPO, which picks the most profitable projects the capital can afford, crashes below on `max_capital(1, 0, [5], [1])` without its `if not heap: break`. An empty heap is often the "impossible" answer.
 6. **`heappush` onto a list that is not a heap.** `heapq` never checks: `h = [5, 1]; heapq.heappush(h, 3)` leaves `h[0] == 3`, not 1. Call `heapify` once first.
 7. **Using what `heapify` returns.** It works in place and returns `None`: `h = heapq.heapify([3, 1]); h[0]` raises `TypeError: 'NoneType' object is not subscriptable`.
-8. **Two successors per pop.** In a grid of sorted sums (373, 378), pushing both `(i + 1, j)` and `(i, j + 1)` after every pop reaches the same cell twice: with `nums1 = nums2 = [1, 2]` and k = 5, the pair `[2, 2]` comes out twice. Seed one head per row and only move right, or keep a `seen` set.
+8. **Two successors per pop.** Find K Pairs with Smallest Sums (373), the k pairs with the smallest sums from two sorted lists, and Kth Smallest Element in a Sorted Matrix (378), whose rows and columns are sorted, both walk a grid of sorted values. Pushing both `(i + 1, j)` and `(i, j + 1)` after every pop reaches the same cell twice: with `nums1 = nums2 = [1, 2]` and k = 5, the pair `[2, 2]` comes out twice. Seed one head per row and only move right, or keep a `seen` set.
 
 ### Edge cases to say out loud
 
-k = 0 · k ≥ n · duplicates (they count separately) · empty lists among the k lists · all lists empty · equal keys with uncomparable payloads · negatives under negation · an even count for the median (average, as a float) · the heap running dry before you are done (impossible input).
+k = 0 · k ≥ n · duplicates (they count separately) · empty lists among the k lists · all lists empty · equal keys with uncomparable payloads · negatives under negation · an even count for the median (average, as a float) · the heap running dry before you are done (impossible input). The cell checks the cases that apply to the two templates.
 
 ```python
 assert k_largest([5, 5, 5], 2) == [5, 5]                  # duplicates count separately
@@ -181,26 +155,30 @@ print("edge cases pass")
 **Try it**
 - Predict, then add: `assert k_largest([2, 9, 4], 3) == [9, 4, 2]` (k = n gives the input sorted, largest first).
 - Why does `merge_sorted([[1, 1], [1]])` never compare anything but numbers? Print the heap after `heapify`: `[(1, 0, 0), (1, 1, 0)]`; the second field already differs.
-- LeetCode 23 passes linked-list nodes: push `(node.val, i, node)` and refill with `node.next`. Drop the `i` and merge two lists whose heads are equal: `TypeError`, because Python then compares two `ListNode`s.
+- Merge k Sorted Lists (23) passes linked-list nodes: push `(node.val, i, node)` and refill with `node.next`. Drop the `i` and merge two lists whose heads are equal: `TypeError`, because Python then compares two `ListNode`s.
 
 ### Variations
 
+Every variation keeps one of the two loops, push-and-evict or pop-and-refill, and changes one thing: the key, the number of heaps, or what waits beside the heap.
+
 | Variation | What changes from the template | Problems |
 |---|---|---|
-| **Keep the k best** | min-heap capped at k for the k largest; max-heap (negate) for the k smallest / closest; 1383 sorts by the bottleneck, then keeps the k best speeds | 215, 703, 973, 1383 |
-| **Custom order** | strings can't be negated: a class with `__lt__` ("less" = worse), or heapify all `(-count, word)` and pop k | 692 |
-| **Two heaps** | max-heap for the low half, min-heap for the high half; the median sits at the roots | 295, 480 |
-| **Cooldown** | max-heap of counts + a FIFO queue (or one held item) of what can't be used yet | 621, 767, 358 |
-| **K-way merge** | the template: one head per sorted list; pop the smallest, push its successor | 23, 355, 786 |
-| **Two orders at once** | one heap of free rooms by id, one of busy rooms by end time | 2402 |
-| **Shrink the max** | max-heap; only lowering the max can shrink max − min; track the min beside it | 1675 |
-| *Stretch:* **unlock, then take the best** | sort by the unlock key, push everything unlocked, pop the best when you must choose | 502, 871, 1834 |
-| *Stretch:* **take now, regret later** | take every item; when a limit breaks, pop the worst item you took | 630, 1642 |
-| *Stretch:* **lazy deletion** | leave dead entries in; pop them only when they reach the top | 218, 480, 1851 |
-| *Stretch:* **lowest frontier first** | heap of frontier cells keyed by level or distance (Dijkstra shape) | 407, 743 |
-| *Stretch:* **merge + running max** | the range `[heap min, running max]` covers every list; advance the min | 632 |
+| **Keep the k best** | min-heap capped at k for the k largest; max-heap, negated, for the k smallest or closest; Maximum Performance of a Team, which picks at most k engineers to maximise speed sum × minimum efficiency, sorts by efficiency and keeps the k best speeds | Kth Largest Element in an Array (215), Kth Largest Element in a Stream (703), K Closest Points to Origin (973), Maximum Performance of a Team (1383) |
+| **Custom order** | strings can't be negated: a class with `__lt__` where "less" means "worse", or heapify all `(-count, word)` and pop k | Top K Frequent Words (692): the k most frequent words, ties alphabetical |
+| **Two heaps** | max-heap for the low half, min-heap for the high half; the median sits at the roots | Find Median from Data Stream (295): the median after every new number; Sliding Window Median (480): the median of every window of k numbers, in [Sliding Window](#s06) |
+| **Cooldown** | max-heap of counts plus a FIFO queue, or one held item, of what can't be used yet; Rearrange String k Distance Apart wants equal letters at least k apart, so its queue has length k | Task Scheduler (621): the least time to run tasks with a cooldown; Reorganize String (767): no two equal letters side by side; Rearrange String k Distance Apart (358) |
+| **K-way merge** | the template: one head per sorted list, pop the smallest, push its successor; Design Twitter's news feed merges the followed users' tweet lists, newest first, and stops after 10 pops; K-th Smallest Prime Fraction merges the sorted rows of fractions arr[i] / arr[j] | Merge k Sorted Lists (23), Design Twitter (355), K-th Smallest Prime Fraction (786) |
+| **Two orders at once** | Meeting Rooms III gives each meeting the lowest free room, or delays it until one frees up: one heap of free rooms by id, one of busy rooms by end time | Meeting Rooms III (2402) |
+| **Shrink the max** | Minimize Deviation in Array may halve evens and double odds to shrink max − min: a max-heap, since only lowering the max can shrink the gap, with the min tracked beside it | Minimize Deviation in Array (1675) |
+| *Second pass:* **unlock, then take the best** | sort by the unlock key, push everything unlocked, pop the best when you must choose | IPO (502); Minimum Number of Refueling Stops (871): the fewest stops on the way to a target; Single-Threaded CPU (1834): the order in which one CPU runs its tasks, always the shortest one that has arrived |
+| *Second pass:* **take now, regret later** | take every item; when a limit breaks, pop the worst item you took | Course Schedule III (630): the most courses that meet their deadlines; Furthest Building You Can Reach (1642): how far a fixed stock of bricks and ladders carries you up a row of buildings |
+| *Second pass:* **lazy deletion** | leave dead entries in; pop them only when they reach the top | The Skyline Problem (218): the outline of a row of buildings; Sliding Window Median (480); Minimum Interval to Include Each Query (1851): the smallest interval holding each query point, in [Intervals & Sweep Line](#s14) |
+| *Second pass:* **lowest frontier first** | heap of frontier cells keyed by level or distance, the Dijkstra shape | Trapping Rain Water II (407): the water a 2-D height map holds; Network Delay Time (743): how long a signal takes to reach every node, in [Graphs III](#s19) |
+| *Second pass:* **merge + running max** | the range `[heap min, running max]` covers every list; advance the min | Smallest Range Covering Elements from K Lists (632): the shortest range holding a number of every list |
 
-**Keep k, mirror image.** For the k *closest*, cap a *max*-heap at k: its root is the farthest point you kept, and a newcomer stays only if it is closer. Words can't be negated, so Top K Frequent Words gives its entries a `__lt__` where "less" means "worse"; then the same push-and-evict loop works. (Simpler when k is small: heapify all `(-count, word)` and pop k times, O(m + k log m).)
+The template kept the k largest; the k *closest* are its mirror image. K Closest Points to Origin asks for the k points nearest the origin, so `[[1, 3], [-2, 2]]` with k = 1 gives `[[-2, 2]]`. Cap a *max*-heap at k: its root is the farthest point you kept, and a newcomer stays only if it is closer. Squared distances keep the order of distances, so no square root is needed.
+
+Top K Frequent Words asks for the k most frequent words, ties broken alphabetically: `["i", "love", "leetcode", "i", "love", "coding"]` with k = 2 gives `["i", "love"]`. Words cannot be negated, so each entry gets a `__lt__` in which "less" means "worse", fewer copies or a later word, and the same push-and-evict loop works. When k is small it is simpler to heapify all `(-count, word)` pairs and pop k times, O(m + k log m) for m distinct words.
 
 ```python
 def k_closest(points, k):
@@ -239,9 +217,9 @@ print(top_k_words(["i", "love", "leetcode", "i", "love", "coding"], 2))    # ['i
 - Drop the minus in `k_closest` (push `(x * x + y * y, x, y)`): you get the 2 *farthest* points, `[[-2, 4], [5, -1]]`, because the root is now the closest point and it is the one evicted.
 - Run `top_k_words(["b", "a", "b", "a"], 1)`: `['a']`. Both words appear twice, and on a tie the later word, `'b'`, is the "worse" one at the root.
 - Flip the tie rule in `__lt__` to `self.word < other.word` and rerun that call: `['b']`, the wrong word. The root must be the word you would throw out first.
-- `k_closest([[1, 1]], 5)` returns `[[1, 1]]`: the cap is simply never reached.
+- Run `k_closest([[1, 1]], 5)`: `[[1, 1]]`. With k above the number of points the cap is never reached, and no special case is needed.
 
-**Two heaps (running median).** The median lives at the seam between the smaller half and the larger half. Keep the smaller half in a max-heap and the larger half in a min-heap, and the middle numbers sit at the two roots.
+One heap holds one end of the order; the median needs both ends at once. Find Median from Data Stream adds numbers one at a time and asks for the median after each add: after 1 and 2 it is 1.5, after 3 it is 2.0. The median lives at the seam between the smaller half and the larger half, so keep the smaller half in a max-heap and the larger half in a min-heap, and the middle numbers sit at the two roots.
 
 ```text
    low (max-heap, stored negated)        high (min-heap)
@@ -250,6 +228,8 @@ print(top_k_words(["i", "love", "leetcode", "i", "love", "coding"], 2))    # ['i
    invariant: every low <= every high, and len(low) is len(high) or len(high) + 1
    median: -low[0] when the count is odd (here 5), else the mean of the two roots
 ```
+
+`add` keeps both rules in three steps, without a comparison of its own: the number joins the small half, the largest small number crosses the seam, and if the large half is now the bigger one, its smallest number crosses back. `median` then reads only the roots.
 
 ```python
 class MedianFinder:
@@ -282,7 +262,11 @@ print(medians)                               # [5.0, 10.0, 5.0, 4.0]
 - On a fresh `MedianFinder()`, change `/ 2` to `// 2` and add 1, then 2: the median prints `1` instead of `1.5`.
 - Predict the medians for `[5, 4, 3, 2, 1]` before running: `[5.0, 4.5, 4.0, 3.5, 3.0]`.
 
-**Cooldown: heap + queue (Task Scheduler, Reorganize String).** Always run the ready task with the most copies left: it is the one that would otherwise force idle ticks at the end. A task that just ran waits n ticks on a FIFO "conveyor belt"; tasks leave the belt in the order they got on, so only its front needs checking. The release comes *after* the run: a task whose cooldown ends with this tick may run from the next tick on. Reorganize String is the same machine with a cooldown of one turn, so the belt shrinks to a single `held` letter, pushed back only after the next letter has been chosen.
+The next variation puts a queue beside the heap, for items that are the best but may not be used yet. Task Scheduler runs one task per tick or idles, with equal tasks at least n ticks apart, and asks for the least total time: `AAABBB` with n = 2 takes 8 ticks, `A B _ A B _ A B`. Always run the ready task with the most copies left, because it is the one that would otherwise force idle ticks at the end.
+
+A task that just ran waits n ticks on a FIFO conveyor belt; tasks leave the belt in the order they got on, so only its front needs checking. The release comes *after* the run: a task whose cooldown ends with this tick may run from the next tick on.
+
+Reorganize String asks for a rearrangement with no two equal neighbours, `aab` to `aba` and `aaab` to `""`, and it is the same machine with a cooldown of one turn. The belt shrinks to a single `held` letter, pushed back only after the next letter has been chosen.
 
 ```python
 def least_interval(tasks, n):
@@ -327,11 +311,15 @@ print(reorganize("aab"), repr(reorganize("aaab")), reorganize("aaabb"))   # aba 
 - Check the first call against the counting formula `(most - 1) * (n + 1) + ties` (`most` = the top count, `ties` = how many tasks have it): (3 − 1) × 3 + 2 = 8. The formula needs a `max(len(tasks), ...)` guard; the simulation does not.
 - In `reorganize`, push the letter straight back instead of holding it (`heapq.heappush(heap, (c + 1, ch))` right after placing it, when copies remain): `"aab"` comes out as `"aab"`.
 
-#### Stretch: hard heap patterns
+The rest of this section is a second pass: Hard problems that reuse the same moves. Skip them until the main path is automatic. The skyline sweeps like [Intervals & Sweep Line](#s14), and IPO, refuelling and Course Schedule III are greedy with regret from [Greedy](#s15): read those first.
 
-The four patterns below are Hard problems built from the same two templates. Learn the core above first; come back here once those feel automatic.
+The first pattern lets a heap sit beside a sort, so that a greedy choice is made from the right candidates, or can be undone. Sort by the key that *unlocks* options, capital, position or deadline; sweep; push each unlocked option into a heap keyed by its *value*; and pop only when you must choose, or when you must undo a choice.
 
-**Greedy + heap: unlock, then take the best; or take now, regret later.** Sort by the key that *unlocks* options (capital, position, deadline), sweep, push each unlocked option into a heap keyed by its *value*, and pop only when you must choose, or when you must undo a choice. In the refuelling loop the FIX comes before the STEP: you may only take fuel from stations you have actually reached.
+IPO starts you with capital w and lets you run at most k projects, each needing a minimum capital and paying a profit, to end as rich as possible: k = 2, w = 0, profits `[1, 2, 3]` and capital `[0, 1, 1]` end with 4. Before each choice, push every project the capital now affords, then run the most profitable one.
+
+Minimum Number of Refueling Stops drives a car with some starting fuel toward a target past stations `[position, fuel]`, and asks for the fewest stops, or −1: target 100 with 10 fuel and stations `[[10, 60], [20, 30], [30, 30], [60, 40]]` needs 2. There the fix comes before the step, because you may only take fuel from stations you have actually reached.
+
+Course Schedule III takes courses `[duration, last day]` back to back from day 1 and asks for the most courses that meet their deadlines: `[[100, 200], [200, 1300], [1000, 1250], [2000, 3200]]` allows 3. It takes every course in deadline order and, when a deadline breaks, regrets the longest course taken.
 
 ```python
 def max_capital(k, w, profits, capital):                 # IPO (502)
@@ -360,8 +348,9 @@ def min_refuel_stops(target, fuel, stations):            # (871) fuel = how far 
 
 
 def schedule_course(courses):                            # (630) courses = [duration, last_day]
+    courses = sorted(courses, key=lambda c: c[1])        # INIT: by deadline
     taken, time = [], 0                                  # STATE: max-heap (negated) of taken durations; time = their sum
-    for duration, last_day in sorted(courses, key=lambda c: c[1]):   # INIT: by deadline
+    for duration, last_day in courses:
         heapq.heappush(taken, -duration)                 # STEP: take it now ...
         time += duration
         if time > last_day:                              # FIX: ... regret, drop the LONGEST course taken
@@ -381,7 +370,7 @@ print(schedule_course([[100, 200], [200, 1300], [1000, 1250], [2000, 3200]]))  #
 - Remove the `if not heap: break` from `max_capital` and run `max_capital(1, 0, [5], [1])`: `IndexError`, since nothing is affordable with 0 capital.
 - Print `-passed[0]` each time a stop is taken in the 100-mile example: 60, then 40. The decision is postponed until the car would run dry, and then it is easy.
 
-**Lazy deletion (the skyline).** A heap can't remove an item from its middle. Lazy deletion says you don't have to: leave the dead entry in and throw it away when it reaches the top, because the top is the only thing you ever read. That is also why the FIX must run before the RECORD reads the top.
+A heap can't remove an item from its middle; lazy deletion says you don't have to. The Skyline Problem asks for the outline of buildings `[left, right, height]` standing on a shared ground line, as the list of points where the outline's height changes, ending at height 0: `[[2, 9, 10], [3, 7, 15]]` gives `[[2, 10], [3, 15], [7, 10], [9, 0]]`. Sweep the edges left to right with a max-heap of the live buildings.
 
 ```text
  15           +-----------+              buildings [2,9,10] [3,7,15] [5,12,12]
@@ -390,6 +379,8 @@ print(schedule_course([[100, 200], [200, 1300], [1000, 1250], [2000, 3200]]))  #
   0  ------+                             +-----   live = max-heap of (height, right end)
            2  3           7              12       key point = where the top height changes
 ```
+
+A building that has ended stays in the heap as a dead entry until it reaches the top, because the top is the only thing you ever read. That is why the fix runs before the record reads the top, and why the ground, `(0, math.inf)`, sits in the heap from the start: it never ends, so there is always a top to read.
 
 ```python
 def skyline(buildings):
@@ -417,7 +408,7 @@ print(skyline([[2, 9, 10], [3, 7, 15], [5, 12, 12], [15, 20, 10], [19, 24, 8]]))
 - Remove the `points[-1][1] != height` test (append on every event): the output gains repeats like `[5, 15]` and `[9, 12]`, points where the height did not change.
 - Print `x, sorted(live)` right after the `while`: at x = 9 the building `[2, 9, 10]` has ended, yet `(-10, 9)` is still in the heap under the taller `(-12, 12)`. It is harmless there, and it is popped at x = 12 when it surfaces.
 
-**Lowest frontier first (Trapping Rain Water II).** Water in a cell can rise only as high as the lowest wall on its best escape route to the border. Start with the border as the wall, always breach the wall at its *lowest* cell, and let the neighbour behind it fill up to that level and join the wall. It is Dijkstra with `max` in place of `+` ([Graphs III](#s19)).
+The second template, pop the lowest and push its successors, becomes a flood when the frontier is a wall. Trapping Rain Water II asks how much water a 2-D height map holds after rain, when water can only escape over the border: the map in the picture below traps 4. Water in a cell can rise only as high as the lowest wall on its best escape route to the border.
 
 ```text
 heights            level the water reaches     trapped = level - height
@@ -425,6 +416,8 @@ heights            level the water reaches     trapped = level - height
 3 2 1 3 2 4   ->   3 3 3 3 3 4          ->     . 1 2 0 1 .      total 4
 2 3 3 2 3 1        2 3 3 2 3 1                 . . . . . .
 ```
+
+So start with the border as the wall, always breach the wall at its *lowest* cell, and let the neighbour behind it fill up to that level and join the wall. It is Dijkstra with `max` in place of `+`, the shape you meet again in [Graphs III](#s19).
 
 ```python
 def trap_rain_water(height):
@@ -452,10 +445,12 @@ print(trap_rain_water([[3, 3, 3, 3, 3], [3, 2, 2, 2, 3], [3, 2, 1, 2, 3],
 **Try it**
 - Push the neighbour's own height instead of `max(level, height[nr][nc])`: the second grid gives 2 instead of 10. A cell that just filled up rejoins the wall at its low floor height, so its neighbours are filled from that "hole" instead of from the real wall.
 - Replace the heap with a FIFO queue (`deque`, `popleft`, `append`): the first grid gives 5 instead of 4. Without "lowest first", a cell gets filled from a wall that is not its real bottleneck.
-- Print `level, r, c` for each pop on the first grid: the levels never go down. That monotone order is what makes each cell's level final when it is first reached.
-- A grid with fewer than 3 rows or columns has no inside: `trap_rain_water([[5, 1, 5]])` is 0.
+- Print `level, r, c` for each pop on the first grid: the levels never go down. That monotone order, never decreasing, is what makes each cell's level final when it is first reached.
+- Run `trap_rain_water([[5, 1, 5]])`: 0. A grid with fewer than 3 rows or columns has no inside, because every cell is on the border.
 
-**Merge + running max (smallest range covering k lists).** Put one finger on each sorted list. The fingered values cover every list, and they span `[min, max]`. The only way to shrink that range is to raise the min, and only the finger *on* the min can do it: advance it, update the running max, and stop when some list runs out.
+The last pattern is the merge template with one more number beside the heap. Smallest Range Covering Elements from K Lists asks for the smallest `[a, b]` that contains at least one number from each of k sorted lists: for `[[4, 10, 15, 24, 26], [0, 9, 12, 20], [5, 18, 22, 30]]` it is `[20, 24]`.
+
+Put one finger on each list. The fingered values cover every list, and they span `[min, max]`. The only way to shrink that range is to raise the min, and only the finger *on* the min can do it: advance it, update the running max, and stop when some list runs out.
 
 ```python
 def smallest_range(lists):
@@ -485,9 +480,13 @@ print(smallest_range([[1, 2, 3], [1, 2, 3], [1, 2, 3]]))                        
 
 ### Say it in the interview
 
-> "Sorting everything costs O(n log n) and orders items I'm going to throw away. I only need the k best, so I keep a min-heap capped at k: its root is the weakest of my k, and every newcomer only has to beat that root. Anything that leaves was beaten by k numbers still in the heap, so it can't be in the top k. Each step is O(log k): O(n log k) time, O(k) space, and it works on a stream. For k sorted lists I keep one head per list: every pop is the next item overall, O(N log k)."
+> "Sorting everything costs O(n log n) and orders items I'm going to throw away. I only need the k best, so I keep a min-heap capped at k: its root is the weakest of my k, and every newcomer only has to beat that root. Anything that leaves was beaten by k numbers still in the heap, so it can't be in the top k.
+>
+> Each step is O(log k): O(n log k) time, O(k) space, and it works on a stream. For k sorted lists I keep one head per list: every pop is the next item overall, O(N log k)."
 
-While coding, point at the `if len(heap) > k` line and say the invariant: "after this line the heap holds exactly the k largest so far, and `heap[0]` is the k-th largest". In a merge, point at the refill right after the pop: "the list I just took from gets its next item in, so every list always has its head in the heap". And say why the tuple has an index in the middle: "so ties never compare the payload". Likely follow-ups and your answers:
+While coding, point at the `if len(heap) > k` line and say the invariant: "after this line the heap holds exactly the k largest so far, and `heap[0]` is the k-th largest". In a merge, point at the refill right after the pop: "the list I just took from gets its next item in, so every list always has its head in the heap". And say why the tuple has an index in the middle: "so ties never compare the payload".
+
+Likely follow-ups and your answers:
 
 - *Faster?* → quickselect: O(n) on average, but it needs all the data in memory ([Sorting & Selection](#s23)).
 - *k is close to n?* → keep the n − k smallest in a max-heap instead, or heapify everything and pop k times: O(n + k log n).
@@ -529,8 +528,8 @@ While coding, point at the `if len(heap) > k` line and say the invariant: "after
 2. Why does the keep-k template push first and evict second?
 <details><summary>Answer</summary>After the push the heap holds k + 1 candidates, and popping removes the weakest of all of them, which may be the newcomer itself. Evicting first removes a kept item before the newcomer has been compared with anything: <code>k_largest([5, 1], 1)</code> would keep 1.</details>
 
-3. `heapq.heappush(heap, (dist, node))` works on small tests and then crashes with `TypeError`. Why, and what is the fix?
-<details><summary>Answer</summary>When two distances are equal, Python compares the next tuple field, the nodes, and they don't support <code>&lt;</code>. Put a unique tie-breaker before the payload: <code>(dist, i, node)</code> with a list index or a running counter.</details>
+3. For the k closest points, why cap a max-heap at k instead of heapifying all n into a min-heap?
+<details><summary>Answer</summary>The capped max-heap's root is the farthest point kept, so each newcomer is compared once, with that root, and memory stays O(k): O(n log k) time, and it works on a stream. Heapifying all n takes O(n) memory and O(n + k log n) time, and it needs every point up front.</details>
 
 4. In the median finder, why does every number go into `low` first and then move `low`'s maximum to `high`?
 <details><summary>Answer</summary>That two-step dance keeps the ordering rule without any comparisons of your own: whatever crosses the seam is the largest of the small half (including the new number), so every number in <code>low</code> stays at most every number in <code>high</code>. Step 3 then fixes only the sizes.</details>

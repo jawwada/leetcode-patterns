@@ -2,7 +2,9 @@
 
 > Keep a stack of the items that are still **waiting** for their answer. Each new item looks at the top: if it beats that item, the waiting item has just found its answer (pop it and record), and the newcomer looks at the next one down. Then the newcomer waits too. Beaten items leave, so the waiting values are always in sorted order: that is the "monotonic".
 
-**Reach for it when** the problem asks, for every element, about the **nearest** element to its left or right that is **bigger or smaller** (the next warmer day, the next greater element, the previous smaller one, how far a bar can stretch, a stock's span), about the minimum or maximum of **every subarray**, or about deleting digits or letters to get the **smallest or largest sequence** while keeping the order.
+This section continues [Stacks & Queues](#s07) with one change. There, a closer or an operator popped the one entry it finished. Here a newcomer may finish several waiting items in a row, and the comparison that pops them keeps the waiting items sorted.
+
+**Reach for it when** the problem asks, for every element, about the **nearest** element to its left or right that is **bigger or smaller**: the next warmer day, the next greater element, the previous smaller one, how far a bar can stretch, a stock's span. The same stack answers questions about the minimum or maximum of **every subarray**, and it builds the **smallest or largest sequence** when digits or letters may be deleted but their order must be kept.
 
 **In this repo:** `stack/` (6 of its 16 problems: daily temperatures, next greater II, the two rectangle problems, car fleet, create maximum number) · bank: `practice/simple/16_daily_temperatures.py`, `practice/simple/17_largest_rectangle_in_histogram.py` · basics in `practice/simple/basics/monotonic_stacks/`: `01_next_greater_element.py`, `02_previous_smaller_element.py`, `03_online_stock_span.py`, `04_sum_of_subarray_minimums.py`, `05_remove_k_digits.py`
 
@@ -21,7 +23,7 @@ the days still waiting, just before day 5:   day 5 (72) arrives and looks at the
    d2  d3  d4
 ```
 
-The waiting days always form a staircase that never steps up. A newcomer knocks down every step shorter than itself (each knocked-down step has found its warmer day) and becomes the new last step.
+The waiting days always form a staircase that never steps up. A newcomer knocks down every step shorter than itself, and each knocked-down step has found its warmer day; then the newcomer becomes the new last step.
 
 **Why it is fast:** the brute force scans forward from every day: O(n²). On a falling stretch like 75 71 69, the scan from 75 walks over 71 and 69, which are *themselves still waiting* for a warmer day, so neither can be 75's answer. The stack flips the question: instead of each day searching forward for its answer, each new day announces itself as the answer to every waiting day it beats. Every index is pushed once and popped at most once, so the whole pass is O(n), even with a `while` inside the `for`.
 
@@ -31,38 +33,23 @@ The waiting days always form a staircase that never steps up. A newcomer knocks 
 
 **The idea in one sentence:** *for each new item: while it beats the item on top of the stack, that item is resolved (pop it, record its answer); then push the new item, which now waits for its own answer.*
 
-| Decision | Monotonic-stack answer |
-|---|---|
-| **State / Definition** | a stack of **indices** of the items still waiting for their answer: `stack` = days whose warmer day hasn't come yet, temperatures never rising from bottom to top. Indices, not values: you need the position to write `ans[j]` and the distance `i - j` |
-| **Invariant** | every index left of `i` that is *not* on the stack already has its answer; the values on the stack are sorted; and every day between a waiting day `j` and today was no warmer than `j`, or it would have popped `j` |
-| **Step** | `stack.append(i)`: the newcomer waits for its own answer |
-| **Fix** | before the step, `while stack and temps[stack[-1]] < t:` pop. The newcomer resolves (for *previous* questions: discards) every waiting item it beats |
-| **Record** | *next* questions: at the pop (the popped index is answered by `i`). *Previous* questions: after the fix, before the step (the survivor on top answers `i`) |
-| **Init** | `ans = [0] * n` or `[-1] * n` (the answer for "never"), `stack = []`; sometimes a sentinel item at the end to flush the stack |
-| **Return** | `ans` (indices never popped keep the default), or the best value recorded at the pops |
+The **State** is a stack of **indices** of the items still waiting for their answer, and its **Definition** goes in a comment: `stack` holds the days whose warmer day has not come yet, temperatures never rising from bottom to top. It holds indices, not values, because the answer is written into `ans[j]` and is often a distance, `i - j`.
 
-**Which comparison?** Derive it from the question instead of memorising it. *Next* questions: pop while the newcomer *is* the top's answer, using the problem's own comparison ("strictly greater" → pop while `top < x`; "greater or equal" → pop while `top <= x`). *Previous* questions: pop while the top *can't be* the newcomer's answer (the negation: "strictly smaller" → pop while `top >= x`), then read the top. Each pop gives two facts at once: the popped item's next answer is the newcomer, and after the loop the top is the newcomer's previous answer, with the opposite strictness. Largest Rectangle uses both. The four common cases, as a check:
+The **Invariant** has three parts. Every index left of `i` that is *not* on the stack already has its answer; the values on the stack are sorted; and every day between a waiting day `j` and today was no warmer than `j`, or it would have popped `j`. A **Step** pushes the newcomer, `stack.append(i)`, so that it waits for its own answer.
 
-| For every item, find the nearest ... | Pop while the top is ... `x` | Values on the stack, bottom → top |
-|---|---|---|
-| greater to the **right** (next greater) | `< x` | never rising |
-| smaller to the **right** (next smaller) | `> x` | never falling |
-| greater to the **left** (previous greater) | `<= x`, then read the top | strictly falling |
-| smaller to the **left** (previous smaller) | `>= x`, then read the top | strictly rising |
+Before the step comes the **Fix**, `while stack and temps[stack[-1]] < t:`, which pops every waiting item the newcomer beats: a *next* question resolves them, a *previous* question discards them. **Record** at the pop for a *next* question, `ans[j] = i - j`, or `ans[j] = t` when the value is wanted, because the popped index has just met its answer. For a *previous* question, record after the fix and before the step, because the survivor on top is the answer for `i`.
 
-The same idea, sentence by sentence:
+**Init** is `ans = [0] * n` or `[-1] * n`, whichever means "never", and `stack = []`; sometimes a sentinel item at the end, such as `heights + [0]`, flushes whatever still waits. **Return** `ans`, where the indices never popped keep the default, or the best value recorded at the pops.
 
-| In words | In code |
-|---|---|
-| "the items still waiting for an answer" | `stack = []` (indices) |
-| "the newcomer beats the most recent waiting item" | `while stack and temps[stack[-1]] < t:` |
-| "that item is resolved, and I am its answer" | `j = stack.pop()`, then `ans[j] = i - j` (or `ans[j] = t` for the value) |
-| "now I wait too" | `stack.append(i)` |
-| "my nearest smaller item on the left" | after popping everything `>= x`: `nums[stack[-1]] if stack else -1` |
-| "nobody ever beat it" | the default left in `ans` |
-| "resolve whatever still waits at the end" | a sentinel item: `heights + [0]` |
+Which comparison pops is derived from the question instead of memorised. A *next* question pops while the newcomer *is* the top's answer, with the problem's own comparison: "strictly greater" pops while `top < x`, "greater or equal" while `top <= x`. A *previous* question pops while the top *cannot be* the newcomer's answer, which is the negation: for "strictly smaller", pop while `top >= x`, then read the top.
 
-Two templates: *next* answers are written at the pop, *previous* answers after the loop. FIX runs before STEP: the newcomer must resolve or discard the waiting items before it waits itself. Pushed first, it would sit on top and block every comparison (`[73, 74]` → `[0, 0]`).
+So next greater pops while the top is `< x`, and the waiting values never rise from bottom to top; next smaller pops while `> x`, and they never fall. Previous greater pops while `<= x` and then reads the top, on a stack that strictly falls; previous smaller pops while `>= x`, on a stack that strictly rises.
+
+Each pop gives two facts at once: the popped item's next answer is the newcomer, and after the loop the top is the newcomer's previous answer, with the opposite strictness. Largest Rectangle, in Watch it work, uses both.
+
+Two templates follow, one per kind of question. Daily Temperatures (739) asks, for each day, how many days until a warmer one, 0 if none ever comes: `[73, 74, 75, 71, 69, 72, 76, 73] → [1, 1, 4, 2, 1, 1, 0, 0]`. It is a *next* question, so the answer is written at the pop. FIX runs before STEP: pushed first, the newcomer would sit on top and block every comparison ([From Idea to Code](#s01) runs this swap).
+
+Previous Smaller Element asks, for each item, for the nearest smaller value on its left, -1 if there is none: `[3, 1, 4, 1, 5] → [-1, -1, 1, -1, 1]`. It is a *previous* question, so the pops only discard: an item at least as big as `x` can never answer anyone again, because `x` is nearer and no bigger. After the loop the answer is `nums[stack[-1]] if stack else -1`, and then `x` waits.
 
 ```python
 def daily_temperatures(temps):
@@ -98,7 +85,9 @@ print(previous_smaller([3, 1, 4, 1, 5]))                      # [-1, -1, 1, -1, 
 
 ### Watch it work
 
-The richest use of the loop is Largest Rectangle in Histogram (84), where one pop answers *both* questions. Bars pop when a bar that is not taller arrives (`>=`), so the newcomer is the popped bar's right wall, and the bar under it on the stack is its left wall (its previous smaller bar, or -1, an imaginary wall before the array, if there is none). The rectangle with the popped bar's height spans the bars strictly between the walls. A final bar of height 0 pops whatever still waits.
+The richest use of the loop is Largest Rectangle in Histogram (84). It asks for the largest rectangle inside a bar chart of width-1 bars: `[2, 1, 5, 6, 2, 3]` gives 10, height 5 across the bars of heights 5 and 6. The best rectangle of one bar has that bar's height and stretches until the first shorter bar on each side, so each bar needs its *previous smaller* and its *next smaller* bar, and one pop delivers both.
+
+Bars pop when a bar that is not taller arrives, `>=`, so the newcomer is the popped bar's right wall. The bar under it on the stack is its left wall: its previous smaller bar, or -1, an imaginary wall before the array. The rectangle spans the bars strictly between the walls, and a final bar of height 0 pops whatever still waits. The trace prints every pop, then the heights still waiting after each step.
 
 ```python
 def trace_rectangle(heights):
@@ -125,13 +114,13 @@ print(trace_rectangle([2, 1, 5, 6, 2, 3]))   # 10
 
 ### Where it goes wrong
 
-1. **Storing values instead of indices.** You lose the position, so there is no way to write `ans[j]` or compute `i - j`. Push `i`; read the value as `nums[stack[-1]]`.
+1. **Storing values instead of indices.** You lose the position, so there is no way to write `ans[j]` or compute `i - j`: pushing temperatures makes `daily_temperatures([73, 74])` read `temps[73]`, an `IndexError`. Push `i`; read the value as `nums[stack[-1]]`.
 2. **`<` vs `<=` when popping.** "Strictly warmer" pops on `<`. Popping on `<=` lets an equal temperature answer: `[70, 70, 71]` would give `[1, 1, 0]` instead of `[2, 1, 0]`.
-3. **Recording in the wrong place.** *Next* answers are written for the **popped** index, at the pop. *Previous* answers are written for the **current** index, after the loop. Mixing them up gives answers to the wrong items.
+3. **Recording in the wrong place.** *Next* answers are written for the **popped** index, at the pop. *Previous* answers are written for the **current** index, after the loop. Mixing them up gives answers to the wrong items: writing `ans[i] = i - j` at the pop turns `[73, 74]` into `[0, 1]` instead of `[1, 0]`.
 4. **Forgetting the leftovers.** Items still on the stack at the end were never resolved. They need the default (`-1`, `0`), or, in the histogram, a final bar of height 0 so they get measured: `[1, 2, 3]` must give 4, but without the flush nothing is ever popped and you get 0.
-5. **Width off by one.** When bar `j` pops at `i` and `left` is the index under it, the bars strictly between the walls number `i - left - 1`, not `i - left`.
-6. **Counting ties twice.** In Sum of Subarray Minimums, `[2, 2]` has two equal minimums, and the subarray `[2, 2]` must be credited to exactly one of them: one wall strict, the other not. A single stack pass does this by itself; computing the left and right walls in two separate passes with the same comparison gives 8 or 4 instead of 6.
-7. **Remove K Digits leftovers.** If the digits never fall (`"12345"`, k = 2), the loop pops nothing, so cut the last k digits at the end. Then strip leading zeros, and return `"0"` if nothing is left (`"10"`, k = 2).
+5. **Width off by one.** When bar `j` pops at `i` and `left` is the index under it, the bars strictly between the walls number `i - left - 1`, not `i - left`. With `i - left`, `[2, 1, 5, 6, 2, 3]` gives 15 instead of 10.
+6. **Counting ties twice.** In Sum of Subarray Minimums, which adds up the minimum of every subarray, `[2, 2]` has two equal minimums, and the subarray `[2, 2]` must be credited to exactly one of them: one wall strict, the other not. A single stack pass does this by itself; computing the left and right walls in two separate passes with the same comparison gives 8 or 4 instead of 6.
+7. **Leftover deletions.** When you delete k digits to make the smallest number, digits that never fall (`"12345"`, k = 2) pop nothing, so cut the last k digits at the end. Then strip leading zeros, and return `"0"` if nothing is left (`"10"`, k = 2).
 
 ### Edge cases to say out loud
 
@@ -169,21 +158,23 @@ print("edge cases pass")
 
 | Variation | What changes from the template | Problems |
 |---|---|---|
-| **Next greater value** | record `ans[j] = x` instead of the distance | 496 |
-| **Next greater in a linked list** | copy the values into a list, then run the template | 1019 |
-| **Circular array** | walk `2n` steps with `i % n`; push only during the first lap | 503 |
-| **Previous smaller / greater** | pop the useless items, then read the top for the current item | 84, 901 |
-| **Span, online** | store `(price, span)`; a popped day's span is absorbed into today's | 901 |
-| **Both walls at once** | rising stack: when `j` pops at `i`, `i` is its right wall and the new top its left wall | 84, 85; Trapping Rain Water (42) has a stack version too, but is taught in [Two Pointers](#s05) |
-| **Both walls + prefix sums** | each minimum's walls bound the widest subarray it rules; its sum comes from prefix sums | 1856 |
-| **Contribution counting** | `nums[j]` is the minimum of `(j - left) * (i - j)` subarrays | 907; 2104 is 907 twice (maxima minus minima) |
-| **Greedy smallest / largest sequence** | pop while the top is worse than `x` *and* you can still afford to drop it | 402, 1081, 321 |
-| **Scan from the right** | 132 Pattern: walk right to left; the last value popped is the best "2" | 456 |
-| **Candidates, then a second scan** | keep a falling stack of left candidates, then match them from the right | 962 |
-| **Monotonic deque** | this stack plus expiry from the front: the window maximum | 239, in [Sliding Window](#s06) |
-| **Sort first, then stack** | sort by position; a car whose solo arrival time is later than the fleet ahead's starts a new fleet | 853 |
+| **Next greater value** | record `ans[j] = x` instead of the distance | Next Greater Element I (496): the next greater value of each item of a subset, looked up in the full array |
+| **Next greater in a linked list** | copy the values into a list, then run the template | Next Greater Node In Linked List (1019) |
+| **Circular array** | walk `2n` steps with `i % n`; push only during the first lap | Next Greater Element II (503): the array wraps around |
+| **Previous smaller / greater** | pop the useless items, then read the top for the current item | Largest Rectangle in Histogram (84); Online Stock Span (901): how many days in a row up to today had a price at most today's |
+| **Span, online** | store `(price, span)`; a popped day's span is absorbed into today's | Online Stock Span (901) |
+| **Sort first, then stack** | sort by position; a car whose solo arrival time is later than the fleet ahead's starts a new fleet | Car Fleet (853): how many groups of cars reach the target |
+| **Greedy smallest / largest sequence** | pop while the top is worse than `x` *and* you can still afford to drop it | Remove K Digits (402): the smallest number after k deletions; Smallest Subsequence of Distinct Characters (1081): each letter once, smallest order |
+| **Both walls at once** | rising stack: when `j` pops at `i`, `i` is its right wall and the new top its left wall | Largest Rectangle in Histogram (84); Trapping Rain Water (42), the water held between bars, has a stack version too, but is taught in [Two Pointers](#s05) |
+| **Contribution counting** | `nums[j]` is the minimum of `(j - left) * (i - j)` subarrays | Sum of Subarray Minimums (907); Sum of Subarray Ranges (2104), the total of max − min over all subarrays, is 907 twice |
+| **Both walls + prefix sums** | each minimum's walls bound the widest subarray it rules; its sum comes from prefix sums | Maximum Subarray Min-Product (1856): the best minimum × sum over all subarrays |
+| **Scan from the right** | walk right to left; the last value popped is the best "2" | 132 Pattern (456): is there `i < j < k` with `nums[i] < nums[k] < nums[j]`? |
+| **Candidates, then a second scan** | keep a falling stack of left candidates, then match them from the right | Maximum Width Ramp (962): the widest `i < j` with `nums[i] <= nums[j]` |
+| **Monotonic deque** | this stack plus expiry from the front: the window maximum | Sliding Window Maximum (239), in [Sliding Window](#s06) |
+| *Second pass:* **Rows into histograms** | each row of a binary matrix becomes a histogram of the 1s standing on it; run Largest Rectangle per row | Maximal Rectangle (85): the largest rectangle of 1s in a binary matrix |
+| *Second pass:* **Largest sequence from two arrays** | keep the largest t digits of each array with the mirror-image stack; try every split of k; merge by comparing remaining tails | Create Maximum Number (321): the largest k-digit number from two digit arrays, each keeping its order |
 
-**Circular array** (503): after the last element comes the first. Walk the array twice: the second lap lets the elements at the start answer the items still waiting at the end. Only the first lap pushes, so each index waits once.
+The first variation changes only the input. Next Greater Element II (503) asks for the next greater value of every item in a circular array, where the first item follows the last, -1 if there is none: `[1, 2, 1] → [2, -1, 2]`. Walk the array twice: the second lap lets the items at the start answer the items still waiting at the end. Only the first lap pushes, so each index waits once.
 
 ```python
 def next_greater_circular(nums):
@@ -191,8 +182,8 @@ def next_greater_circular(nums):
     ans, stack = [-1] * n, []                # STATE + INIT: indices still waiting; -1 = "never"
     for i in range(2 * n):                   # two laps around the circle
         x = nums[i % n]
-        while stack and nums[stack[-1]] < x: # FIX + RECORD: x answers every smaller waiting item
-            ans[stack.pop()] = x
+        while stack and nums[stack[-1]] < x: # FIX: x answers every smaller waiting item
+            ans[stack.pop()] = x             # RECORD
         if i < n:
             stack.append(i)                  # STEP: only the first lap creates waiting items
     return ans                               # RETURN
@@ -206,64 +197,49 @@ print(next_greater_circular([1, 2, 1]), next_greater_circular([1, 2, 3, 4, 3])) 
 - Walk one lap only (`range(n)`) and run `[1, 2, 1]`: `[2, -1, -1]`. The last 1 never sees the 2 at the front.
 - Predict `[5, 4, 3, 2, 1]` and `[3, 3, 3]` before running: `[-1, 5, 5, 5, 5]` and `[-1, -1, -1]`.
 
-**Largest rectangle** (84, 85): the loop traced in Watch it work. Bar `j`'s best rectangle has its height and stretches until the first shorter bar on each side; the pop delivers both walls. Maximal Rectangle turns each row of the matrix into a histogram of the 1s standing on that row, then reuses the same function.
+The *previous* question comes next, asked online, so the stack lives between calls. Online Stock Span (901) gets one price per call and returns how many consecutive days, ending today, had a price at most today's: prices 100, 80, 60, 70, 60, 75, 85 give 1, 1, 1, 2, 1, 4, 6. A day that today beats lies inside today's span, and so does every day it had already absorbed, so the stack stores `(price, span)` pairs and today adds up the spans it pops.
+
+Car Fleet (853) sits at the other extreme: a monotonic stack that never pops. Cars drive toward a target, a car that catches a slower one slows down and joins its fleet, and the question is how many fleets arrive: target 12, positions `[10, 8, 0, 5, 3]`, speeds `[2, 4, 1, 1, 3]` → 3. Sort by position and walk from the car closest to the target, comparing *solo arrival times*, not speeds.
+
+A car whose time is later than the fleet ahead's can never catch it and leads a new fleet; one that would arrive at the same time or sooner catches up and merges. The times on the stack only rise, which is why nothing pops: the stack is really a running maximum.
 
 ```python
-def largest_rectangle(heights):
-    bars = heights + [0]                     # a height-0 bar resolves everything at the end
-    stack, best = [], 0                      # STATE + INIT: indices; heights rise bottom -> top
-    for i, h in enumerate(bars):
-        while stack and bars[stack[-1]] >= h:    # FIX: the top can't stretch past i
-            height = bars[stack.pop()]
-            left = stack[-1] if stack else -1    # its left wall: the nearest shorter bar
-            best = max(best, height * (i - left - 1))   # RECORD: bars strictly between the walls
-        stack.append(i)                      # STEP
-    return best                              # RETURN
+class StockSpanner:                          # 901
+    def __init__(self):
+        self.stack = []                      # STATE + INIT: (price, span); prices strictly fall bottom -> top
+
+    def next(self, price):
+        span = 1                             # today itself
+        while self.stack and self.stack[-1][0] <= price:   # FIX: absorb every day today beats
+            span += self.stack.pop()[1]      # ... and every day that day had covered
+        self.stack.append((price, span))     # STEP
+        return span                          # RECORD + RETURN
 
 
-def maximal_rectangle(matrix):
-    best, heights = 0, [0] * (len(matrix[0]) if matrix else 0)
-    for row in matrix:
-        for c, cell in enumerate(row):       # the 1s standing on this row, per column
-            heights[c] = heights[c] + 1 if cell == "1" else 0
-        best = max(best, largest_rectangle(heights))
-    return best
+def car_fleet(target, position, speed):      # 853
+    cars = sorted(zip(position, speed), reverse=True)   # INIT: closest to the target first
+    times = []                               # STATE: arrival times of the fleets, front fleet first
+    for pos, spd in cars:
+        t = (target - pos) / spd             # this car's solo arrival time
+        if not times or t > times[-1]:       # arrives later than the fleet ahead: a new fleet
+            times.append(t)                  # STEP (otherwise it catches up and merges)
+    return len(times)                        # RETURN
 
 
-grid = [["1", "0", "1", "0", "0"], ["1", "0", "1", "1", "1"],
-        ["1", "1", "1", "1", "1"], ["1", "0", "0", "1", "0"]]
-print(largest_rectangle([2, 1, 5, 6, 2, 3]), largest_rectangle([2, 4]), maximal_rectangle(grid))   # 10 4 6
+spanner = StockSpanner()
+print([spanner.next(p) for p in [100, 80, 60, 70, 60, 75, 85]])   # [1, 1, 1, 2, 1, 4, 6]
+print(car_fleet(12, [10, 8, 0, 5, 3], [2, 4, 1, 1, 3]))           # 3
 ```
 
 **Try it**
-- Drop the sentinel (`bars = heights`) and run `largest_rectangle([1, 2, 3])`: 0 instead of 4. The heights only rose, so no bar was ever popped and measured.
-- Change the width to `i - left` and run `[2, 1, 5, 6, 2, 3]` again: 15 instead of 10. Every rectangle now counts one bar too many (height 5 gets width 3).
-- Print `heights` after each row in `maximal_rectangle(grid)`: `[1, 0, 1, 0, 0]`, `[2, 0, 2, 1, 1]`, `[3, 1, 3, 2, 2]`, `[4, 0, 0, 3, 0]`. A `"0"` resets its column to the ground.
+- Change `<=` to `<` in `next` and replay `[60, 60, 60]` on a fresh spanner: `[1, 1, 1]` instead of `[1, 2, 3]`.
+- Count each popped day as 1 (`span += 1`) instead of adding its span, and replay the main prices: `[1, 1, 1, 2, 1, 3, 3]`. The 75 loses the day that the 70 had absorbed, and the 85 gets 3 instead of 6.
+- In `car_fleet`, drop `reverse=True` and rerun: 1 instead of 3. Each car now compares itself with a car *behind* it.
+- Run `car_fleet(10, [0, 5], [2, 1])`: 1, because both cars reach the target at t = 5 and arrive together. With `t >= times[-1]` it would say 2.
 
-**Sum of subarray minimums** (907): turn the sum around. Instead of finding the minimum of every subarray, ask for every element *how many subarrays it is the minimum of*. With its walls at `left` and `i` (the nearest smaller items), a subarray has `nums[j]` as its minimum when it starts in `left+1 .. j` and ends in `j .. i-1`: that is `(j - left) * (i - j)` subarrays. The histogram's pop hands you both walls.
+The stack can also *build* an answer instead of answering questions. Remove K Digits (402) asks for the smallest number left after deleting k digits from a number string: `"1432219"`, k = 3 → `"1219"`. The leftmost digits matter most, so a digit sitting right before a smaller one should go, because deleting it slides the smaller digit into a more important place. The kept digits should therefore never fall: pop while the top is bigger than the newcomer and deletions are left.
 
-```python
-def sum_subarray_mins(nums):
-    vals = nums + [-math.inf]                # sentinel: smaller than everything, pops all
-    stack, total = [], 0                     # STATE + INIT: indices; values rise bottom -> top
-    for i, x in enumerate(vals):
-        while stack and vals[stack[-1]] >= x:    # FIX
-            j = stack.pop()                  # i = right wall: the first value <= vals[j]
-            left = stack[-1] if stack else -1    # left wall: the last value < vals[j]
-            total += vals[j] * (j - left) * (i - j)   # RECORD: vals[j] is the min of that many subarrays
-        stack.append(i)                      # STEP
-    return total % (10**9 + 7)               # RETURN
-
-
-print(sum_subarray_mins([3, 1, 2, 4]), sum_subarray_mins([11, 81, 94, 43, 3]), sum_subarray_mins([2, 2]))   # 17 444 6
-```
-
-**Try it**
-- Check it against the brute force: with `nums = [3, 1, 2, 4]`, `sum(min(nums[i:j]) for i in range(4) for j in range(i + 1, 5))` is also 17.
-- Print `(vals[j], j - left, i - j)` at each pop for `[3, 1, 2, 4]`: the 1 is the minimum of 2 × 3 = 6 subarrays.
-- Change `>=` to `>`: still 17, and still 6 for `[2, 2]`. One pass always makes one wall strict and the other not, so a tie is counted once either way.
-
-**Smallest sequence by deleting** (402, 1081, 321): to make the smallest number, the leftmost digits matter most. A digit sitting right before a smaller one should go, because deleting it slides the smaller digit into a more important place. So the digits you keep should never fall: pop while deletions are left. Smallest Subsequence of Distinct Characters (1081, same as 316) swaps the budget for a different test: drop a letter only if it appears again later. Create Maximum Number (321) uses the mirror image to keep the *largest* t digits.
+Smallest Subsequence of Distinct Characters (1081), the same problem as Remove Duplicate Letters (316), keeps every distinct letter exactly once and wants the smallest such string: `"cbacdcbc"` → `"acdb"`. It swaps the budget for a different test: a bigger letter on top is dropped only if it appears again later.
 
 ```python
 def remove_k_digits(num, k):
@@ -290,6 +266,93 @@ def smallest_subsequence(s):                 # every distinct letter exactly onc
     return "".join(stack)
 
 
+print(remove_k_digits("1432219", 3), remove_k_digits("10200", 1), remove_k_digits("10", 2))   # 1219 200 0
+print(smallest_subsequence("bcabc"), smallest_subsequence("cbacdcbc"))                      # abc acdb
+```
+
+**Try it**
+- Delete the line that trims leftover deletions and run `remove_k_digits("12345", 2)`: `12345` instead of `123`.
+- Drop `or "0"` and run `remove_k_digits("10", 2)`: an empty string instead of `0`.
+- In `smallest_subsequence`, delete `and last[stack[-1]] > i` and run `"cbacdcbc"`: `abc`. The `d` was dropped although it never comes back.
+- Print `stack` after every digit of `"1432219"` with k = 3: the 4, the 3 and one 2 are popped, each by the smaller digit right after it, and `['1', '2', '1', '9']` is left.
+
+Both walls at once come next, in the loop traced in Watch it work, without the prints. Bar `j`'s best rectangle has its own height and stretches until the first shorter bar on each side, and the pop delivers both walls: `i` on the right, the new top on the left. `[2, 1, 5, 6, 2, 3]` gives 10, and `[2, 4]` gives 4, from the bar of height 4 alone or from both bars at height 2.
+
+```python
+def largest_rectangle(heights):
+    bars = heights + [0]                     # a height-0 bar resolves everything at the end
+    stack, best = [], 0                      # STATE + INIT: indices; heights rise bottom -> top
+    for i, h in enumerate(bars):
+        while stack and bars[stack[-1]] >= h:    # FIX: the top can't stretch past i
+            height = bars[stack.pop()]
+            left = stack[-1] if stack else -1    # its left wall: the nearest shorter bar
+            best = max(best, height * (i - left - 1))   # RECORD: bars strictly between the walls
+        stack.append(i)                      # STEP
+    return best                              # RETURN
+
+
+print(largest_rectangle([2, 1, 5, 6, 2, 3]), largest_rectangle([2, 4]))   # 10 4
+```
+
+**Try it**
+- Drop the sentinel (`bars = heights`) and run `largest_rectangle([1, 2, 3])`: 0 instead of 4. The heights only rose, so no bar was ever popped and measured.
+- Change the width to `i - left` and run `[2, 1, 5, 6, 2, 3]` again: 15 instead of 10. Every rectangle now counts one bar too many (height 5 gets width 3).
+- Predict `largest_rectangle([6, 2, 5, 4, 5, 1, 6])` before running: 12, height 4 across the three bars 5, 4 and 5. Print `(height, i - left - 1)` at each pop to see which pop finds it.
+
+Counting with both walls closes the main path. Sum of Subarray Minimums (907) asks for the sum of `min(sub)` over every contiguous subarray, modulo 10⁹ + 7: `[3, 1, 2, 4]` → 17. Turn the sum around: instead of finding the minimum of every subarray, ask for every element *how many subarrays it is the minimum of*.
+
+With its walls at `left` and `i`, the nearest smaller items on each side, `nums[j]` is the minimum of every subarray that starts in `left+1 .. j` and ends in `j .. i-1`: that is `(j - left) * (i - j)` subarrays. The histogram's pop hands you both walls, and making one wall strict and the other not counts a tie exactly once.
+
+```python
+def sum_subarray_mins(nums):
+    vals = nums + [-math.inf]                # sentinel: smaller than everything, pops all
+    stack, total = [], 0                     # STATE + INIT: indices; values rise bottom -> top
+    for i, x in enumerate(vals):
+        while stack and vals[stack[-1]] >= x:    # FIX
+            j = stack.pop()                  # i = right wall: the first value <= vals[j]
+            left = stack[-1] if stack else -1    # left wall: the last value < vals[j]
+            total += vals[j] * (j - left) * (i - j)   # RECORD: vals[j] is the min of that many subarrays
+        stack.append(i)                      # STEP
+    return total % (10**9 + 7)               # RETURN
+
+
+print(sum_subarray_mins([3, 1, 2, 4]), sum_subarray_mins([11, 81, 94, 43, 3]), sum_subarray_mins([2, 2]))   # 17 444 6
+```
+
+**Try it**
+- Check it against the brute force: with `nums = [3, 1, 2, 4]`, `sum(min(nums[i:j]) for i in range(4) for j in range(i + 1, 5))` is also 17.
+- Print `(vals[j], j - left, i - j)` at each pop for `[3, 1, 2, 4]`: the 1 is the minimum of 2 × 3 = 6 subarrays.
+- Change `>=` to `>`: still 17, and still 6 for `[2, 2]`. One pass always makes one wall strict and the other not, so a tie is counted once either way.
+
+The rest of this section is a second pass: Hard problems that reuse the same moves. Skip them until the main path is automatic.
+
+Maximal Rectangle (85) asks for the largest rectangle made only of 1s in a binary matrix; in the 4 × 5 grid of the cell, the answer is 6, two rows of three 1s. Turn each row into a histogram: `heights[c]` counts the 1s standing on this row in column c, and a `"0"` resets its column to the ground. The largest rectangle that sits on this row is then `largest_rectangle(heights)`, and the answer is the best over all rows.
+
+```python
+def maximal_rectangle(matrix):
+    best, heights = 0, [0] * (len(matrix[0]) if matrix else 0)
+    for row in matrix:
+        for c, cell in enumerate(row):       # the 1s standing on this row, per column
+            heights[c] = heights[c] + 1 if cell == "1" else 0
+        best = max(best, largest_rectangle(heights))
+    return best
+
+
+grid = [["1", "0", "1", "0", "0"], ["1", "0", "1", "1", "1"],
+        ["1", "1", "1", "1", "1"], ["1", "0", "0", "1", "0"]]
+print(maximal_rectangle(grid), maximal_rectangle([["0"]]), maximal_rectangle([]))   # 6 0 0
+```
+
+**Try it**
+- Print `heights` after each row in `maximal_rectangle(grid)`: `[1, 0, 1, 0, 0]`, `[2, 0, 2, 1, 1]`, `[3, 1, 3, 2, 2]`, `[4, 0, 0, 3, 0]`. A `"0"` resets its column to the ground.
+- Print `largest_rectangle(heights)` after each row as well: 1, 3, 6 and 4. The best rectangle sits on the third row.
+- Compare with the number instead of the character (`cell == 1`) and rerun: 0. The matrix holds the characters `"0"` and `"1"`, and no character equals the number 1.
+
+Create Maximum Number (321) asks for the largest number of k digits taken from two digit arrays, each keeping its own order: `[3, 4, 6, 5]` and `[9, 1, 2, 5, 8, 3]` with k = 5 give `[9, 8, 6, 5, 3]`. The full solution tries every split of k between the two arrays, takes the best subsequence of each, and merges the two by comparing the remaining tails, not just the heads.
+
+Its building block is Remove K Digits mirrored. To keep the *largest* t digits of one array in order, pop while the top is *smaller* than the newcomer and drops are left; drops that are left over come off the tail, which `stack[:t]` does.
+
+```python
 def max_subsequence(nums, t):                # 321's building block: the largest t digits, in order
     drop, stack = len(nums) - t, []
     for x in nums:
@@ -300,51 +363,14 @@ def max_subsequence(nums, t):                # 321's building block: the largest
     return stack[:t]
 
 
-print(remove_k_digits("1432219", 3), remove_k_digits("10200", 1), remove_k_digits("10", 2))   # 1219 200 0
-print(smallest_subsequence("bcabc"), smallest_subsequence("cbacdcbc"))                      # abc acdb
-print(max_subsequence([9, 1, 2, 5, 8, 3], 3), max_subsequence([3, 4, 6, 5], 2))             # [9, 8, 3] [6, 5]
+print(max_subsequence([9, 1, 2, 5, 8, 3], 3), max_subsequence([3, 4, 6, 5], 2))   # [9, 8, 3] [6, 5]
 ```
 
 **Try it**
-- Delete the line that trims leftover deletions and run `remove_k_digits("12345", 2)`: `12345` instead of `123`.
-- Drop `or "0"` and run `remove_k_digits("10", 2)`: an empty string instead of `0`.
-- In `smallest_subsequence`, delete `and last[stack[-1]] > i` and run `"cbacdcbc"`: `abc`. The `d` was dropped although it never comes back.
 - Predict `max_subsequence([6, 0, 4], 2)` before running: `[6, 4]`.
-
-**Span and fleets** (901, 853): a stock's span asks for the *previous greater* price, online: how many days in a row, ending today, had a price ≤ today's? A day that today beats lies inside today's span, and so does every day it had already absorbed, so store `(price, span)` pairs and add the spans you pop. Car Fleet sorts by position and walks from the car closest to the target, comparing *solo arrival times*, not speeds. A car whose time is later than the fleet ahead's can never catch it and leads a new fleet; one that would arrive at the same time or sooner catches up and merges. The times on that stack only rise, so it never pops: it is really just a running maximum.
-
-```python
-class StockSpanner:                          # 901
-    def __init__(self):
-        self.stack = []                      # STATE + INIT: (price, span); prices strictly fall bottom -> top
-
-    def next(self, price):
-        span = 1                             # today itself
-        while self.stack and self.stack[-1][0] <= price:   # FIX: absorb every day today beats
-            span += self.stack.pop()[1]      # ... and every day that day had covered
-        self.stack.append((price, span))     # STEP
-        return span                          # RECORD + RETURN
-
-
-def car_fleet(target, position, speed):      # 853
-    times = []                               # STATE + INIT: arrival times of the fleets, front fleet first
-    for pos, spd in sorted(zip(position, speed), reverse=True):   # closest to the target first
-        t = (target - pos) / spd             # this car's solo arrival time
-        if not times or t > times[-1]:       # arrives later than the fleet ahead: a new fleet
-            times.append(t)                  # STEP (otherwise it catches up and merges)
-    return len(times)                        # RETURN
-
-
-spanner = StockSpanner()
-print([spanner.next(p) for p in [100, 80, 60, 70, 60, 75, 85]])   # [1, 1, 1, 2, 1, 4, 6]
-print(car_fleet(12, [10, 8, 0, 5, 3], [2, 4, 1, 1, 3]))           # 3
-```
-
-**Try it**
-- Change `<=` to `<` in `next` and replay `[60, 60, 60]` on a fresh spanner: `[1, 1, 1]` instead of `[1, 2, 3]`.
-- Count each popped day as 1 (`span += 1`) instead of adding its span, and replay the main prices: `[1, 1, 1, 2, 1, 3, 3]`. The 75 loses the day that the 70 had absorbed, and the 85 gets 3 instead of 6.
-- In `car_fleet`, drop `reverse=True` and rerun: 1 instead of 3. Each car now compares itself with a car *behind* it.
-- Run `car_fleet(10, [0, 5], [2, 1])`: 1, because both cars reach the target at t = 5 and arrive together. With `t >= times[-1]` it would say 2.
+- Delete the `[:t]` and run `max_subsequence([5, 4, 3], 1)`: `[5, 4, 3]` instead of `[5]`. Falling digits never pop, so the unused drops must come off the tail, as in Remove K Digits.
+- Change `<` to `<=` and run `max_subsequence([6, 6, 5], 2)`: `[6, 5]` instead of `[6, 6]`. Popping an equal digit spends a drop for nothing.
+- Finish 321: for every split `i + (k - i) = k` that both arrays can supply, merge `a = max_subsequence(nums1, i)` and `b = max_subsequence(nums2, k - i)` with `[max(a, b).pop(0) for _ in a + b]`, which compares the remaining tails, and keep the largest result. The example gives `[9, 8, 6, 5, 3]`.
 
 ### Say it in the interview
 
@@ -355,7 +381,7 @@ Then point at the pop line and say *who* is resolved there ("this index just met
 - *Values instead of distances* (496) → record `ans[j] = t`.
 - *A circular array* (503) → walk two laps with `i % n`; push only during the first.
 - *The previous item instead of the next* → record after the loop, before pushing.
-- *A stream of prices* (901) → the same stack, kept between calls; each call is amortized O(1).
+- *A stream of prices* (901) → the same stack, kept between calls; each call is amortised O(1), which means O(1) on average over all calls, because each price is pushed once and popped at most once.
 - *O(1) extra space for 739* → scan right to left; to find day `i`'s answer, start at `j = i + 1` and jump `j += ans[j]` over days that are not warmer.
 
 ### Problem map

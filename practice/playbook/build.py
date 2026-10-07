@@ -16,6 +16,7 @@ Usage: python3 practice/playbook/build.py                  # all notebooks -> pr
        python3 practice/playbook/build.py --no-exec        # same, without running anything
        python3 practice/playbook/build.py --only 06,07 --out /tmp/x.ipynb --folders stack,queues
                                                             # some sections as one notebook, to check them
+                                                            # (--folders none: no coverage check)
 """
 import ast
 import contextlib
@@ -114,16 +115,24 @@ def split_try_it(kind, src):
 
 
 def problem_rows(markdown):
-    """Rows of the '### Problem map' tables: (name, where, insight)."""
-    rows, inside = [], False
+    """Rows of the '### Problem map' tables as dicts: name, asks (optional column), where, insight."""
+    rows, inside, cols = [], False, None
     for line in markdown.splitlines():
         if line.startswith("#"):
             inside = line.strip().lower().startswith("### problem map")
+            cols = None
             continue
-        if inside and line.startswith("|") and not re.match(r"^\|\s*(Problem|-)", line):
-            parts = [p.strip() for p in line.strip().strip("|").split("|")]
-            if len(parts) >= 3:
-                rows.append((parts[0], parts[1], parts[2]))
+        if not (inside and line.startswith("|")):
+            continue
+        parts = [p.strip() for p in line.strip().strip("|").split("|")]
+        if cols is None:                       # the header row names the columns
+            cols = [p.lower() for p in parts]
+            continue
+        if re.match(r"^\|\s*-", line) or len(parts) < 3:
+            continue
+        row = dict(zip(cols, parts))
+        rows.append({"name": row.get("problem", parts[0]), "asks": row.get("what it asks", ""),
+                     "where": row.get("where", ""), "insight": row.get("key insight", parts[-1])})
     return rows
 
 
@@ -183,12 +192,19 @@ def load_sections(prefixes=None):
 
 def finder_md(sections, link):
     """The A-Z problem finder; link(prefix) gives the href of a section."""
-    rows = [(name, where, insight, p) for p, s in sections.items() for name, where, insight in s["rows"]]
+    rows = [(r, p) for p, s in sections.items() for r in s["rows"]]
+    asks = any(r["asks"] for r, _ in rows)
     body = ['<a id="finder"></a>', "", "## A-Z problem finder", "",
-            "Every problem in this repo and the practice bank, with the section that teaches its technique.", "",
-            "| Problem | Technique | Where | Key insight |", "|---|---|---|---|"]
-    for name, where, insight, p in sorted(rows, key=lambda r: re.sub(r"[^a-z0-9 ]", "", r[0].lower())):
-        body.append(f"| {name} | [{sections[p]['title']}]({link(p)}) | {where} | {insight} |")
+            "Every problem in this repo and the practice bank, with the section that teaches its technique "
+            "and the one idea that cracks it. Each problem a section codes is stated in full right before its "
+            "code.", ""]
+    body += (["| Problem | What it asks | Technique | Where | Key insight |", "|---|---|---|---|---|"] if asks
+             else ["| Problem | Technique | Where | Key insight |", "|---|---|---|---|"])
+    relink = lambda text: re.sub(r"\]\(#s(\d\d)\)", lambda m: f"]({link(m.group(1))})", text)
+    for r, p in sorted(rows, key=lambda x: re.sub(r"[^a-z0-9 ]", "", x[0]["name"].lower())):
+        technique = f"[{sections[p]['title']}]({link(p)})"
+        cells = [r["name"]] + ([r["asks"]] if asks else []) + [technique, r["where"], r["insight"]]
+        body.append("| " + " | ".join(relink(c) for c in cells) + " |")
     return "\n".join(body)
 
 
@@ -224,7 +240,7 @@ def report(sections, nb_cells, topics, full):
               if c["kind"] == "code" and c["where"] != "setup"
               and not (i + 1 < len(nb_cells) and nb_cells[i + 1]["kind"] == "markdown"
                        and nb_cells[i + 1]["src"].lstrip().startswith("**Try it**"))]
-    wheres = [where for s in sections.values() for _, where, _ in s["rows"]]
+    wheres = [r["where"] for s in sections.values() for r in s["rows"]]
     mentioned = " ".join(wheres)
     missing = [f"{t}/{p.name}" for t in topics for p in sorted((REPO / t).glob("*.py"))
                if p.name != "__init__.py" and f"{t}/{p.name}" not in mentioned]
@@ -236,19 +252,29 @@ def report(sections, nb_cells, topics, full):
     print(f"topic problems not in any Problem map: {len(missing)}" + "".join(f"\n  {m}" for m in missing))
     print(f"topic problems in more than one Problem map row: {len(dupes)}" + "".join(f"\n  {d}" for d in dupes))
     if full:
-        files = {nb[0] for nb in NOTEBOOKS}
-        anchors = {"s" + p for p in sections} | {"finder", "notebooks", "top"}
-        links = Counter(m for c in nb_cells if c["kind"] == "markdown"
-                        for m in re.findall(r"\]\(([\w.-]*#[\w-]+|[\w.-]+\.ipynb)\)", c["src"]))
-        bad = sorted(l for l in links
-                     if (l.split("#")[0] and l.split("#")[0] not in files)
-                     or ("#" in l and l.split("#")[1] not in anchors))
-        print(f"broken links: {len(bad)}" + "".join(f"\n  {b}" for b in bad))
         all_text = "\n".join(c["src"] for c in nb_cells)
         bank = sorted(p.relative_to(REPO).as_posix() for p in (HERE.parent / "simple").glob("*.py"))
         bank_missing = [b for b in bank if b not in all_text]
         print(f"practice/simple problems never referenced: {len(bank_missing)}"
               + "".join(f"\n  {m}" for m in bank_missing))
+
+
+def check_links(per_nb):
+    """Every in-notebook link must hit an anchor of that notebook, every cross-notebook link one of the other's."""
+    anchors = {fname: {a for c in cells if c["kind"] == "markdown"
+                       for a in re.findall(r'<a id="([\w-]+)"></a>', c["src"])}
+               for fname, cells in per_nb}
+    bad = []
+    for fname, cells in per_nb:
+        for c in cells:
+            if c["kind"] != "markdown":
+                continue
+            for target in re.findall(r"\]\(([\w.-]*#[\w-]+|[\w.-]+\.ipynb)\)", c["src"]):
+                file, _, anchor = target.partition("#")
+                file = file or fname
+                if file not in anchors or (anchor and anchor not in anchors[file]):
+                    bad.append(f"{fname}: {target}")
+    print(f"broken links: {len(bad)}" + "".join(f"\n  {b}" for b in sorted(set(bad))))
 
 
 def build_one(prefixes, out, topics, run):
@@ -276,9 +302,11 @@ def build_all(run):
     last = NOTEBOOKS[-1][0]
 
     def href(prefix, here):                   # link to a section from notebook `here`
+        if prefix not in home:
+            return f"#s{prefix}"
         return f"#s{prefix}" if home[prefix] == here else f"{home[prefix]}#s{prefix}"
 
-    every_cell, total = [], 0
+    every_cell, per_nb, total = [], [], 0
     for k, (fname, title, blurb, prefixes) in enumerate(NOTEBOOKS):
         prev_nb, next_nb = NOTEBOOKS[k - 1] if k else None, NOTEBOOKS[k + 1] if k + 1 < len(NOTEBOOKS) else None
         nav = []
@@ -320,16 +348,21 @@ def build_all(run):
         total += n
         print(f"wrote {(OUT_DIR / fname).relative_to(REPO)}: {n} cells ({code} code)")
         every_cell += nb_cells
+        per_nb.append((fname, nb_cells))
     rows = sum(len(s["rows"]) for s in sections.values())
     print(f"{len(NOTEBOOKS)} notebooks, {total} cells, {len(sections)} sections, {rows} problem-map rows")
     report(sections, every_cell, TOPICS, full=True)
+    check_links(per_nb)
 
 
 def main():
     run = "--no-exec" not in sys.argv
     only = arg("--only")
+    if arg("--out") and not only:
+        sys.exit("--out needs --only: a full build always writes practice/LeetCode_Playbook/")
     if only:
-        topics = arg("--folders").split(",") if arg("--folders") else TOPICS
+        folders = arg("--folders")
+        topics = [] if folders == "none" else folders.split(",") if folders else TOPICS
         build_one(only.split(","), Path(arg("--out", HERE / "check.ipynb")), topics, run)
     else:
         build_all(run)

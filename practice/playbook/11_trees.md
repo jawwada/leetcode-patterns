@@ -1,14 +1,16 @@
 ## Trees
 
-> A tree recursion is a conversation. Each call gets facts from its **parent** (arguments: depth, bounds, the path so far), asks its two **children** for facts about their subtrees (return values: height, sum, "found it"), and may **record** something in a global answer on the side. Decide those three things and the code nearly writes itself.
+> A tree recursion is a conversation. Each call gets facts from its **parent** as arguments: the depth, the bounds, the path so far. It asks its two **children** for facts about their subtrees and gets them back as return values: a height, a sum, "found it". And it may **record** something in a global answer on the side. Decide those three things and the code nearly writes itself.
 
-**Reach for it when** the input is a `TreeNode` (or anything with parents and children); the answer at a node depends on its **subtrees** (height, balance, sums, diameter) or on its **ancestors** (bounds, depth, path sums); the problem says *level*, *row* or *view from the side* (BFS); or it says *BST* (inorder is sorted; compare and go one way).
+**Reach for it when** the input is a `TreeNode` or anything else with parents and children; when the answer at a node depends on its **subtrees** (height, balance, sums, diameter) or on its **ancestors** (bounds, depth, path sums); when the problem says *level*, *row* or *view from the side*, which calls for breadth-first search (BFS), one level at a time; or when it says *BST*.
+
+A binary search tree keeps every value larger than its whole left subtree and smaller than its whole right subtree. Its inorder walk is therefore sorted, and a lookup compares once and goes one way.
 
 **In this repo:** `trees/` (28 problems) · bank: `practice/simple/26_binary_tree_level_order_traversal.py`, `practice/simple/27_validate_binary_search_tree.py`, `practice/simple/28_kth_smallest_element_in_a_bst.py`, `practice/simple/29_lowest_common_ancestor_of_a_bst.py`, `practice/simple/30_diameter_of_binary_tree.py` · basics: `practice/simple/basics/trees/` (traversals recursive and iterative, BFS level order and height, BST insert/search/delete, balanced, LCA, serialize/deserialize).
 
 ### The picture
 
-Information moves in two directions. **Down**, as arguments: what the ancestors know. **Up**, as return values: what a subtree knows about itself.
+Before any code, watch what travels where. Information moves in two directions: **down**, as arguments, carrying what the ancestors know, and **up**, as return values, carrying what a subtree knows about itself.
 
 ```text
 tree = [3, 9, 20, None, None, 15, 7]
@@ -37,65 +39,39 @@ Every call is the same small box. It receives arguments from its parent, gets on
                     left        right
 ```
 
-Why it is fast: the brute force usually recomputes a fact about a subtree once for every ancestor (calling `height()` from each node in Balanced or Diameter is O(n²) on a chain), or re-walks the path from the root at every node (Count Good Nodes rescanning the path is O(n·h)). A bottom-up pass computes each subtree fact exactly once and hands it to the parent; a top-down pass hands each node a summary of its ancestors (a running max, a window, a remaining sum) in O(1). Either way every node is visited once: O(n) time, O(h) space for the recursion (h = height).
+The brute force repeats work in one of two ways. It recomputes a fact about a subtree once for every ancestor. Balanced Binary Tree asks whether every node's two subtrees differ in height by at most 1, Diameter of Binary Tree asks for the longest path between two nodes, and a standalone `height()` called from every node makes either one O(n²) on a chain.
+
+Or it re-walks the path from the root at every node: Count Good Nodes asks how many nodes have no larger value above them, and rescanning the path at each node costs O(n·h).
+
+A bottom-up pass computes each subtree fact exactly once and hands it to the parent. A top-down pass hands each node a summary of its ancestors in O(1): a running max, a window, a remaining sum. Either way every node is visited once, so the time is O(n), and the recursion stack takes O(h) space, where h is the height of the tree.
 
 ### From idea to code
 
 **The idea in one sentence:** *write the contract first, "f(node, what comes down) returns what my parent needs about my subtree, and records the answer if it can sit at any node", then write the base case for `None`, recurse into the children, and combine.*
 
-| Decision | Tree-recursion answer |
-|---|---|
-| **State**: what must I remember? | the arguments (facts from above: depth, bounds, remaining sum, the path), the return value (a fact about this subtree), and maybe one global (`best`, a result list) |
-| **Definition**: what exactly does each variable mean? | one sentence per function, as a comment: `height(node)` = number of nodes on the longest downward path from `node`; 0 for `None` |
-| **Invariant**: what is true at the end of every step? | trust the recursion: when a child's call returns, its answer is correct for that child's *whole* subtree |
-| **Step**: how does one node change the state? | base case → recurse into the children (with updated arguments) → combine their two answers with `node.val` |
-| **Record**: when is the answer updated? | when the problem's answer is *not* what the parent needs (a path that bends at this node, a finished level, a matching path): write it to the global inside the call |
-| **Init**: starting values | the answer for an empty tree (`0`, `True`, `None`), the root's arguments (`-inf, inf`, depth 0), and `best` = the worst possible (`0` for lengths, `-math.inf` for sums) |
-| **Return**: what comes back? | `f(root)` or the recorded global, translated if needed (`height(root) != -1`) |
+The **State** of a tree recursion lives in three places: the arguments carry facts from above, the return value carries one fact about this subtree, and a global, `best` or a list of results, holds what neither can carry. The **Definition** is one sentence per function, written as a comment: `height(node)` is the number of nodes on the longest downward path from `node`. The **Invariant** is the recursion's promise: a child's answer is correct for its whole subtree, so the parent combines two trusted facts without looking inside them.
 
-The same idea, sentence by sentence:
+A **Step** is one node: handle the base case, recurse into both children with updated arguments, and combine their answers with `node.val`. The **Record** happens inside the call when the problem's answer is not what the parent needs: a path that bends here, a finished level, a matching path. **Init** is the neutral answer of the empty tree, the root's arguments, and the worst possible `best`: 0 for lengths, `-math.inf` for sums. The **Return** is `f(root)` or the recorded global, translated when needed: Balanced returns `height(root) != -1`.
 
-| In words | In code |
-|---|---|
-| "an empty tree" | `if node is None: return 0` (or `True`, or `None`: the neutral answer) |
-| "a leaf" | `if node.left is None and node.right is None:` |
-| "ask both children" | `left, right = f(node.left), f(node.right)` |
-| "tell my children what I know" | `f(node.left, depth + 1)`, `valid(node.left, low, node.val)` |
-| "my answer from theirs" | `return 1 + max(left, right)` |
-| "my parent needs two facts" | `return depth, node` (a tuple) |
-| "remember the best seen anywhere" | `nonlocal best`, then `best = max(best, left + right)` |
+Write the contract before any code; it is the seven decisions of [From Idea to Code](#s01), asked of one recursive call. Four questions turn an unseen problem into a signature. The first asks what you must know about the nodes **above** a node to judge it: that comes down as arguments, a path maximum, a window, a remaining sum, a depth, a parent. The second asks what the **parent** must know about this subtree: that is the return value, a tuple when it needs two facts.
 
-**Write the contract before any code.** Four questions turn an unseen problem into a signature:
+The third asks whether the problem's answer is what the root returns. When the answer can sit at **any** node, a bend, a count, a list of paths, it is recorded on the side. The fourth settles the **edges**: `None` returns the neutral value, and the root receives the starting arguments. The contract then fits on one line: `f(node, <down>) -> <up> about node's subtree; records <global>; f(None) = <neutral>`.
 
-```text
-1. DOWN    To judge ONE node, what must I know about the nodes ABOVE it?
-           -> arguments: path max, window, remaining sum, depth, parent
-2. UP      What must my PARENT know about my subtree?
-           -> the return value; if it needs two facts, return a tuple
-3. RECORD  Is the problem's answer what the root returns? If the answer can sit at ANY node
-           (a bend, a count, a list of paths) -> record it on the side
-4. EDGES   What does None return? What does the root receive?
-           -> the neutral value and the starting arguments
-contract:  f(node, <down>) -> <up> about node's subtree; records <global>; f(None) = <neutral>
-```
+If the parent needs exactly what the problem asks for, return it. If not, return what the parent needs and record the answer on the side. The problems of this section fall into five families, told apart by what goes down, what comes up and what is recorded.
 
-If the parent needs exactly what the problem asks for, just return it; if not, return what the parent needs and record the answer on the side. The contracts of this section:
+In the first family nothing goes down and the answer comes up. Balanced Binary Tree (110) returns the height, or −1 the moment any subtree below is unbalanced, and the −1 travels up untouched: one number carries two facts. Smallest Subtree with All the Deepest Nodes (865), the smallest subtree that holds every deepest leaf, needs two facts from each child and gets them as a tuple: the depth of its deepest leaf and the answer for its subtree.
 
-| Problem | Down (from the parent) | Up (return value) | Recorded globally |
-|---|---|---|---|
-| Balanced (110) | – | height, or -1 = "unbalanced below" | – |
-| Diameter (543) | – | height (one arm) | `best = max(best, left + right)` |
-| Max path sum (124) | – | best one-arm sum going down (the parent clips a negative one to 0) | `best = max(best, val + left + right)` |
-| Longest univalue path (687) | – | the longest same-value arm, in edges | `best = max(best, left + right)` |
-| Distribute coins (979) | – | coins to send up (negative: coins needed) | `moves += abs(left) + abs(right)` |
-| Subtree with all deepest (865) | – | a tuple: (depth of the deepest leaf, the answer for this subtree) | – |
-| Validate BST (98) | open window `(low, high)` | `True` / `False` | – |
-| Count good nodes (1448) | largest value on the path | number of good nodes in this subtree | – |
-| Path Sum II (113) | remaining sum, the shared `path` | – | copies of the matching paths |
-| Right side view (199) | depth | – | the first value seen at each depth |
-| LCA (236) | – | `p`, `q`, the LCA, or `None` | – |
+In the second family a call returns one arm and records the path that bends at it. Diameter (543) returns the height and records `left + right`. Binary Tree Maximum Path Sum (124), the largest sum along any path with bends allowed, returns the best one-arm sum going down; the parent clips a negative arm to 0 and records `val + left + right`. Longest Univalue Path (687), the longest path in edges whose nodes all share one value, returns the longest same-value arm and records `left + right`.
 
-First the node, and two helpers: build a tree from LeetCode's level-order list (`None` = no child) and turn a tree back into that list.
+Distribute Coins in Binary Tree (979) belongs to the same family with a different record. It puts n coins on n nodes, lets one move pass one coin along an edge, and asks for the fewest moves until every node holds one coin. A call returns its surplus, negative when its subtree needs coins, and records `abs(left) + abs(right)`, the coins that cross its two child edges.
+
+In the third family a fact about the ancestors goes down, and the answer comes up from the children. Validate Binary Search Tree (98), whether every node fits the BST order, sends the open window `(low, high)` and returns `True` or `False`. Count Good Nodes (1448) sends the largest value on the path and returns the number of good nodes below; the drill at the end of the section has the same shape.
+
+In the fourth, facts go down and the answer is recorded instead of returned. Path Sum II (113), every root-to-leaf path with a given sum, sends the remaining sum and the shared `path` down and records a copy of each matching path. Binary Tree Right Side View (199), the rightmost node of every level, sends the depth down and records the first value seen at each depth.
+
+Lowest Common Ancestor of a Binary Tree (236), the lowest node with both targets beneath it, is the fifth family on its own: nothing goes down, and the return value is a node, `p`, `q`, the LCA, or `None`.
+
+LeetCode hands you a tree as a level-order list, `[3, 9, 20, None, None, 15, 7]`, with `None` for a missing child, and every function in this section takes a `TreeNode`. `build_tree` turns the list into nodes by giving each real node the next two slots as its children, and `tree_to_list` walks the tree level by level to produce the list again, trimming the trailing `None`s the way LeetCode does.
 
 ```python
 class TreeNode:
@@ -131,12 +107,16 @@ print(tree_to_list(root))                             # [3, 9, 20, None, None, 1
 
 **Try it**
 - Build `[1, None, 2, 3]` and print `root.right.left.val`: 3. The `None` fills only 1's left slot, so 2 is 1's right child and 3 hangs to the left of 2.
-- `build_tree([])` is `None` and `tree_to_list(None)` is `[]`: the empty tree round-trips.
+- Run `build_tree([])` and `tree_to_list(None)`: `None` and `[]`, so the empty tree round-trips.
 - Delete the trimming loop in `tree_to_list`: the example prints `[3, 9, 20, None, None, 15, 7, None, None, None, None]`, two `None`s for each of the two bottom leaves.
 
-The three shapes of tree recursion. Bottom-up (`max_depth`): children answer first, the parent combines. Top-down (`is_valid_bst`): the parent passes a constraint down. Return one thing, record another (`diameter`). Down and up at once is Count Good Nodes (1448): the largest value on the path goes down, the count of good nodes comes up; the drill at the end of the section has the same shape.
+In code, each part of a contract is one familiar line. An empty tree is `if node is None: return 0`, or `True` or `None` when that is the neutral answer. A leaf is `node.left is None and node.right is None`, never `None` itself. Asking both children is `left, right = f(node.left), f(node.right)`; telling them what you know is one more argument, `f(node.left, depth + 1)`; a parent that needs two facts gets a tuple, `return depth, node`; and a global that is reassigned needs `nonlocal best`.
 
-**Why recording at every node finds the best path:** every path has exactly one highest node. At that node the path is a left arm plus a right arm, each at most that child's height. Recording `left + right` at every node therefore sees every path at its own highest node. The order of the lines follows: a bottom-up call can only combine after both children have answered (post-order), and the RECORD sits between the children's answers and the RETURN, because it needs both arms while the parent gets only one.
+Three problems show the three shapes of that skeleton. Maximum Depth of Binary Tree (104) asks for the number of nodes on the longest root-to-leaf path, 3 for `[3, 9, 20, None, None, 15, 7]`. It is bottom-up: the children answer first and the parent adds itself to the taller answer, which is post-order, children before the node.
+
+Validate Binary Search Tree asks whether every node is larger than everything in its left subtree and smaller than everything in its right. `[5, 4, 6, None, None, 3, 7]` fails, although each child sits on the correct side of its own parent: the 3 under the 6 lies in 5's right subtree. So the check is top-down: each child receives the window of values it may hold, and going left caps the top of the window while going right raises the bottom.
+
+Diameter of Binary Tree asks for the longest path between any two nodes, counted in edges: 3 for `[1, 2, 3, 4, 5]`, along 4-2-1-3. It returns one thing and records another. Every path has exactly one highest node, where it is a left arm plus a right arm, each at most that child's height, so recording `left + right` at every node sees every path. The record sits between the children's answers and the return, because it needs both arms while the parent gets only the taller one.
 
 ```python
 def max_depth(node):                          # bottom-up: the answer comes UP
@@ -181,14 +161,16 @@ print(diameter(build_tree([1, 2, None, 3, 4, 5, None, None, 6])))   # 4  (bends 
 - Count what the problem counts: record `left + right + 1` in `diameter` and try `diameter(build_tree([1, 2, 3]))`: 3 instead of 2. That is the number of *nodes* on the path; the problem counts edges.
 - Copy `max_depth` as `min_depth` and change `max` to `min`: `min_depth(build_tree([1, 2]))` gives 1, but the only leaf (2) is at depth 2. An empty side is not a leaf: when one child is `None`, use the other side.
 - Replace the window with a parent-only check, `valid(node.left, -math.inf, node.val)` and `valid(node.right, node.val, math.inf)`, then try `is_valid_bst(build_tree([5, 4, 6, None, None, 3, 7]))`: `True`, although the 3 sits in 5's right subtree.
-- Ask which side duplicates go. If the problem says left ≤ node < right, check `low < node.val <= high` with the same recursion: `[2, 2]` becomes valid and `[2, None, 2]` stays invalid.
+- Let duplicates go left, as in "left ≤ node < right": change the check to `low < node.val <= high` and run `[2, 2]` and `[2, None, 2]`. The first becomes valid, and the second stays invalid.
 
-**BFS by level.** A queue visits nodes in order of depth. The one trick for grouping: at the start of a round the queue holds exactly one level, so `len(queue)` is that level's size.
+Two problems ask about levels rather than subtrees, and levels call for a queue instead of recursion. Binary Tree Level Order Traversal (102) asks for the values level by level, left to right: `[3, 9, 20, None, None, 15, 7]` gives `[[3], [9, 20], [15, 7]]`. A queue visits nodes in order of depth, and one trick groups them: at the start of a round the queue holds exactly one level, so `len(queue)` is that level's size.
 
 ```text
 tree [3, 9, 20, None, None, 15, 7]:   queue [3] -> level [3];   [9, 20] -> level [9, 20];   [15, 7] -> level [15, 7]
 each popped node puts its children at the BACK of the queue, behind the rest of the current level
 ```
+
+Binary Tree Right Side View asks for the rightmost value of every level, what you see standing to the right of the tree: `[1, 2, 3, None, 5, None, 4]` gives `[1, 3, 4]`. A level-order walk answers it, and so does a depth-first walk that goes right first and carries the depth down, because the first node to reach a new depth is the one you see. The cell writes the queue for levels and the depth-first walk for the view.
 
 ```python
 def level_order(root):
@@ -231,7 +213,7 @@ print(right_side_view(build_tree([1, 2, 3, 4])))                 # [1, 3, 4]  (4
 
 ### Watch it work
 
-The top-down windows of `is_valid_bst`, printed on the way down. Each window sits inside its parent's, and one broken node stops the walk.
+Checking only parent and child is the BST mistake everyone makes once, so the cell prints the windows of `is_valid_bst` on the way down for `[5, 1, 7, None, None, 4, 8]`. There the 4 is a correct left child of 7, yet it sits in 5's right subtree. Each window sits inside its parent's, so the 4 must lie in (5, 7), and one broken node stops the walk before the 8 is visited.
 
 ```python
 def trace_windows(root):
@@ -254,19 +236,21 @@ print(trace_windows(build_tree([5, 1, 7, None, None, 4, 8])))
 
 ### Where it goes wrong
 
-1. **Returning what you should record, or counting the wrong thing.** The parent can extend only one arm: return `1 + max(left, right)` and *record* `left + right`. Returning both arms counts paths that fork, and recording `left + right + 1` counts nodes where the problem counts edges (`[1, 2, 3]` gives 3 instead of 2).
-2. **`UnboundLocalError` on the global.** Assigning `best = ...` inside a nested function makes `best` local: add `nonlocal best` (appending to a list needs no `nonlocal`).
+Every trap below is one of the three channels used wrongly: returning what should be recorded, passing the wrong thing down, or sharing state without undoing it.
+
+1. **Returning what you should record, or counting the wrong thing.** The parent can extend only one arm: return `1 + max(left, right)` and *record* `left + right`. Returning both arms counts paths that fork, and recording `left + right + 1` counts nodes where the problem counts edges: `[1, 2, 3]` gives 3 instead of 2.
+2. **`UnboundLocalError` on the global.** `best = ...` inside the nested `height` needs `nonlocal best` ([Python Toolkit](#s02)).
 3. **Checking only parent and child in a BST.** `[5, 4, 6, None, None, 3, 7]` passes a parent-only check. Pass the window `(low, high)` down instead.
-4. **The wrong neutral value.** Max Path Sum with `best = 0` answers 0 for `[-3]` (should be -3): start at `-math.inf`. In Balanced, an empty subtree has height 0; -1 means "unbalanced".
+4. **The wrong neutral value.** Max Path Sum with `best = 0` answers 0 for `[-3]`, where the answer is -3: start at `-math.inf`. In Balanced, an empty subtree has height 0; -1 means "unbalanced".
 5. **A leaf is not `None`.** Testing `remaining == 0` when you reach `None` makes `[1, 2]` with target 1 succeed through 1's empty right side, and min depth as `1 + min(left, right)` gives 1 instead of 2 on `[1, 2]`. Test leaves explicitly.
-6. **Skipping a call that also records.** `if uni(node.left) and uni(node.right):` short-circuits, so Count Univalue Subtrees on `[1, 2, 3, 4]` never visits 3 and answers 1 instead of 2; a Longest Univalue Path that recurses only into children with the same value answers 0 instead of 1 on `[1, 2, None, 2]`. Call both children first, store the results, then combine.
-7. **Shared state without the undo.** `paths.append(path)` stores the *same* list again and again (append `path[:]`, and `path.pop()` on the way back); Path Sum III without `seen[prefix] -= 1` lets a sibling see your prefix sums (`[0, 1, 2]`, target 1, gives 3 instead of 2).
-8. **Forgetting to re-attach.** A function that returns the new root of a subtree must be called as `node.left = f(node.left, ...)`; calling `f(node.left, key)` alone throws the new subtree away (deleting 2 from `[5, 3, 6, 2, 4, None, 7]` returns the tree unchanged).
-9. **Values instead of nodes.** LCA, cousins and "is it the same node" compare identity: `node is p`. An `lca` that compares values answers 1 instead of 3 on `[1, 2, 3, None, None, 2]` with p = the lower 2 and q = 3: the *other* 2 answered for p.
+6. **Skipping a call that also records.** `if uni(node.left) and uni(node.right):` short-circuits: the right call never runs once the left one fails. Count Univalue Subtrees asks how many subtrees have all their nodes equal, and on `[1, 2, 3, 4]` the short-circuit never visits 3 and answers 1 instead of 2. A Longest Univalue Path that recurses only into children with the same value answers 0 instead of 1 on `[1, 2, None, 2]`. Call both children first, store the results, then combine.
+7. **Shared state without the undo.** `paths.append(path)` stores the *same* list again and again: append `path[:]`, and `path.pop()` on the way back. Path Sum III counts downward paths with a given sum that may start at any node; without `posts[total] -= 1` a sibling sees your running totals, and `[0, 1, 2]` with target 1 gives 3 instead of 2.
+8. **Forgetting to re-attach.** A function that returns the new root of a subtree must be called as `node.left = f(node.left, ...)`; calling `f(node.left, key)` alone throws the new subtree away, so deleting 2 from `[5, 3, 6, 2, 4, None, 7]` returns the tree unchanged.
+9. **Values instead of nodes.** LCA, cousins (same depth, different parents) and "is it the same node" compare identity: `node is p`. An `lca` that compares values answers 1 instead of 3 on `[1, 2, 3, None, None, 2]` with p = the lower 2 and q = 3: the *other* 2 answered for p.
 
 ### Edge cases to say out loud
 
-Empty tree (`None`) · a single node · a chain (height = n, recursion depth!) · all values negative · duplicates (BST strictness; compare nodes by identity) · p is an ancestor of q · the answer does not pass through the root · values at the integer limits (use `math.inf` bounds, not a sentinel like `2**31 - 1` that a real value can equal).
+Empty tree (`None`) · a single node · a chain (height = n, recursion depth!) · all values negative · duplicates (BST strictness; compare nodes by identity) · p is an ancestor of q · the answer does not pass through the root · values at the integer limits (use `math.inf` bounds, not a sentinel like `2**31 - 1` that a real value can equal). The asserts below put each case to the templates above.
 
 ```python
 assert max_depth(None) == 0 and diameter(None) == 0 and is_valid_bst(None)
@@ -286,24 +270,27 @@ print("edge cases pass")
 
 ### Variations
 
+Every variation changes one channel of the contract: what rides down, what comes back up, or what is recorded. The table is the lookup; the paragraphs below take the important variations in turn, each with the problem it solves.
+
 | Variation | What changes from the template | Problems |
 |---|---|---|
-| **Bottom-up value** | return a fact about the subtree; combine the two children | 104, 226, 110 |
-| **Return ≠ record** | return one arm; record the path that bends here | 543, 124, 687 |
-| **Sentinel, state or tuple return** | return -1 ("failed below"), a state (needs / covered / camera) or a tuple (depth, node) | 110, 968, 865 |
-| **Top-down arguments** | pass a running max (and min), a window, a remaining sum, a depth, a parent | 1448, 1026, 98, 112, 404, 993, 199 |
-| **Path state, with undo** | a shared path (copy it at a matching leaf) or a counter of prefix sums on the root path (the counter from [Prefix Sums](#s04)); undo it on the way back | 113, 437 |
-| **Found below me** | return `p`/`q`/LCA/`None`; a hit from both sides means "it's me" (if a target may be missing, count the hits) | 236, 1644 |
-| **BST: compare and go one way** | a single O(h) descent, no recursion needed | 235 (and BST insert/search) |
-| **Rebuild and return the subtree** | every call returns the new root of its subtree; the parent re-attaches it | 450, 701, 1110 |
-| **Explicit stack; inorder = sorted** | a lazy inorder generator with a counter or a `prev` node; bottom-up = preorder reversed, a dict for the return values; 272: two lazy iterators, predecessors and successors of the target | 94, 543, 230, 99, 272 |
-| **BFS by level** | a queue plus the `len(queue)` snapshot | 102, 199 |
-| **Tree as a graph** | record every node's parent, then BFS over left, right *and* parent ([Graphs I](#s17)) | 863 |
-| **Coordinates** | DFS carrying `(row, col)`, bucket by column, sort | 987 |
-| **Build or encode a tree** | preorder + inorder index map; preorder with `#` for `None`; a stack indexed by depth | 105, 297, 428, 1028, 572 |
-| **Two trees at once** | recurse on pairs `(a, b)` | 100, 101, 572 |
+| **Bottom-up value** | return a fact about the subtree; combine the two children | Maximum Depth (104), Invert Binary Tree (226: swap the children of every node), Balanced Binary Tree (110) |
+| **Return ≠ record** | return one arm; record the path that bends here | Diameter (543), Maximum Path Sum (124), Longest Univalue Path (687), Distribute Coins (979) |
+| **Sentinel or tuple return** | return -1 ("failed below") or a tuple (depth, node) | Balanced (110), Smallest Subtree with All the Deepest Nodes (865) |
+| **Top-down arguments** | pass a running max (and min), a window, a remaining sum, a depth, a parent | Count Good Nodes (1448), Maximum Difference Between Node and Ancestor (1026: the widest gap between a node and an ancestor, the drill below), Validate BST (98), Path Sum (112: does some root-to-leaf path add up to the target), Sum of Left Leaves (404: add up the leaves that are left children), Cousins in Binary Tree (993: same depth, different parents), Right Side View (199) |
+| **Path state, with undo** | a shared path (copy it at a matching leaf, as in [Backtracking](#s16)) or a counter of prefix sums on the root path (the counter from [Prefix Sums](#s04)); undo it on the way back | Path Sum II (113), Path Sum III (437) |
+| **Found below me** | return `p`/`q`/LCA/`None`; a hit from both sides means "it's me" (if a target may be missing, count the hits) | LCA of a Binary Tree (236), LCA II (1644: p or q may be missing) |
+| **BST: compare and go one way** | a single O(h) descent, no recursion needed | LCA of a BST (235: the same question on a BST), BST insert and search (basics) |
+| **Rebuild and return the subtree** | every call returns the new root of its subtree; the parent re-attaches it | Delete Node in a BST (450: remove one key, keep a valid BST), Insert into a BST (701: add one key), Delete Nodes and Return Forest (1110: delete a set of values, return the roots left behind) |
+| **Explicit stack; inorder = sorted** | a lazy inorder generator with a counter or a `prev` node; bottom-up = preorder reversed, a dict for the return values; two lazy iterators, predecessors and successors of the target | Inorder Traversal (94: the values in left, node, right order), Diameter (543), Kth Smallest in a BST (230: the k-th smallest value), Recover BST (99: two values were swapped), Closest BST Value II (272: the k values nearest a target) |
+| **BFS by level** | a queue plus the `len(queue)` snapshot | Level Order (102), Right Side View (199) |
+| **Tree as a graph** | record every node's parent, then BFS over left, right *and* parent ([Graphs I](#s17)) | All Nodes Distance K (863: every node k edges from a target) |
+| **Coordinates** | DFS carrying `(row, col)`, bucket by column, sort | Vertical Order Traversal (987: the nodes column by column) |
+| **Build or encode a tree** | preorder + inorder index map; preorder with `#` for `None`; a stack indexed by depth | Construct from Preorder and Inorder (105: the tree back from two walks), Serialize and Deserialize (297: a string that rebuilds the tree), Serialize an N-ary Tree (428: nodes with any number of children), Recover a Tree from Preorder (1028: dashes mark each node's depth), Subtree of Another Tree (572: is one tree a subtree of another) |
+| **Two trees at once** | recurse on pairs `(a, b)` | Same Tree (100: equal shape and values), Symmetric Tree (101: a tree that mirrors itself), Subtree of Another Tree (572) |
+| *Second pass:* **A state per node** | return one of three states, needs / covered / camera | Binary Tree Cameras (968: the fewest cameras that watch every node) |
 
-**Return one arm and record the bend (124); return two facts at once (865).** Max Path Sum has the skeleton of Diameter, but the arms are sums, and a negative arm is dropped (clipped to 0) because a path doesn't have to use it. Subtree with All the Deepest Nodes needs two facts from each child, how deep its deepest leaf is *and* which node holds all of them, so it returns a tuple. (Balanced sends "this subtree already failed" up the height channel as -1, the same idea with one number.)
+Binary Tree Maximum Path Sum (124) comes first because it is Diameter with sums for arms. It asks for the largest sum along any path, which may bend and need not touch the root or a leaf: `[-10, 9, 20, None, None, 15, 7]` gives 42 along 15-20-7. Each call returns the best sum going down one side, and the parent clips a negative arm to 0, because a path need not use it. `best` starts at `-math.inf`, so an all-negative tree still has an answer.
 
 ```python
 def max_path_sum(root):
@@ -320,27 +307,16 @@ def max_path_sum(root):
     return best
 
 
-def subtree_with_all_deepest(root):
-    def deep(node):                           # UP: (depth of the deepest leaf below, answer node)
-        if node is None:
-            return 0, None
-        (ld, ln), (rd, rn) = deep(node.left), deep(node.right)
-        if ld != rd:                          # the deeper side holds all the deepest leaves
-            return (ld + 1, ln) if ld > rd else (rd + 1, rn)
-        return ld + 1, node                   # deepest leaves on both sides: I hold them all
-    return deep(root)[1]
-
-
 print(max_path_sum(build_tree([-10, 9, 20, None, None, 15, 7])), max_path_sum(build_tree([-3])))   # 42 -3
-print(tree_to_list(subtree_with_all_deepest(build_tree([3, 5, 1, 6, 2, 0, 8, None, None, 7, 4]))))   # [2, 7, 4]
 ```
 
 **Try it**
 - Remove both `max(..., 0)` clips and try `max_path_sum(build_tree([2, -1]))`: 1 instead of 2. Without the clip the path is forced to take the -1 arm.
 - Start with `best = 0`: `[-3]` now answers 0, the sum of a path that doesn't exist.
-- Predict, then run `subtree_with_all_deepest` on `build_tree([1, 2, 3])`: the whole tree `[1, 2, 3]` (the deepest leaves sit on both sides of the root). On `build_tree([0, 1, 3, None, 2])`: `[2]` (a single deepest leaf is its own answer).
+- Return `node.val + left + right` instead of `node.val + max(left, right)` and run `max_path_sum(build_tree([1, 2, 3, 4, 5]))`: 15 instead of 11. The parent was told it may extend a path that already bends, and 4-2-5 joined to 1-3 is not a path.
+- Predict, then run: `max_path_sum(build_tree([1, 2, 3]))` is 6, the whole tree, and `max_path_sum(build_tree([-2, -1]))` is -1, a single node.
 
-**Lowest common ancestor (236, 235).** Ask every subtree one question, "which of p and q do you contain?", and let the answer be a single node: `None` (neither), `p` or `q` (that one), or the LCA itself (both, already resolved below). The first node that hears a non-`None` answer from *both* sides is where the two paths split. This contract assumes both targets are in the tree. In a BST you don't need to search at all: compare values and walk down one path.
+Lowest Common Ancestor of a Binary Tree (236) changes the return value from a number to a node. It asks for the deepest node that has both p and q beneath it, where a node counts as its own descendant: in the tree below, the LCA of 5 and 1 is 3, and the LCA of 5 and 4 is 5 itself.
 
 ```text
               3               lca(5, 1): 3 hears "5" from the left and "1" from the right:
@@ -351,6 +327,10 @@ print(tree_to_list(subtree_with_all_deepest(build_tree([3, 5, 1, 6, 2, 0, 8, Non
             / \
            7   4
 ```
+
+Ask every subtree one question, "which of p and q do you contain?", and let the answer be a single node: `None` for neither, `p` or `q` for that one, or the LCA itself when both were already found below. The first node that hears a non-`None` answer from *both* sides is where the two paths split. This contract assumes both targets are in the tree.
+
+Lowest Common Ancestor of a Binary Search Tree (235) asks the same question of a BST, and there nobody needs to search: compare the two values with the node and walk down one path until the node lies between them. In `[6, 2, 8, 0, 4, 7, 9, None, None, 3, 5]` the LCA of 2 and 8 is 6, and the LCA of 3 and 5 is 4. The cell writes both, with `find_node` to fetch the node that holds a value.
 
 ```python
 def lca(root, p, q):                          # returns p, q, their LCA, or None for this subtree
@@ -392,7 +372,9 @@ print(lca_bst(b, find_node(b, 2), find_node(b, 8)).val, lca_bst(b, find_node(b, 
 - Ask about a node that isn't in the tree: `lca(t, find_node(t, 5), TreeNode(10)).val` is 5, a wrong answer, because the early return assumed both targets exist. If a target may be missing (1644), don't return early: visit everything, count the hits, and answer only if the count is 2.
 - In `lca_bst`, change `hi < node.val` to `hi <= node.val` and ask for 2 and 0: you get 0 instead of 2. When a target *is* the node, the node is the answer (a node counts as its own ancestor).
 
-**Facts that ride down the path (113, 437).** Path Sum II carries the remaining sum down as an argument and keeps ONE list for the current path: append on the way down, pop on the way back, copy it only at a matching leaf. Path Sum III counts paths that may start anywhere: keep a counter of the prefix sums on the current root path (the trick from [Prefix Sums](#s04)); a path ending here sums to the target exactly when `prefix - target` was a prefix higher up. The counter is shared, so undo your entry on the way back.
+The next two problems carry facts *down* the path and must undo them on the way back up. Path Sum II (113) asks for every root-to-leaf path whose values add up to a target: with target 22, the tree in the cell below has the paths `[5, 4, 11, 2]` and `[5, 8, 4, 5]`. The remaining sum travels as an argument, and ONE list holds the current path: append on the way down, pop on the way back, and copy it only at a leaf that matches.
+
+Path Sum III (437) counts the downward paths that sum to the target and may start at any node: `[10, 5, -3, 3, 2, None, 11, 3, -2, None, 1]` with target 8 has 3. Keep a counter of the running totals on the current root path, the `posts` and `total` of [Prefix Sums](#s04): a path ending here hits the target exactly when `total - target` is a total higher up. Every branch shares the counter, so a call removes its own post before it returns.
 
 ```python
 def path_sum_all(root, target):
@@ -414,15 +396,15 @@ def path_sum_all(root, target):
 
 
 def path_sum_iii(root, target):
-    seen = Counter({0: 1})                    # prefix sums on the current root path
-    def dfs(node, prefix):
+    posts = Counter({0: 1})                   # running totals on the current root path
+    def dfs(node, total):
         if node is None:
             return 0
-        prefix += node.val
-        count = seen[prefix - target]         # downward paths that end here
-        seen[prefix] += 1                     # STEP: join the path ...
-        count += dfs(node.left, prefix) + dfs(node.right, prefix)
-        seen[prefix] -= 1                     # FIX: ... and leave it on the way back up
+        total += node.val
+        count = posts[total - target]         # downward paths that end here
+        posts[total] += 1                     # STEP: join the path ...
+        count += dfs(node.left, total) + dfs(node.right, total)
+        posts[total] -= 1                     # FIX: ... and leave it on the way back up
         return count
     return dfs(root, 0)
 
@@ -435,9 +417,9 @@ print(path_sum_iii(build_tree([10, 5, -3, 3, 2, None, 11, 3, -2, None, 1]), 8)) 
 **Try it**
 - Replace `paths.append(path[:])` with `paths.append(path)`: `[[], []]`. Both entries are the same list object, emptied by the pops on the way back.
 - Delete `path.pop()`: the sums are still checked correctly (`remaining` travels as an argument), but the paths keep stale nodes: the first answer becomes `[5, 4, 11, 7, 2]`.
-- Delete `seen[prefix] -= 1` and try `path_sum_iii(build_tree([0, 1, 2]), 1)`: 3 instead of 2. The prefix 1 from the left branch is still in the counter when the right branch asks.
+- Delete `posts[total] -= 1` and try `path_sum_iii(build_tree([0, 1, 2]), 1)`: 3 instead of 2. The total 1 from the left branch is still in the counter when the right branch asks.
 
-**Explicit stacks, and inorder is sorted (94, 230, 99).** Preorder, inorder and postorder are one walk; they differ only in *when* you write the node down. The recursion keeps a hidden stack of nodes waiting for you to come back, and you can keep it yourself. Written as a generator, the inorder walk becomes a lazy iterator: `yield` hands out one node and pauses until the caller asks for the next. On a BST that walk is sorted: Kth Smallest stops after k nodes, and Recover BST compares each node with the one before it. Two swapped values make the sorted walk dip once if they were neighbours, twice if far apart (`1 5 3 4 2 6` dips at 5 > 3 and at 4 > 2): swap the bigger value of the first dip with the smaller value of the last. Finally, any bottom-up recursion becomes a loop, which answers "what about depth 10⁵?": an iterative preorder (pop a node, push its children) puts every parent before its children, so the reversed preorder puts every child before its parent, and a dict replaces the return values.
+Sooner or later the interviewer asks "and without recursion?", and the answer is the explicit stack. Preorder, inorder and postorder are one walk that differs only in *when* you write the node down: before its children, between them, or after them. The recursion keeps a hidden stack of nodes waiting for you to come back, and you can keep it yourself. Written as a generator, the inorder walk becomes a lazy iterator: `yield` hands out one node and pauses until the caller asks for the next.
 
 ```text
             1            preorder  (node, left, right):  1 2 4 5 3 6    node BEFORE its children
@@ -446,6 +428,12 @@ print(path_sum_iii(build_tree([10, 5, -3, 3, 2, None, 11, 3, -2, None, 1]), 8)) 
         / \     \        (iterative postorder = node-right-left preorder, reversed)
        4   5     6
 ```
+
+On a BST that walk is sorted. Kth Smallest Element in a BST (230) asks for the k-th smallest value: in `[5, 3, 6, 2, 4, None, None, 1]` the 3rd smallest is 3, and the walk stops after k nodes, so it costs O(h + k).
+
+Recover Binary Search Tree (99) rides on the same walk. Two values of a BST were swapped by mistake, and the tree must be repaired. Compare each node with the one before it: the swap makes the sorted walk dip once if the two values were neighbours and twice if they were far apart, as `1 5 3 4 2 6` dips at 5 > 3 and at 4 > 2. Swap the bigger value of the first dip with the smaller value of the last.
+
+Finally, any bottom-up recursion becomes a loop, which answers "what about depth 10⁵?". An iterative preorder pops a node and pushes its children, so it lists every parent before its children; the reversed preorder lists every child before its parent, and a dict takes the place of the return values. `diameter_iterative` is Diameter written that way.
 
 ```python
 def inorder_nodes(root):                      # yields the nodes in inorder, lazily
@@ -465,17 +453,6 @@ def kth_smallest(root, k):
             return node.val                   # stop early: the rest is never visited
 
 
-def recover_bst(root):
-    first = second = prev = None
-    for node in inorder_nodes(root):
-        if prev and prev.val > node.val:      # a dip in what should be increasing
-            if first is None:
-                first = prev                  # the bigger value of the FIRST dip
-            second = node                     # the smaller value of the LAST dip
-        prev = node
-    first.val, second.val = second.val, first.val
-
-
 def diameter_iterative(root):
     order, stack = [], [root] if root else []
     while stack:                              # preorder: every parent before its children
@@ -493,20 +470,22 @@ def diameter_iterative(root):
 t = build_tree([1, 2, 3, 4, 5, None, 6])
 print([n.val for n in inorder_nodes(t)], diameter_iterative(t), diameter(t))   # [4, 2, 5, 1, 3, 6] 4 4
 print(kth_smallest(build_tree([5, 3, 6, 2, 4, None, None, 1]), 3))           # 3
-bst = build_tree([3, 1, 4, None, None, 2])
-recover_bst(bst)
-print(tree_to_list(bst))                                                      # [2, 1, 4, None, None, 3]
 ```
 
 **Try it**
 - In `inorder_nodes`, move `yield node` up into the `while node:` loop, right after the push: the first printed list becomes `[1, 2, 4, 5, 3, 6]`, the preorder. Handing a node out on arrival is preorder; handing it out once its left side is done is inorder.
 - Add `print(node.val)` after `stack.append(node)` and call `kth_smallest(build_tree([5, 3, 6, 2, 4, None, None, 1]), 1)`: only 5, 3, 2, 1 are ever pushed. The walk stops as soon as the answer is known: O(h + k).
-- Make `recover_bst` stop at the first dip (`break` right after `second = node`) and repair `build_tree([4, 5, 6, 1, 3, 2])`, where 2 and 5 were swapped far apart: it swaps 5 with 3, and the inorder becomes `[1, 3, 5, 4, 2, 6]` instead of `[1, 2, 3, 4, 5, 6]`.
-- On the 10 000-node chain from the edge cases, `diameter_iterative(deep)` is 9999 while `diameter(deep)` raises `RecursionError` (`sys.setrecursionlimit(30_000)` also lets it through; set it back to 1000 afterwards). Loop over `order` instead of `reversed(order)` and you get `KeyError`: a parent asks for a child's height before the child has one.
+- On the 10 000-node chain from the edge cases, `diameter_iterative(deep)` is 9999 while `diameter(deep)` raises `RecursionError`. `import sys; sys.setrecursionlimit(30_000)` also lets it through; set it back to 1000 afterwards. Loop over `order` instead of `reversed(order)` and you get `KeyError`: a parent asks for a child's height before the child has one.
 
-**Rebuild and return the subtree (450), and the tree as a graph (863).** When a call may *replace* its subtree (delete, insert, trim), its contract is "return the new root of my subtree", and the parent re-attaches whatever comes back: `node.left = delete(node.left, key)`. When the question looks *up* as well as down ("all nodes at distance k from the target"), a parent pointer is just one more edge: remember every node's parent in one pass, then BFS outwards from the target over left, right and parent, one ring per step.
+So far no call has changed the tree. Delete Node in a BST (450) does: it removes the node holding a key and keeps the tree a valid BST, so deleting 3 from `[5, 3, 6, 2, 4, None, 7]` gives `[5, 4, 6, 2, None, None, 7]`, where 3's successor 4 took its place.
 
-```python
+When a call may replace its subtree, its contract is "return the new root of my subtree", and the parent re-attaches whatever comes back: `node.left = delete(node.left, key)`. The code sits in the fold below; the move to remember is the re-attach.
+
+<details><summary>Delete Node in a BST (450): return the new root</summary>
+
+A node with at most one child is replaced by that child. A node with two children keeps its place and takes the value of its successor, the smallest value in its right subtree, and that successor is then deleted below, where it has at most one child.
+
+```py
 def delete_bst(node, key):                    # returns the new root of this subtree
     if node is None:
         return None
@@ -527,6 +506,16 @@ def delete_bst(node, key):                    # returns the new root of this sub
     return node
 
 
+print(tree_to_list(delete_bst(build_tree([5, 3, 6, 2, 4, None, 7]), 3)))   # [5, 4, 6, 2, None, None, 7]
+```
+
+Call `delete_bst(node.left, key)` without the `node.left = ...` and delete 2 from `[5, 3, 6, 2, 4, None, 7]`: the tree comes back unchanged, because the new subtree was returned and thrown away. That is trap 8.
+
+</details>
+
+All Nodes Distance K in Binary Tree (863) looks *up* as well as down. It asks for every node exactly k edges away from a target node: in the tree drawn for LCA above, the nodes two steps from 5 are 7, 4 and 1, and the 1 is reached by going up through the root. A parent pointer is one more edge: remember every node's parent in one pass, then BFS outwards from the target over left, right and parent, one ring per step.
+
+```python
 def distance_k(root, target, k):
     parent, stack = {root: None}, [root]
     while stack:                                    # one pass: remember every node's parent
@@ -547,23 +536,23 @@ def distance_k(root, target, k):
     return [n.val for n in ring]
 
 
-print(tree_to_list(delete_bst(build_tree([5, 3, 6, 2, 4, None, 7]), 3)))   # [5, 4, 6, 2, None, None, 7]
 t = build_tree([3, 5, 1, 6, 2, 0, 8, None, None, 7, 4])
 print(sorted(distance_k(t, find_node(t, 5), 2)))                            # [1, 4, 7]
 ```
 
 **Try it**
-- In `delete_bst`, call `delete_bst(node.left, key)` without `node.left = ...` and delete 2 from `[5, 3, 6, 2, 4, None, 7]`: the tree comes back unchanged. The new subtree was returned and thrown away.
-- In `distance_k`, drop the `seen` check: the k = 2 answer becomes `[1, 4, 5, 5, 5, 7]`. The walk goes back to the target, and three different two-step paths lead there.
+- Drop the `seen` check: the k = 2 answer becomes `[1, 4, 5, 5, 5, 7]`. The walk goes back to the target, and three different two-step paths lead there.
 - Leave out the parent edge (`for nb in (node.left, node.right)`): only `[4, 7]`. The 1 is two steps away *up and over*, through 3.
+- Predict, then run: k = 0 gives `[5]`, the target itself, and k = 4 gives `[]`, because nothing in this tree is four edges from 5 and the ring runs empty.
 
-**Build a tree from its traversals (105) and serialize it (297).** Preorder says *who* the root is (the first unused value); inorder says *how many* nodes are on its left (everything before the root). A dict finds the root's inorder position in O(1), and one iterator walks preorder, because building left-then-right uses preorder in exactly its own order. To *store* a tree, preorder alone is ambiguous, but preorder with `#` for every missing child is complete: each `#` says "this branch stops here", so the reader can replay the walk.
+The next recursions build a tree instead of reading one. Construct Binary Tree from Preorder and Inorder Traversal (105) gives both walks of a tree with unique values and asks for the tree: preorder `[3, 9, 20, 15, 7]` with inorder `[9, 3, 15, 20, 7]` gives `[3, 9, 20, None, None, 15, 7]`. Preorder says *who* the root is, the first unused value; inorder says *how many* nodes lie on its left, everything before it. A dict finds the root's inorder position in O(1), and one iterator walks preorder.
 
 ```text
  preorder = [3 | 9 | 20, 15, 7]      the next unused preorder value is the root: 3
  inorder  = [9 | 3 | 15, 20, 7]      left of 3 in inorder: [9]  -> left subtree; [15, 20, 7] -> right
- serialize [1, 2, 3, None, None, 4, 5]:   1,2,#,#,3,4,#,#,5,#,#   (# = "nothing here")
 ```
+
+Serialize and Deserialize Binary Tree (297) asks for a string that rebuilds the tree exactly. Preorder alone is ambiguous, but preorder with `#` for every missing child is complete: `[1, 2, 3, None, None, 4, 5]` becomes `1,2,#,#,3,4,#,#,5,#,#`, and each `#` says "this branch stops here", so the reader replays the walk. Both builders in the cell, `make` and `read`, fill the left child before the right, because that is the order in which preorder hands out the values.
 
 ```python
 def build_from_pre_in(preorder, inorder):
@@ -606,11 +595,13 @@ print(s, tree_to_list(deserialize(s)))        # 1,2,#,#,3,4,#,#,5,#,# [1, 2, 3, 
 
 **Try it**
 - Print `serialize(build_tree([1, 2]))` and `serialize(build_tree([1, None, 2]))`: `1,2,#,#,#` and `1,#,2,#,#`. Strip the `#`s and both read `1,2`: the markers are what tell a left child from a right one.
-- `serialize(None)` is `"#"` and `deserialize("#")` is `None`: the empty tree round-trips too.
+- Run `serialize(None)` and `deserialize("#")`: `"#"` and `None`, so the empty tree round-trips too.
 - Build from `preorder=[1, 2]` with `inorder=[2, 1]`, then with `inorder=[1, 2]`: `[1, 2]` versus `[1, None, 2]`. Same preorder; inorder decides the side.
 - Swap the two recursive lines in `make` (right subtree first): the build hands preorder values to the wrong subtrees and stops with `StopIteration`, asking for more roots than there are.
 
-**Coordinates (987).** Give every node a position on graph paper: the root at (row 0, col 0), a left child at (row + 1, col − 1), a right child at (row + 1, col + 1). Once each node carries its coordinates, the tree shape no longer matters: bucket by column, then sort each bucket by (row, value), so two nodes in the same cell come out smaller value first.
+Vertical Order Traversal of a Binary Tree (987) closes the main path because it makes the tree's shape stop mattering. It asks for the nodes column by column, where the root sits at column 0, a left child one column to the left and a right child one to the right: `[3, 9, 20, None, None, 15, 7]` gives `[[9], [3, 15], [20], [7]]`.
+
+Give every node a position on graph paper: the root at (row 0, col 0), a left child at (row + 1, col − 1), a right child at (row + 1, col + 1). Once each node carries its coordinates, bucket by column and sort each bucket by (row, value), so two nodes in the same cell come out smaller value first.
 
 ```python
 def vertical_order(root):
@@ -634,9 +625,13 @@ print(vertical_order(build_tree([1, 2, 3, 4, 6, 5, 7])))           # [[4], [2], 
 - Print `dict(columns)` before the `return` for the second tree: column 0 holds `(0, 1), (2, 6), (2, 5)`. 6 and 5 share a grid cell, so the sort uses their values.
 - Predict `vertical_order(build_tree([1, 2, 3]))` before running: `[[2], [1], [3]]`, one node per column.
 
+The rest of this section is a second pass: Hard problems that reuse the same moves. Skip them until the main path is automatic.
+
 <details><summary>Binary Tree Cameras (968): a state per node</summary>
 
-Each subtree reports one of three states to its parent: "needs" (dark), "covered" (lit from below, no camera of its own) or "camera". `None` reports "covered", so leaves report "needs" and never hold a camera: a camera on the parent covers the leaf, the parent and the parent's other neighbours. A node takes a camera exactly when a child "needs" one, is "covered" when a child has a camera, and otherwise "needs". If the root still "needs" at the end, add one camera for it.
+Binary Tree Cameras asks for the fewest cameras that watch every node, where a camera on a node watches the node, its parent and its children: `[0, 0, None, 0, 0]` needs one camera, on the middle node. Each subtree reports one of three states to its parent: "needs" when it is dark, "covered" when it is lit from below without a camera of its own, or "camera".
+
+`None` reports "covered", so leaves report "needs" and never hold a camera, because a camera on the parent covers the leaf, the parent and the parent's other neighbours. A node takes a camera exactly when a child "needs" one; it is "covered" when a child has a camera; otherwise it "needs". If the root still "needs" at the end, add one camera for it.
 
 </details>
 
@@ -683,7 +678,7 @@ check_max_ancestor_diff(max_ancestor_diff)
 
 **Try it**
 - Write your solution, run the cell and read the checker's lines. If a random tree fails, draw it and trace your function on it.
-- If you pass only the *largest* value down, the second example fails: 3's widest partner above it is the smaller value 0. A node needs both the smallest and the largest value above it.
+- Pass only the *largest* value down and run the checker: the second example fails, because 3's widest partner above it is the smaller value 0. A node needs both the smallest and the largest value above it.
 - Both contracts below work: report from `None` (as in the answer), or record `best = max(best, abs(node.val - lo), abs(node.val - hi))` at every node. Write the other one and run the checker again.
 
 <details><summary>One solution</summary>
@@ -702,7 +697,9 @@ def max_ancestor_diff(root):
 
 ### Say it in the interview
 
-> "I'll write one recursive function and state its contract: given a node and what comes down from its parent, it returns what the parent needs about its subtree, and it records the answer outside when the answer can sit at any node; an empty tree returns a neutral value. Correctness by induction: if my children's calls are right for their subtrees, combining them is right for mine, and every candidate answer is seen at exactly one node (for a path, its highest node), where I record it. One visit per node: O(n) time, O(h) stack, O(n) on a chain."
+> "I'll write one recursive function and state its contract: given a node and what comes down from its parent, it returns what the parent needs about its subtree, and it records the answer outside when the answer can sit at any node; an empty tree returns a neutral value.
+>
+> Correctness by induction: if my children's calls are right for their subtrees, combining them is right for mine, and every candidate answer is seen at exactly one node, for a path its highest node, where I record it. One visit per node: O(n) time, O(h) stack, O(n) on a chain."
 
 Before typing, say the contract out loud, then point at the base case, the line that combines the children and the line that records. Be ready for the follow-ups:
 

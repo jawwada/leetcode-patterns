@@ -2,9 +2,11 @@
 
 > A linked list is a chain of boxes, each holding a value and **one** arrow to the next box. You can't index into it, walk it backwards or see its length; all you can do is put named fingers on boxes (`prev`, `cur`, `slow`, `fast`) and re-aim arrows. Every algorithm is careful pointer surgery: **give every box you will touch a name, then rewire.**
 
-**Reach for it when** the input is a `ListNode`; the problem says *in place* or *O(1) extra space*; it asks for the **middle**, the **k-th from the end**, a **cycle**, a **merge** or a **reversal**; or an array's values are indices into the same array (then the array *is* a linked list, and Floyd's cycle trick applies).
+[Stacks & Queues](#s07) and [Monotonic Stack](#s08) kept their items in a Python list, where the order is given and any index is one step away. Here the order itself is made of arrows, so changing it safely is the whole skill: name every box, rewire, move the fingers last.
 
-**In this repo:** `linked_list/` (12 problems) · bank: `practice/simple/21_reverse_linked_list.py`, `practice/simple/22_merge_two_sorted_lists.py`, `practice/simple/23_linked_list_cycle_ii.py`, `practice/simple/25_remove_nth_node_from_end.py` · basics: `practice/simple/basics/linked_lists/` (build/insert/delete, reverse iterative and recursive, middle, Floyd, merge, palindrome, k-group, add two numbers). LRU Cache (a dict plus a doubly linked list) is taught in [Design](#s24).
+**Reach for it when** the input is a `ListNode`; the problem says *in place* or *O(1) extra space*; it asks for the **middle**, the **k-th from the end**, a **cycle**, a **merge** or a **reversal**; or an array's values are indices into the same array, because then the array *is* a linked list and Floyd's cycle trick applies.
+
+**In this repo:** `linked_list/` (12 problems) · bank: `practice/simple/21_reverse_linked_list.py`, `practice/simple/22_merge_two_sorted_lists.py`, `practice/simple/23_linked_list_cycle_ii.py`, `practice/simple/25_remove_nth_node_from_end.py` · basics: `practice/simple/basics/linked_lists/` (build/insert/delete, reverse iterative and recursive, middle, Floyd, merge, palindrome, k-group, add two numbers). LRU Cache (146), a fixed-size cache that evicts the least recently used key, is a dict plus a doubly linked list and lives in [Design Problems](#s24).
 
 ### The picture
 
@@ -58,37 +60,21 @@ n-th from the end (n = 2): open a gap of n + 1 links, then slide both until fast
                 slow            fast          slow.next (4) is 2nd from the end: skip it
 ```
 
-Why it is fast (and small): the brute force for almost every list problem is "copy the nodes into a Python list, use indices, rebuild". That is O(n) time but O(n) extra space, and the interviewer will ask you to drop it. Each list technique replaces one array superpower with a pointer trick: *index from the end* becomes a finger trailing by a fixed gap; *the middle* becomes a finger at half speed; *walk backwards* becomes "reverse that half in place"; *have I been here before?* becomes a fast finger lapping a slow one. Fingers only move forward, so each trick is O(n) time and O(1) space.
+**Why it is fast and small:** the brute force for almost every list problem is "copy the nodes into a Python list, use indices, rebuild". That is O(n) time but O(n) extra space, and the interviewer will ask you to drop it.
+
+Each list technique replaces one array superpower with a pointer trick. *Index from the end* becomes a finger trailing by a fixed gap; *the middle* becomes a finger at half speed; *walk backwards* becomes "reverse that half in place"; *have I been here before?* becomes a fast finger lapping a slow one. Fingers only move forward, so each trick is O(n) time and O(1) space.
 
 ### From idea to code
 
 **The idea in one sentence:** *name every box a step touches, rewire the arrows, move the fingers last, and put a dummy box in front so the head is never a special case.*
 
-| Decision | Linked-list answer |
-|---|---|
-| **State**: what must I remember? | a few fingers: `prev`/`cur` to rewire, `tail` to build a new chain, `slow`/`fast` to measure; often a `dummy` box in front of the head |
-| **Definition**: what exactly does each variable mean? | say it in a comment: `prev` = head of the already-reversed part, `cur` = first box not processed yet, `tail` = last box of the answer so far |
-| **Invariant**: what is true at the end of every step? | everything before `cur` is done and reachable from `prev` (or `dummy`); everything from `cur` on is untouched and reachable from `cur` |
-| **Step**: how does one box change the state? | name every box the step touches (`nxt = cur.next`), rewire the arrows, then move the fingers |
-| **Record**: when is the answer updated? | building: hang a box on `tail`. Rewiring in place: nothing to record, the structure *is* the answer. Finding: the moment the fingers meet or stop (`slow is fast`, `fast` falls off), then act on that box (return it, skip it) |
-| **Init**: starting values | `dummy = ListNode(0, head)`; `prev = None, cur = head` for a reversal; `slow = fast = head` (or `dummy`) for measuring |
-| **Return**: what comes back? | `dummy.next` (never `head`: the head may have moved or been deleted), `prev` after a reversal, a box or `None` for a search |
+The **State** is a few fingers: `prev` and `cur` to rewire, `tail` to build a new chain, `slow` and `fast` to measure, and often a `dummy` box in front of the head. Their **Definition** goes in a comment: `prev` is the head of the already-reversed part, `cur` the first box not processed yet, `tail` the last box of the answer so far. The **Invariant**: everything before `cur` is done and reachable from `prev` or `dummy`, and everything from `cur` on is untouched and reachable from `cur`.
 
-The same idea, sentence by sentence:
+A **Step** names every box it touches, `nxt = cur.next`, rewires the arrows, `cur.next = prev`, and only then moves the fingers, `prev, cur = cur, nxt`. Where to **Record** depends on the job. Building, you hang a box on the end of the answer, `tail.next = node`, then `tail = tail.next`. Rewiring in place records nothing, because the structure *is* the answer. Finding records the moment the fingers meet or stop, and then acts on that box: return it, or skip it with `prev.next = prev.next.next`.
 
-| In words | In code |
-|---|---|
-| "a box in front of the head" | `dummy = ListNode(0, head)` |
-| "name the box I am about to lose" | `nxt = cur.next` |
-| "flip this arrow backwards" | `cur.next = prev` |
-| "move both fingers on" | `prev, cur = cur, nxt` |
-| "skip (delete) the next box" | `prev.next = prev.next.next` |
-| "hang a box on the end of the answer" | `tail.next = node` then `tail = tail.next` |
-| "can fast take two more steps?" | `while fast and fast.next:` |
-| "the same box" (not the same value) | `a is b` |
-| "the answer starts after the dummy" | `return dummy.next` |
+**Init** is `dummy = ListNode(0, head)`, or `prev, cur = None, head` for a reversal, or `slow = fast = head`, sometimes the dummy, for measuring. **Return** `dummy.next`, never `head`, because the head may have moved or been deleted; `prev` after a reversal; a box or `None` for a search. Two phrases translate the same way everywhere: "can fast take two more steps?" is `while fast and fast.next:`, and "the same box", not the same value, is `a is b`.
 
-First the box itself, and two helpers to turn a Python list into a linked list and back:
+Every cell below needs the box itself and two helpers. `ListNode` holds a value and one arrow. `build_list([1, 2, 3])` hangs one box per value behind a dummy and returns the head, and `to_list` walks the arrows back into a Python list so that a result can be printed; its `limit` stops a walk that would go round a cycle forever.
 
 ```python
 class ListNode:
@@ -118,10 +104,15 @@ print(to_list(head))                                  # [1, 2, 3]
 ```
 
 **Try it**
-- `build_list([])` returns `None` (an empty list is just "no first box"), and `to_list(None)` is `[]`. Check both.
+- Run `build_list([])` and `to_list(None)`: `None` and `[]`. An empty list is just "no first box", the first edge case to say out loud.
 - Make a cycle by hand: `h = build_list([1, 2, 3]); h.next.next.next = h`, then `to_list(h, 7)` gives `[1, 2, 3, 1, 2, 3, 1]`. Without the limit this walk would never end: remember that when a bug creates a cycle.
+- Build `[1, 2, 3]` and print `head.next.next.next is None`: `True`. The last box's arrow points at nothing, which is what every `while cur:` loop waits for.
 
-Three templates cover most problems: rewire in place (reverse), build a new chain (merge), and fingers that measure (middle, n-th from the end). The tags are the seven decisions, and the **order** of the tagged lines is a decision too: `reverse_list` names `nxt` before the flip (flip first and the rest of the list is lost) and moves the fingers last; `merge_lists` hangs a box on the answer (RECORD) before `tail` steps onto it (STEP); `remove_nth_from_end` acts only after the slide, when `slow` is known to sit just before the victim.
+Three templates cover most problems: rewire in place, build a new chain, and fingers that measure; in each, the order of the tagged lines is itself a decision. Reverse Linked List (206) rewires in place: `1 → 2 → 3 → 4 → 5` becomes `5 → 4 → 3 → 2 → 1`. It names `nxt` before the flip, because flipping first loses the rest of the list, and it moves the fingers last.
+
+Merge Two Sorted Lists (21) builds one sorted chain from the boxes of two: `[1, 2, 4]` and `[1, 3, 4]` give `[1, 1, 2, 3, 4, 4]`. It hangs the smaller front box on the answer (RECORD) before `tail` steps onto it (STEP), and when one list runs out, the rest of the other is hung on whole.
+
+The last two measure. Middle of the Linked List (876) returns the middle box, the second of the two middles on an even length: 3 for both `[1, 2, 3, 4, 5]` and `[1, 2, 3, 4]`. Remove Nth Node From End of List (19) deletes the n-th box from the end, `[1, 2, 3, 4, 5]` with n = 2 → `[1, 2, 3, 5]`, and acts only after the slide, when `slow` is known to sit just before the victim.
 
 ```python
 def reverse_list(head):
@@ -175,7 +166,7 @@ print(to_list(remove_nth_from_end(build_list([1, 2, 3, 4, 5]), 2)))         # [1
 - Change `while fast and fast.next:` to `while fast.next:` and call `middle_node(build_list([1, 2, 3, 4]))`: `AttributeError`, because on an even length `fast` itself becomes `None`. Odd lengths still work, which is why this bug survives a quick test.
 - Delete `tail.next = a or b` from `merge_lists`: the merge prints `[1, 1, 2, 3, 4]`. The second list's `4` was still waiting when the first list ran out, so it was never hung on the answer.
 
-**Several arrows in one step.** Swap Nodes in Pairs (24) is the three-move recipe from the picture, word for word. Remove Linked List Elements (203) adds the other everyday rule: after a delete, don't move. The finger must look at the *new* `cur.next`, which nobody has checked yet.
+Two everyday rules come next, each with its own problem. Swap Nodes in Pairs (24) swaps every two neighbouring boxes, `[1, 2, 3, 4, 5] → [2, 1, 4, 3, 5]`, and it is the three-move recipe from the picture, word for word. Remove Linked List Elements (203) deletes every box that holds a given value, `[1, 2, 6, 3, 6, 6]` without its 6s → `[1, 2, 3]`, and it adds the other rule: after a delete, don't move. The finger must look at the *new* `cur.next`, which nobody has checked yet.
 
 ```python
 def swap_pairs(head):
@@ -209,35 +200,9 @@ print(to_list(remove_elements(build_list([1, 2, 6, 3, 6, 6]), 6)))  # [1, 2, 3]
 - In `remove_elements`, move the finger after every step (replace the `if/else` with the delete under an `if`, then an unconditional `cur = cur.next`): removing 2 from `[1, 2, 2, 3]` gives `[1, 2, 3]`, and removing 6 from `[6, 6, 1]` gives `[6, 1]`. The second copy was never checked.
 - Remove every value from `[7, 7, 7]`: `[]`. The dummy is the only box left, which is why the loop watches `cur.next` and not `cur`.
 
-**Recursive reversal.** Interviewers sometimes ask for it. Trust the recursion: it reverses everything after `head` and returns the new head (the old last box). At that moment `head` still points at its old next box, which is now the *tail* of the reversed part, so hang `head` behind it:
-
-```text
-call on 1:  1 -> 2 -> 3 -> 4      the call on 2 returns 4:  1 -> 2 <- 3 <- 4  (2 is the TAIL)
-head.next.next = head             2 points back at 1: 1 <-> 2, a 2-box loop for a moment
-head.next = None                  None <- 1 <- 2 <- 3 <- 4, and return 4
-```
-
-```python
-def reverse_recursive(head):
-    if head is None or head.next is None:    # 0 or 1 box: already reversed
-        return head
-    new_head = reverse_recursive(head.next)  # trust it: everything after head is reversed
-    head.next.next = head                    # my old next box is now the tail: hang me after it
-    head.next = None                         # I am the new tail
-    return new_head                          # the old last box, handed up unchanged
-
-
-print(to_list(reverse_recursive(build_list([1, 2, 3, 4]))))   # [4, 3, 2, 1]
-```
-
-**Try it**
-- Print `head.val, new_head.val` just before `return new_head`: you see `3 4`, `2 4`, `1 4`. The same box travels up through every level; only the arrows around `head` change.
-- Delete `head.next = None` and rerun: the printed list becomes `[4, 3, 2, 1, 2, 1, 2, 1, ...]` and only stops at `to_list`'s limit. Boxes 1 and 2 now point at each other: a cycle.
-- Try `reverse_recursive(build_list(range(10_000)))`: `RecursionError` (Python allows about 1000 nested calls by default). `reverse_list` handles the same list without trouble: prefer the loop unless recursion is asked for.
-
 ### Watch it work
 
-The reversal keeps two chains: the reversed part (drawn with arrows pointing left, `prev` is its rightmost box) and the untouched rest (starting at `cur`). Each step moves one box from the right chain to the left one.
+The reversal keeps two chains: the reversed part, drawn with its arrows pointing left and `prev` as its rightmost box, and the untouched rest, which starts at `cur`. Each step moves one box from the right chain to the left one, and the trace prints both chains after every step of `[1, 2, 3, 4]`.
 
 ```python
 def trace_reverse(values):
@@ -263,20 +228,20 @@ trace_reverse([1, 2, 3, 4])
 
 **Try it**
 - Run `trace_reverse([7])` and `trace_reverse([])`: one step for one box, and for the empty list only the start line (`prev` stays `None`, which is the right answer).
-- On every line the two chains together hold all n boxes, with no box in both. That is the invariant: nothing is ever lost, it only changes sides.
+- Count the boxes on every printed line: the two chains together always hold all n boxes, with no box in both. That is the invariant, visible: nothing is ever lost, it only changes sides.
 - Change the loop to `while cur.next:` and run `trace_reverse([1, 2, 3])`: the last line still shows `3 -> None` on the right. The last box is never flipped, so you would return `2 -> 1` and lose the 3.
 
 ### Where it goes wrong
 
 1. **Losing the rest of the list.** Writing an arrow before naming the box it pointed to: `cur.next = prev` before `nxt = cur.next` turns `[1, 2, 3]` into `[1]`. Fix: name every box the step touches, then rewire, then move.
 2. **Returning the old head.** After a reversal `head` is the *tail*: returning it gives `[1]` for `[1, 2, 3]`. Return `prev` (reversal) or `dummy.next` (anything built behind a dummy).
-3. **The head without a dummy.** Without the dummy (and without a special case), `remove_nth_from_end` on `[1]` with n = 1 runs `fast` off the end and hits `None.next` (`AttributeError`). A dummy gives every box a box before it; then return `dummy.next`.
+3. **The head without a dummy.** Without the dummy and without a special case, `remove_nth_from_end` on `[1]` with n = 1 runs `fast` off the end and hits `None.next`, an `AttributeError`. A dummy gives every box a box before it; then return `dummy.next`.
 4. **Off-by-one fingers.** A loop that only checks `fast.next` crashes on `[1, 2, 3, 4]` (guard with `while fast and fast.next:`); a gap of n instead of n + 1 deletes the wrong box (`[1, 2, 3, 4, 5], 2` → `[1, 2, 3, 4]`).
-5. **Values instead of boxes.** Two different boxes can hold the same value. Meeting points and intersections compare boxes: `a is b`, never `a.val == b.val`.
-6. **Forgetting to cut.** When you split a list (reorder, merge sort, partition), end the first part with `None`. Reorder `[1, 2, 3, 4]` without the cut and box 3 points at itself: `[1, 4, 2, 3, 3, 3, ...]`. Partition `[2, 1]` around 2 into two dummy chains without `big_tail.next = None`: `[1, 2, 1, 2, ...]`. Palindrome gets away without a cut only because it stops when the reversed half ends.
+5. **Values instead of boxes.** Two different boxes can hold the same value. Meeting points and intersections compare boxes: `a is b`, never `a.val == b.val`. Two separate lists `[1]` and `[1]` share no box, but comparing values reports their first boxes as the intersection.
+6. **Forgetting to cut.** When you split a list to reorder it, sort it or partition it, end the first part with `None`. Reordering `[1, 2, 3, 4]` without the cut leaves box 3 pointing at itself: `[1, 4, 2, 3, 3, 3, ...]`. Partitioning `[2, 1]` around 2, smaller values first, into two dummy chains without `big_tail.next = None` gives `[1, 2, 1, 2, ...]`. The palindrome check gets away without a cut only because it stops when the reversed half ends.
 7. **Advancing after a delete.** After `cur.next = cur.next.next`, nobody has checked the new `cur.next`: move `cur` only when you did not delete. With an unconditional `cur = cur.next`, removing 2 from `[1, 2, 2, 3]` gives `[1, 2, 3]`.
 8. **One-line multiple assignment.** Python evaluates the right side first, then assigns the targets left to right. `cur, cur.next, prev = cur.next, prev, cur` sets the `next` of the *new* `cur` and crashes on `[1, 2, 3]` (`AttributeError`); `cur.next, prev, cur = prev, cur, cur.next` works. If unsure, one assignment per line.
-9. **Comparing before moving in Floyd.** `slow` and `fast` both start on the head, so `slow is fast` is true before the first step. Move first, then compare.
+9. **Comparing before moving in Floyd.** `slow` and `fast` both start on the head, so `slow is fast` is true before the first step: compare first, and the loop-free list `[1, 2]` reports its head as the entrance of a cycle. Move first, then compare.
 
 ### Edge cases to say out loud
 
@@ -284,7 +249,6 @@ Empty list (`None`) · one box · two boxes (even length for fast/slow) · remov
 
 ```python
 assert to_list(reverse_list(None)) == [] and to_list(reverse_list(build_list([7]))) == [7]
-assert to_list(reverse_recursive(build_list([1, 2]))) == [2, 1]
 assert to_list(merge_lists(None, build_list([0]))) == [0]
 assert to_list(merge_lists(build_list([5]), build_list([1, 2, 3]))) == [1, 2, 3, 5]
 assert middle_node(build_list([1])).val == 1
@@ -306,20 +270,24 @@ print("edge cases pass")
 
 | Variation | What changes from the template | Problems |
 |---|---|---|
-| **Several arrows in one step** | name every box, rewire in any order, move the finger last | 24 |
-| **Delete while walking** | move the finger only when nothing was deleted; for 82, drop the whole run of duplicates and keep `prev` where it is | 203, 82 |
-| **Cycle: is there one, where does it start?** | fast/slow race; after they meet, restart one finger at the head and step both by 1 | 141, 142 |
-| **Floyd on an array** | the "next" of index `i` is `nums[i]`; the duplicate value is the cycle entrance | 287 |
-| **Fold in half** | middle → cut → reverse the back half → walk both halves together | 234, 143 |
-| **Merge sort** | middle (fingers start on a dummy) → cut → sort both halves → merge | 148 |
-| **Reverse a block** | reverse with `prev` starting at the box *after* the block, hook the box before it to the new head; in a loop with a look-ahead for k-groups | 92, 25 |
-| **Two chains, then join** | one dummy per chain, append each box to its chain, join them and cut the last tail | 86, 328 |
-| **Rotate** | count n, close the list into a ring, cut after box n − k % n | 61 |
-| **Two lists in lockstep** | one finger per list, step together (merge, add with a carry, line up two tails) | 21, 2, 160 |
-| **Copy with extra arrows** | dict old box → new box, then wire `next` and `random` through it | 138 |
-| **Recency order with O(1) moves** | dict + doubly linked list with two sentinels ([Design](#s24)) | 146 |
+| **Several arrows in one step** | name every box, rewire in any order, move the finger last | Swap Nodes in Pairs (24) |
+| **Delete while walking** | move the finger only when nothing was deleted; for 82, drop the whole run of duplicates and keep `prev` where it is | Remove Linked List Elements (203); Remove Duplicates from Sorted List II (82): delete every value that appears more than once |
+| **Cycle: is there one, where does it start?** | fast/slow race; after they meet, restart one finger at the head and step both by 1 | Linked List Cycle (141); Linked List Cycle II (142): the box where the loop begins |
+| **Floyd on an array** | the "next" of index `i` is `nums[i]`; the duplicate value is the cycle entrance | Find the Duplicate Number (287): the repeated value among n + 1 numbers in `[1, n]` |
+| **Fold in half** | middle → cut → reverse the back half → walk both halves together | Palindrome Linked List (234); Reorder List (143): first, last, second, second-to-last, ... |
+| **Merge sort** | middle (fingers start on a dummy) → cut → sort both halves → merge | Sort List (148) |
+| **Reverse a block** | reverse with `prev` starting at the box *after* the block, hook the box before it to the new head; in a loop with a look-ahead for k-groups | Reverse Linked List II (92): only positions left..right; Reverse Nodes in k-Group (25) |
+| **Two chains, then join** | one dummy per chain, append each box to its chain, join them and cut the last tail | Partition List (86): smaller values first, both groups in order; Odd Even Linked List (328): odd positions first |
+| **Rotate** | count n, close the list into a ring, cut after box n − k % n | Rotate List (61): shift every box k places to the right |
+| **Two lists in lockstep** | one finger per list, step together (merge, add with a carry, line up two tails) | Merge Two Sorted Lists (21); Add Two Numbers (2): digits stored ones first; Intersection of Two Linked Lists (160) |
+| **Copy with extra arrows** | dict old box → new box, then wire `next` and `random` through it | Copy List with Random Pointer (138) |
+| **Recency order with O(1) moves** | dict + doubly linked list with two sentinels, in [Design Problems](#s24) | LRU Cache (146) |
 
-**Cycles (141, 142).** Inside a loop, `fast` gains exactly one box per step on `slow`, so the gap shrinks by one each step and must reach zero: they meet, and `fast` can't jump over `slow` (a speed-3 finger chasing a speed-1 finger round a 4-box loop from 1 apart sees the gap go 1, 3, 1, 3, ... forever). Without a loop, `fast` falls off the end. Phase 2 finds the entrance because **whole laps don't move you**:
+Cycles come first: only arrows can loop back on themselves, and a race between two fingers is how you notice. Linked List Cycle (141) asks whether the arrows ever loop back; Linked List Cycle II (142) asks for the box where the loop begins. In `3 → 2 → 0 → -4`, with the last box pointing back at the 2, the answer is the box that holds 2.
+
+Inside a loop, `fast` gains exactly one box per step on `slow`, so the gap shrinks by one each step and must reach zero: they meet, and `fast` can't jump over `slow`. A speed-3 finger would not do: chasing a speed-1 finger round a 4-box loop from 1 apart, it sees the gap go 1, 3, 1, 3, ... forever. Without a loop, `fast` falls off the end.
+
+Phase 2 finds the entrance because **whole laps don't move you**. After the meeting, restart one finger at the head and step both one box at a time: they meet exactly on the entrance.
 
 ```text
  head ------ a boxes ------> E ------ b boxes ------> M        E = entrance, M = where they met
@@ -331,7 +299,9 @@ print("edge cases pass")
  a steps end, on E. A finger restarted at the head also reaches E after exactly a steps.
 ```
 
-**Floyd on an array (287):** read index `i` as a box whose arrow points to index `nums[i]`. Values are in `[1, n]`, so no arrow enters index 0: the walk from 0 can never come back to 0, so it must run into a loop. The box where it enters has two incoming arrows, one from the tail and one from the loop's last box. Two arrows into box v means v is stored twice, so the entrance is the duplicate.
+Find the Duplicate Number (287) asks for the one value that appears more than once among n + 1 numbers in `[1, n]`, without changing the array and with O(1) extra space: `[1, 3, 4, 2, 2] → 2`. Read index `i` as a box whose arrow points to index `nums[i]`. Values are in `[1, n]`, so no arrow enters index 0: the walk from 0 can never come back to 0, so it must run into a loop.
+
+The box where it enters has two incoming arrows, one from the tail and one from the loop's last box. Two arrows into box v means v is stored twice, so the entrance is the duplicate.
 
 ```text
  nums  = [1, 3, 4, 2, 2]
@@ -341,6 +311,8 @@ print("edge cases pass")
                 ^    |           so 2 is the duplicate AND the entrance of the loop
                 +----+
 ```
+
+The cell runs both phases twice: `detect_cycle` on boxes made by `build_cycle`, whose last box links back to index `pos`, and `find_duplicate` on an array, where index `i` points to index `nums[i]` and `==` on two indices already means "the same box". The two asserts at the end are the edge cases: a box that points at itself, and a loop through the head.
 
 ```python
 def build_cycle(values, pos):                # the last box links back to index pos (-1: no cycle)
@@ -390,20 +362,19 @@ assert detect_cycle(build_cycle([1, 2], 0)).val == 1                    # a loop
 - Compare before moving: put the `if slow is fast: break` lines *above* the step line in phase 1. The cell now prints `3` and a `ListNode` instead of `2 None`: the fingers "meet" on the head before taking a single step.
 - Predict `find_duplicate([2, 5, 9, 6, 9, 3, 8, 9, 7, 1])` before running (9: it appears three times, so three arrows enter box 9).
 
-**Fold in half (234, 143) and merge sort (148).** Palindrome and Reorder both need "the back half, walked backwards"; you can't walk backwards, but you can *make* the back half run backwards by reversing it in place. Sort List needs two halves to sort and merge. All three start by finding the middle, and the only decision is which middle:
-
-| Fingers start on | Guard | `slow` on `[1, 2, 3, 4]` | `slow` on `[1, 2, 3, 4, 5]` | Use when |
-|---|---|---|---|---|
-| `head` | `while fast and fast.next` | 3 | 3 | you need the back half's first box (palindrome) |
-| a dummy before `head` | `while fast and fast.next` | 2 | 3 | you need the box *before* the back half, to cut it off (reorder, sort) |
-
-Need the box before? Start on the dummy, the same rule as n-th from the end.
+Folding in half chains the templates: find the middle, cut, reverse, walk. Palindrome Linked List (234) asks whether the values read the same both ways, `[1, 2, 2, 1]` → True. Reorder List (143) interleaves the front and the back in place, `[1, 2, 3, 4, 5]` → `[1, 5, 2, 4, 3]`. Both need the back half walked backwards. You can't walk backwards, but you can *make* the back half run backwards by reversing it in place.
 
 ```text
  1 -> 2 -> 3 -> 4 -> 5         slow stops on 3, the last box of the first half
  1 -> 2 -> 3     5 -> 4        cut after 3 and reverse the back half
  1 -> 5 -> 2 -> 4 -> 3         zip: one box from the left half, one from the right
 ```
+
+Each of them starts by finding the middle, and the only decision is which middle. With the guard `while fast and fast.next`, fingers that start on `head` stop on the 3 of both `[1, 2, 3, 4]` and `[1, 2, 3, 4, 5]`; on the even length that is the first box of the back half, which is what the palindrome check needs.
+
+Fingers that start on a dummy before `head` stop on the 2 of `[1, 2, 3, 4]` and on the 3 of `[1, 2, 3, 4, 5]`: the box *before* the back half, the only box that can cut it off.
+
+Reorder needs that box, and so does Sort List (148), which sorts a list in O(n log n) time, `[4, 2, 1, 3]` → `[1, 2, 3, 4]`, by merge sort: find the middle, cut, sort both halves, and merge them with `merge_lists`. Both start their fingers on the dummy, the same rule as n-th from the end, while the palindrome check reuses `middle_node`.
 
 ```python
 def reorder_list(head):                      # L0 -> Ln -> L1 -> Ln-1 -> ...  in place
@@ -453,13 +424,15 @@ print(to_list(sort_list(build_list([4, 2, 1, 3]))), to_list(sort_list(build_list
 - In `sort_list`, start the fingers on `head` instead of a dummy: `sort_list(build_list([2, 1]))` raises `RecursionError`. `slow` stops on the second box, so the back half is empty and the front half is the whole list again, forever.
 - Run `h = build_list([1, 2, 3, 2, 1]); print(is_palindrome_list(h), to_list(h))`: `True [1, 2, 3]`. The check rewired the input; reverse the back half again if the caller needs the list intact.
 
-**Reverse one block (92), then every block (25).** Reversing positions `left..right` is the plain reversal with two extra fingers: `before`, the box before the block, and `after`, the first box after it. Start the reversal with `prev = after`, so the block's new tail already points onward; then hook `before` to the block's new head. Reverse Nodes in k-Group is the same block reversal in a loop, with a look-ahead that stops when fewer than k boxes are left.
+Reversal returns for one part of the list. Reverse Linked List II (92) reverses only positions `left..right`, counting from 1: `[1, 2, 3, 4, 5]` with 2..4 → `[1, 4, 3, 2, 5]`. It is the plain reversal with two extra fingers: `before`, the box before the block, and `after`, the first box after it. Start the reversal with `prev = after`, so the block's new tail already points onward, then hook `before` to the block's new head.
 
 ```text
  left = 2, right = 4:   D -> 1 -> 2 -> 3 -> 4 -> 5          before = 1, after = 5
                         D -> 1    4 -> 3 -> 2 -> 5          reversed with prev starting at 5
                         D -> 1 -> 4 -> 3 -> 2 -> 5          before.next = 4: hooked in
 ```
+
+Reverse Nodes in k-Group (25) reverses every full block of k boxes and leaves a shorter rest alone: `[1, 2, 3, 4, 5]` with k = 2 → `[2, 1, 4, 3, 5]`, and with k = 3 → `[3, 2, 1, 4, 5]`. It is the same block reversal in a loop, with a look-ahead that stops when fewer than k boxes are left; each block's old first box, now its tail, becomes the next `before`.
 
 ```python
 def reverse_block(before, after):            # reverse the boxes strictly between before and after
@@ -508,13 +481,19 @@ print(to_list(reverse_k_group(build_list([1, 2, 3, 4, 5]), 3)))      # [3, 2, 1,
 - Predict before running: k = 1 returns the list unchanged, k = 5 reverses all of it, k = 6 changes nothing (there is no full block).
 - Print `to_list(dummy.next)` right after the `before = reverse_block(...)` line: for k = 2 you see `[2, 1, 3, 4, 5]` and then `[2, 1, 4, 3, 5]`, one finished block per line.
 
-**Two lists in lockstep (2, 160).** One finger per list, moving together. Add Two Numbers is schoolbook addition: the lists store the ones digit first, so walk both, write `total % 10`, carry `total // 10`. Intersection lines up the two tails: after the merge box both lists are the *same* boxes, so once each finger is the same distance from the end, they reach the merge box at the same moment. Count the lengths and skip the longer list's extra prefix, or (below) let each finger walk its own list and then the other one: both then walk A's own part + B's own part + the shared tail. (LCA with parent pointers, 1650, is this same problem: walk up from p and from q, and the two upward paths merge at the LCA.)
+Two lists can also be walked in lockstep, one finger per list. Add Two Numbers (2) adds two numbers stored as lists of digits, ones digit first: `2 → 4 → 3` plus `5 → 6 → 4` is 342 + 465 = 807, stored as `7 → 0 → 8`. It is schoolbook addition: walk both lists, write `total % 10`, carry `total // 10`, and keep going while either list or the carry remains.
+
+Intersection of Two Linked Lists (160) asks for the first box two lists share, or `None`. Past the merge box both lists are the *same* boxes, so fingers that start the same distance from the end reach it together. Count the lengths and skip the longer list's extra prefix, or let each finger walk its own list and then the other: both then walk A's own part, B's own part and the shared tail.
+
+Lowest Common Ancestor of a Binary Tree III (1650), where every tree node knows its parent, is the same problem: walk up from p and from q, and the two upward paths merge at the ancestor.
 
 ```text
  A:      4 -> 1 \                 pa walks 4 1 8 4 5, then B's own part 5 6 1   (8 boxes)
                  8 -> 4 -> 5      pb walks 5 6 1 8 4 5, then A's own part 4 1   (8 boxes)
  B: 5 -> 6 -> 1 /                 so the next step puts both on the shared 8
 ```
+
+The cell adds 342 + 465 and 99 + 1, whose final carry needs a box of its own, and builds the picture's two lists around the shared tail `8 → 4 → 5`.
 
 ```python
 def add_two_numbers(l1, l2):                 # ones digit first: 342 is stored as 2 -> 4 -> 3
@@ -553,9 +532,13 @@ print(intersection_node(a, b).val, intersection_node(build_list([1]), build_list
 - Print `pa.val if pa else None, pb.val if pb else None` at the top of the loop, then call `intersection_node(a, b)`: nine lines, ending with `1 1` (two different boxes holding equal values); the next step puts both fingers on the shared 8.
 - The counting version lines up the same way: measure both lengths, move the longer list's finger ahead by the difference, then step both until `a is b`. Write it and check that it also gives 8.
 
-**Copy a list with random arrows (138).** A deep copy needs a translator from "a box of the old list" to "its copy". Pass 1 creates a copy of every box and stores the pair in a dict; pass 2 wires each copy's `next` and `random` through that dict. (The O(1)-space version weaves each copy right after its original, `A -> A' -> B -> B'`, so "the copy of X" is simply `X.next`; then it unweaves the two lists.)
+The last variation copies a list that has two arrows per box. Copy List with Random Pointer (138) asks for a deep copy of a list whose boxes also carry a `random` arrow to any box or to `None`: every arrow of the copy must point into the copy, never back into the original. A deep copy needs a translator from "a box of the old list" to "its copy".
 
-```python
+Pass 1 creates a copy of every box and stores the pair in a dict; pass 2 wires each copy's `next` and `random` through that dict. The dict starts as `{None: None}`, so an arrow to nothing translates to nothing instead of raising `KeyError`. The O(1)-space version weaves each copy right after its original, `A → A' → B → B'`, so that "the copy of X" is simply `X.next`, and then unweaves the two lists.
+
+<details><summary>The two-pass copy, with a test that checks every arrow</summary>
+
+```py
 class RandomNode:
     def __init__(self, val, next=None, random=None):
         self.val, self.next, self.random = val, next, random
@@ -597,10 +580,7 @@ print(describe(clone))                       # [(7, None), (13, 0), (11, 4), (10
 print(clone is orig, clone.next.random is orig, clone.next.random is clone)   # False False True
 ```
 
-**Try it**
-- Remove the `None: None` entry and rerun: `KeyError: None`, from the first box whose `random` points at nothing.
-- In pass 2, write `old_to_new[node].random = node.random` (no translation): `describe(clone)` now fails with `ValueError`, because the copy's random arrows point into the *old* list. A deep copy must never point outside itself.
-- In pass 1, store the old box itself (`old_to_new[node] = node`): `describe` looks perfect, but `clone is orig` prints `True`. That is a shallow copy, exactly what the problem forbids.
+</details>
 
 ### Say it in the interview
 
@@ -608,7 +588,7 @@ print(clone is orig, clone.next.random is orig, clone.next.random is clone)   # 
 
 While coding, point at the naming line ("so I don't lose the rest"), at `return dummy.next` ("the head may have changed"), and for fast/slow say the loop guard out loud ("fast can take two more steps"). Be ready for the follow-ups:
 
-- *Recursive version?* The same rewiring with the call stack as the memory: O(n) stack, and Python stops at about 1000 boxes.
+- *Recursive version?* Trust the call to reverse the rest, then `head.next.next = head; head.next = None`, at the price of O(n) call stack, about 1000 boxes in Python.
 - *Must the input stay intact (palindrome)?* Reverse the back half again before returning.
 - *Floyd: why do the fingers meet, and why does phase 2 find the entrance?* The gap closes by exactly one per step, so it can't be skipped; whole laps don't move you, so a steps from the meeting point land where a steps from the head land.
 - *Remove the n-th from the end in one pass?* A gap of n + 1 between two fingers that start on the dummy.

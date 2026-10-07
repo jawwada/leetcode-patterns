@@ -2,11 +2,11 @@
 
 > Two questions about how nodes relate. **Order**: *what can I do first?* Keep taking a node that nothing is waiting on (topological sort). **Connectivity**: *are these two in the same group?* Every group has a boss; merging two groups means pointing one boss at the other (union-find).
 
-**Reach for it when** the problem says:
-- **Order:** prerequisites, dependencies, "must come before", build order, an alphabet hidden in sorted words, "minimum time when tasks run in parallel".
-- **Connectivity:** merge, same group, connected, "edges arrive one at a time", "the extra edge that makes a cycle", "after each operation, how many groups?", "queries with a weight limit".
+[Graphs I](#s17) walked a graph to measure distances and regions. This section asks two other questions, in what order the nodes can be taken and which nodes belong together, and answers each with a small structure instead of a fresh search.
 
-"Which cable, if cut, disconnects the network?" is bridges and "use every ticket exactly once" is an Eulerian path; both are in the hard extras at the end of Variations.
+**Reach for it when** the problem talks about order: prerequisites, dependencies, "must come before", a build order, an alphabet hidden in sorted words, or the minimum time when tasks run in parallel. Reach for it too when it talks about groups: merge, same group, connected, edges that arrive one at a time, "the extra edge that makes a cycle", "after each operation, how many groups?", or queries with a weight limit.
+
+"Which cable, if cut, disconnects the network?" is bridges, and "use every ticket exactly once" is an Eulerian path; both come in the second pass at the end of Variations.
 
 **In this repo:** `graphs/` (19 of its 45 problems) · bank: `practice/simple/43_course_schedule.py`, `practice/simple/47_redundant_connection.py` · basics: `practice/simple/basics/graphs/02_topological_sort_kahn_and_dfs.py`, `practice/simple/basics/graphs/03_union_find.py`
 
@@ -40,42 +40,29 @@ UNION-FIND: every group is a tree, and its root is the group's name
   union(0, 2) now: find(0) == find(2) == 0, so it returns False: they were already connected.
 ```
 
-**Which tool?**
-- *An order, with a cycle check* → Kahn: iterative, no recursion limit, and a cycle shows up as `len(order) < n`. Use DFS colours when you are already inside a DFS, or need "the nodes that can reach a cycle" (802).
-- *Connectivity on a graph given once* → one BFS or DFS ([Graphs I](#s17)).
-- *Edges arriving over time, many queries, or "the edge that closes a cycle"* → union-find.
+Kahn's algorithm gives an order and a cycle check in one pass: it is iterative, so it never hits the recursion limit, and a cycle shows up as `len(order) < n`. DFS colours are the choice when you are already inside a DFS, or when the question is which nodes can reach a cycle: Find Eventual Safe States (802) asks for the nodes from which every path ends at a node with no way out, which are exactly the nodes that cannot reach a cycle.
 
-**Why it is fast:** the brute-force ordering rescans every edge each round to find a node that is ready: O(V · (V + E)). Kahn keeps one counter per node, and taking a node only changes the counters of *its* successors, so each edge is touched once: O(V + E). For connectivity, re-running a BFS for every "connected?" question costs O(V + E) each time. Groups only ever merge, so a forest of parent pointers answers in nearly O(1), as long as the trees stay flat. Union by size keeps them flat: a node goes one level deeper only when its group is hung under a group at least as big, so its group at least doubles each time, and depth ≤ log₂ n. Path halving flattens the rest. Together they cost amortised α(n) per operation (the inverse Ackermann function), effectively a constant.
+For connectivity, a graph given once needs nothing more than one BFS or DFS ([Graphs I](#s17)). Union-find earns its place when edges arrive over time, when many "connected?" questions come between the arrivals, or when the question is the edge that closes a cycle.
+
+**Why it is fast.** The brute-force ordering rescans every edge each round to find a node that is ready: O(V · (V + E)). Kahn keeps one counter per node, and taking a node only changes the counters of *its* successors, so each edge is touched once: O(V + E).
+
+For connectivity, re-running a BFS for every "connected?" question costs O(V + E) each time. Groups only ever merge, so a forest of parent pointers can answer in nearly O(1), as long as the trees stay flat.
+
+Union by size keeps them flat: a node goes one level deeper only when its group is hung under a group at least as big, so its group at least doubles each time, and no tree grows deeper than log₂ n. Path halving flattens the rest. Together they cost α(n) per operation amortised, that is, averaged over any long run of operations; α is the inverse Ackermann function, which stays below 5 for any n you will ever store.
 
 ### From idea to code
 
 **The idea in two sentences:** *Order: count each node's unfinished predecessors, take any node whose count is 0, and taking it lowers its successors' counts.* *Connectivity: `find` walks up to the root that names a group, `union` points one root at the other, and a `union` whose two roots are already equal has just found an edge that closes a cycle.*
 
-| Decision | Topological sort (Kahn) | Union-find |
-|---|---|---|
-| **State**: what must I remember? | `graph[u]` (u before v), `indegree[v]`, and a queue of ready nodes | `parent[x]`, `size[root]`, and the number of groups if asked |
-| **Definition**: what exactly does each variable mean? | `indegree[v]` = predecessors of `v` not taken yet | `find(x)` = the root of x's tree; same root means same group |
-| **Invariant**: what is true at the end of every step? | every node in the queue has all its predecessors already in `order` | every group is one tree; `r` is a root exactly when `parent[r] == r` |
-| **Step**: how does one item change the state? | pop `u`, append it; for each successor `v`: `indegree[v] -= 1`, push `v` when it reaches 0 | `union(a, b)`: find both roots; if they differ, hang the smaller tree under the bigger |
-| **Record**: when is the answer updated? | the pop order is the topological order | `union` returns `False`: already connected (cycle edge); `True`: one group fewer |
-| **Init**: starting values | the queue holds *every* node with indegree 0, isolated nodes too | `parent = list(range(n))`, `size = [1] * n`, `count = n` |
-| **Return**: what comes back, and for "not found"? | `order` if `len(order) == n`; otherwise a cycle: `[]`, `False` or `""` | the count, the redundant edge, or groups bucketed by `find` |
+For Kahn's algorithm the **state** is three things: the graph, where `graph[u]` lists every v that u must precede, an `indegree` list, and a queue of ready nodes. The **definition**: `indegree[v]` counts the predecessors of v not taken yet, where a node's indegree is the number of arrows pointing into it. The **invariant**: every node in the queue has all its predecessors already in `order`. A **step** pops u, appends it to `order`, and lowers `indegree[v]` for each successor v, pushing v the moment its count reaches 0.
 
-The same idea, sentence by sentence:
+The **record** is the pop order itself, which is a valid order. **Init** puts *every* node of indegree 0 in the queue, isolated nodes too. The **return** is `order` when `len(order) == n`; anything shorter means a cycle, translated into `[]`, `False` or `""`.
 
-| In words | In code |
-|---|---|
-| "b must come before a" (pair `[a, b]`) | convert once: the edge `(b, a)`, then think u → v everywhere |
-| "everything I can do right now" | `deque(v for v in range(n) if indegree[v] == 0)` |
-| "u is done, so v waits on one fewer" | `indegree[v] -= 1` |
-| "v is free now" | `if indegree[v] == 0: queue.append(v)` |
-| "some nodes never got free" | `len(order) < n`: there is a cycle |
-| "on the path I am walking right now" (DFS) | `color[v] == GRAY` |
-| "who is the boss of x's group?" | `find(x)` |
-| "merge the two groups" | `parent[find(b)] = find(a)`: roots, never the nodes themselves |
-| "they were already together" | `find(a) == find(b)`, so `union` returns `False` |
+Union-find makes the same decisions about groups. Its state is `parent[x]`, `size[root]` and, when asked, the number of groups. By definition `find(x)` is the root of x's tree, and two nodes share a group exactly when they share a root. The invariant: every group is one tree, and `r` is a root exactly when `parent[r] == r`. A step, `union(a, b)`, finds both roots and, if they differ, hangs the smaller tree under the bigger.
 
-Kahn's algorithm with one edge convention, u → v ("u before v"). LeetCode's Course Schedule writes `[a, b]` for "b before a", so its wrapper converts once and never thinks about it again:
+`union` also records: it returns `False` when the two were already connected, so the edge closes a cycle, and `True` when there is one group fewer. Init is `parent = list(range(n))`, `size = [1] * n` and `count = n`, and the return is the count, the redundant edge, or the groups bucketed by `find`.
+
+Course Schedule asks whether n courses can all be taken when a pair `[a, b]` means "take b before a"; Course Schedule II asks for one such order, or `[]` when none exists. With 4 courses and `[[1, 0], [2, 0], [3, 1], [3, 2]]`, one order is `[0, 1, 2, 3]`. The template keeps one convention, an edge (u, v) for "u before v", so the wrapper converts the pairs once and never thinks about them again. In the code, "everything I can do right now" is the starting queue, and "u is done, so v waits on one fewer" is `indegree[v] -= 1`.
 
 ```python
 def topo_kahn(n, edges):
@@ -112,7 +99,7 @@ print(find_order(3, []))                                 # [0, 1, 2]  (no rules:
 - Replace `popleft()` with `pop()` (a stack): the first example gives `[0, 2, 1, 3]`, a different order that is just as valid. Kahn does not care which ready node goes first.
 - Predict `find_order(4, [[1, 0], [2, 1], [3, 2], [1, 3]])` before running it: `[]`. Course 0 is taken, but 1, 2 and 3 wait on each other in a circle.
 
-The DFS version needs three colours, not two. A node reached again can be *finished* (it was reached earlier by another path, which is fine) or *on the current path* (a cycle). A node finishes after everything it leads to, so the reversed finishing order is a topological order:
+The DFS version returns the same thing, an order or `[]`, and it needs three colours, not two. A node reached again can be *finished*, reached earlier along another path, which is harmless, or still *on the current path*, which means a cycle; "on the path I am walking right now" is `color[v] == GRAY`. A node finishes after everything it leads to, so the reversed finishing order is a topological order: the six-node graph below gives `[5, 4, 2, 3, 1, 0]`.
 
 ```python
 WHITE, GRAY, BLACK = 0, 1, 2                      # not visited, on the current path, finished
@@ -151,9 +138,8 @@ print(topo_dfs(3, [(0, 1), (1, 2), (2, 0)]))                           # []
 - Use two colours only: change `if color[v] == GRAY` to `if color[v] != WHITE`. The diamond `[(0, 1), (0, 2), (2, 1)]` now comes back `[]`: node 1 was finished, not on the path, but the two look the same.
 - Print `finished` before reversing: `[0, 1, 3, 2, 4, 5]` for the first example. The deepest nodes finish first.
 - Return `finished` without reversing: every edge now points backwards. It is a valid order for the graph with all arrows flipped.
-- Run a 10,000-node chain, `topo_dfs(10_000, [(i, i + 1) for i in range(9_999)])`: `RecursionError`. Kahn has no recursion, which is worth saying in an interview.
 
-Union-find. Path halving makes each node on the way up point at its grandparent; union by size hangs the smaller tree below the bigger one:
+Union-find answers "are a and b in the same group?" while groups keep merging. After `union(0, 1)`, `union(2, 3)` and `union(1, 3)`, nodes 0 and 3 share a root, so `union(0, 2)` returns False: they were already together. "Merge the two groups" is `parent[find(b)] = find(a)`, which links roots and never the nodes themselves. Path halving makes each node on the way up point at its grandparent, and union by size hangs the smaller tree below the bigger one.
 
 ```python
 class DSU:
@@ -191,14 +177,14 @@ print(dsu.count, dsu.find(3) == dsu.find(0), dsu.size[dsu.find(0)])      # 3 Tru
 - Print `dsu.size`: `[4, 1, 2, 1, 1, 1]`. Only a root's entry means something; `size[2] = 2` is left over from when 2 was a root.
 - Delete the two `if ra == rb` lines and rerun the cell: the last union returns True and `count` drops to 2, although the groups are still `{0, 1, 2, 3}`, `{4}` and `{5}`.
 
-In an interview, two functions are enough. Halving alone keeps `find` fast in practice; add union by size if you are asked for the guarantee:
+In an interview, two functions are enough. Path halving alone keeps `find` fast in practice; add union by size if you are asked for the guarantee:
 
 ```py
 parent = list(range(n))
 
 def find(x):
     while parent[x] != x:
-        parent[x] = parent[parent[x]]      # halving: skip to the grandparent
+        parent[x] = parent[parent[x]]      # path halving: skip to the grandparent
         x = parent[x]
     return x
 
@@ -212,7 +198,7 @@ def union(a, b):                           # False: a and b were already connect
 
 ### Watch it work
 
-Kahn on the picture's graph, then union-find hunting for the extra edge in Redundant Connection:
+Two traces make the templates visible. `trace_kahn` runs Kahn's algorithm on the picture's graph and prints the indegrees and the ready queue after each take. `trace_redundant` solves Redundant Connection, which gives a tree on nodes 1..n plus one extra edge and asks which edge to remove, the last one in the input if several work: union the edges in order, and the first union that finds both ends already connected names the edge, `[1, 4]` here.
 
 ```python
 def trace_kahn(n, edges):                         # edges (u, v): u before v
@@ -252,12 +238,12 @@ print(trace_redundant([[1, 2], [2, 3], [3, 4], [1, 4], [1, 5]]))   # [1, 4]
 ### Where it goes wrong
 
 1. **Edge direction.** `[a, b]` means "b before a", so the edge is `b -> a`. Reversed edges give the order backwards (`[3, 1, 2, 0]` above), and Course Schedule I still passes because reversing edges keeps cycles, so the bug hides until part II. Convert once, at the top.
-2. **Forgotten nodes.** Seed the queue with *every* node of indegree 0, including nodes with no edges at all. In Alien Dictionary every letter is a node, even one that appears in no rule (`["ab", "adc"]` must output `c` too).
+2. **Forgotten nodes.** Seed the queue with *every* node of indegree 0, including nodes with no edges at all. Alien Dictionary, which recovers an alphabet from words sorted in it, makes every letter a node, even one that appears in no rule: `["ab", "adc"]` must output `c` too.
 3. **Duplicate edges with a set adjacency.** If `graph[x]` is a set, add to `indegree[y]` only when `y` was really new. Without that guard, `alien_order(["ab", "ac", "bb", "bc"])` returns `""` instead of `"abc"`: the fact "b before c" was counted twice but can only be freed once. With list adjacency duplicates are harmless: counted twice, freed twice.
 4. **Two colours in DFS.** "Visited" is not "on my path": with two colours, the diamond `0->1, 0->2, 2->1` looks like a cycle.
 5. **Linking nodes instead of roots.** `parent[b] = a` can pull `b` out of its old group (`union(0, 1)`, then `union(2, 1)` leaves 0 and 1 apart). Always link `find(b)` under `find(a)`.
 6. **No halving, no union by size.** With a plain `parent[find(a)] = find(b)`, the unions `union(0, k)` for k = 1 … 999 build one long chain, and `find(0)` then walks 999 links.
-7. **Counting every union.** Lower the group count only when the roots differed; a repeated edge must not change it.
+7. **Counting every union.** Lower the group count only when the roots differed; a repeated edge must not change it. Four nodes with the edges `[0, 1]`, `[1, 0]` and `[2, 3]` form 2 groups, but counting every edge, `n - len(edges)`, says 1.
 8. **1-indexed nodes.** Courses, people and tree nodes are often numbered `1..n`: `DSU(3).union(1, 3)` raises `IndexError`. Allocate `n + 1`.
 9. **Comparing parents instead of roots.** After `union(0, 1)`, `union(2, 3)`, `union(0, 2)` the parents are `[0, 0, 0, 2]`: `parent[3] == parent[1]` is False although `find(3) == find(1)`. Only roots name groups.
 
@@ -289,24 +275,36 @@ print("edge cases pass")
 
 ### Variations
 
+Every variation keeps one of the two templates and changes what goes in or what is read out: which nodes start, what an edge means, or what is done with the groups at the end.
+
 | Variation | What changes from the template | Problems |
 |---|---|---|
-| **Is any order possible?** | count the pops; possible iff all n come out | 207 |
-| **Return an order** | keep the pop order | 210 |
-| **Smallest or unique order** | a heap instead of the deque; the order is unique iff the queue never holds two nodes | 444 |
-| **Derive the edges first** | compare neighbouring words; their first different letter is one edge; prefix check | 269 |
-| **Longest path in a DAG** | in topological order, push `finish[v] = max(finish[v], finish[u] + time[v])` | 2050 |
-| **Peel leaves** | Kahn on an undirected tree: remove degree-1 leaves ring by ring; the last 1–2 nodes are the centre | 310 |
-| **Tree check / component count / judge** | n − 1 edges and no failed union; `dsu.count`; in-degree minus out-degree | 261, 323, 997 |
-| **The cycle edge, undirected** | the first union that returns False | 684 |
-| **Group by a shared key** | each key (an email) remembers its first owner; union with it | 721 |
-| **Union, then act per component** | sort letters inside each component; stones − groups | 1202, 947 |
-| **Equations as unions** | union every `a == b`, then check that no `a != b` falls inside one group | 990 |
-| **Two-colouring with a DSU** | every neighbour of u joins one group, and that group must not contain u | 785 |
-| **Online counting** | a new node adds 1; each successful union subtracts 1 | 305 |
-| **Hard extras** | see the end of this section | 685, 1203, 952, 924, 2092, 1579, 1697, 1192, 332 |
+| **Is any order possible?** | count the pops; possible iff all n come out | Course Schedule (207) |
+| **Return an order** | keep the pop order | Course Schedule II (210) |
+| **Smallest or unique order** | a heap instead of the deque; the order is unique iff the queue never holds two nodes | Sequence Reconstruction (444): is one given sequence the only order the rules allow |
+| **Derive the edges first** | compare neighbouring words; their first different letter is one edge; prefix check | Alien Dictionary (269) |
+| **Longest path in a DAG** | in topological order, push `finish[v] = max(finish[v], finish[u] + time[v])` | Parallel Courses III (2050) |
+| **Peel leaves** | Kahn on an undirected tree: remove degree-1 leaves ring by ring; the last 1–2 nodes are the centre | Minimum Height Trees (310) |
+| **Tree check / component count / judge** | n − 1 edges and no failed union; `dsu.count`; in-degree minus out-degree | Graph Valid Tree (261), Number of Connected Components (323), Find the Town Judge (997) |
+| **The cycle edge, undirected** | the first union that returns False | Redundant Connection (684) |
+| **Group by a shared key** | each key (an email) remembers its first owner; union with it | Accounts Merge (721) |
+| **Union, then act per component** | sort letters inside each component; stones − groups | Smallest String With Swaps (1202), Most Stones Removed (947) |
+| **Equations as unions** | union every `a == b`, then check that no `a != b` falls inside one group | Satisfiability of Equality Equations (990): can every `==` and `!=` hold at once |
+| **Two-colouring with a DSU** | every neighbour of u joins one group, and that group must not contain u | Is Graph Bipartite (785): two camps, every edge between them, as in [Graphs I](#s17) |
+| **Online counting** | a new node adds 1; each successful union subtracts 1 | Number of Islands II (305) |
+| *Second pass:* **bridges** | DFS low-link: tree edge (u, v) is a bridge iff `low[v] > disc[u]` | Critical Connections in a Network (1192) |
+| *Second pass:* **use every edge once** | Hierholzer: write a node down when it is stuck, reverse at the end | Reconstruct Itinerary (332) |
+| *Second pass:* **prime hubs** | each prime factor remembers its first owner; union with it | Largest Component Size by Common Factor (952) |
+| *Second pass:* **unions over time** | one timestamp at a time; reset everyone not connected to person 0 | Find All People With Secret (2092) |
+| *Second pass:* **offline thresholds** | sort queries by limit, let edges in by weight, answer into the original slots | Checking Existence of Edge Length Limited Paths (1697) |
+| *Second pass:* **an order inside an order** | topo-sort the items and the groups separately; output groups in order, items inside | Sort Items by Groups Respecting Dependencies (1203) |
+| *Second pass:* **the cycle edge, directed** | a node with two parents first: try dropping the later edge, else the earlier one | Redundant Connection II (685) |
+| *Second pass:* **two players** | two DSUs; shared edges first, then each player's own | Remove Max Number of Edges to Keep Graph Fully Traversable (1579) |
+| *Second pass:* **facts per component** | per root: its size and how many infected nodes it holds | Minimize Malware Spread (924) |
 
-**One call away from the template.** A tree on n nodes is "just enough" edges: exactly n − 1, and none of them wasted on a loop. A component count starts at n and every real merge removes one. The Town Judge needs no graph at all, only degrees.
+Three warm-ups need almost nothing beyond the templates. Graph Valid Tree asks whether n nodes and a list of undirected edges form one tree, and `5, [[0, 1], [0, 2], [0, 3], [1, 4]]` does: a tree on n nodes has exactly n − 1 edges, none of them wasted on a loop. Number of Connected Components counts the groups, 2 for `5, [[0, 1], [1, 2], [3, 4]]`: start at n, and every real merge removes one.
+
+Find the Town Judge looks for the one person who is trusted by everybody else and trusts nobody, or -1: with 3 people and `[[1, 3], [2, 3]]`, the judge is 3. It needs no graph at all, only a score per person, in-degree minus out-degree, and only the judge reaches n − 1.
 
 ```python
 def valid_tree(n, edges):                         # exactly n - 1 edges, and none of them closes a cycle
@@ -340,7 +338,7 @@ print(find_judge(3, [[1, 3], [2, 3]]), find_judge(3, [[1, 3], [2, 3], [3, 1]]), 
 - `count_components(4, [[0, 1], [1, 0], [2, 3]])` is 2: the repeated edge's union returns False, so the count does not drop.
 - `valid_tree(1, [])` is True: a single node with no edges is a tree.
 
-**Derive the edges first (Alien Dictionary).** The sorted word list hides the alphabet. Two *neighbouring* words give at most one fact: at their first different letter, the earlier word's letter comes first. Letters after that difference say nothing. And if a word comes before its own prefix (`"abc"` before `"ab"`), no alphabet can do that.
+Sometimes the edges are hidden, and the first job is to find them. Alien Dictionary gives words sorted in an unknown alphabet and asks for that alphabet, or `""` when no alphabet fits: `["wrt", "wrf", "er", "ett", "rftt"]` gives `"wertf"`. Two *neighbouring* words give at most one fact, at their first different letter, where the earlier word's letter comes first; the letters after that difference say nothing. And a word placed before its own prefix, `"abc"` before `"ab"`, is impossible in any alphabet.
 
 ```python
 def alien_order(words):
@@ -377,7 +375,7 @@ print([alien_order(ws) for ws in (["wrt", "wrf", "er", "ett", "rftt"], ["z", "x"
 - `alien_order(["ab", "adc"])` is `"abcd"`: `c` appears in no rule but still belongs to the alphabet.
 - `alien_order(["z", "z"])` is `"z"`: equal words give no rule and no contradiction.
 
-**Longest path in a DAG (Parallel Courses III).** A course can start only when its *slowest* prerequisite has finished, so `finish[v] = time[v] + max(finish of its prerequisites)`. In Kahn's order every prerequisite has already reported when `v` is popped, so each edge pushes its value forward exactly once.
+A topological order can also carry values forward, which turns Kahn's algorithm into a longest-path algorithm. Parallel Courses III gives each course a duration, lets any number of courses run at once, and asks for the fewest months to finish them all: with `time = [3, 2, 5]` and course 3 waiting for courses 1 and 2, the answer is 8. A course starts when its *slowest* prerequisite ends, so `finish[v] = time[v] + max(finish of its prerequisites)`, and in Kahn's order every prerequisite has reported before v is popped.
 
 ```python
 def minimum_time(n, relations, time):
@@ -407,7 +405,7 @@ print(minimum_time(5, [[1, 5], [2, 5], [3, 5], [3, 4], [4, 5]], [1, 2, 3, 4, 5])
 - With no relations, `minimum_time(3, [], [3, 2, 5])` is 5: everything runs in parallel.
 - Chain them: `minimum_time(3, [[1, 2], [2, 3]], [3, 2, 5])` is 10.
 
-**Peel leaves (Minimum Height Trees).** The best root of a tree is its centre, and the centre is what is left after peeling the tree like an onion: remove every leaf (degree 1) at once, then the new leaves, until at most two nodes remain. It is Kahn's algorithm on an undirected tree, with "degree 1" in place of "indegree 0".
+Kahn's idea also works on an undirected tree, with "degree 1" in place of "indegree 0". Minimum Height Trees asks for every root that gives a tree its smallest height: the star with centre 1 has the single answer `[1]`. The best root is the centre, and the centre is what is left after peeling the tree like an onion: remove every leaf at once, then the new leaves, until at most two nodes remain.
 
 ```python
 def find_min_height_trees(n, edges):
@@ -442,7 +440,7 @@ print(find_min_height_trees(1, []))                                         # [0
 - Change `while remaining > 2` to `> 1`: the second example answers `[]` instead of `[3, 4]`. A tree can have two centres.
 - Predict the centre of the path 0-1-2-3-4, then check: `find_min_height_trees(5, [[0, 1], [1, 2], [2, 3], [3, 4]])` is `[2]`; with only four nodes in a line it is `[1, 2]`.
 
-**Group by a shared key (Accounts Merge).** Comparing every pair of accounts to see whether they share an email is O(n²). Turn it around: each email remembers the *first* account it saw, and every later account with the same email is unioned with that first one. Then bucket the emails by their group's root.
+Union-find takes over when groups come from shared keys. Accounts Merge gives accounts as a name followed by emails and merges any two that share an email, since one person owns both; a shared name proves nothing. Below, the two Johns who share `b@m` merge, and the John with only `x@m` stays apart. Instead of comparing every pair of accounts, O(n²), each email remembers the *first* account that listed it, every later account with that email is unioned with it, and the emails are finally bucketed by their group's root.
 
 ```python
 def accounts_merge(accounts):
@@ -467,8 +465,11 @@ print(accounts_merge([["John", "a@m", "b@m"], ["John", "b@m", "c@m"], ["Mary", "
 **Try it**
 - Print `owner` and `dsu.parent` after the first loop: `b@m` belongs to account 0, and account 0 now hangs under account 1. The two Johns who share nothing stay apart, although they have the same name.
 - Delete the `else:` branch (never record an owner): the result is `[]`. `owner` is both the shared-email detector and the list of emails to print.
+- Run `accounts_merge([["A", "x"], ["A", "y"], ["A", "x", "y"]])`: `[['A', 'x', 'y']]`. The third account bridges two that share nothing.
 
-**Union, then act per component.** Some problems only need the groups: union everything first, then do one thing per component. In Smallest String With Swaps, swaps chain together, so the letters inside a component can be put in *any* order: sort them. In Most Stones Removed, a stone glues its row to its column, and every group of stones can be cleared down to one stone.
+Some problems only need the groups: union everything first, then do one thing per component. Smallest String With Swaps lets you swap the letters at any listed pair of indexes, as often as you like, and asks for the smallest string you can reach: `"dcab"` with the pairs `[0, 3]` and `[1, 2]` becomes `"bacd"`. Swaps chain, so the letters inside a component can be put in *any* order, and the answer sorts them.
+
+Most Stones Removed lets you remove a stone that shares a row or a column with another stone still on the board, and asks for the most stones you can remove: 5 of the 6 stones below. A stone glues its row to its column, and every group of stones can be cleared down to one stone, so the answer is the number of stones minus the number of groups.
 
 ```python
 def smallest_string_with_swaps(s, pairs):
@@ -500,11 +501,11 @@ print(remove_stones([[0, 0], [0, 1], [1, 0], [1, 2], [2, 1], [2, 2]]), remove_st
 ```
 
 **Try it**
-- Print `groups` for `"dcab", [[0, 3], [1, 2]]`: `{0: [0, 3], 1: [1, 2]}`. Index 0 can only trade with index 3, so sorting the whole string (`"abcd"`) would be wrong; the answer is `"bacd"`.
+- Print `dict(groups)` for `"dcab", [[0, 3], [1, 2]]`: `{0: [0, 3], 1: [1, 2]}`. Index 0 can only trade with index 3, so sorting the whole string (`"abcd"`) would be wrong; the answer is `"bacd"`.
 - Forget the column offset (`dsu.union(r, c)`): `remove_stones([[0, 1], [1, 2]])` answers 1 instead of 0, because column 1 got glued to row 1.
 - `remove_stones([[0, 0], [5, 5]])` is 0: two stones that share neither a row nor a column.
 
-**Online counting (Number of Islands II).** Land appears one cell at a time and the island count is needed after every step. Recounting the grid each time repeats almost all of the work. Instead: a new cell is a new island (+1), and it swallows each *different* neighbouring island (−1 per successful union).
+The last union-find variation counts groups while they form. Number of Islands II turns water into land one cell at a time and asks for the island count after every step: on a 3 × 3 grid, adding (0, 0), (0, 1), (1, 2) and (2, 1) gives `[1, 1, 2, 3]`. Recounting the grid each time repeats almost all the work. Instead, a new cell is a new island, +1, and it swallows each *different* neighbouring island, −1 per successful union.
 
 ```python
 def num_islands_2(m, n, positions):
@@ -539,94 +540,11 @@ print(num_islands_2(3, 3, [[0, 0], [0, 2], [1, 1], [0, 1], [0, 1]]))   # [1, 2, 
 - Decrement for every land neighbour (drop the `if ra != rb`): `num_islands_2(2, 2, [[0, 0], [0, 1], [1, 0], [1, 1]])` gives `[1, 1, 1, 0]`. The last cell's two neighbours were already one island.
 - Print `{cell: find(cell) for cell in parent}` at the end of the second example: all four cells report the same root.
 
-#### Hard extras (skim)
+The rest of this section is a second pass: Hard problems that reuse the same moves. Skip them until the main path is automatic.
 
-The same two tools, each with one more twist. Skim them once the core above is automatic.
+Critical Connections in a Network gives a connected network of servers and asks for every cable whose removal disconnects some pair: in a triangle 0-1-2 with server 3 hanging off 1, only `[1, 3]` is critical. Removing each edge and re-running a BFS costs O(E · (V + E)); one DFS does it all.
 
-| Variation | What changes | Problems |
-|---|---|---|
-| **The cycle edge, directed** | a node with two parents first: try dropping the later edge, else the earlier one | 685 |
-| **An order inside an order** | topo-sort the items and the groups separately; output groups in order, items inside | 1203 |
-| **Prime hubs** | each prime factor remembers its first owner; union with it | 952 |
-| **Facts per component** | per root: its size and how many infected nodes it holds | 924 |
-| **Unions over time** | one timestamp at a time; reset everyone not connected to person 0 | 2092 |
-| **Two players** | two DSUs; shared edges first, then each player's own | 1579 |
-| **Offline thresholds** | sort queries by limit, let edges in by weight, answer into the original slots | 1697 |
-| **Bridges** | DFS low-link: tree edge (u, v) is a bridge iff `low[v] > disc[u]` | 1192 |
-| **Use every edge once** | Hierholzer: write a node down when it is stuck, reverse at the end | 332 |
-
-**Prime hubs (Largest Component by Common Factor).** The Accounts Merge trick with primes as the keys: two numbers are connected if they share a prime, so every number is unioned with the first owner of each of its prime factors.
-
-```python
-def largest_component(nums):
-    dsu = DSU(len(nums))
-    owner = {}                                    # prime -> the first index divisible by it
-    for i, x in enumerate(nums):
-        p = 2
-        while p * p <= x:
-            if x % p == 0:
-                dsu.union(i, owner.setdefault(p, i))
-                while x % p == 0:
-                    x //= p
-            p += 1
-        if x > 1:                                 # a prime factor bigger than sqrt is left over
-            dsu.union(i, owner.setdefault(x, i))
-    return max(dsu.size[dsu.find(i)] for i in range(len(nums)))
-
-
-print(largest_component([4, 6, 15, 35]), largest_component([20, 50, 9, 63]))   # 4 2
-```
-
-**Try it**
-- `largest_component([2, 3, 6])` is 3: 2 and 3 share nothing, but 6 glues them through the primes 2 and 3.
-- Delete the leftover-prime lines (`if x > 1: ...`): `[4, 6, 15, 35]` now answers 2. The 3 in 6 and the 5 in 15 are only found after the loop, so those links never happen.
-
-**Unions over time, and offline thresholds.** Union-find can only merge, never split, so feed it events in the right order. In Find All People With Secret, a timestamp's meetings are unioned together, and afterwards everybody who did *not* end up connected to person 0 is reset to a group of one: their links knew no secret and must not carry one later. In Edge Length Limited Paths, sort the queries by limit and let edges in by weight; each query is then one `find` comparison, written back into its original slot.
-
-```python
-def find_all_people(n, meetings, first):
-    dsu = DSU(n)
-    dsu.union(0, first)
-    meetings = sorted(meetings, key=lambda m: m[2])
-    i = 0
-    while i < len(meetings):
-        j, met = i, set()
-        while j < len(meetings) and meetings[j][2] == meetings[i][2]:   # every meeting at this moment
-            x, y, _ = meetings[j]
-            dsu.union(x, y)
-            met.update((x, y))
-            j += 1
-        for p in met:                             # links that never touched person 0 are forgotten
-            if dsu.find(p) != dsu.find(0):
-                dsu.parent[p], dsu.size[p] = p, 1
-        i = j
-    return [p for p in range(n) if dsu.find(p) == dsu.find(0)]
-
-
-def limited_paths(n, edges, queries):
-    dsu = DSU(n)
-    edges = sorted(edges, key=lambda e: e[2])
-    answer, j = [False] * len(queries), 0
-    for qi in sorted(range(len(queries)), key=lambda i: queries[i][2]):   # smallest limit first
-        p, q, limit = queries[qi]
-        while j < len(edges) and edges[j][2] < limit:   # let in every edge lighter than the limit
-            dsu.union(edges[j][0], edges[j][1])
-            j += 1
-        answer[qi] = dsu.find(p) == dsu.find(q)   # write into the query's ORIGINAL slot
-    return answer
-
-
-print(find_all_people(6, [[1, 2, 5], [2, 3, 8], [1, 5, 10]], 1))   # [0, 1, 2, 3, 5]
-print(find_all_people(4, [[2, 3, 1], [1, 2, 2]], 1))               # [0, 1, 2]  (3 met 2 BEFORE 2 knew)
-print(limited_paths(3, [[0, 1, 2], [1, 2, 4], [2, 0, 8], [1, 0, 16]], [[0, 1, 2], [0, 2, 5]]))   # [False, True]
-```
-
-**Try it**
-- Replace the reset line with `pass`: `find_all_people(4, [[2, 3, 1], [1, 2, 2]], 1)` returns `[0, 1, 2, 3]`. Person 3 "learns" the secret through a meeting that happened before 2 knew it.
-- Change `<` to `<=` in `limited_paths`: the first query becomes True, although its only edge weighs 2 and the limit is 2 (the problem says strictly less).
-- Ask the queries in the other order, `[[0, 2, 5], [0, 1, 2]]`: `[True, False]`. The answers land in their original slots.
-
-**Bridges (Critical Connections).** Removing each edge and re-running a BFS costs O(E · (V + E)). One DFS can do it. Picture the DFS tree with every non-tree edge as a *rope* from a deep node up to an ancestor. Cut the tree edge above v: v's subtree stays attached exactly when some rope from inside it reaches above the cut.
+Picture the DFS tree with every non-tree edge as a *rope* from a deep node up to an ancestor: cut the tree edge above v, and v's subtree stays attached exactly when some rope from inside it reaches above the cut.
 
 ```text
         0 <------+      tree edges go down; the non-tree edge 2-0 is a rope from 2 up to 0
@@ -637,6 +555,8 @@ print(limited_paths(3, [[0, 1, 2], [1, 2, 4], [2, 0, 8], [1, 0, 16]], [[0, 1, 2]
       |          |
       +----------+      disc = visiting order; low[v] = the smallest disc a rope from v's subtree reaches
 ```
+
+In the code, `disc[v]` is the order in which the DFS visits v, and `low[v]` is the smallest `disc` a rope from v's subtree reaches. The tree edge (u, v) is a bridge exactly when `low[v] > disc[u]`: nothing below v climbs back to u or above it.
 
 ```python
 def critical_connections(n, connections):
@@ -679,13 +599,16 @@ print(critical_connections(5, [[0, 1], [1, 2], [2, 0], [1, 3], [3, 4]]))   # [[3
 
 Two more limits of this version. Parallel edges: `critical_connections(2, [[0, 1], [0, 1]])` gives `[[0, 1]]`, but removing one copy disconnects nothing; skip the parent *edge id*, not the parent node. A disconnected graph: `critical_connections(4, [[0, 1], [2, 3]])` misses the bridge 2-3, because the DFS has to be started from every unvisited node.
 
-**Use every edge once (Reconstruct Itinerary).** Backtracking over ticket orders can dead-end deep down and undo a lot. Hierholzer's trick: always fly the smallest unused ticket; when you are stuck at an airport, it must be the *end* of what is left, so write it down and back up one step. Airports are written in reverse, so reverse at the end.
+Reconstruct Itinerary gives plane tickets `[from, to]`, all used by one traveller who starts at JFK, and asks for the route that uses every ticket exactly once, the smallest in lexical order when several exist: the four tickets below fly JFK, MUC, LHR, SFO, SJC. Backtracking over ticket orders can dead-end deep down and undo a lot.
+
+Hierholzer's algorithm never undoes a flight. Always fly the smallest unused ticket; when you are stuck at an airport, it must be the *end* of what is left, so write it down and back up one step. Airports are written in reverse finishing order, so the route is reversed at the end.
 
 ```python
 def find_itinerary(tickets):
     graph = defaultdict(list)
-    for a, b in sorted(tickets, reverse=True):
-        graph[a].append(b)                        # reverse-sorted, so pop() hands out the smallest
+    tickets = sorted(tickets, reverse=True)       # INIT: reverse-sorted, so pop() hands out the smallest
+    for a, b in tickets:
+        graph[a].append(b)
     route, stack = [], ["JFK"]
     while stack:
         while graph[stack[-1]]:                   # keep flying while this airport has unused tickets
@@ -700,14 +623,18 @@ print(find_itinerary([["JFK", "KUL"], ["JFK", "NRT"], ["NRT", "JFK"]]))         
 
 **Try it**
 - Write each airport down on the way *in* instead (append it when you fly to it, no reverse): the second example becomes `['JFK', 'KUL', 'NRT', 'JFK']`, which needs a KUL → NRT ticket that does not exist.
-- Sort ascending instead: `pop()` now hands out the *largest* destination. For `[["JFK", "SFO"], ["JFK", "ATL"], ["SFO", "ATL"], ["ATL", "JFK"], ["ATL", "SFO"]]` you get `['JFK', 'SFO', 'ATL', 'JFK', 'ATL', 'SFO']`: it uses every ticket, but it is not the smallest route.
-- Print `route[-1], stack` each time an airport is written: KUL goes first, while the stack still holds the trip so far.
+- Sort ascending instead (drop `reverse=True`): `pop()` now hands out the *largest* destination. For `[["JFK", "SFO"], ["JFK", "ATL"], ["SFO", "ATL"], ["ATL", "JFK"], ["ATL", "SFO"]]` you get `['JFK', 'SFO', 'ATL', 'JFK', 'ATL', 'SFO']`: it uses every ticket, but it is not the smallest route.
+- Print `route[-1], stack` each time an airport is written, for the second example: `KUL ['JFK']` comes first. KUL is a dead end, so it must end the trip; the loop through NRT is flown after it and written before the start, so the reversal puts KUL last.
 
-**Four more, in words.**
-- *Sort Items by Groups (1203):* give every ungrouped item its own new group. Build the item graph and a group graph (`group[u] -> group[v]` when the groups differ), topo-sort both, then output the groups in group order with each group's items in item order. Either sort failing means `[]`.
-- *Redundant Connection II (685):* directed, one parent per node. If some node has two parents, the answer is one of those two edges: skip the later one and union the rest; if a cycle still appears, the earlier edge was the culprit. If no node has two parents, return the first edge that closes a cycle.
-- *Remove Max Edges to Keep Graph Fully Traversable (1579):* two DSUs, one per player. Shared (type 3) edges go first, kept once if they merge anything; then type 1 for Alice and type 2 for Bob. Answer = edges − kept, or −1 if either player's DSU still has more than one group.
-- *Minimize Malware Spread (924):* union the adjacency matrix, count the infected nodes per root, and remove the infected node whose component has exactly one infected node and the largest size (ties: the smallest index; none: `min(initial)`).
+Seven more Hard problems need no new code, only one more idea each:
+
+- Largest Component Size by Common Factor (952) joins two numbers when they share a factor greater than 1 and asks for the size of the biggest group, 4 for `[4, 6, 15, 35]`. It is Accounts Merge with primes as the emails: union each number with the first owner of each of its prime factors, then count the numbers per root.
+- Find All People With Secret (2092): person 0 tells `firstPerson` a secret at time 0, and a meeting `[x, y, t]` passes it between x and y, instantly along chains of meetings at the same time; who knows it in the end? Union-find can merge but never split, so union one timestamp's meetings at a time, then reset everyone from that timestamp who is not connected to person 0.
+- Checking Existence of Edge Length Limited Paths (1697) asks, for each query `[p, q, limit]`, whether a path joins p and q using only edges lighter than the limit. Answer the queries offline: sort them by limit, let the edges in by weight, and each query becomes one `find` comparison, written into its original slot.
+- Sort Items by Groups Respecting Dependencies (1203) asks for an order of items that respects every "before" rule and keeps each group's items together. Give every ungrouped item its own new group, topo-sort the items and, separately, the groups (`group[u] -> group[v]` when they differ), then output the groups in group order with each group's items in item order; either sort failing means `[]`.
+- Redundant Connection II (685) adds one extra *directed* edge to a rooted tree and asks which edge to remove. If some node now has two parents, the answer is one of those two edges: skip the later one and union the rest; if no cycle appears, the later edge is the answer, and otherwise the earlier one is. If no node has two parents, return the first edge that closes a cycle.
+- Remove Max Number of Edges to Keep Graph Fully Traversable (1579) asks how many edges can go while Alice and Bob, each with edges only they may use plus shared ones, still reach every node. Keep one DSU per player: shared edges go first and are kept when they merge anything, then each player's own. The answer is edges − kept, or −1 if either player's DSU still has more than one group.
+- Minimize Malware Spread (924) asks which one node to take off the initially infected list so that the fewest nodes end up infected. Union the adjacency matrix, count the infected nodes per root, and remove the infected node whose component holds exactly one infected node and is the largest; ties go to the smallest index, and with no such node the answer is `min(initial)`.
 
 ### Say it in the interview
 

@@ -2,9 +2,11 @@
 
 > A **stack** is a pile of unfinished business: whatever you opened last must be finished first, so it sits on top (LIFO). A **queue** is a line: whoever arrived first is served, or expires, first (FIFO). To pick one, ask a single question: *in what order do my pending items get finished?*
 
-**Reach for it when** you see nesting or matching (brackets, `k[...]`, parentheses in an expression), "the most recent unmatched thing", going back (`..` in a path, undo), evaluating an expression, or a newcomer that only ever meets the nearest survivor (collisions): that is a **stack**. When items are handled in arrival order (the oldest expires first, players take turns, a fixed-size buffer), that is a **queue**, written with `collections.deque`. And the most common queue of all is BFS: "nearest first", "fewest steps" or "level by level" means the frontier is a deque (see [Graphs I](#s17)).
+**Reach for it when** you see nesting or matching: brackets, `k[...]`, the parentheses of an expression. The same goes for "the most recent unmatched thing", for going back with `..` in a path or with undo, for evaluating an expression, and for a newcomer that only ever meets the nearest survivor, as in a collision. All of those are a **stack**.
 
-**In this repo:** `stack/` (10 of its 16 problems; the "next greater" family is in Monotonic Stack) · `queues/` (6 problems) · bank: `practice/simple/13_valid_parentheses.py`, `practice/simple/14_min_stack.py`, `practice/simple/15_evaluate_reverse_polish_notation.py` · basics in `practice/simple/basics/stacks/`: `01_array_stack_and_queue_via_two_stacks.py`, `02_simplify_unix_path.py`, `03_decode_string.py`, `04_basic_calculator_ii.py`, `05_asteroid_collision.py`
+When items are handled in arrival order, because the oldest expires first, players take turns or a buffer has a fixed size, that is a **queue**, written with `collections.deque`. The most common queue of all is BFS: "nearest first", "fewest steps" or "level by level" means the frontier is a deque, and that one lives in [Graphs I](#s17).
+
+**In this repo:** `stack/` (10 of its 16 problems; the "next greater" family is in [Monotonic Stack](#s08)) · `queues/` (6 problems) · bank: `practice/simple/13_valid_parentheses.py`, `practice/simple/14_min_stack.py`, `practice/simple/15_evaluate_reverse_polish_notation.py` · basics in `practice/simple/basics/stacks/`: `01_array_stack_and_queue_via_two_stacks.py`, `02_simplify_unix_path.py`, `03_decode_string.py`, `04_basic_calculator_ii.py`, `05_asteroid_collision.py`
 
 ### The picture
 
@@ -25,57 +27,35 @@ stack (LIFO):  [ a  b  c  d ]  <- push and pop here, at the top (d is the most r
 queue (FIFO):  append -> [ e  d  c  b  a ] -> popleft         (a is the oldest, it leaves first)
 ```
 
-**Why it is fast:** the brute force for nesting finds an innermost pair like `()`, deletes it, and rescans from the start: O(n²). A stack holds exactly the unfinished items in the order they were opened, so each character is pushed once and popped at most once: O(n). Queues have the same story in time: `list.pop(0)` shifts every remaining item (O(n) per call), while a `deque`, or a ring buffer that moves an index instead of the data, does it in O(1).
+**Why it is fast:** the brute force for nesting finds an innermost pair like `()`, deletes it, and rescans from the start: O(n²). A stack holds exactly the unfinished items in the order they were opened, so each character is pushed once and popped at most once: O(n).
 
-**Why it is correct:** brackets nest, so a bracket opened later must be closed earlier. The next closer can therefore only match the innermost open bracket, which is the most recent one: the top. A closer that doesn't match the top can never be matched by anything later, so failing at once is safe.
+Queues have the same story. `list.pop(0)` shifts every remaining item, O(n) per call. A `deque` moves nothing, and a ring buffer moves an index instead of the data, so with either one an item leaves the line in O(1).
+
+**Why it is correct:** brackets nest, so a bracket opened later must be closed earlier. The next closer can therefore only match the innermost open bracket, which is the most recent one: the top. A closer that does not match the top can never be matched by anything later, so failing at once is safe.
 
 ### From idea to code
 
 **The idea in one sentence:** *walk the input once; push whatever is still unfinished; when an item finishes something, the thing it finishes is on top, so pop it and combine.*
 
-The seven decisions, for stacks and queues side by side:
+The seven decisions, for a stack first. The **State** is a Python list used as a stack of *unfinished* items, and its **Definition** goes in a comment: `stack = openers not closed yet, innermost on top`. The **Invariant** is that after reading `s[:i]` the stack holds exactly the unfinished items of that prefix, most recent on top. A **Step** pushes an opener or a value; a closer or an operator pops what it finishes, combines, and pushes the result when there is one.
 
-| Decision | Stack (nesting, evaluation) | Queue / deque (arrival order) |
-|---|---|---|
-| **State / Definition** | a list used as a stack of *unfinished* items, defined in a comment: `stack = openers not closed yet, innermost on top` | a `deque` in arrival order: `q = pings in [t - 3000, t], oldest at the front` |
-| **Invariant** | after reading `s[:i]`, the stack holds exactly the unfinished items of that prefix, most recent on top | the deque holds exactly the live items, in arrival order |
-| **Step** | an opener or a value: push it. A closer or an operator: pop what it finishes, combine, maybe push the result | `append` the new item at the back |
-| **Fix** | when one newcomer can finish several items in a row (collisions, runs that vanish): `while` it beats the top, pop | `while` the front has expired: `popleft` |
-| **Record** | when a pop measures something (a run length in 32; distances and areas in Monotonic Stack), record right there. Otherwise the answer is what is left at the end (`not stack`, the one value, the survivors). An early `return False` records a failure the moment it is certain | after the fix: `len(q)`, or the front |
-| **Init** | `stack = []`, `num = 0`; sometimes a sentinel (a `-1` barrier, a trailing `"+"`) | `q = deque()` |
-| **Return** | `not stack` (matching), the single value left (evaluation), the stack itself (survivors) | per call: the size or the front; at the end: whoever is left |
+The **Fix** is a `while` loop, needed only when one newcomer can finish several items in a row, as in a collision or a run that vanishes: pop while the newcomer beats the top. **Record** at the pop whenever the pop measures something: the length of a well-formed run in Longest Valid Parentheses, a distance or an area in [Monotonic Stack](#s08). Otherwise the answer is what is left at the end, and an early `return False` records a failure the moment it is certain.
 
-**What goes in one stack entry?** Exactly what you will need at the moment it is popped. It is the easiest decision to skip, and the one that makes the rest of the code obvious:
+**Init** is `stack = []` and `num = 0`, sometimes with a sentinel: a `-1` barrier under the indices, a trailing `"+"` on the input. **Return** `not stack` for matching, the single value left for evaluation, and the stack itself when the survivors are the answer.
 
-| Problem | One entry | Needed at the pop because |
-|---|---|---|
-| Valid Parentheses (20) | the opener | the closer must match its type |
-| Evaluate RPN (150) | a value | an operator combines the two newest values |
-| Basic Calculator II (227) | a signed term | `+` and `-` wait for the final sum; `*` and `/` edit the top |
-| Decode String (394) | (text before `[`, count) | `]` glues prefix + inner × count |
-| Calculator with parentheses (224, 772) | (terms so far, pending operator) | `)` resumes the whole outer expression |
-| Longest Valid Parentheses (32) | an index, on a −1 barrier | a length is `i - stack[-1]` |
-| Asteroid Collision (735) | a survivor | the newcomer fights the nearest survivor |
-| Min Stack (155) | (value, min at or below it) | after a pop, the minimum must already be known |
-| Remove Adjacent Duplicates II (1209) | [char, run length] | a run can grow again after the run above it vanishes |
-| Simplify Path (71) | a directory name | `..` undoes the most recent one |
+A queue makes the same decisions with the ends swapped. The state is a `deque` in arrival order, defined as `q = pings in [t - 3000, t], oldest at the front`, and the invariant is that it holds exactly the live items. A step appends the new item at the back, the fix pops the front while it has expired, and the record, after the fix, is `len(q)` or the front. Init is `q = deque()`; the return is the size or the front per call, or whoever is left at the end.
 
-If you can't say what you'll need at the pop, solve two pops by hand first.
+One more decision hides inside the state: what goes in one stack entry. The answer is exactly what you will need at the moment it is popped. It is the easiest decision to skip, and the one that makes the rest of the code obvious.
 
-The words of the idea, line by line:
+Valid Parentheses (20), which asks whether brackets are properly nested, pushes the opener itself, because the closer must match its type. Evaluate Reverse Polish Notation (150), which evaluates a postfix expression, pushes values, because an operator combines the two newest. Basic Calculator II (227), which evaluates `"3+2*2"` with the usual precedence, pushes signed terms: `+` and `-` wait for the final sum, while `*` and `/` edit the top. Decode String (394), which expands `3[a]` into `aaa`, parks a pair, the text before `[` and the count, because `]` glues prefix + inner × count.
 
-| In words | In code |
-|---|---|
-| "remember it, it's unfinished" | `stack.append(x)` |
-| "the most recent unfinished thing" | `stack[-1]`, only after checking `stack` is not empty |
-| "finish it" | `stack.pop()` |
-| "anything still open?" | `return not stack` |
-| "the right operand comes off first" | `b = stack.pop()`, then `a = stack.pop()`, then `a - b` |
-| "read a number digit by digit" | `num = num * 10 + int(ch)` |
-| "join the line" / "leave the line" | `q.append(x)` / `q.popleft()` (never `list.pop(0)`) |
-| "the oldest item" | `q[0]` |
+Longest Valid Parentheses (32), which wants the longest well-formed stretch of `(` and `)`, pushes an index on top of a `-1` barrier, because a length is `i - stack[-1]`. Asteroid Collision (735), where the smaller of two colliding asteroids explodes, pushes a survivor, because the newcomer fights the nearest survivor. Min Stack (155), a stack that also answers `getMin` in O(1), pushes the value together with the minimum at or below it, because after a pop the minimum must already be known.
 
-Two stack templates: one pops to *match*, the other pops to *combine*. Order matters in both: `is_valid` looks at the top *before* it pops (the check decides whether the pop is legal), and `eval_rpn` pops `b` before `a` (the right operand was pushed last).
+Remove All Adjacent Duplicates in String II (1209), which deletes every run of k equal letters, pushes `[char, run length]`, because a run can grow again after the run above it vanishes. Simplify Path (71), which cleans up a Unix path, pushes a directory name, because `..` undoes the most recent one. If you cannot say what you will need at the pop, solve two pops by hand first.
+
+Two stack templates come first, one that pops to *match* and one that pops to *combine*. Valid Parentheses asks whether a string of `()[]{}` is properly nested: `"{[()]}"` is, `"([)]"` is not. Walk the string. An opener is unfinished business, `stack.append(ch)`. A closer must finish the most recent opener, `stack[-1]`, which you may read only after checking that the stack is not empty; `stack.pop()` finishes it. At the end, `return not stack` asks whether anything is still open.
+
+Evaluate Reverse Polish Notation asks for the value of a postfix expression: `["2", "1", "+", "3", "*"]` is `(2 + 1) * 3 = 9`. Numbers wait on the stack, and an operator combines the two newest, with the right operand coming off first: `b = stack.pop()`, then `a = stack.pop()`, then `a - b`. Order matters in both templates. `is_valid` looks at the top *before* it pops, because the check decides whether the pop is legal, and `eval_rpn` pops `b` before `a`, because the right operand was pushed last.
 
 ```python
 def is_valid(s):
@@ -117,7 +97,9 @@ print(eval_rpn(["2", "1", "+", "3", "*"]), eval_rpn(["4", "13", "5", "/", "+"]))
 - Swap the two pops (pop `a` first) and run `eval_rpn(["6", "3", "-"])`: you get -3 instead of 3, because the operands come off the stack in reverse order.
 - Change `int(a / b)` to `a // b` in `OPS` and run `eval_rpn(["7", "-3", "/"])`: -3 instead of -2, because `//` floors and the problem truncates toward zero.
 
-A queue template has the same shape, but items leave from the *other* end. Pings expire in the order they arrived, so only the front ever needs checking. The order is STEP, FIX, RECORD: appending first means the FIX loop can never empty the deque, because `t` itself never expires, so it needs no `self.q and` guard; measuring last means only live pings are counted.
+A queue template has the same shape, but items leave from the *other* end: "join the line" is `q.append(x)`, "leave the line" is `q.popleft()`, never `list.pop(0)`, and "the oldest item" is `q[0]`. When items expire in the order they arrived, only the front ever needs checking. The lines then run in the order STEP, FIX, RECORD: join, drop whatever has expired, and measure last, so that only live items are counted.
+
+Number of Recent Calls (933) asks `ping(t)` to count the pings in `[t - 3000, t]`, and `t` only grows: pings at 1, 100, 3001 and 3002 answer 1, 2, 3 and 3, because by 3002 the ping at 1 has expired. Each ping joins at the back, the front leaves while it is older than `t - 3000`, and the answer is the length of what is left. Appending first also means the FIX loop can never empty the deque, because `t` itself never expires, so it needs no `self.q and` guard.
 
 ```python
 class RecentCounter:                         # 933: how many pings in [t - 3000, t]?
@@ -142,7 +124,7 @@ print([counter.ping(t) for t in [1, 100, 3001, 3002]])   # [1, 2, 3, 3]
 
 ### Watch it work
 
-The stack after every token. Notice that `/` takes `13` and `5`, the two most recent values, and never touches the `4` underneath:
+The stack after every token of `["4", "13", "5", "/", "+"]`, which is `4 + 13 / 5` and evaluates to 6. Notice that `/` takes `13` and `5`, the two most recent values, and never touches the `4` underneath: that is why postfix needs no parentheses.
 
 ```python
 def trace_rpn(tokens):
@@ -170,17 +152,17 @@ trace_rpn(["4", "13", "5", "/", "+"])
 
 1. **Peeking at an empty stack.** A closer with nothing open (`"]"`, `"())"`) makes `stack[-1]` raise `IndexError`. Check `not stack` first, in the same condition.
 2. **Forgetting the leftovers.** `"(("` never fails inside the loop. The answer is `not stack`, not `True`.
-3. **Counting instead of matching.** `"([)]"` has balanced counts but is invalid. A plain counter is enough only with a single bracket type (921): then every stack entry is the same `(` and only the height matters.
+3. **Counting instead of matching.** `"([)]"` has balanced counts but is invalid. A plain counter is enough only with a single bracket type, as in Minimum Add to Make Parentheses Valid (921), which asks for the fewest brackets to insert: then every stack entry is the same `(` and only the height matters.
 4. **Operand order.** The first pop is the *right* operand: `["6", "3", "-"]` is `6 - 3 = 3`, not -3.
 5. **Floor instead of truncate.** Python's `//` floors (`7 // -3 == -3`), but these problems truncate toward zero (`int(7 / -3) == -2`). It also bites calculators that store `-3` as a signed term: `"14-3/2"` must be 13, and `-3 // 2` would make it 12.
-6. **The last number is never applied.** A calculator applies an operator when the *next* operator arrives, so the final number needs a flush: loop over `s + "+"`. Without the sentinel, `"3+2*2"` gives 5. (Testing `i == len(s) - 1` also works, but only in an `if` of its own; chained as an `elif` after the digit test, `"42"` gives 0.)
+6. **The last number is never applied.** A calculator applies an operator when the *next* operator arrives, so the final number needs a flush: loop over `s + "+"`. Without the sentinel, `"3+2*2"` gives 5. Testing `i == len(s) - 1` also works, but only in an `if` of its own: chained as an `elif` after the digit test, `"42"` gives 0.
 7. **`if` instead of `while` for collisions.** A left-mover can destroy several right-movers in a row: `[1, 2, -5]` must end as `[-5]`, not `[1, -5]`.
 8. **`list.pop(0)` as a queue.** Each call shifts every remaining item, so n dequeues cost about n²/2 moves. Use `deque.popleft()`, or a ring buffer that moves `head` instead of the data.
-9. **An expiry loop without `q and`.** It is safe in `ping` only because `t` was just appended. In a read-only method such as `getHits(t)` (362, in [Design](#s24)) write `while q and q[0] <= t - 300`, or a call on an empty counter raises `IndexError`.
+9. **An expiry loop without `q and`.** It is safe in `ping` only because `t` was just appended. A read-only method has no such guarantee. Design Hit Counter (362) asks `getHits(t)` for the hits of the last 300 seconds; [From Idea to Code](#s01) has the base version and [Design Problems](#s24) the follow-up. Write `while q and q[0] <= t - 300`, or a call on an empty counter raises `IndexError`.
 
 ### Edge cases to say out loud
 
-Empty input · a lone closer · only openers · the wrong type innermost (`"([)]"`) · a single RPN token · negative numbers (`"-3"` is a number, not an operator) · dividing a negative · multi-digit numbers · a ping exactly 3000 ms old (still counts).
+Empty input · a lone closer · only openers · the wrong type innermost (`"([)]"`) · a single RPN token · negative numbers (`"-3"` is a number, not an operator) · dividing a negative · multi-digit numbers · a ping exactly 3000 ms old (still counts). The cell checks each of them against the three templates above.
 
 ```python
 assert is_valid("") is True
@@ -205,31 +187,34 @@ print("edge cases pass")
 
 | Variation | What changes from the template | Problems |
 |---|---|---|
-| **Match pairs** | push openers; a closer must equal the top | 20 |
-| **Stack collapses to a counter** | one bracket type: keep only the height; a `)` at height 0 costs one insertion | 921 |
-| **Index stack with a barrier** | push indices, seeded with `-1`; after a match the valid run is `i - stack[-1]` | 32 |
-| **Postfix evaluation** | numbers push; an operator pops two and pushes one | 150 |
-| **Precedence** | push signed terms; `*` and `/` edit the top term; the answer is `sum(stack)` | 227 |
-| **Park and resume** | on an opener, push the current context and start fresh; on a closer, pop it and merge | 394, 224, 772 |
-| **Park and resume, with time** | a start pauses the function below it; an end (inclusive) closes the top | 636 |
-| **Collapse at the closer** | push everything; at `)` pop the group's operands, then its operator, and push one result | 1106 |
-| **Score of nested pairs** | a stack of scores: `()` is 1, `(A)` doubles A, neighbours add up | 856 |
-| **Mark, then rebuild** | a stack of indices of unmatched `(`; drop every marked character | 1249, in [Strings](#s20) |
-| **Undo / go up** | names push, `..` pops (if anything is there), `.` and `""` do nothing | 71 |
-| **Collisions** | the newcomer fights the top *while* they collide | 735 |
-| **Stack of runs** | entry `[char, count]`; k in a row vanish, and the run below may grow again | 1209, 1047 |
-| **Remember the minimum** | each entry stores `(value, min of everything at or below it)` | 155 |
-| **Simulate the pops** | push in order; pop while the top equals the next value to pop | 946 |
-| **Flatten nested lists** | a stack of iterators; the top is the list you are inside | 341 |
-| **Queue from two stacks** | inbox takes pushes, outbox serves pops; refill only when the outbox is empty | 232 |
-| **Stack from one queue** | after each push, rotate the older items behind the new one (`len - 1` times) | 225 |
-| **Ring buffer** | fixed array + `head` + `count`; every index goes through `% k` | 622, 641 |
-| **Time window** | deque of times; pop the front while it is too old | 933, 362 |
-| **Round robin** | one queue per side; the earlier front acts and rejoins as `index + n` | 649 |
+| **Match pairs** | push openers; a closer must equal the top | Valid Parentheses (20) |
+| **Stack collapses to a counter** | one bracket type: keep only the height; a `)` at height 0 costs one insertion | Minimum Add to Make Parentheses Valid (921): the fewest brackets to insert |
+| **Postfix evaluation** | numbers push; an operator pops two and pushes one | Evaluate Reverse Polish Notation (150) |
+| **Precedence** | push signed terms; `*` and `/` edit the top term; the answer is `sum(stack)` | Basic Calculator II (227) |
+| **Park and resume** | on an opener, push the current context and start fresh; on a closer, pop it and merge | Decode String (394) |
+| **Mark, then rebuild** | a stack of indices of unmatched `(`; drop every marked character | Minimum Remove to Make Valid Parentheses (1249): delete the fewest brackets, in [Strings](#s20) |
+| **Undo / go up** | names push, `..` pops (if anything is there), `.` and `""` do nothing | Simplify Path (71) |
+| **Collisions** | the newcomer fights the top *while* they collide | Asteroid Collision (735) |
+| **Stack of runs** | entry `[char, count]`; k in a row vanish, and the run below may grow again | Remove All Adjacent Duplicates in String II (1209) and I (1047): `"abbaca"` → `"ca"` |
+| **Remember the minimum** | each entry stores `(value, min of everything at or below it)` | Min Stack (155) |
+| **Queue from two stacks** | inbox takes pushes, outbox serves pops; refill only when the outbox is empty | Implement Queue using Stacks (232) |
+| **Stack from one queue** | after each push, rotate the older items behind the new one (`len - 1` times) | Implement Stack using Queues (225): push, pop, top and empty from queue moves only |
+| **Ring buffer** | fixed array + `head` + `count`; every index goes through `% k` | Design Circular Queue (622) and Design Circular Deque (641): a bounded queue in a fixed array |
+| **Time window** | deque of times; pop the front while it is too old | Number of Recent Calls (933); Design Hit Counter (362) |
+| **Round robin** | one queue per side; the earlier front acts and rejoins as `index + n` | Dota2 Senate (649): which party wins a ban war |
+| *Second pass:* **Index stack with a barrier** | push indices, seeded with `-1`; after a match the valid run is `i - stack[-1]` | Longest Valid Parentheses (32) |
+| *Second pass:* **Collapse at the closer** | push everything; at `)` pop the group's operands, then its operator, and push one result | Parsing a Boolean Expression (1106): evaluate and/or/not groups over `t` and `f` |
+| *Second pass:* **Park and resume, with arithmetic** | at `(` park the terms so far and the pending operator; at `)` the group becomes one number | Basic Calculator (224) and Basic Calculator III (772): expressions with parentheses |
 
-The first pass below covers the five shapes that come up most; the second pass (calculators with parentheses, fixed-size buffers, turn order) can wait until those feel easy.
+The code below covers the five shapes that come up most: precedence, park and resume, collisions and undo, entries that remember, and a queue from two stacks. The ring buffer and the round robin need only their idea.
 
-**Precedence** (227): an operator can't be applied when you read it, because its right operand hasn't been read yet. So keep the operator *in front of* the current number in `op`, and apply it when the next operator arrives; the sentinel `"+"` at the end makes the last number get applied too. `+` and `-` are put off by pushing signed terms; `*` and `/` bind tighter, so they combine with the term on top right away.
+A ring buffer, as in Design Circular Queue (622), moves a label instead of the data: the items are the `count` slots that start at `head` in a fixed array of k, and every index goes through `% k`. Design Circular Deque (641) adds the front end by stepping `head` back, `(head - 1) % k`, before it writes, and self-check 4 shows why `count` is kept.
+
+The round robin of Dota2 Senate (649) gives each party a queue of turn indices. The earlier front bans the other front and rejoins its own queue as `index + n`, one full round later, so both queues stay in turn order and the party left standing wins.
+
+Precedence comes first because it is Evaluate RPN with the operators in their usual place. Basic Calculator II (227) asks for the value of a string such as `"3+2*2"`, which is 7: `*` and `/` bind before `+` and `-`, and division truncates toward zero, so `" 3/2 "` is 1. An operator cannot be applied when you read it, because its right operand has not been read yet.
+
+So the operator waits *in front of* the current number, in `op`, and is applied when the next operator arrives. `+` and `-` are put off by pushing signed terms, which the end adds up; `*` and `/` bind tighter, so they combine with the term on top at once. The number is read digit by digit, `num = num * 10 + int(ch)`, and a sentinel `"+"` at the end makes the last number get applied too.
 
 ```python
 def push_term(stack, op, num):               # put num on the stack the way op says
@@ -262,7 +247,7 @@ print(calculate_ii("3+2*2"), calculate_ii(" 3/2 "), calculate_ii("14-3/2"))   # 
 - Delete `+ "+"` from the loop and run `calculate_ii("3+2*2")`: 5 instead of 7. The pending `* 2` is never applied.
 - Print `stack` just before the `return` for `"2*3+4*5-6/2"`: `[6, 20, -3]`, one signed term per `+` or `-`, which sum to 23.
 
-**Park and resume** (394): an opening bracket means *save where I am and start fresh*; a closing bracket means *finish the inner part, restore what was saved, and merge*. Decode String parks `(text so far, repeat count)`; `cur` is always the text of the innermost open group.
+Park and resume comes next because the thing on the stack is no longer a value but a whole context. Decode String (394) asks you to expand `k[text]`, which may nest: `"3[a2[c]]"` is `"accaccacc"`. An opening bracket means *save where I am and start fresh*; a closing bracket means *finish the inner part, restore what was saved, and merge*. The stack parks `(text so far, repeat count)` at every `[`, and `cur` is always the text of the innermost open group.
 
 ```python
 def decode_string(s):
@@ -290,7 +275,9 @@ print(decode_string("3[a2[c]]"), decode_string("2[abc]3[cd]ef"))   # accaccacc a
 - Print `stack` right after each push for `"3[a2[c]]"`: `[('', 3)]`, then `[('', 3), ('a', 2)]`. One frame per open bracket.
 - Predict `decode_string("2[a]b")` before running: `aab`. Text after a group just extends `cur`.
 
-**Collisions and undo** (735, 71): only a left-mover arriving after a right-mover can crash, and it meets the most recent survivor first. So it fights the top *while* it keeps winning (FIX), and it is pushed only if it survives (STEP). A path is a stack of directory names: a name goes one level down, `..` goes one level up, but never above the root (the same function is in `practice/simple/basics/stacks/02_simplify_unix_path.py`).
+The next two problems pop for a different reason, to destroy and to undo. Asteroid Collision (735) asks which asteroids survive. The size is the absolute value, the sign is the direction, and when two meet the smaller explodes, both if they are equal: `[5, 10, -5]` ends as `[5, 10]`, `[8, -8]` as `[]`. Only a left-mover arriving after a right-mover can crash, and it meets the most recent survivor first. So it fights the top *while* it keeps winning (FIX), and it is pushed only if it survives (STEP).
+
+Simplify Path (71) asks for the canonical form of a Unix path: `"/a/./b/../../c/"` is `"/c"`. A path is a stack of directory names: a name goes one level down, `..` goes one level up, but never above the root. The same function is in `practice/simple/basics/stacks/02_simplify_unix_path.py`.
 
 ```python
 def asteroid_collision(asteroids):
@@ -330,7 +317,9 @@ print(simplify_path("/a/./b/../../c/"), simplify_path("/../"), simplify_path("/h
 - Run `asteroid_collision([-2, -1, 1, 2])`: nothing collides. Left-movers already on the left never meet the right-movers behind them.
 - Remove the `if stack:` guard and run `simplify_path("/../")`: `IndexError`, because `..` at the root tries to pop an empty stack.
 
-**Entries that remember** (155, 1209): when the pop must know something about what lies *below* the top, store it in the entry. A stack only changes at its top, so the minimum of everything below an entry can't change while that entry is there: Min Stack stores it next to the value. Remove Adjacent Duplicates II stores a run as `[char, count]`, because when a run of k vanishes, the run underneath can keep growing.
+Entries that remember come next, because here the decision "what goes in one entry" is the whole solution. Min Stack (155) asks for a stack whose `push`, `pop`, `top` and `getMin` all run in O(1): push −2, 0 and −3, and `getMin` is −3; pop, and it is −2 again. Remove All Adjacent Duplicates in String II (1209) asks you to delete every run of k equal neighbours, again and again, until none is left: `"deeedbbcccbdaa"` with k = 3 becomes `"aa"`.
+
+When the pop must know something about what lies *below* the top, store it in the entry. A stack only changes at its top, so the minimum of everything below an entry cannot change while that entry is there: Min Stack stores it next to the value. Remove Adjacent Duplicates II stores a run as `[char, count]`, because when a run of k vanishes, the run underneath can keep growing.
 
 ```python
 class MinStack:                              # 155
@@ -378,7 +367,7 @@ print(remove_duplicates("deeedbbcccbdaa", 3), remove_duplicates("abbaca", 2))   
 - Print `stack` after every character of `"deeedbbcccbdaa"` with k = 3: when `ccc` vanishes, the `bb` underneath meets one more `b` and vanishes too, and then `ddd` does the same.
 - Make the entry a tuple, `(ch, 1)`: `TypeError` on `stack[-1][1] += 1`, because a tuple can't change. That is why the entry is a list.
 
-**A queue from two stacks** (232): pouring one stack into another reverses it, which turns "newest on top" into "oldest on top". Pour only when the outbox is empty, so every item is poured once: amortized O(1).
+A queue from two stacks closes the main path, because it shows that a stack and a queue differ by exactly one reversal. Implement Queue using Stacks (232) asks for a FIFO queue with `push`, `pop`, `peek` and `empty`, built from stack moves only: push 1, push 2, and `peek` is 1. Pouring one stack into another reverses it, which turns "newest on top" into "oldest on top". Pour only when the outbox is empty, so every item is poured once: amortised O(1), which means the cost averaged over all the operations.
 
 ```python
 class MyQueue:                               # 232
@@ -415,7 +404,9 @@ print(first, q.pop(), q.pop(), q.empty())    # 1 2 3 True
 - Print `q.inbox, q.outbox` after every call: each item crosses from inbox to outbox exactly once.
 - Push 1 to 1000, then pop all 1000: count the appends to `outbox`. There are exactly 1000, so the expensive pour is paid once per item.
 
-**Second pass.** A calculator with parentheses parks `(terms so far, pending operator)` at each `(`, the same move as Decode String, and a finished group becomes one number for the outer expression. (For 224 alone there is a shortcut: with only `+` and `-`, a parenthesis just flips signs, so a stack of signs is enough.)
+The rest of this section is a second pass: Hard problems that reuse the same moves. Skip them until the main path is automatic.
+
+The full calculator is Decode String's park-and-resume applied to Basic Calculator II. Basic Calculator (224) and Basic Calculator III (772) ask for the value of an expression with parentheses: `"(1+(4+5+2)-3)+(6+8)"` is 23, and `"2*(5+5*2)/3"` is 10. A `(` parks `(terms so far, pending operator)`, and a finished group becomes one number for the outer expression. For 224 alone there is a shortcut: with only `+` and `-`, a parenthesis just flips signs, so a stack of signs is enough.
 
 ```python
 def calculate(s):                            # + - * / and parentheses (224, 227, 772)
@@ -443,79 +434,6 @@ print(calculate("(1+(4+5+2)-3)+(6+8)"), calculate("-(2-3)"), calculate("2*(5+5*2
 - Print `saved` right after it grows, for `calculate("2*(3+(4-1))")`: first `[([2], '*')]`, then `[([2], '*'), ([3], '+')]`. Each `(` parks one more outer expression. The answer is 12.
 - Delete `num = sum(stack)` and run `calculate("2*(3+4)")`: 8 instead of 14. The outer `*` multiplied only the group's last number.
 - Predict `calculate("-(3*(2-5))")` before running: `-(3 * -3) = 9`.
-
-**Ring buffer** (622, 641): a bounded queue in a fixed array. Dequeuing shouldn't move the data, only the label "this slot is the front". Bend the array into a ring: the items are `count` slots in a row starting at `head`, and every index goes through `% k`, so the line can wrap past the last slot.
-
-```text
-k = 5, head = 3, count = 3        slot:   0    1    2    3    4
-                                  item:   c    .    .    a    b      front = buf[3] = a
-                                                                     rear  = buf[(3 + 3 - 1) % 5] = buf[0] = c
-the next enQueue writes buf[(3 + 3) % 5] = buf[1]
-```
-
-The deque version (641) adds two moves: `insertFront` steps back *first*, `head = (head - 1) % k`, then writes `buf[head]`; `deleteLast` is just `count -= 1`. Python's `%` never returns a negative number here; in Java or C++ write `(head - 1 + k) % k`.
-
-```python
-class MyCircularQueue:                       # 622 (641 adds operations at the front)
-    def __init__(self, k):
-        self.buf, self.k = [0] * k, k
-        self.head, self.count = 0, 0         # STATE + INIT: items are buf[head], buf[head + 1], ... (mod k)
-
-    def enQueue(self, x):
-        if self.count == self.k:
-            return False                     # full
-        self.buf[(self.head + self.count) % self.k] = x   # STEP: the slot after the last item
-        self.count += 1
-        return True
-
-    def deQueue(self):
-        if self.count == 0:
-            return False                     # empty
-        self.head = (self.head + 1) % self.k # STEP: move the label, not the data
-        self.count -= 1
-        return True
-
-    def Front(self):
-        return self.buf[self.head] if self.count else -1
-
-    def Rear(self):
-        return self.buf[(self.head + self.count - 1) % self.k] if self.count else -1
-
-
-cq = MyCircularQueue(3)
-print([cq.enQueue(x) for x in [1, 2, 3, 4]], cq.Rear())    # [True, True, True, False] 3
-print(cq.deQueue(), cq.enQueue(4), cq.Front(), cq.Rear())  # True True 2 4
-```
-
-**Try it**
-- On a fresh `MyCircularQueue(3)`: enQueue 1, 2, 3, deQueue twice, enQueue 4 and 5, then print `cq.buf, cq.head`: `[4, 5, 3]` and 2. The new items wrapped into slots 0 and 1, and the front is still 3.
-- Remove `% self.k` from `Rear` and call it in that state: `IndexError`, because `head + count - 1` is 4. Python forgives index -1, but not 4.
-- Change `self.count == self.k` in `enQueue` to `self.count > self.k`: a 4th `enQueue` on a size-3 queue now succeeds and overwrites the oldest item (check `Front()`).
-
-**Round robin** (649): each queue holds one party's senators in the order they act next, so the two fronts are the next senator of each side. The earlier one acts: it bans the other (who is never put back) and rejoins its own line one full round later, as `index + n`. Adding `n` keeps both lines sorted by real turn time.
-
-```python
-def predict_party_victory(senate):
-    n = len(senate)
-    r = deque(i for i, c in enumerate(senate) if c == "R")   # STATE + INIT: turn times, in order
-    d = deque(i for i, c in enumerate(senate) if c == "D")
-    while r and d:
-        a, b = r.popleft(), d.popleft()      # the next senator of each party
-        if a < b:
-            r.append(a + n)                  # STEP: R acts first, bans b, comes back next round
-        else:
-            d.append(b + n)                  # STEP: D acts first, bans a, comes back next round
-    return "Radiant" if r else "Dire"        # RETURN: the party that still has senators
-
-
-print(predict_party_victory("RD"), predict_party_victory("RDD"), predict_party_victory("DDRRR"))   # Radiant Dire Dire
-```
-
-**Try it**
-- Change `a + n` and `b + n` to plain `a` and `b`, then run `"RDD"`: `Radiant` instead of `Dire`. The R senator gets a second turn before D at index 2 has had its first.
-- Print `list(r), list(d)` at the top of the loop for `"DDRRR"` and follow each ban.
-- Predict `"RRDDD"` before running: `Radiant`, because both R senators act before any D and ban the first two.
-- Count the loop rounds for a few strings: never more than `n - 1`, because each round removes one senator for good.
 
 ### Say it in the interview
 
@@ -545,7 +463,7 @@ Point at the two pushes and pops while you say the invariant. Likely follow-ups 
 | Design Circular Queue | `queues/design_circular_queue.py` | fixed array + head + count; tail = (head + count) % k; count tells empty from full |
 | Dota2 Senate | `queues/dota2_senate.py` | one queue of turn indices per party; the earlier front bans the other and rejoins as i + n |
 | Evaluate Reverse Polish Notation | `stack/evaluate_reverse_polish_notation.py` · `practice/simple/15_evaluate_reverse_polish_notation.py` | numbers wait on a stack; an operator pops the right operand, then the left, and pushes the result |
-| Implement Queue using Stacks | `queues/implement_queue_using_stacks.py` · `practice/simple/basics/stacks/01_array_stack_and_queue_via_two_stacks.py` | inbox + outbox; pour only when the outbox is empty, so each item moves once: amortized O(1) |
+| Implement Queue using Stacks | `queues/implement_queue_using_stacks.py` · `practice/simple/basics/stacks/01_array_stack_and_queue_via_two_stacks.py` | inbox + outbox; pour only when the outbox is empty, so each item moves once: amortised O(1) |
 | Implement Stack using Queues | `queues/implement_stack_using_queues.py` | after each push, rotate the queue len − 1 times so the newest item sits at the front |
 | Longest Valid Parentheses | `stack/longest_valid_parentheses.py` | indices on a −1 barrier; after a match, run = i − top; a stray `)` becomes the barrier |
 | Min Stack | `stack/min_stack.py` · `practice/simple/14_min_stack.py` | store (value, min so far) in every entry; popping reveals the older minimum for free |
@@ -563,7 +481,7 @@ Point at the two pushes and pops while you say the invariant. Likely follow-ups 
 <details><summary>Answer</summary>When you read <code>*</code>, its right operand hasn't been read yet. The number is complete only when the next operator (or the sentinel at the end) shows up, so the pending operator waits in <code>op</code> and is applied then.</details>
 
 3. Queue from two stacks: one `pop` can move n items. Why is it still O(1)?
-<details><summary>Answer</summary>Amortized: every item is pushed onto the inbox once, moved to the outbox once and popped once, a constant number of stack operations per item. An unlucky single pop does many moves at once, but n operations never do more than a constant times n moves in total.</details>
+<details><summary>Answer</summary>Amortised: every item is pushed onto the inbox once, moved to the outbox once and popped once, a constant number of stack operations per item. An unlucky single pop does many moves at once, but n operations never do more than a constant times n moves in total.</details>
 
 4. The ring buffer keeps `head` and `count`. What goes wrong with only `head` and `tail`?
 <details><summary>Answer</summary><code>head == tail</code> happens both when the queue is empty and when it is full, so you can't tell them apart. Keeping <code>count</code> (or always leaving one slot unused) removes the ambiguity, and the tail is just <code>(head + count) % k</code>.</details>

@@ -2,58 +2,46 @@
 
 > The last mile: the edge cases to test, the bugs that cost interviews, how to test when you cannot run code, what to say, and how to spend the last week.
 
+Every section before this one taught a technique. This one is for the days around the interview, and it is short on purpose: a check to run before you type, the edge cases and bugs to recap the night before, a way to test code you cannot run, the sentences that keep an interview moving, and a plan for the last seven days.
+
+The A-Z finder closes the notebook, with every problem in the repo and the one idea that cracks it.
+
 ### Before you type: the 60-second check
 
-- [ ] I restated the problem and confirmed the output format.
-- [ ] I asked about size, value ranges, duplicates, negatives, empty input, sortedness.
-- [ ] I wrote 2–3 tiny examples, one of them an edge case.
-- [ ] I said the brute force and its complexity.
-- [ ] I can say the seven decisions: state, definitions, invariant, step, record, init, return.
-- [ ] I wrote them as comments, so the interviewer can follow and I cannot lose my place.
-- [ ] The interviewer agreed with the approach before I started coding.
+The cheapest minute of the interview is the one before you type, so this check comes first. Restate the problem and confirm the output format. Ask about size, value ranges, duplicates, negatives, empty input and sortedness. Write two or three tiny examples, one of them an edge case.
+
+Say the brute force and its complexity. Say the seven decisions: state, definitions, invariant, step, record, init, return. Write them as comments, so the interviewer can follow and you cannot lose your place. Then ask whether the approach sounds right, and type only once the interviewer agrees.
 
 ### Edge cases by input type
+
+The plan is agreed; now the edge cases decide whether the code is right, so say them before you type and walk them after. This table is a lookup: find the row for your input type and read it out loud.
 
 | Input | Test these |
 |---|---|
 | Array | empty · one item · two items · all equal · sorted / reverse sorted · negatives · zeros · duplicates · target absent · answer at index 0 or n−1 |
-| Window / subarray | k = 0 · k ≥ n · target ≤ 0 · negatives (sliding windows break) |
+| Window / subarray | k = 0 · k ≥ n · target ≤ 0 · negatives, which break a window that shrinks while its sum is too big |
 | String | empty · one character · all the same character · odd / even length · spaces, punctuation, upper / lower case |
 | Number | 0 · 1 · negative · 32-bit limits when the problem mentions them · division by zero · modulo of a negative |
 | Linked list | empty · one node · two nodes · the head is removed · cycle back to the head · odd / even length |
-| Tree | empty · one node · a skewed tree (deep recursion) · duplicate values in a BST · negative values · the target is the root |
+| Tree | empty · one node · a skewed tree, which means deep recursion · duplicate values in a BST · negative values · the target is the root |
 | Graph | disconnected · self-loop · parallel edges · cycle · one node · target unreachable · directed vs undirected |
-| Grid | 1×1 · one row or one column · all water / all land · start equals end · blocked start or end |
+| Grid | `[]` and `[[]]` · 1×1 · one row or one column · a non-square grid · all water / all land · start equals end · blocked start or end |
 | Intervals | touching ends `[1,2],[2,3]` · one inside another · unsorted input · a single interval |
-| Top-k / heap | k = 0 · k = n · ties |
+| Top-k / heap | k = 0 · k = n · ties · empty lists among the k to merge |
+| Backtracking | empty input, where the answer is `[[]]` rather than `[]` · target 0 · duplicate values |
+| Bits | 0 · negatives, masked to 32 bits · 0 in the power-of-two test |
 | Binary search | target below all / above all · duplicates · length 1 · the answer is `lo` or `hi` itself |
 | Design | capacity 0 or 1 · an operation on an empty structure · repeated keys · updates to an existing key · equal timestamps |
 
 ### The bug catalogue
 
-**Python traps**
+These bugs pass the happy path and fail at the edge, which is why they cost interviews; recap them the night before.
 
-| Bug | Symptom | Fix |
-|---|---|---|
-| `[[0] * C] * R` | changing one row changes every row | `[[0] * C for _ in range(R)]` |
-| `res.append(path)` in backtracking | every saved result is the same list, ending up empty or identical | `res.append(path[:])` |
-| mutable default argument `def f(x, seen=[])` | state leaks between calls | `seen=None`, then `if seen is None: seen = []` |
-| assigning to an outer variable inside a nested function | `UnboundLocalError` if the function also reads it first; a silent no-op if it only assigns | `nonlocal best` (or keep it in a list or attribute) |
-| reading `d[x]` on a `defaultdict` | `x` is inserted with 0, so `len(d)` (a distinct count) grows | `d.get(x, 0)` or `x in d` |
-| `a.sort()` used as a value | `None` | `sorted(a)` returns a list; `a.sort()` sorts in place |
-| `max([])` / `min([])` | `ValueError` | `max(a, default=0)` |
-| `mid = (lo + hi) / 2` | `TypeError: list indices must be integers` | `//` |
-| `-7 // 2` expected −3 | Python floors: −4 | `int(-7 / 2)` truncates toward zero |
-| heap of `(priority, payload)` with equal priorities and non-comparable payloads (dicts, nodes) | `TypeError: '<' not supported` | `(priority, counter, payload)` with a running counter |
-| max-heap by pushing `-x`, forgetting to negate on pop | answers come out negative | `-heapq.heappop(h)` |
-| `Counter` subtraction with `-` | zero and negative counts vanish | `c.subtract(other)` keeps them |
-| string `+=` in a loop | can be O(n²) | collect parts, `"".join(parts)` |
-| `list.pop(0)` / `x in list` in a loop | O(n²) time | `deque.popleft()` / a `set` |
-| recursion deeper than about 1000 levels (the default limit) | `RecursionError` | iterate with an explicit stack |
-| modifying a list or dict while iterating it | skipped items or `RuntimeError` | iterate over a copy, or collect changes first |
-| reusing a grid or list that the function mutated | later tests see changed data | pass a copy |
+The Python traps live in one place: the *Read this first* list that opens [Python Toolkit](#s02), most of them with a cell you can run and break. Reread that list the night before. Two more belong beside it, because the toolkit does not show them. `Counter` subtraction with `-` drops every count that falls to zero or below, so `Counter("aab") - Counter("abbb")` keeps only `{'a': 1}`; `c.subtract(other)` keeps the negatives. And a function that edits its argument poisons the next test that reuses that list or grid: pass a copy. That second trap is why the harness below deep-copies every input.
 
 **Algorithm traps**
+
+The algorithm traps are not Python's doing. Each is one of the seven decisions landing on the wrong line, and the fix names the decision.
 
 | Bug | Symptom | Fix |
 |---|---|---|
@@ -63,59 +51,29 @@
 | BFS marks visited when popping | nodes queued many times, slow or wrong counts | mark when **pushing** |
 | graph DFS without a visited set | infinite recursion on a cycle | add `seen` before recursing |
 | Dijkstra without `if d > dist[u]: continue` | stale entries reprocessed: slow, and wrong with some variants | skip stale pops |
-| recording before the invariant is fixed | broken states counted | record after the fix (or inside it for "shortest") |
+| recording before the invariant is fixed | broken states counted | record after the fix, or inside it for "shortest" |
 | `best = 0` for a maximum that can be negative | all-negative inputs return 0 | start from `-math.inf` or the first item |
 | forgetting to `return` the recursive call's value | `None` bubbles up | `return helper(...)` |
 | binary search with `lo = mid` and `mid = (lo + hi) // 2` | infinite loop when `hi = lo + 1` | `mid = (lo + hi + 1) // 2` there, or the `lo = mid + 1` template |
-
-Several of these are easy to see for yourself:
-
-```python
-a = [3, 1, 2]
-print(a.sort(), a)                         # None [1, 2, 3]   <- sort() sorts in place and returns None
-grid = [[0] * 3] * 2
-grid[0][0] = 9
-print(grid)                                # [[9, 0, 0], [9, 0, 0]]   <- both rows are one list
-print(-7 // 2, int(-7 / 2), -7 % 3)        # -4 -3 2
-print(max([], default=0))                  # 0
-
-res, path = [], []
-for x in (1, 2):
-    path.append(x)
-    res.append(path)                       # appends the SAME list object twice
-print(res)                                 # [[1, 2], [1, 2]]   <- needs path[:] (a copy)
-
-d = defaultdict(int)
-if d["ghost"] == 0:                        # reading a missing key INSERTS it
-    pass
-print(len(d))                              # 1
-
-c = Counter("aab")
-c.subtract(Counter("abbb"))                # subtract() keeps zero and negative counts
-print(c, Counter("aab") - Counter("abbb")) # Counter({'a': 1, 'b': -2}) Counter({'a': 1})
-
-h = []
-heapq.heappush(h, (1, 0, {"job": "a"}))    # (priority, tie-breaker, payload)
-heapq.heappush(h, (1, 1, {"job": "b"}))    # equal priority: the counter decides, dicts never compared
-print(heapq.heappop(h)[2])                 # {'job': 'a'}
-```
-
-**Try it**
-- Remove the tie-breakers (push `(1, {"job": "a"})` and `(1, {"job": "b"})`): `TypeError`, because with equal priorities Python compares the dicts. Plain integers as payloads would have been fine.
-- Change `res.append(path)` to `res.append(path[:])`: `[[1], [1, 2]]`. This one line is the most common backtracking bug.
-- Write `grid = [[0] * 3 for _ in range(2)]`, set `grid[0][0] = 9` again and print: only the first row changes.
-- Predict `-7 % 3` and `7 % -3` before running (2 and −2: the result takes the sign of the divisor).
+| un-choosing only part of a choice, such as popping `path` but leaving `used[i]` set | later branches skip a free item; answers go missing | every change before the recursive call gets its mirror line after it |
+| reading a prerequisite `[a, b]` as the edge a → b | the order comes out reversed | `[a, b]` means b before a: the edge is b → a |
+| union-find linking the two nodes instead of their roots | groups split again, and `find` disagrees with the unions | `parent[find(a)] = find(b)` |
+| Dijkstra returning when the target is first discovered | a longer path wins, because the first offer is not always the best | return when the target is popped |
+| merging intervals with `last[1] = end` | a nested interval shrinks the block | `last[1] = max(last[1], end)` |
+| keeping the k largest in a max-heap of everything | O(n) memory, and it cannot run on a stream | a min-heap capped at k, whose root is the k-th largest |
+| an LRU node that does not store its key | eviction cannot delete its dict entry | store the key in the node, then `del self.map[node.key]` |
 
 ### Testing when you cannot run the code
 
-In the interview you usually cannot execute anything, so testing means tracing:
+In most interviews you cannot execute anything, so testing means tracing, and tracing has an order. Pick the smallest input that makes every loop run zero times, once and several times; three or four items usually do.
 
-1. **Pick the smallest input that makes every loop run zero times, once, and several times** (often 3–4 items).
-2. **Write a state table as a comment under the code**: one column per variable, one row per iteration.
-3. **Compare the last row with the expected answer, out loud.**
-4. **Say each edge case** from the table above and walk only the lines it changes.
+Under the code, write a state table as a comment: one column per variable, one row per iteration, filled in by hand. Compare the last row with the expected answer, out loud. Then say each edge case from the table above and walk only the lines it changes.
 
-While **practising**, add the habit that catches what tracing misses: cross-check your solution against the brute force on many small random inputs. Small inputs mean a failure is small enough to trace by hand.
+While practising, add the habit that catches what tracing misses: a cross-check, which runs your optimal solution and your brute force on the same random inputs and reports the first disagreement. The inputs stay small on purpose, so that a failure is small enough to trace by hand.
+
+The harness below does exactly that. Its example is Maximum Sum Subarray of Size K, which asks for the largest sum of any k consecutive numbers; `[1, -2, 3, 4], k = 2 → 7`, from the window `[3, 4]`. The brute force sums every window and is obviously right. The sliding version adds the new number and drops the one k steps back.
+
+The buggy version is the same sliding code with `best` starting at 0 instead of `-math.inf`, and the harness finds the input that exposes it. Each input is deep-copied before a call, so a solution that edits its argument cannot poison the other's input.
 
 ```python
 import copy
@@ -166,26 +124,23 @@ _ = cross_check(max_window_sum, max_window_sum_brute, small)
 ```
 
 **Try it**
-- Read the mismatch the harness found: every window in that input has a negative sum, and `best = 0` claims a sum no window has. That is the "`best = 0` for a maximum that can be negative" row of the catalogue.
-- Change the generator to `rng.randint(0, 5)` (no negatives) and rerun the buggy version: it passes. Your random inputs must be able to reach the edge cases, or the harness proves nothing.
-- Raise the list length to 50 and break `max_window_sum` on purpose (e.g. drop the `window -= nums[i - k]` line): the mismatch it prints is much harder to trace by hand. That is why the generator starts small.
-- Use `cross_check` for any problem in this notebook: write the brute force first, then the optimal, then check.
+- Read the mismatch the harness found: `[3, -5, -4]` with k = 3 has a single window, summing to −6, and `best = 0` claims a sum no window has. That is the "`best = 0` for a maximum that can be negative" row of the catalogue.
+- Change the generator to `rng.randint(0, 5)`, no negatives, and rerun the buggy version: 300 random inputs agree. Your random inputs must be able to reach the edge cases, or the harness proves nothing.
+- Raise the list length to 50 and break `max_window_sum` on purpose, for example by dropping the `window -= nums[i - k]` line: the mismatch comes on trial 0, and the fifty-number input it prints is far harder to trace by hand. That is why the generator starts small.
+- Use `cross_check` for any problem in this playbook: write the brute force first, then the optimal, then check.
 
 ### Complexity at a glance
 
+The closing minute of an interview asks for time and space, and these are the numbers to quote. The costs of Python's own operations, sort, heap, dict, list and slice, are in [Python Toolkit](#s02)'s cost table. This table is a lookup for the techniques; the one row to read twice is the hidden costs, because they multiply whatever loop they sit in.
+
 | Operation / algorithm | Time | Note |
 |---|---|---|
-| sort | O(n log n) | Timsort, stable |
-| heap push / pop · heapify | O(log n) · O(n) | `heapq` |
-| dict / set lookup, insert | O(1) average | |
-| `x in list`, `list.pop(0)`, `list.insert(0, x)` | O(n) | use a set / deque |
-| slicing `a[i:j]` · `"".join(parts)` | O(j − i) · O(total length) | slices copy |
-| hidden costs | `Counter` equality O(alphabet) · `sorted(word)` as a key O(L log L) · substring keys O(L) | they multiply your loop |
+| hidden costs inside a loop | `Counter` equality O(alphabet) · `sorted(word)` as a key O(L log L) · a substring key O(L) | they multiply your loop |
 | binary search · on the answer | O(log n) · O(log range × check) | |
 | two pointers · sliding window · monotonic stack | O(n) | each index moves / is pushed once |
 | BFS / DFS | O(V + E) | grid: O(R × C) |
 | Dijkstra with a heap | O((V + E) log V) | non-negative weights |
-| union-find with path compression and union by size | almost O(1) per operation | |
+| union-find with path halving and union by size | almost O(1) per operation | |
 | topological sort | O(V + E) | |
 | trie insert / search | O(word length) | |
 | subsets · permutations | O(2ⁿ · n) · O(n! · n) | the output alone is that big |
@@ -193,49 +148,54 @@ _ = cross_check(max_window_sum, max_window_sum_brute, small)
 
 ### What to say
 
-- **Opening:** "Let me restate it… Can the input be empty? Can values be negative or repeated? How large is n?"
-- **Brute force:** "The straightforward way is … which is O(…) because for every … we rescan …"
-- **Optimisation:** "The brute force repeats …; if I keep … then each step is O(1), so O(n) overall."
-- **Before coding:** "Here's the plan in four comments… does that sound right? Shall I code it?"
-- **While coding:** name the invariant ("after this loop the window has no repeats") and point at the line where you record the answer.
-- **Stuck on the optimal:** "I'll code the brute force first as a correct baseline, then optimise the line that repeats work."
-- **Stuck on a detail:** "Let me try a smaller example by hand" is always allowed; thinking out loud earns hints.
-- **Testing:** "Let me trace the example… now the empty case… now the case where …"
-- **Out of time:** "The remaining piece is …; I'd do it by …"
-- **Closing:** time, space, and one follow-up you would handle ("if the input were a stream, I would …").
+The words carry as much as the code, because the interviewer grades the reasoning they can hear. Open by restating the problem and asking the questions that change the code: "Can the input be empty? Can values be negative or repeated? How large is n?" Give the straightforward way with its cost: "for every … we rescan …, so it is O(…)."
+
+Name the work it repeats and the structure that remembers it: "if I keep …, each step is O(1), so O(n) overall." Then show the plan and ask for the go-ahead: "Here it is in four comments. Does that sound right? Shall I code it?"
+
+While coding, name the invariant as you write its loop, "after this loop the window has no repeats", and point at the line that records the answer. When the optimal idea will not come, say so and keep moving: "I'll code the brute force first as a correct baseline, then optimise the line that repeats work." When a detail will not come, "let me try a smaller example by hand" is always allowed; thinking out loud is what earns hints.
+
+Test out loud, in order: "the example first… now the empty case… now the case where …". If time runs out, name the remaining piece and how you would do it. Close with time, space and one follow-up you would handle: "if the input were a stream, I would …".
 
 ### The night-before list
 
-Pick the **five** templates you are least sure of. Write each from memory in a plain editor (interviews are typed, without autocomplete), under three minutes each, saying the invariant out loud:
+Pick the five templates you are least sure of. Write each from memory in a plain editor, because interviews are typed without autocomplete, under three minutes each, saying the invariant out loud. Start from the problem, not from the template's name: the task is what you will be given.
 
-1. Two Sum with a dict (ask the past, then join it)
-2. Sliding window, longest and shortest versions
-3. Binary search "first index where the condition is true", and binary search on the answer
-4. Monotonic stack: next greater element
-5. BFS on a grid with levels (multi-source start)
-6. DFS flood fill (recursive and with an explicit stack)
-7. Topological sort with indegrees
-8. Union-find with path compression
-9. Dijkstra with the stale-entry check
-10. Top-k with a size-k min-heap
-11. Merge intervals
-12. Backtracking: subsets, permutations, combinations with duplicates
-13. Tree DFS that returns one thing and records another (diameter)
-14. Trie insert and search
-15. LRU cache with a dict and a doubly linked list
+1. From [Arrays & Hashing](#s03): **Two Sum** asks for the two indices whose values add up to a target, `[2, 7, 11, 15], 9 → [0, 1]`. Write the dict of values seen so far, and ask it before you join it.
+2. From [Sliding Window](#s06): **Longest Substring Without Repeating Characters** asks for the longest run of distinct letters, `"abcabcbb" → 3`, and **Minimum Size Subarray Sum** for the shortest run of non-negative numbers whose sum reaches a target, `[2, 3, 1, 2, 4, 3], 7 → 2`. Write both windows: the longest records after the shrink, the shortest records inside it.
+3. From [Binary Search](#s09): **Search Insert Position** asks for the first index whose value is at least the target, `[1, 3, 5, 6], 2 → 1`, and **Koko Eating Bananas** for the slowest eating speed that still finishes every pile within h hours, `[3, 6, 7, 11], h = 8 → 4`. Write "first index where the condition is true", then the same search over the candidate answers.
+4. From [Monotonic Stack](#s08): **Daily Temperatures** asks, for each day, how many days pass until a warmer one, 0 if none comes, `[73, 74, 75, 71, 69, 72, 76, 73] → [1, 1, 4, 2, 1, 1, 0, 0]`. Write the stack of waiting days that today resolves.
+5. From [Graphs I](#s17): **Rotting Oranges** asks how many minutes pass until no orange is fresh, every rotten orange spreading at once, −1 if some never rot. Write the BFS in rings, with every source in the queue at minute 0.
+6. From [Graphs I](#s17): **Number of Islands** asks how many groups of land cells touch up, down, left or right. Write the flood fill twice: recursive, and with an explicit stack.
+7. From [Graphs II](#s18): **Course Schedule** asks whether every course can be finished when each pair `[a, b]` means "b before a", `2, [[1, 0]] → True`. Write Kahn's topological sort: indegrees, a queue of ready courses, and a count of how many came out.
+8. From [Graphs II](#s18): **Redundant Connection** asks which edge, added to a tree, closed its cycle: the first edge whose two ends already share a root. Write union-find with path halving.
+9. From [Graphs III](#s19): **Network Delay Time** asks when the last node hears a signal sent from node k, −1 if one never does. Write Dijkstra with the stale-entry check.
+10. From [Heaps](#s13): **Kth Largest Element in a Stream** asks for the k-th largest value after every add. Write the min-heap capped at size k, whose root is the answer.
+11. From [Intervals & Sweep Line](#s14): **Merge Intervals** asks to merge every overlapping pair of ranges, `[[1, 3], [2, 6], [8, 10]] → [[1, 6], [8, 10]]`. Write the sort by start and the block that only its last member can stretch.
+12. From [Backtracking](#s16): **Subsets**, **Permutations** and **Combination Sum II** ask for every subset of distinct numbers, every ordering of them, and every combination that reaches a target when each candidate is used once and no combination repeats. Write the three backtracking shapes: a start index, used flags, and sorted input with equal siblings skipped.
+13. From [Trees](#s11): **Diameter of Binary Tree** asks for the longest path between any two nodes, counted in edges, `[1, 2, 3, 4, 5] → 3`. Write the DFS that returns a height to its parent and records left + right on the way.
+14. From [Tries](#s12): **Implement Trie** asks for `insert`, `search` of a whole word, and `startsWith` a prefix. Write the node as a dict of children with an end flag.
+15. From [Design Problems](#s24): **LRU Cache** asks for `get` and `put` in O(1), evicting the key used longest ago once the capacity is full. Write the dict from key to node and the doubly linked list with sentinels.
+
+Every one of these has a solution in the repo, and the finder gives its path. Write yours first, then compare; the lines that differ point at the decision to reread.
 
 ### A 7-day plan with this repo
 
-Practise in `practice/simple/`: 25 minutes per problem, in a plain editor, talking out loud, and run the code only when you think it is finished.
+Practise in `practice/simple/`: 25 minutes per problem, in a plain editor, talking out loud, and run the code only when you think it is finished. The Read column names the notebook and its sections. The Practise column names the files by number and says what each one asks, half a sentence each, so that you start from the task.
 
 | Day | Read | Practise |
 |---|---|---|
-| 1 | Start Here, From Idea to Code, Python Toolkit, Arrays & Hashing, Prefix Sums | `01` – `05` |
-| 2 | Two Pointers, Sliding Window, Strings | `06` – `12`, `50` |
-| 3 | Stacks & Queues, Monotonic Stack, Binary Search, Linked Lists | `13` – `23`, `25` |
-| 4 | Trees, Tries, Heaps | `26` – `35` |
-| 5 | Graphs I – III | `41` – `47`; redo your two slowest |
-| 6 | Intervals & Sweep Line, Greedy, Backtracking, Design Problems | `24`, `36` – `40`, `48`, `49`; one 45-minute mock where someone else picks from the A-Z finder |
-| 7 (light) | these checklists; the bits part of Math, Bits & Geometry; skim Matrices and Sorting & Selection | `practice/simple/basics/bits/`; two timed problems from your miss list; the night-before list; stop early |
+| 1 | **01_Start_Here**: [Start Here](#s00), [From Idea to Code](#s01), [Python Toolkit](#s02); **02_Arrays_Hashing_Prefix_Sums**: [Arrays & Hashing](#s03), [Prefix Sums](#s04) | `01`–`05`: Two Sum, the two indices that add up to a target; Group Anagrams, words grouped by the letters they share; Product of Array Except Self, each position's product of all the others, without division; Longest Consecutive Sequence, the longest run of consecutive values hidden in an unsorted list; Subarray Sum Equals K, how many subarrays sum to k |
+| 2 | **03_Two_Pointers_Sliding_Window_Strings**: [Two Pointers](#s05), [Sliding Window](#s06), [Strings](#s20) | `06`–`12` and `50`: 3Sum, every distinct triple summing to zero; Container With Most Water, the two lines that hold the most water; Trapping Rain Water, how much rain the bars trap; Longest Substring Without Repeating Characters, the longest run of distinct letters; Minimum Window Substring, the shortest window of s holding every letter of t; Sliding Window Maximum, the largest value in each window of size k; Longest Repeating Character Replacement, the longest window that k replacements make uniform; Longest Palindromic Substring, the longest palindrome inside s |
+| 3 | **04_Stacks_Queues_Linked_Lists**: [Stacks & Queues](#s07), [Monotonic Stack](#s08), [Linked Lists](#s10); **05_Binary_Search_Sorting**: [Binary Search](#s09), [Sorting & Selection](#s23) | `13`–`17`, `21`–`23` and `25`, then `18`–`20`: Valid Parentheses, whether the brackets match; Min Stack, a stack whose minimum is always O(1) away; Evaluate Reverse Polish Notation, the value of a postfix expression; Daily Temperatures, days until a warmer day; Largest Rectangle in Histogram, the biggest rectangle under the bars; Reverse Linked List, the list reversed in place; Merge Two Sorted Lists, one sorted list from two; Linked List Cycle II, the node where the cycle begins; Remove Nth Node From End of List, the list without its n-th node from the end; Search in Rotated Sorted Array, a target's index in a sorted array that was rotated; Koko Eating Bananas, the slowest speed that finishes in h hours; Split Array Largest Sum, the split into k parts whose largest part is smallest |
+| 4 | **06_Trees_Tries**: [Trees](#s11), [Tries](#s12); the [Heaps](#s13) part of **07_Heaps_Intervals_Greedy** | `26`–`35`: Binary Tree Level Order Traversal, the values level by level; Validate Binary Search Tree, whether the tree is a valid BST; Kth Smallest Element in a BST, the k-th value in sorted order; Lowest Common Ancestor of a BST, the deepest node above both targets; Diameter of Binary Tree, the longest path in edges; Implement Trie, insert, search and startsWith; K Closest Points to Origin, the k points nearest (0, 0); Task Scheduler, the fewest time slots when equal tasks need a cooldown between them; Find Median from Data Stream, the median after every insert; Merge k Sorted Lists, one sorted list from k |
+| 5 | **09_Graphs**: [Graphs I](#s17), [Graphs II](#s18), [Graphs III](#s19) | `41`–`47`: Number of Islands, how many groups of land touch; Clone Graph, a deep copy of a graph from one node; Course Schedule, whether every course can be finished given its prerequisites; Rotting Oranges, minutes until no orange is fresh; Network Delay Time, when the last node hears the signal; Min Cost to Connect All Points, the cheapest wiring that joins every point; Redundant Connection, the edge whose removal leaves a tree; then redo your two slowest |
+| 6 | the [Intervals & Sweep Line](#s14) and [Greedy](#s15) parts of **07_Heaps_Intervals_Greedy**; **08_Backtracking**: [Backtracking](#s16); **11_Design**: [Design Problems](#s24) | `24`, `36`–`40`, `48` and `49`: LRU Cache, get and put in O(1) with the least recently used key evicted; Palindrome Partitioning, every way to cut s into palindromes; Combination Sum II, the combinations that reach a target with each candidate used once; Letter Combinations of a Phone Number, every word the digits can spell; Word Search, whether a word traces a path on the board; N-Queens, every safe placement of n queens; Merge Intervals, the overlapping ranges merged; Meeting Rooms II, the fewest rooms that fit every meeting; then one 45-minute mock where someone else picks from the [A-Z finder](#finder) |
+| 7 (light) | **12_Interview_Day**, this notebook; the bits part of [Math, Bits & Geometry](#s22) in **10_Matrices_Math_Bits**; skim [Matrices](#s21) | `practice/simple/basics/bits/`; two timed problems from your miss list; the night-before list; stop early |
 
-Two daily habits make the plan stick: **every morning, spend 10 minutes cold-writing yesterday's two hardest templates from their seven decisions**, and **put every miss on a list that you redo two days later**. If the decisions come back, the code will too.
+Two daily habits make the plan stick. Every morning, spend ten minutes cold-writing yesterday's two hardest templates from their seven decisions. And put every miss on a list that you redo two days later. If the decisions come back, the code will too.
+
+After the seventh day, the A-Z finder below is the part of this playbook you will keep using. It lists every problem in the repo and the practice bank in alphabetical order, with the section that teaches its technique, the file that holds its solution, and the one idea that cracks it.
+
+When a name comes up, in a mock or on a friend's list, look it up and read its key insight first. When the insight does not click on its own, follow the technique link and reread that section's seven decisions; the section states the problem in full right before the code that solves it, and the traced file in `practice/` does too. And when you have a spare half hour, pick a row whose insight you cannot yet explain, and solve it from the task alone.
+
+That is the whole method. An idea is one sentence, code is seven decisions, and the decisions come back when you say them out loud. Walk in, restate the problem, say the brute force, write the plan as comments, and type. Good luck.

@@ -1,14 +1,16 @@
-## Python Toolkit for Interviews
+## Python Toolkit
 
 > Python hands you a hash map, a min-heap, a double-ended queue and binary search for free. Turning an idea into code fast is mostly knowing **what each operation costs**, and the handful of traps that silently turn O(1) into O(n) or a correct idea into a wrong answer.
 
-**How to use this section:** read the trap list once, then come back to a container's cell when you hesitate. Every cell runs; change the inputs and run it again. Which structure an idea needs is in [From Idea to Code](#s01) and [Design Problems](#s24); the string tools (`split`, `ord`/`chr`, slicing) are in [Strings](#s20).
+[From Idea to Code](#s01) turned an idea into seven decisions and their lines. Those lines lean on a handful of containers, and this section is what each one costs and where it bites.
+
+Read the trap list once, then come back to a container's cell when you hesitate; every cell runs, so change the inputs and run it again. Which structure an idea needs is in [From Idea to Code](#s01) and [Design Problems](#s24), and the string tools, from `split` to `ord`, `chr` and slicing, are in [Strings](#s20).
 
 **In this repo:** `practice/CHEATSHEET.md` (one page of templates) · `practice/simple/basics/sorting/06_python_sort_keys_and_stability.py` · `practice/simple/basics/heaps/04_max_heap_by_negation_and_tuples.py` · `practice/simple/basics/stacks/01_array_stack_and_queue_via_two_stacks.py`
 
 ### Read this first: the traps
 
-Every one of these is shown in a cell below.
+Each trap is one line long and costs minutes to find under pressure, which is why the list comes first. Most of them are shown in a cell or a **Try it** below.
 
 1. **`a.pop(0)`, `a.insert(0, x)` or `x in a_list` inside a loop** cost O(n) each: O(n²) in total. Use a `deque` or a `set`.
 2. **Reading a missing key of a `defaultdict` inserts it**: lengths change and loops crash. Test with `in` or `.get`.
@@ -31,10 +33,12 @@ Every one of these is shown in a cell below.
 
 ### What each operation costs
 
+Decision 1 picks a structure; this table says what each of its operations costs, so that an O(n) idea stays O(n) in code. Look things up here, and read the cells below for the traps in context.
+
 | Container | Operation | Cost |
 |---|---|---|
 | any built-in | `len(x)` | O(1) |
-| list | `a[i]`, `a[i] = x`, `a.append(x)`, `a.pop()` | O(1) (append and pop amortized) |
+| list | `a[i]`, `a[i] = x`, `a.append(x)`, `a.pop()` | O(1); append and pop are amortised |
 | list | `a.pop(0)`, `a.insert(0, x)`, `a.pop(i)`, `a.insert(i, x)` | O(n): every item after `i` shifts |
 | list | `x in a`, `a.index(x)`, `a.remove(x)`, `a.count(x)`, `min(a)`, `sum(a)` | O(n): a scan |
 | list | `a[i:j]`, `a + b`, `a[::-1]`, `list(a)` | O(size of the result): a copy |
@@ -52,11 +56,15 @@ Every one of these is shown in a cell below.
 | str | `s[i]` / `s + t`, `s[i:j]`, `s == t`, `"".join(parts)` | O(1) / O(the lengths involved) |
 | str | `s in t`, `t.find(s)`, `t.count(s)` | O(len(t) · len(s)) as the safe worst case |
 
-"O(1)" for a dict or set means O(1) *hashes*, and hashing a `str` or `tuple` key costs O(its length). A `str` caches its hash after the first time; a `tuple` is rehashed on every lookup up to Python 3.13 (3.14 caches it too).
+*Amortised* O(1) means that an occasional `append` copies the whole list into a bigger block, but averaged over all the appends each one costs O(1).
+
+"O(1)" for a dict or set means O(1) *hashes*, and hashing a `str` or `tuple` key costs O(its length). A `str` caches its hash after the first time. A `tuple` is rehashed on every lookup up to Python 3.13, and from 3.14 it caches its hash too.
 
 ### Lists, dicts and sets
 
 A list is a row of slots: taking from the **end** touches one slot, taking from the **front** makes every other item slide over. A set jumps straight to an item's hash slot, while `x in a_list` compares x with `a[0]`, `a[1]`, ... in turn.
+
+The cell does each of these once and prints what came out, then turns to a dict: the two ways to read a key that may be missing, and the fact that insertion order is kept. Remember that `{}` is an empty dict; an empty set is `set()`.
 
 ```python
 a = [5, 3, 8]
@@ -76,13 +84,15 @@ print(d, list(d))                    # {'x': 2, 'y': [7]} ['x', 'y']   (insertio
 ```
 
 **Try it**
-- Time the shift: drain `list(range(20_000))` with `pop(0)` and `deque(range(20_000))` with `popleft()`, timing each with `time.perf_counter()`. The deque is dozens of times faster, and doubling the size makes the list roughly 5 times slower (quadratic) but the deque only twice as slow (linear).
+- Time the shift: `import time`, then drain `list(range(20_000))` with `pop(0)` and `deque(range(20_000))` with `popleft()`, timing each with `time.perf_counter()`. The deque is dozens of times faster, and doubling the size makes the list roughly 5 times slower (quadratic) but the deque only twice as slow (linear).
 - `d["z"]` raises `KeyError: 'z'`, while `d.get("z")` quietly returns `None`. Use `[]` when a missing key is a bug, `.get` when it is normal.
-- Copy it, `d2 = dict(d)`, and run `for k in d2: del d2[k]`: `RuntimeError: dictionary changed size during iteration`. Loop over `list(d2)` when you delete while looping. (And `{}` is an empty dict: an empty set is `set()`.)
+- `a.remove(8)` deletes only the first 8 and leaves `[3]`; a second `a.remove(8)` raises `ValueError`. On the set, `seen.discard(8)` never raises, and `seen.add(3)` for an item already there changes nothing.
 
 ### collections: Counter, defaultdict, deque, OrderedDict
 
-`Counter` and `defaultdict` remove the "is the key there yet?" branch; `deque` and `OrderedDict` give O(1) moves at both ends.
+`Counter` and `defaultdict` remove the "is the key there yet?" branch, and `deque` and `OrderedDict` give O(1) moves at both ends. Group Anagrams is the classic use of a `defaultdict`: words made of the same letters go in one group, `["eat", "tea", "tan", "ate", "nat"] → [["eat", "tea", "ate"], ["tan", "nat"]]`, and a group's key is its words' sorted letters.
+
+LRU Cache is the classic use of an `OrderedDict`: a cache of fixed size evicts the key that has gone unused for longest, so the key just used moves to the end and the oldest key leaves from the front. The cell counts the letters of a word, groups the anagrams, keeps a window of the last three items with a bounded deque, and ends with that LRU move.
 
 ```python
 count = Counter("mississippi")
@@ -113,6 +123,8 @@ print(list(od), od.popitem(last=False))       # ['b', 'c', 'a'] ('b', None)   th
 
 ### heapq: a min-heap that lives in a plain list
 
+A heap answers "the smallest, again and again" in O(log n) per operation, and Python's lives in a plain list:
+
 ```text
 h = [1, 2, 8, 3, 5]          the list IS the tree: the children of index i are 2i+1 and 2i+2
 
@@ -123,7 +135,9 @@ h = [1, 2, 8, 3, 5]          the list IS the tree: the children of index i are 2
        3   5
 ```
 
-For a max-heap, push `-x` and negate again on the way out. (Python 3.14 adds `heapq.heappush_max` and friends; negation works on every version.) Tuples compare field by field, so when two priorities tie Python compares the *next* field; if that field is an object without `<` (a node, a dict), the heap crashes, but only on a tie, which is why small tests miss it.
+For a max-heap, push `-x` and negate again on the way out. Python 3.14 adds `heapq.heappush_max` and friends, but negation works on every version.
+
+Tuples compare field by field, so when two priorities tie, Python compares the *next* field. If that field is an object without `<`, a node or a dict, the heap crashes, but only on a tie, which is why small tests miss it. The cell builds a heap, takes its minimum, flips it into a max-heap, then shows the tie crash and the counter that settles it.
 
 ```python
 h = [5, 1, 8, 3, 2]
@@ -162,6 +176,8 @@ print([heapq.heappop(jobs)[2].name for _ in range(3)])   # ['a', 'b', 'c']  (fir
 
 ### bisect: binary search you don't have to write
 
+When the state is a sorted list, `bisect` is the lookup, and the only question is which of its two functions to call:
+
 ```text
 a = [1, 2, 2, 2, 5]
      0  1  2  3  4  5        the numbers under the items are insertion points
@@ -170,6 +186,8 @@ bisect_left(a, 2)  = 1      first index with a[i] >= 2   =  how many items are <
 bisect_right(a, 2) = 4      first index with a[i] >  2   =  how many items are <= 2
                             the 2s live in a[1:4]: 4 - 1 = 3 copies
 ```
+
+The cell counts the copies of a value and the items in a range with the two functions, and finds the largest item at most x. It ends with the lookup that Time Based Key-Value Store is built on: values are stored with rising timestamps, and `get` returns the latest value at or before a given time.
 
 ```python
 a = [1, 2, 2, 2, 5]
@@ -200,9 +218,15 @@ print(i, times[i - 1][1])                 # 2 b   (the latest entry with time <=
 - `bisect.insort(times, (6, "z"), key=lambda p: p[0])` works, because `insort` applies the key to the new item too. `bisect.bisect_right(times, (6, "z"), key=lambda p: p[0])` raises `TypeError: '<' not supported between instances of 'tuple' and 'int'`: pass the key `6`, not the record.
 - Write `ceil_item(a, x)`, the smallest item `>= x`: `i = bisect.bisect_left(a, x)`, valid while `i < len(a)`. Check `ceil_item(a, 3) == 5` and `ceil_item(a, 6) is None`.
 
-### Sorting: keys, stability and custom orders
+**Python has no TreeMap**, the sorted map with O(log n) insert, delete and nearest-key lookups that Java and C++ offer. A sorted list plus `bisect` stands in for it: each insert is O(n), but it is one fast memory move, and 100,000 random `insort`s take under half a second.
 
-`key=` turns each item into the thing to compare. Tuples compare field by field, so a tuple key is a multi-level sort; negate a number to flip just that level. Python's sort is **stable**: items with equal keys keep their input order.
+When you only ever need the min or the max, a heap with lazy deletion is enough: it leaves a removed item in place and skips it when it reaches the top. And if the interviewer allows the library, `sortedcontainers.SortedList` is the real thing.
+
+### Sorting: keys and stability
+
+`key=` turns each item into the thing to compare. Tuples compare field by field, so a tuple key is a multi-level sort, and negating a number flips just that level. An order that depends on the pair rather than on one item needs `cmp_to_key`; Largest Number, which arranges numbers so that their concatenation is the largest, is taken apart in [Sorting & Selection](#s23).
+
+Python's sort is **stable**: items with equal keys keep their input order. The cell sorts four people oldest first, with names breaking ties, then by age alone, where stability keeps each tie in input order. It ends with the trap of `.sort()`, which returns `None`.
 
 ```python
 people = [("ann", 30), ("bob", 25), ("cy", 30), ("di", 25)]
@@ -210,29 +234,17 @@ print(sorted(people, key=lambda p: (-p[1], p[0])))   # [('ann', 30), ('cy', 30),
 print(sorted(people, key=lambda p: p[1]))            # [('bob', 25), ('di', 25), ('ann', 30), ('cy', 30)]
 
 print([3, 1, 2].sort(), sorted([3, 1, 2]))         # None [1, 2, 3]   (.sort() works in place and returns None)
-
-
-def largest_number(nums):                            # the order depends on the PAIR: a+b vs b+a
-    def cmp(x, y):
-        if x + y > y + x:
-            return -1                                # negative: x goes first
-        if x + y < y + x:
-            return 1
-        return 0
-    s = "".join(sorted(map(str, nums), key=cmp_to_key(cmp)))
-    return "0" if s[0] == "0" else s                 # [0, 0] -> "0", not "00"
-
-
-print(largest_number([3, 30, 34, 5, 9]), largest_number([0, 0]))   # 9534330 0
 ```
 
 **Try it**
 - Age ascending, name *descending* (you can't negate a string): sort twice, minor key first, and let stability keep it: `sorted(sorted(people, key=lambda p: p[0], reverse=True), key=lambda p: p[1])` gives `[('di', 25), ('bob', 25), ('cy', 30), ('ann', 30)]`.
-- Replace the body of `cmp` with `return x + y > y + x`: no error, but `largest_number([10, 2])` gives `"102"` instead of `"210"`, and the first example comes out in input order, `3303459`. A bool is never negative, so nothing ever moves.
-- In `cmp`, swap `-1` and `1`: `largest_number([3, 30, 34, 5, 9])` becomes the *smallest* arrangement, `3033459`.
-- Delete the `"0" if ...` guard and run `largest_number([0, 0])`: `00`.
+- `sorted(people, key=lambda p: p[1], reverse=True)` keeps `ann` before `cy` (both 30): `reverse=True` reverses the comparison, not the order of ties.
+- Sort `["bb", "a", "cc", "d"]` by `len`: `['a', 'd', 'bb', 'cc']`, ties in input order.
+- Hand `cmp_to_key` a comparator that returns a bool: `sorted([3, 1, 2], key=cmp_to_key(lambda x, y: x > y))` gives `[3, 1, 2]`, unchanged and with no error. A bool is never negative, so no item ever counts as smaller; return -1, 1 or 0.
 
 ### Numbers: division, modulo, infinity
+
+Integer division and modulo are where Python quietly disagrees with C and Java, and index arithmetic and binary search depend on them. The cell shows which way `//` and `%` round, a division that truncates toward zero without touching floats, and how `math.inf`, `min(..., default=)` and `math.isclose` stand in for "nothing found yet" and "equal enough".
 
 ```python
 print(7 // 2, -7 // 2, int(-7 / 2))      # 3 -4 -3   // floors toward -inf; int() truncates toward 0
@@ -252,14 +264,14 @@ print(0.1 + 0.2 == 0.3, math.isclose(0.1 + 0.2, 0.3), round(2.5))  # False True 
 ```
 
 **Try it**
-- Evaluate Reverse Polish Notation divides toward zero: `6 // -132` is `-1`, but the expected answer is `trunc_div(6, -132)`, which is `0`.
+- Run `6 // -132` and `trunc_div(6, -132)`: `-1` and `0`. The problem Evaluate Reverse Polish Notation, which computes a postfix expression given as a list of tokens, divides toward zero, so it expects the `0`.
 - `int(a / b)` also truncates, but through a float: `int(10**18 / 3)` is `333333333333333312`, while `10**18 // 3` is `333333333333333333`.
 - In a binary search, `a[(lo + hi) / 2]` raises `TypeError: list indices must be integers or slices, not float`. In Python 3, `/` always makes a float.
-- `min([])` without `default=` raises `ValueError`. If a problem says "32-bit integer", Python will not overflow for you: compare against `2**31 - 1` yourself.
+- `min([])` without `default=` raises `ValueError`. And `2**31 - 1 + 1` prints `2147483648`: Python never overflows, so when a problem says "32-bit integer", compare against `2**31 - 1` yourself.
 
 ### Copying and aliasing
 
-`bad = [[0] * 3] * 2` makes **one** row object and lists it twice; a comprehension makes a fresh row per iteration:
+Two names for one object is the trap behind most wrong grids and wrong backtracking answers. `bad = [[0] * 3] * 2` makes **one** row object and lists it twice; a comprehension makes a fresh row per iteration. The second half of the cell shows the three kinds of copy: an alias, a shallow copy that shares the inner lists, and a deep copy that shares nothing.
 
 ```python
 bad = [[0] * 3] * 2                      # ONE row object, listed twice
@@ -282,6 +294,8 @@ print(alias, shallow, deep)               # [9, [2, 3, 4]] [1, [2, 3, 4]] [1, [2
 - `rows = [[]] * 3`, then `rows[0].append(1)`: `[[1], [1], [1]]`. The inner `[0] * 3` was safe only because ints can't change.
 
 ### Functions and classes: state that is shared by accident
+
+A mutable default argument and a rebinding inside a nested function are the two ways a function keeps state you did not mean it to keep. The default list below is created once, at `def` time, and every call appends to the same one; the fix is a `None` default and a fresh list inside. The leaf counter needs `nonlocal`, because `leaves += 1` rebinds the name, and without the declaration Python treats `leaves` as a new local of `dfs`.
 
 ```python
 def add_item(x, bucket=[]):              # BUG: the default list is created ONCE, at def time
@@ -319,8 +333,9 @@ print(count_leaves({"r": ["a", "b"], "a": ["c"], "b": [], "c": []}, "r"))   # 2
 - Delete the `nonlocal leaves` line: `UnboundLocalError`, because assigning to `leaves` inside `dfs` makes it a new local name there.
 - Print `add_item.__defaults__` after the calls: `([1, 2],)`. The shared list lives on the function object itself.
 - Use a one-item box instead, `leaves = [0]` with `leaves[0] += 1` (and `return leaves[0]`): it works without `nonlocal`, because you change the list's content, not the name. In a class, `self.leaves` does the same job.
+- Shadow a builtin: `max = 0`, then `max([1, 2])` raises `TypeError: 'int' object is not callable`. `del max` brings the builtin back; in a notebook, one stray `max = ...` or `list = ...` breaks every later cell.
 
-A design question is a class, and classes have their own ways of sharing state by accident:
+A design question is a class, and classes have their own ways of sharing state by accident. A set created in the class body is one set for every instance, and an attribute named like a method hides the method. Both are in the cell.
 
 ```python
 class Tracker:
@@ -358,11 +373,11 @@ except TypeError as e:
 - Rename the attribute to `self.ones` (and `return self.ones`): `Bits(3).count()` returns 0.
 - Forget `self.`: in a class `Forgot` whose `__init__` says `hits = deque()`, the first method that touches `self.hits` raises `AttributeError: 'Forgot' object has no attribute 'hits'`. The deque was a local variable of `__init__` and vanished.
 
-**Python has no TreeMap** (a sorted map with O(log n) insert and delete). The interview answers: a sorted list + `bisect` (each insert is O(n), but it is one fast memory move: 100,000 random `insort`s take about half a second), a heap with lazy deletion when you only need the min or the max, or `sortedcontainers.SortedList` if the interviewer allows the library.
-
 ### Recursion: the limit and the iterative rewrite
 
-Python stops recursion at about 1000 nested calls, and a linked list or a path-shaped tree with 10^5 nodes is far deeper. `sys.setrecursionlimit(10**5)` is the quick fix people use on LeetCode; an explicit stack is the robust answer, and the one to give in an interview. The iterative `dfs_order` below visits the same nodes as a recursive DFS, and on a tree in the same order; on a graph whose nodes share neighbours the order can differ, which is fine for reachability and flood fill but not for order-sensitive DFS (cycle colouring, postorder topological sort).
+Python stops recursion at about 1000 nested calls, and a linked list or a path-shaped tree with 10^5 nodes is far deeper. `sys.setrecursionlimit(10**5)` is the quick fix people use on LeetCode; an explicit stack is the robust answer, and the one to give in an interview.
+
+The cell first hits the limit on a 10,000-deep chain, then rewrites DFS with an explicit stack. The iterative `dfs_order` visits the same nodes as a recursive DFS, and on a tree in the same order. On a graph whose nodes share neighbours the order can differ, which is fine for reachability and flood fill but not for an order-sensitive DFS such as cycle detection by colouring or a postorder topological sort.
 
 ```python
 def length_recursive(node):              # node = (value, next_node) or None
@@ -400,6 +415,8 @@ print(dfs_order({1: [2, 3], 2: [4], 3: [], 4: []}, 1))   # [1, 2, 4, 3]
 
 ### Small idioms: loops, unpacking, swaps
 
+The last cell is the small change that interview code is made of: `enumerate` with a start, a countdown `range`, `zip` for neighbouring pairs, star unpacking and the swap. It ends with the one swap that goes wrong, because the targets of an assignment are filled left to right.
+
 ```python
 letters = ["x", "y", "z"]
 print(list(enumerate(letters, start=1)))                  # [(1, 'x'), (2, 'y'), (3, 'z')]
@@ -424,7 +441,9 @@ print(arr)                                                # [1, 2, 1]   arr[arr[
 
 ### lru_cache, only as a convenience
 
-`@lru_cache(maxsize=None)` on a recursive function is a memo dict you didn't have to write, `arguments -> result`. Three things to know: the arguments become dict keys, so they must be hashable (pass a tuple, not a list); the cache outlives the call, so when the function reads outside data, define it inside the solving function or call `f.cache_clear()`; and be ready to write the dict yourself: `if args in memo: return memo[args]`, compute, store, return. Memoized recursion is the bridge to DP: see [Dynamic Programming: A Short Map](#s25).
+`@lru_cache(maxsize=None)` on a recursive function is a memo dict you didn't have to write, `arguments -> result`. The arguments become dict keys, so they must be hashable: pass a tuple, not a list. The cache also outlives the call, so when the function reads outside data, define it inside the solving function or call `f.cache_clear()`.
+
+Be ready to write the dict yourself: `if args in memo: return memo[args]`, compute, store, return. Memoised recursion is the bridge to dynamic programming, which [Dynamic Programming](#s25) maps.
 
 ### Self-check
 

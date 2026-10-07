@@ -2,7 +2,11 @@
 
 > Once edges have prices, "fewest edges" is no longer "cheapest". **Dijkstra** is BFS with a priority queue: always settle the closest unsettled node, because with no negative edges nobody can reach it more cheaply later. **A minimum spanning tree** connects everything for the least total price: keep taking the cheapest edge that does not close a loop.
 
-**Reach for it when** edges have weights and the problem asks for the minimum cost / time / effort to get somewhere (Dijkstra); every weight is 0 or 1, like "free move or paid move" (0-1 BFS with a deque); "minimise the *highest* step on the route" (Dijkstra with `max` instead of `+`); "connect all points / cities as cheaply as possible" (MST: Prim or Kruskal); "at most k stops" or negative weights (Bellman-Ford rounds).
+[Graphs I](#s17) counted every move as one step, so the first arrival at a node was the cheapest. Once edges carry prices that stops being true: a heap takes over from the queue, and the union-find of [Graphs II](#s18) comes back to build spanning trees.
+
+**Reach for it when** edges have weights and the problem asks for the minimum cost, time or effort to get somewhere: that is Dijkstra. When every weight is 0 or 1, a free move or a paid move, a deque replaces the heap, the 0-1 BFS. When a route is only as hard as its *worst* step, Dijkstra runs with `max` in place of `+`.
+
+"Connect all points or cities as cheaply as possible" is a minimum spanning tree, built by Prim or Kruskal, and "at most k stops" or negative weights call for Bellman-Ford rounds.
 
 **In this repo:** `graphs/` (7 of its 45 problems) · bank: `practice/simple/45_network_delay_time.py`, `practice/simple/46_min_cost_to_connect_all_points.py` · basics: `practice/simple/basics/graphs/06_dijkstra.py`, `practice/simple/basics/graphs/05_prim_mst.py`, `practice/simple/basics/graphs/04_kruskal_mst.py`, `practice/simple/basics/graphs/03_union_find.py`
 
@@ -18,7 +22,7 @@
          1
 ```
 
-The heap always hands out the closest node nobody has settled yet. C was first priced at 5 (straight from A), then found again at 4 (A, B, D, C); the old entry is not removed, it is simply skipped when it surfaces. That skip is the **stale check**.
+The heap always hands out the closest node nobody has settled yet. C was first priced at 5, straight from A, then found again at 4 along A, B, D, C; the old entry is not removed but skipped when it surfaces. That skip is the **stale check** (lazy deletion, as in [Heaps](#s13)).
 
 Why is a popped node final?
 
@@ -44,38 +48,31 @@ rest of the route adds >= 0 (no negative edges). Nothing can beat d.
     0-2 (1), 2-1 (2), 1-3 (5), 3-4 (3): the same total, 11
 ```
 
-**Why the greedy edge is safe (the cut property).** Split the nodes into two sides and let e be the cheapest edge crossing the split. Take any best tree that does not use e: adding e closes a loop, and that loop must cross the split a second time through some edge f with w(f) ≥ w(e). Swap f for e: the tree still spans everything and is never heavier, so some best tree uses e. Prim uses the split "tree so far | the rest". Kruskal, at an edge (u, v) whose ends have different roots, uses the split "u's group | the rest": every cheaper edge has already been processed, and none of them can still leave u's group (it would have been taken), so (u, v) is the cheapest edge leaving it.
+**Why the greedy edge is safe.** The argument is the cut property. Split the nodes into two sides and let e be the cheapest edge crossing the split. Take any best tree that does not use e: adding e closes a loop, and that loop must cross the split a second time through some edge f with w(f) ≥ w(e). Swap f for e: the tree still spans everything and is never heavier, so some best tree uses e.
 
-**Why it is fast:** Bellman-Ford relaxes every edge in V − 1 rounds, O(V · E), because it does not know which distances are final. Dijkstra settles nodes in order of distance, so each node's edges are relaxed once, and the heap hands out the next node in O(log V): O((V + E) log V). For the MST, the brute force tries spanning trees (exponentially many); the cut property makes the greedy choice safe, so one sorted pass (Kruskal) or one heap-driven growth (Prim) is enough.
+Prim uses the split "tree so far | the rest", so the cheapest edge leaving its tree is always safe to add.
+
+Kruskal, at an edge (u, v) whose ends have different roots, uses the split "u's group | the rest". Every cheaper edge has already been processed, and none of them can still leave u's group, because it would have been taken; so (u, v) is the cheapest edge leaving that group, and safe.
+
+**Why it is fast.** To relax an edge u → v is to ask whether going through u makes v cheaper, and to lower v's price if it does. Bellman-Ford relaxes every edge in V − 1 rounds, O(V · E), because it does not know which distances are final. Dijkstra settles nodes in order of distance, so each node's edges are relaxed once, and the heap hands out the next node in O(log V): O((V + E) log V).
+
+For the MST, the brute force tries spanning trees, and there are exponentially many. The cut property makes the greedy choice safe, so one sorted pass (Kruskal) or one heap-driven growth (Prim) is enough.
 
 ### From idea to code
 
 **The idea in one sentence:** *pop the cheapest entry from a min-heap; if it is out of date, skip it; otherwise it is final, so offer its neighbours at their new prices.* Dijkstra prices a node by the whole path `d + w`; Prim prices it by the single edge `w` that would attach it to the tree. That is the one real difference between the two loops: both pop the cheapest entry, skip the out-of-date ones, and offer the neighbours.
 
-| Decision | Dijkstra | Prim (MST) |
-|---|---|---|
-| **State**: what must I remember? | `dist[v]` and a min-heap of `(dist, node)` | `in_tree` and a min-heap of `(edge cost, node)` |
-| **Definition**: what exactly does each variable mean? | `dist[v]` = the cheapest path from `src` to `v` found so far; final once `v` is popped with `d == dist[v]` | an entry `(w, v)` = "v could join the tree through an edge of cost w" |
-| **Invariant**: what is true at the end of every step? | nodes are settled in nondecreasing distance, and a settled distance never changes | the tree built so far is part of some minimum spanning tree |
-| **Step**: how does one item change the state? | pop `(d, u)`; skip if `d > dist[u]`; for each edge `(v, w)`: if `d + w < dist[v]`, update and push | pop `(w, v)`; skip if `v` is in the tree; add it; push `(w', x)` for every edge to an outside `x` |
-| **Record**: when is the answer updated? | `dist[u]` is final at its (non-stale) pop | `total += w` when `v` joins |
-| **Init**: starting values | `dist = {src: 0}`, heap `[(0, src)]` | heap `[(0, start)]`: the start joins for free |
-| **Return**: what comes back, and for "not found"? | `dist`, `dist[target]` or `max(dist.values())`; −1 if a node never appears | `total` once all n have joined; fewer means the graph is disconnected |
+For Dijkstra the **state** is `dist` and a min-heap of `(dist, node)` entries. By **definition**, `dist[v]` is the cheapest path from `src` to v found so far, and it is final once v is popped with `d == dist[v]`. The **invariant**: nodes are settled in nondecreasing distance, and a settled distance never changes. A **step** pops `(d, u)`, skips it if `d > dist[u]`, and relaxes each edge `(v, w)`: if `d + w < dist[v]`, it lowers `dist[v]` and pushes the new price.
 
-The same idea, sentence by sentence:
+The **record** is `dist[u]`, final at its non-stale pop. **Init** is `dist = {src: 0}` and the heap `[(0, src)]`. The **return** is `dist`, `dist[target]` or `max(dist.values())`, and −1 when a node never appears.
 
-| In words | In code |
-|---|---|
-| "the closest node not settled yet" | `d, u = heapq.heappop(heap)` |
-| "an out-of-date copy of u" | `if d > dist[u]: continue` |
-| "going through u is cheaper" | `if d + w < dist.get(v, math.inf):` |
-| "remember it and offer it" | `dist[v] = d + w` then `heapq.heappush(heap, (d + w, v))` |
-| "a path is as bad as its worst step" | `max(d, w)` in place of `d + w` |
-| "a free move / a paid move" (0-1 BFS) | `dq.appendleft(...)` / `dq.append(...)` |
-| "the cheapest edge leaving the tree" (Prim) | `w, v = heapq.heappop(heap)`, skip if `in_tree[v]` |
-| "this edge would close a loop" (Kruskal) | `find(u) == find(v)` |
+Prim makes the same decisions about a tree. Its state is `in_tree` and a min-heap of `(edge cost, node)`, where an entry `(w, v)` means "v could join the tree through an edge of cost w". Its invariant is that the tree built so far is part of some minimum spanning tree. A step pops `(w, v)`, skips it if v is already in the tree, adds v, and pushes `(w', x)` for every edge to an outside node x.
 
-Dijkstra, then Network Delay Time on top of it. The order is the whole point: a node is final when it is *popped* (after the stale check), never when it is pushed.
+Prim records `total += w` when v joins. Init is the heap `[(0, start)]`, so the start joins for free, and the return is `total` once all n have joined; fewer means the graph is disconnected.
+
+The sentences map onto lines as usual. "The closest node not settled yet" is `d, u = heapq.heappop(heap)`, and "an out-of-date copy of u" is `if d > dist[u]: continue`. "Going through u is cheaper" is `if d + w < dist.get(v, math.inf):`, and "remember it and offer it" is `dist[v] = d + w` followed by a push.
+
+Network Delay Time sends a signal from node k along directed edges, each with a travel time, and asks when the last node hears it, or -1 if some node never does: with the edges 2 → 1, 2 → 3 and 3 → 4, each taking 1, a signal from 2 needs 2. So `dijkstra` computes every shortest distance and the wrapper takes the largest. The whole point is the order of two moments: a node is final when it is *popped* past the stale check, never when it is pushed.
 
 ```python
 def dijkstra(graph, src):
@@ -114,7 +111,7 @@ print(network_delay_time([[1, 2, 1]], 2, 2))                                   #
 - Change `d > dist[u]` to `d >= dist[u]`: all three examples answer -1. Even the very first entry, `(0, src)`, now looks stale.
 - Give `dijkstra` a `target` and return at discovery (`if v == target: return d + w` right after `dist[v] = d + w`): from 1 to 2 in the second example you get 4 instead of 2. Discovery-time checks are safe in BFS, where every edge costs 1, not here.
 
-Prim on the complete graph of points. There is no edge list: the "edges" from a point are its distances to every point still outside the tree.
+Min Cost to Connect All Points asks for the cheapest way to connect points on a plane, where joining two points costs their Manhattan distance, `|x1 − x2| + |y1 − y2|`: the five points below cost 20. It is a minimum spanning tree of the complete graph, so there is no edge list; the "edges" from a point are its distances to every point still outside the tree. "The cheapest edge leaving the tree" is a pop that skips any point already in.
 
 ```python
 def min_cost_connect_points(points):
@@ -145,7 +142,7 @@ print(min_cost_connect_points([[3, 12], [-2, 5], [-4, 1]]))                # 18
 - Start the heap with `(5, 0)` instead of `(0, 0)`: 25. The start must join for free.
 - Print `i, cost` when a point joins: 0 (0), 1 (4), 3 (3), 4 (4), 2 (9). The costs are not sorted: Prim takes the cheapest edge leaving the *current* tree, not the cheapest edge overall.
 
-Kruskal: sort all edges once, then let union-find say whether an edge would close a loop.
+Kruskal builds the same kind of tree from an edge list: sort all edges once, cheapest first, and let union-find, from [Graphs II](#s18), say whether an edge would close a loop, `find(u) == find(v)`. On the picture's graph it keeps four edges of total weight 11, and it stops as soon as it has n − 1.
 
 ```python
 def kruskal(n, edges):
@@ -159,7 +156,8 @@ def kruskal(n, edges):
         return x
 
     total, kept = 0, []                           # STATE + INIT: the forest built so far
-    for u, v, w in sorted(edges, key=lambda e: e[2]):   # cheapest edge first
+    edges = sorted(edges, key=lambda e: e[2])     # INIT: cheapest edge first
+    for u, v, w in edges:
         ru, rv = find(u), find(v)
         if ru == rv:
             continue                              # both ends already connected: it would close a loop
@@ -182,7 +180,7 @@ print(kruskal(5, [(0, 1, 4), (0, 2, 1), (1, 2, 2), (1, 3, 5), (2, 3, 8), (3, 4, 
 
 ### Watch it work
 
-The picture's graph, step by step. Every pop is either settled or skipped as stale:
+The trace runs Dijkstra on the picture's graph and prints one line per pop: a pop either settles its node and offers the neighbours, or is skipped as stale. Watch C come out twice, once at its old price and once at its real one.
 
 ```python
 def trace_dijkstra(graph, src):
@@ -218,13 +216,13 @@ trace_dijkstra(roads, "A")
 3. **No stale check while recording at pop time.** Distances still come out right (an out-of-date `d` cannot improve anything), but whatever you record per pop is wrong: the max over pops in the trace graph is 5 instead of 4, and Prim counts a point twice (18 instead of 20).
 4. **Negative edges.** "Popped means final" needs `w >= 0`. With `A->B 1, A->C 2, C->B -2, B->D 1`, B is popped at 1 before the cheaper route through C (0) is found. A version that never re-expands a node (a `done` set) leaves D at 2 instead of 1; this lazy version re-pushes B and recovers here, but can take exponential time in general. Negative weights need Bellman-Ford.
 5. **0-1 BFS with a plain FIFO.** A free move must go to the *front*; appending it lets a cost-1 entry come out first, and `[[1, 1, 3], [3, 2, 2], [1, 1, 4]]` answers 1 instead of 0.
-6. **Bottleneck with the wrong key.** Pushing the step alone instead of `max(t, step)` forgets the worst step so far (the 5×5 Swim in Rising Water grid answers 6 instead of 16).
-7. **Unreachable nodes.** They never get a `dist`. Check `len(dist) == n` before taking a max, and return −1 otherwise.
+6. **Bottleneck with the wrong key.** Pushing the step alone instead of `max(t, step)` forgets the worst step so far: Swim in Rising Water, the lowest water level at which you can swim from one corner to the other, answers 6 instead of 16 on the 5 × 5 grid in Variations.
+7. **Unreachable nodes.** They never get a `dist`. Check `len(dist) == n` before taking a max, and return −1 otherwise: without the check, `network_delay_time([[1, 2, 1]], 3, 1)` answers 1, although node 3 never hears the signal.
 8. **Nodes missing from the graph dict.** `dijkstra({0: [(1, 1)]}, 0)` raises `KeyError: 1`, because node 1 has no entry. Build the graph as a `defaultdict(list)`.
 9. **Prim's start with a cost.** Pushing `(5, 0)` instead of `(0, 0)` adds 5 to the total (25 instead of 20). The start joins for free.
-10. **Prim on a disconnected edge list.** `while joined < n` pops from an empty heap (`IndexError`) once the reachable part is used up. Loop `while heap and joined < n`, and return −1 if `joined < n`.
-11. **Losing edge indexes.** Sorting `edges` in place loses the original numbering that Critical and Pseudo-Critical Edges must return. Sort a list of indexes.
-12. **Unorderable heap entries.** On a tie in distance, Python compares the next item of the tuple: pushing `(1, obj)` twice with plain objects raises `TypeError`. Push `(dist, index)` or `(dist, counter, obj)`.
+10. **Prim on a disconnected edge list.** `while joined < n` pops from an empty heap once the reachable part is used up: three nodes with the single edge 0-1 raise `IndexError` after two joins. Loop `while heap and joined < n`, and return −1 if `joined < n`.
+11. **Losing edge indexes.** Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree must name edges by their input index. Sorting `[[0, 1, 2], [1, 2, 1]]` in place moves the weight-1 edge to index 0, so it is reported as edge 0 when the input called it edge 1. Sort a list of indexes.
+12. **Unorderable heap entries.** On a tie in distance, Python compares the next item of the tuple: pushing `(1, obj)` twice with plain objects raises `TypeError`. Push `(dist, index)` or `(dist, counter, obj)`, as in [Heaps](#s13).
 
 ### Edge cases to say out loud
 
@@ -249,19 +247,24 @@ print("edge cases pass")
 
 ### Variations
 
+Every variation keeps the pop, skip and relax loop and changes one thing: the container, the key, the number of rounds, or what a node is.
+
 | Variation | What changes from the template | Problems |
 |---|---|---|
-| **All distances, then a max** | run to the end; answer = `max(dist.values())`, −1 if a node is missing | 743 |
-| **Weights are only 0 or 1** | a deque instead of a heap: weight 0 → `appendleft`, weight 1 → `append` | 1368, 1263 |
-| **Dijkstra on a grid or on states** | a node is `(r, c)` or a whole state like `(box, player)`; the loop is unchanged | 1631, 778, 1263 |
-| **Minimise the worst step** | key = `max(so_far, step)` instead of a sum | 1631, 778 |
-| **Most likely path** | push `-p`: a product of probabilities ≤ 1 never grows along a path | 1514 |
-| **At most k edges, or negative weights** | Bellman-Ford: k + 1 rounds, each relaxing every edge from a copy of last round's prices | 787 |
-| **MST on a set of points** | Prim with a heap, or the O(n²) array version on a complete graph | 1584 |
-| **MST from an edge list** | Kruskal: sort + union-find | 1489 |
-| **Hard extras** | several fixed endpoints · which edges matter to the MST | 2203, 1489 |
+| **All distances, then a max** | run to the end; answer = `max(dist.values())`, −1 if a node is missing | Network Delay Time (743) |
+| **Weights are only 0 or 1** | a deque instead of a heap: weight 0 → `appendleft`, weight 1 → `append` | Minimum Cost to Make at Least One Valid Path in a Grid (1368), Minimum Moves to Move a Box to Their Target Location (1263) |
+| **Dijkstra on a grid or on states** | a node is `(r, c)` or a whole state like `(box, player)`; the loop is unchanged | Path With Minimum Effort (1631), Swim in Rising Water (778), Minimum Moves to Move a Box to Their Target Location (1263) |
+| **Minimise the worst step** | key = `max(so_far, step)` instead of a sum | Path With Minimum Effort (1631), Swim in Rising Water (778) |
+| **Most likely path** | push `-p`: a product of probabilities ≤ 1 never grows along a path | Path with Maximum Probability (1514) |
+| **At most k edges, or negative weights** | Bellman-Ford: k + 1 rounds, each relaxing every edge from a copy of last round's prices | Cheapest Flights Within K Stops (787) |
+| **MST on a set of points** | Prim with a heap, or the O(n²) array version on a complete graph | Min Cost to Connect All Points (1584) |
+| **MST from an edge list** | Kruskal: sort + union-find | Min Cost to Connect All Points (1584), with every pair listed as an edge |
+| *Second pass:* **several fixed endpoints** | Dijkstra from each source, and from the target on reversed edges; minimise over the meeting node | Minimum Weighted Subgraph With the Required Paths (2203) |
+| *Second pass:* **which edges matter to the MST** | rerun Kruskal once per edge, skipping it or forcing it in first | Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree (1489) |
 
-**Weights are only 0 or 1: 0-1 BFS.** With two possible weights the heap only ever holds two distances, `d` and `d + 1`. A deque keeps that order for free: a free move joins the *front* of the line, a paid move the back. In Minimum Cost to Make a Valid Path, following a cell's arrow is free and turning it costs 1.
+Two weight patterns come first, and the simpler one lets a deque replace the heap. When every weight is 0 or 1, the heap only ever holds two distances, `d` and `d + 1`, and a deque keeps that order for free: a free move joins the *front* of the line with `dq.appendleft(...)`, a paid move the back with `dq.append(...)`.
+
+Minimum Cost to Make at Least One Valid Path in a Grid puts an arrow in every cell: right, left, down or up. Following a cell's arrow is free, turning it to point elsewhere costs 1, and the problem asks for the cheapest way to make a path from the top-left to the bottom-right corner: 3 for the first grid below.
 
 ```python
 ARROWS = {1: (0, 1), 2: (0, -1), 3: (1, 0), 4: (-1, 0)}   # sign in the cell -> direction it points
@@ -299,9 +302,11 @@ print(min_cost_valid_path([[1, 2], [4, 3]]))                                    
 - Print `[x[0] for x in dq]` just before each `popleft()` on the first grid: only two values ever, `d` and `d + 1`, in order. That is why a deque can replace the heap.
 - Swap the deque for `heapq` (push `(d + w, nr, nc)`, pop the smallest): plain Dijkstra, the same three answers, with an extra log factor.
 
-The same deque works on states. In Minimum Moves to Move a Box (1263) a node is `(box, player)`: a player step that does not touch the box costs 0, and walking into the box pushes it one cell for a cost of 1 (if the cell beyond is free). The answer is the cost of the first popped state whose box sits on the target.
+The same deque works on states. Minimum Moves to Move a Box to Their Target Location asks for the fewest pushes that bring a box onto its target, while the player walks for free. A node is `(box, player)`: a player step that does not touch the box costs 0, and walking into the box pushes it one cell for a cost of 1, if the cell beyond is free. The answer is the cost of the first popped state whose box sits on the target.
 
-**Minimise the worst step: bottleneck Dijkstra.** In Path With Minimum Effort a route is as hard as its *steepest* step; in Swim in Rising Water, as its *highest* cell. Dijkstra still works, because `max` never decreases along a path, just as `+` never decreases with non-negative weights. Only the key changes, so one helper serves both:
+The second pattern changes the key instead of the container. Path With Minimum Effort asks for the route between the top-left and bottom-right cells whose steepest step, the largest height difference between neighbours, is as small as possible: 2 for the first grid below. Swim in Rising Water asks for the lowest water level at which you can swim between the same corners, a cell being open once the water reaches its height: 16 for the 5 × 5 grid.
+
+Dijkstra still works, because `max` never decreases along a path, just as `+` never does with non-negative weights. "A path is as bad as its worst step" is `max(t, step)` in place of `d + w`, and only that key changes, so one helper serves both problems.
 
 ```python
 def bottleneck_path(rows, cols, start_key, step_key):
@@ -341,9 +346,13 @@ print(swim_in_water([[0, 2], [1, 3]]), swim_in_water([[0, 1, 2, 3, 4], [24, 23, 
 - Use `t + step_key(...)` instead: the 5×5 grid gives 57, the cheapest *total* climb, which is a different problem.
 - `swim_in_water([[3, 2], [0, 1]])` is 3: the start's own height counts, so you cannot leave before the water reaches it. `minimum_effort([[5]])` is 0: one cell, no step at all.
 
-Two other accepted answers for Path With Minimum Effort: binary search on the answer t, with one BFS or DFS per guess asking "can I reach the corner using steps ≤ t?" ([Binary Search](#s09)); or a Kruskal-style sweep that adds edges by weight until the start and the corner share a root. Path With Maximum Probability (1514) is Dijkstra too: a product of probabilities ≤ 1 never grows along a path, so push `-p` and pop the most likely node first.
+Path With Minimum Effort has two other accepted answers. One is binary search on the answer t, with one BFS or DFS per guess asking "can I reach the corner using steps ≤ t?" ([Binary Search](#s09)). The other is a Kruskal-style sweep that adds edges by weight until the start and the corner share a root.
 
-**At most k edges: Bellman-Ford in rounds (Cheapest Flights Within K Stops).** Plain Dijkstra keeps one price per node, so it cannot also cap the number of edges unless the node becomes (node, edges used). Bellman-Ford counts edges for free: each round relaxes *every* edge once, reading last round's prices, so after round i every node knows its cheapest route with at most i edges. It also tolerates negative weights (V − 1 rounds for plain shortest paths, O(V · E)).
+Path With Maximum Probability (1514) asks for the most likely path between two nodes when each edge succeeds with its own probability, and it is Dijkstra too. A product of probabilities ≤ 1 never grows along a path, so push `-p` and pop the most likely node first.
+
+A cap on the number of edges breaks plain Dijkstra, and rounds handle it. Cheapest Flights Within K Stops asks for the cheapest price from `src` to `dst` with at most k stops, or -1: on the first network below, k = 1 allows 0 → 1 → 3 for 700. Dijkstra keeps one price per node, so it cannot also cap the number of edges unless the node becomes (node, edges used).
+
+Bellman-Ford counts edges for free. Each round relaxes *every* edge once, reading last round's prices, so after round i every node knows its cheapest route with at most i edges. It also tolerates negative weights: V − 1 rounds find plain shortest paths in O(V · E).
 
 ```python
 def find_cheapest_price(n, flights, src, dst, k):
@@ -368,7 +377,7 @@ print(find_cheapest_price(3, [[0, 1, 100], [1, 2, 100], [0, 2, 500]], 0, 2, 1),
 - Allow k = 2 on the first network: 400, along 0 → 1 → 2 → 3.
 - `find_cheapest_price(3, [[0, 1, 100]], 0, 2, 1)` is -1: nothing ever flies into 2.
 
-**MST on a set of points, in O(n²).** On a complete graph there are n² edges anyway, so a heap only adds a log factor. Keep `best[j]` = the cheapest edge from the tree to point j, and pick the next point with a plain scan:
+On a complete graph the heap can go. There are n² edges anyway, so a heap only adds a log factor: keep `best[j]`, the cheapest edge from the tree to point j, and pick the next point with a plain scan. The five points of Min Cost to Connect All Points cost 20 again, and the three points `[[3, 12], [-2, 5], [-4, 1]]` cost 18.
 
 ```python
 def min_cost_connect_points_dense(points):
@@ -396,9 +405,9 @@ print(min_cost_connect_points_dense([[0, 0], [2, 2], [3, 10], [5, 2], [7, 0]]),
 - Print `best` each time a point joins on the 3-point example: `[0, inf, inf]`, `[0, 12, 18]`, `[0, 12, 6]`. An entry only ever goes down: point 2's price drops from 18 to 6 once point 1 is in.
 - Compare both versions on random point sets: they always agree. The array version does n² simple steps and keeps no stale entries.
 
-#### Hard extras
+The rest of this section is a second pass: Hard problems that reuse the same moves. Skip them until the main path is automatic.
 
-**Several fixed endpoints (Minimum Weighted Subgraph).** Two paths, from `src1` and `src2`, must both reach `dest`. Somewhere they meet at a node `x` and share the rest, so the cost is `d1[x] + d2[x] + (x → dest)`. Distances from the sources are two ordinary Dijkstras. "From every x to dest" sounds like n searches, but on the reversed graph it is a single Dijkstra *from* `dest`.
+Minimum Weighted Subgraph With the Required Paths gives a weighted directed graph and asks for the lightest set of edges through which both `src1` and `src2` can reach `dest`, or -1: 9 for the graph below. The two paths meet at some node x and share the rest, so the cost is `d1[x] + d2[x] + (x → dest)`. Distances from the sources are two ordinary Dijkstras, and "from every x to dest" sounds like n searches, but on the reversed graph it is a single Dijkstra *from* `dest`.
 
 ```python
 def minimum_weight(n, edges, src1, src2, dest):
@@ -422,48 +431,15 @@ print(minimum_weight(3, [[0, 1, 1], [2, 1, 1]], 0, 1, 2))  # -1
 - Print `d1[x]`, `d2[x]` and `to_dest[x]` for every x: meeting at 0 or at 1 both cost 9 (`0 + 3 + 6` and `3 + 0 + 6`).
 - `minimum_weight(3, [[0, 2, 5], [1, 2, 5], [0, 1, 1]], 0, 1, 2)` is 6: src1 rides to src2 for 1, then they share 1 → 2. The meeting point can be one of the sources.
 
-**Which edges matter to the MST?** An edge is *critical* if the MST without it is heavier (or impossible), and *pseudo-critical* if it is not critical but some MST uses it: forcing it in first still gives the best weight. Kruskal is cheap, so run it once per question.
+Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree asks which edges every minimum spanning tree uses, the critical ones, and which only some of them use, the pseudo-critical ones. Kruskal is cheap, so run it once per question about one edge.
 
-```python
-def critical_edges(n, edges):
-    order = sorted(range(len(edges)), key=lambda i: edges[i][2])   # sort INDEXES: keep the original numbering
-
-    def mst_weight(skip=None, force=None):
-        parent = list(range(n))
-
-        def find(x):
-            while parent[x] != x:
-                parent[x] = parent[parent[x]]
-                x = parent[x]
-            return x
-
-        total, used = 0, 0
-        for i in ([force] if force is not None else []) + order:   # a forced edge goes in first
-            u, v, w = edges[i]
-            if i == skip or find(u) == find(v):
-                continue
-            parent[find(u)] = find(v)
-            total, used = total + w, used + 1
-        return total if used == n - 1 else math.inf  # not spanning counts as infinitely bad
-
-    best = mst_weight()
-    critical = [i for i in range(len(edges)) if mst_weight(skip=i) > best]
-    pseudo = [i for i in range(len(edges)) if i not in critical and mst_weight(force=i) == best]
-    return [critical, pseudo]
-
-
-print(critical_edges(5, [[0, 1, 1], [1, 2, 1], [2, 3, 2], [0, 3, 2], [0, 4, 3], [3, 4, 3], [1, 4, 6]]))   # [[0, 1], [2, 3, 4, 5]]
-print(critical_edges(4, [[0, 1, 1], [1, 2, 1], [2, 3, 1], [0, 3, 1]]))                                  # [[], [0, 1, 2, 3]]
-```
-
-**Try it**
-- Let a run that does not span count as a normal weight (`return total`): the path `critical_edges(3, [[0, 1, 1], [1, 2, 1]])` gives `[[], [0, 1]]` instead of `[[0, 1], []]`. Removing a bridge made the "tree" cheaper instead of impossible.
-- Drop `i not in critical` from the pseudo-critical test: the critical edges 0 and 1 show up in both lists.
-- A triangle with weights 1, 2, 3: `critical_edges(3, [[0, 1, 1], [1, 2, 2], [0, 2, 3]])` is `[[0, 1], []]`. Make all three weights 1 and every edge becomes pseudo-critical: any two of them form an MST.
+An edge is critical when skipping it makes the tree heavier, or impossible, where a run that cannot span counts as infinitely heavy. An edge that is not critical is pseudo-critical when forcing it in first still gives the best weight. Sort a list of indexes, not the edges themselves, so that the answer keeps the input's numbering (trap 11).
 
 ### Say it in the interview
 
-> "The edges have different costs, so 'fewest edges' isn't 'cheapest' and plain BFS is out. Bellman-Ford would relax every edge V − 1 times, O(V · E). The weights are non-negative, so I'll use Dijkstra: a min-heap of (distance, node). When I pop a node with distance d, any other route to it must leave the settled nodes through something still in the heap, which already costs at least d, and edges can't subtract, so d is final and I relax its edges once. Entries that went out of date are skipped when they surface. With lazy deletion the heap holds up to E entries: O(E log E) = O(E log V)."
+> "The edges have different costs, so 'fewest edges' isn't 'cheapest' and plain BFS is out. Bellman-Ford would relax every edge V − 1 times, O(V · E). The weights are non-negative, so I'll use Dijkstra: a min-heap of (distance, node)."
+
+> "When I pop a node with distance d, any other route to it must leave the settled nodes through something still in the heap, which already costs at least d, and edges can't subtract, so d is final and I relax its edges once. Entries that went out of date are skipped when they surface. With lazy deletion the heap holds up to E entries: O(E log E) = O(E log V)."
 
 > "We need every point connected at minimum total cost, which is a minimum spanning tree. The cheapest edge leaving the tree built so far is always safe, so Prim's grows the tree with a heap of (edge cost, point): O(n² log n) on the complete graph of n points, or O(n²) with the array version."
 

@@ -2,11 +2,15 @@
 
 > Sorting buys you **order**, and order makes the next step cheap: equal items sit together, neighbours become comparable, two pointers can squeeze from both ends, binary search can jump. **Selection** is sorting's lazy cousin: to find the k-th item, partition once and throw away the half that cannot contain it.
 
-**Reach for it when** the problem gets easy "if only the input were sorted" (pairs or triples with a target sum, merging intervals, scheduling, greedy by size or deadline), asks for the **k-th smallest/largest** or the **top k**, asks to count pairs that are **out of order** ("how many smaller numbers to my right"), or the values are small integers you could **count** instead of compare.
+[Binary Search](#s09) searched a landscape that flips once, from False to True, and [Two Pointers](#s05) squeezed a sorted array from both ends; sorting is what creates the order both of them need. This section builds that order, and when only one position of it matters, the k-th item, it finds that position without sorting everything.
 
-**In this repo:** sorting has no topic folder. Its building blocks are `practice/simple/basics/sorting/01_insertion_sort.py`, `02_merge_sort.py`, `03_quick_sort.py`, `04_heap_sort.py`, `05_counting_and_bucket_sort.py` and `06_python_sort_keys_and_stability.py`, and the problems it cracks live in the sections of their main technique (listed at the end of this section). In an interview you call `sorted()`; you implement a sort only when asked, or when you need to change its inner loop (quickselect, counting inversions).
+**Reach for it when** the problem gets easy "if only the input were sorted": pairs or triples with a target sum, merging intervals, scheduling, greedy by size or deadline. Reach for it too when the problem asks for the **k-th smallest or largest** or the **top k**, asks to count pairs that are **out of order**, as in "how many smaller numbers to my right", or has small integer values you could **count** instead of compare.
+
+**In this repo:** sorting has no topic folder. Its building blocks are `practice/simple/basics/sorting/01_insertion_sort.py`, `02_merge_sort.py`, `03_quick_sort.py`, `04_heap_sort.py`, `05_counting_and_bucket_sort.py` and `06_python_sort_keys_and_stability.py`, and the problems it cracks live in the sections of their main technique, listed at the end of this section. In an interview you call `sorted()`; you implement a sort only when asked, or when you need to change its inner loop, as quickselect and counting inversions do.
 
 ### The picture
+
+Two motions carry the whole section. Merge sort splits until every piece is trivially sorted and merges sorted halves on the way up; a partition sweeps once and drops its pivot into the slot it will have in the sorted list:
 
 ```text
 MERGE SORT: split until trivial, then merge sorted halves on the way up
@@ -29,14 +33,13 @@ PARTITION (quicksort, quickselect): one sweep puts the pivot in its FINAL slot
            quickselect only on the side that holds the index it wants
 ```
 
-Why it is fast:
+A comparison sort must tell apart all n! possible orders, and each comparison at best halves what is still possible, so in the worst case it needs about log₂(n!) ≈ n log n comparisons. Merge sort reaches that bound: log n levels of splitting, and n items merged on each level.
 
-- A comparison sort must tell apart all n! possible orders, and each comparison at best halves what is still possible, so in the worst case it needs about log2(n!) ≈ n log n comparisons. Merge sort reaches that bound: log n levels, n work per level.
-- Quicksort with a random pivot splits near the middle on average, so it also has about log n levels. With an unlucky pivot (the smallest or largest every time) it has n levels: O(n²).
-- **Quickselect** keeps only one side: n + n/2 + n/4 + ... < 2n, so O(n) on average. Sorting everything to read one position wastes the work of ordering the two halves it then ignores.
-- **Counting sort** never compares two items: it uses each value as an array index, so it runs in O(n + k) for values in a range of size k and beats n log n when k is small.
+Quicksort with a random pivot splits near the middle on average, so it also has about log n levels. With an unlucky pivot, the smallest or the largest every time, it has n levels and costs O(n²). **Quickselect** keeps only one side: n + n/2 + n/4 + ... < 2n, so it is O(n) on average. Sorting everything to read one position wastes the work of ordering two halves it then ignores.
 
-**Top k, four ways.** The interview question is rarely "implement a sort"; it is "find the k-th" or "the top k", and you are expected to know the trade-offs:
+**Counting sort** never compares two items. It uses each value as an array index, so it runs in O(n + k) for values in a range of size k, and it beats n log n when k is small.
+
+The interview question is rarely "implement a sort"; it is "find the k-th" or "the top k", and you are expected to know four ways to answer it and what each costs:
 
 | Approach | Time | Extra space | Mutates? | Stream? | Say it when |
 |---|---|---|---|---|---|
@@ -49,38 +52,17 @@ Why it is fast:
 
 **The idea in one sentence:** *merge: two sorted piles become one by repeatedly taking the smaller top item; partition: one sweep splits the items into "small" and "big" around a pivot, and the pivot lands in its final slot; quickselect: partition, then keep only the side that holds the index you want.*
 
-Before typing, answer the seven questions for the piece you are about to write:
+Merge comes first. **State** is two sorted piles with a read head in each, `i` and `j`, plus the output `out`, and **Definition** says that `left[i]` and `right[j]` are the next untaken items of their piles. **Invariant** holds that `out` is sorted and no item in it is bigger than an untaken one. **Step** moves the smaller front item into `out`, the left one on ties, `if left[i] <= right[j]:`, and advances that head.
 
-| Decision | Merge (merge sort, inversions) | Partition (Lomuto) | Quickselect (k-th largest) |
-|---|---|---|---|
-| **State** | two sorted piles, a read head in each (`i`, `j`), the output `out` | the pivot, the end of the "small" region `i`, the scanner `j` | the range `[lo, hi]` still in play |
-| **Definition** | `left[i]`, `right[j]` = the next untaken item of each pile | `a[lo..i]` ≤ pivot; `a[i+1..j-1]` > pivot; `a[j..hi-1]` not seen yet | `target = n - k`: the k-th largest sits at index `target` of the sorted order |
-| **Invariant** | `out` is sorted and ≤ every untaken item | the three regions above hold, with the pivot parked at `a[hi]` | target's slot lies in `[lo, hi]`: everything left of `lo` is ≤ the answer, everything right of `hi` is ≥ it |
-| **Step** | the smaller front item joins `out` (the left one on ties); advance that head | if `a[j]` ≤ pivot: `i += 1`, swap `a[i]` and `a[j]` | partition `[lo, hi]`: one sweep fixes `a[p]` in its final slot |
-| **Record** | nothing per item for a plain merge (`out` is the answer); for inversions, `cross += len(left) - i` when the right pile wins | after the sweep, swap the pivot into `i + 1`, its final slot | the answer is known when `p == target`; otherwise keep only the side that holds `target` (the fix) |
-| **Init** | `i = j = 0`, `out = []` | `pivot = a[hi]` (a random item swapped there), `i = lo - 1` | `lo, hi = 0, n - 1` |
-| **Return** | `out + left[i:] + right[j:]`: one pile is empty, the other's rest is the largest and already sorted | the pivot's index `i + 1` | `a[p]` when `p == target` |
+A plain merge has no **Record** per item, because `out` itself is the answer; counting inversions records `cross += len(left) - i` when the right pile wins. **Init** is `i = j = 0` and `out = []`. **Return** is `out + left[i:] + right[j:]`: when the loop stops, one pile is empty, and the rest of the other is sorted and larger than everything in `out`.
 
-The same ideas, sentence by sentence:
-
-| In words | In code |
-|---|---|
-| "split in half" | `mid = len(a) // 2` |
-| "sort each half, then merge them" | `merge(merge_sort(a[:mid]), merge_sort(a[mid:]))` |
-| "take the smaller front item, the left pile on ties" | `if left[i] <= right[j]:` |
-| "add whatever is left over" | `out + left[i:] + right[j:]` |
-| "pick a random pivot" | `r = random.randint(lo, hi)` then `a[r], a[hi] = a[hi], a[r]` |
-| "grow the small region by one" | `i += 1` then `a[i], a[j] = a[j], a[i]` |
-| "the pivot lands in its final slot" | `a[i + 1], a[hi] = a[hi], a[i + 1]` |
-| "k-th largest = position n − k in ascending order" | `target = len(nums) - k` |
-| "keep only the side that holds the target" | `lo = p + 1` if `p < target`, else `hi = p - 1` |
-
-The merge template:
+The template sorts a list: `[5, 2, 4, 6, 1, 3]` → `[1, 2, 3, 4, 5, 6]`. `merge` joins two sorted piles, `[2, 4, 5]` and `[1, 3, 6]`, by repeatedly taking the smaller front item. `merge_sort` splits the list at `mid = len(a) // 2`, sorts each half with the same call, and merges the results, `merge(merge_sort(a[:mid]), merge_sort(a[mid:]))`, which is exactly the tree in the picture.
 
 ```python
 def merge(left, right):
     out, i, j = [], 0, 0                     # STATE + INIT: left[i], right[j] = the next untaken item of each pile
-    while i < len(left) and j < len(right):  # INVARIANT: out is sorted and <= every untaken item
+    # INVARIANT: out is sorted and <= every untaken item
+    while i < len(left) and j < len(right):
         if left[i] <= right[j]:              # <= : the left pile wins ties -> stable
             out.append(left[i])              # STEP: the smaller front item joins out
             i += 1
@@ -105,13 +87,22 @@ print(merge([2, 4, 5], [1, 3, 6]), merge_sort([5, 2, 4, 6, 1, 3]))   # [1, 2, 3,
 - See stability: compare only the first field (`left[i][0] <= right[j][0]`) and run `merge_sort([(2, "a"), (1, "b"), (2, "c"), (1, "d")])`: `[(1, 'b'), (1, 'd'), (2, 'a'), (2, 'c')]`, ties in input order. Now make it `<`: `[(1, 'd'), (1, 'b'), (2, 'c'), (2, 'a')]`, every tie flipped.
 - Add `print(a)` as the first line of `merge_sort` and watch the splits of `[5, 2, 4, 6, 1, 3]` (11 lines, left half first): the call tree from the picture.
 
-The partition template, and the two algorithms built on it:
+Partition, in Lomuto's version, splits one range around a pivot. Its state is the pivot, the end `i` of the "small" region and the scanner `j`. Its definition and its invariant are three regions, `a[lo..i]` ≤ pivot, `a[i+1..j-1]` > pivot and `a[j..hi-1]` not seen yet, with the pivot parked at `a[hi]`. A step looks at `a[j]`, and when it is ≤ pivot, `i += 1` and the swap of `a[i]` and `a[j]` grow the small region by one.
+
+The record comes after the sweep: `a[i + 1], a[hi] = a[hi], a[i + 1]` drops the pivot right after the small region, which is its final slot. Init starts `i = lo - 1`, an empty small region, and takes the pivot from `a[hi]` after `random_partition` has swapped a random item there. The return is the pivot's index, `i + 1`.
+
+Quickselect wraps that partition in a loop over the range `[lo, hi]` still in play, which starts as `0, n - 1`. Its definition rests on `target = len(nums) - k`, the index of the k-th largest in ascending order, and its invariant is that target's slot lies in `[lo, hi]`, with everything left of `lo` ≤ the answer and everything right of `hi` ≥ it.
+
+A step partitions the range, which fixes one pivot in its final slot `p`. When `p == target`, that pivot is the answer; otherwise the **Fix** keeps only the side that holds target, `lo = p + 1` if `p < target`, else `hi = p - 1`.
+
+Kth Largest Element in an Array asks for the k-th largest value of an unsorted array: `[3, 2, 1, 5, 6, 4]` with k = 2 → 5. Sorting answers it in O(n log n), but `kth_largest` only partitions and narrows, O(n) on average. The cell builds it from `partition` and `random_partition`, and `quick_sort` is the same partition recursing into both sides: `[3, 1, 2, 1]` → `[1, 1, 2, 3]`.
 
 ```python
 def partition(a, lo, hi):
     """Lomuto: pivot = a[hi]. Afterwards the pivot sits at its final sorted index, which is returned."""
     pivot, i = a[hi], lo - 1                 # STATE + INIT: a[lo..i] <= pivot (empty so far)
-    for j in range(lo, hi):                  # INVARIANT: a[i+1..j-1] > pivot, a[j..hi-1] not seen yet
+    # INVARIANT: a[i+1..j-1] > pivot, a[j..hi-1] not seen yet
+    for j in range(lo, hi):
         if a[j] <= pivot:
             i += 1
             a[i], a[j] = a[j], a[i]          # STEP: a[j] joins the small region
@@ -157,13 +148,13 @@ print(quick_sort([3, 1, 2, 1]), kth_largest([3, 2, 1, 5, 6, 4], 2), kth_largest(
 
 **Try it**
 - Use `target = k - 1` instead: `kth_largest([3, 2, 1, 5, 6, 4], 2)` returns 2, the 2nd *smallest*. Say the direction out loud before you type the index.
-- In `quick_sort`, use `partition` instead of `random_partition` and sort `list(range(3000))`: `RecursionError`. On sorted input the last item is always the max, so one side is empty and the recursion is n levels deep.
+- In `quick_sort`, use `partition` instead of `random_partition` and sort `list(range(3000))`: `RecursionError`. On sorted input the last item is always the max, so one side is empty and the recursion needs n levels.
 - Change `sort_range(lo, p - 1)` to `sort_range(lo, p)` and rerun the cell: `RecursionError` on `[3, 1, 2, 1]`. Once a range holds just the two 1s, the pivot lands at `hi` every time, so `[lo, p]` never shrinks.
 - Print `lo, hi, p` at the end of each round in `kth_largest`: the range only ever shrinks towards `target`, and nothing outside it is touched again.
 
 ### Watch it work
 
-The partition sweep, one line per item seen, then quickselect narrowing its range (a fixed last-item pivot here, so the run is repeatable):
+The first trace runs the partition sweep on the picture's array and prints one line per item seen, with the small region, the big region and what is still unseen. The second runs quickselect for the 2nd largest of `[3, 2, 1, 5, 6, 4]` and prints each range and where its pivot lands. It uses the fixed last-item pivot, so the run is the same every time.
 
 ```python
 def trace_partition(nums):
@@ -203,19 +194,19 @@ print(trace_quickselect([3, 2, 1, 5, 6, 4], 2))
 
 ### Where it goes wrong
 
-1. **A fixed pivot on sorted input.** The last item is always the max, the recursion goes n deep: O(n²) time and `RecursionError` around n = 1000. Swap a random item into `hi` first.
-2. **Many equal items with Lomuto.** Every item ≤ pivot goes left, so all-equal input is O(n²) even with random pivots. Use a three-way partition (or Hoare's).
-3. **The k-th largest index.** In ascending order it is `n - k`, not `k - 1` (that is the k-th smallest).
-4. **Recursing on `[lo, p]` after Lomuto.** The pivot is already final: recurse on `p - 1` and `p + 1`. Hoare is the opposite: it returns a split point, so recurse on `[lo, p]` and `[p + 1, hi]`.
-5. **`<` instead of `<=` in merge.** Still sorted, but no longer stable, and inversion counts start counting equal pairs.
-6. **Forgetting the leftovers** after the merge loop: `out + left[i:] + right[j:]`.
-7. **Counting sort with negatives.** Index with `x - min(nums)`; a negative index silently writes into the end of the list.
-8. **Mutating the caller's list.** Quickselect rearranges its input; copy first if the original order matters.
-9. **A comparator that returns a bool.** `cmp_to_key` needs a negative number for "x first"; `return x + y > y + x` only ever returns True or False (1 or 0), so nothing moves: Largest Number on `[10, 2]` gives `"102"` instead of `"210"`. Return -1, 1 or 0.
+1. **A fixed pivot on sorted input.** The last item is always the max, so one side is empty and the recursion goes n deep: O(n²) time, and `quick_sort(list(range(3000)))` with the plain `partition` raises `RecursionError`. Swap a random item into `hi` first.
+2. **Many equal items with Lomuto.** Every item ≤ pivot goes left, so all-equal input is O(n²) even with random pivots: `quick_sort([5] * 3000)` raises `RecursionError`. Use a three-way partition, or Hoare's.
+3. **The k-th largest index.** In ascending order it is `n - k`. `k - 1` is the k-th smallest, so with it `kth_largest([3, 2, 1, 5, 6, 4], 2)` returns 2 instead of 5.
+4. **Recursing on `[lo, p]` after Lomuto.** The pivot is already final, so recurse on `p - 1` and `p + 1`: with `sort_range(lo, p)`, `quick_sort([3, 1, 2, 1])` can never split the two 1s and raises `RecursionError`. Hoare is the opposite: it returns a split point, so recurse on `[lo, p]` and `[p + 1, hi]`.
+5. **`<` instead of `<=` in merge.** The output is still sorted, but no longer stable, and inversion counts start counting equal pairs: `count_inversions([1, 1])` gives 1 instead of 0.
+6. **Forgetting the leftovers** after the merge loop: without `+ left[i:] + right[j:]`, `merge([2, 4, 5], [1, 3, 6])` loses the 6.
+7. **Counting sort with negatives.** Index with `x - min(nums)`; a negative index silently writes into the end of the list, and without the shift `counting_sort([3, -1, 2])` returns `[2, 3, 4]`.
+8. **Mutating the caller's list.** Partition rearranges its input: after `data = [3, 1, 2]` and `partition(data, 0, 2)`, `data` is `[1, 2, 3]`. Quickselect copies first for that reason; do the same whenever the original order matters.
+9. **A comparator that returns a bool.** Largest Number, which arranges numbers so that their concatenation is the largest, sorts with `cmp_to_key`, and that needs a negative number for "x first". `return x + y > y + x` only ever returns True or False, 1 or 0, so nothing moves: `[10, 2]` gives `"102"` instead of `"210"`. Return -1, 1 or 0.
 
 ### Edge cases to say out loud
 
-Empty list · one item · all equal · already sorted · reverse sorted · negative numbers · duplicates equal to the pivot · `k = 1` (the max) and `k = n` (the min) · `k` outside `1..n` (state the contract).
+Say them before you type: an empty list, one item, all equal, already sorted, reverse sorted, negative numbers, duplicates equal to the pivot, `k = 1` for the max and `k = n` for the min, and `k` outside `1..n`, where you state the contract. The cell checks both sorts against `sorted` on each case and on a random list, then shows what `k = 0` does.
 
 ```python
 random.seed(1)
@@ -239,23 +230,27 @@ print("edge cases pass")
 **Try it**
 - Read the `ValueError`: with `k = 0` the target index is 3, every pivot lands left of it, `lo` climbs past `hi`, and `random.randint(3, 2)` fails. Say "I assume 1 ≤ k ≤ n" out loud, or check it and raise a clear error.
 - Check that the input survives: `data = [3, 1, 2]`, then `kth_largest(data, 1)`, then `data` is still `[3, 1, 2]` because the function copies it.
-- Try `quick_sort([5] * 3000)`: `RecursionError`, even with random pivots (all-equal input is trap 2). Then try `quick_sort_hoare([5] * 3000)` from the Variations below.
+- Try `quick_sort([5] * 3000)`: `RecursionError`, even with random pivots (all-equal input is trap 2). Then try `quick_sort_hoare([5] * 3000)` from the second pass of the Variations below.
 
 ### Variations
 
+Each variation below changes one thing: how the partition splits, what the order compares, or what the sorted order is used for. The table is the overview; the paragraphs after it take the main ones in order.
+
 | Variation | What changes from the template | Problems |
 |---|---|---|
-| **Quickselect** (k-th, top k) | partition, then continue on ONE side only | Kth Largest Element (215), K Closest Points (973) |
-| **Three-way partition** | three regions `< pivot`, `== pivot`, `> pivot`; equal items finish in one pass | Sort Colors (75), quicksort on many duplicates |
-| **Hoare partition** (Hard stretch) | two pointers walk inward and swap a misplaced pair; returns a split point, not the pivot's slot | quicksort with fewer swaps, safe on duplicates |
-| **Count while merging** (Hard stretch) | total inversions: `+= len(left) - i` when the right pile wins. Per element: merge `(value, index)` pairs; when a LEFT item is placed, add `j`, the right items already placed (smaller and later) | Count of Smaller Numbers After Self (315) |
-| **Count, then merge** (Hard stretch) | the condition is not the merge order (`a > 2b`), so first sweep a second pointer over the two sorted halves to count, then merge | Reverse Pairs (493) |
-| **Sort as preprocessing** | sort once in O(n log n), then a linear sweep: two pointers, greedy, merge neighbours | 3Sum (15), Merge Intervals (56), Meeting Rooms II (253), Non-overlapping Intervals (435) |
-| **Custom order** | `key=` when each item has its own rank; `cmp_to_key` when the order depends on the pair | Sort by Frequency (1636), Largest Number (179) |
-| **Bucket by value** | a small integer key indexes an array instead of being compared ([Arrays & Hashing](#s03)) | Top K Frequent Elements (347), Maximum Gap (164) |
-| **Selection with a heap** | a size-k min-heap: O(n log k), works on a stream ([Heaps](#s13)) | Kth Largest in a Stream (703) |
+| **Quickselect** (k-th, top k) | partition, then continue on ONE side only | Kth Largest Element in an Array (215), K Closest Points to Origin (973): the k points nearest to (0, 0) |
+| **Three-way partition** | three regions `< pivot`, `== pivot`, `> pivot`; equal items finish in one pass | Sort Colors (75): sort 0s, 1s and 2s in place; quicksort on many duplicates |
+| **Sort as preprocessing** | sort once in O(n log n), then a linear sweep: two pointers, greedy, merge neighbours | 3Sum (15): every unique triplet that sums to 0; Merge Intervals (56): merge the overlapping ranges; Meeting Rooms II (253): the fewest rooms that hold every meeting; Non-overlapping Intervals (435): the fewest removals that leave no overlap |
+| **Custom order** | `key=` when each item has its own rank; `cmp_to_key` when the order depends on the pair | Sort Array by Increasing Frequency (1636): rarer values first, ties by the bigger value; Largest Number (179) |
+| **Bucket by value** | a small integer key indexes an array instead of being compared ([Arrays & Hashing](#s03)) | Top K Frequent Elements (347): the k most frequent values; Maximum Gap (164): the largest gap between neighbours in sorted order, in O(n) |
+| **Selection with a heap** | a size-k min-heap: O(n log k), works on a stream ([Heaps](#s13)) | Kth Largest Element in a Stream (703): the k-th largest after each new number |
+| *Second pass:* **Hoare partition** | two pointers walk inward and swap a misplaced pair; returns a split point, not the pivot's slot | quicksort with fewer swaps, safe on duplicates |
+| *Second pass:* **Count while merging** | total inversions: `+= len(left) - i` when the right pile wins. Per element: merge `(value, index)` pairs; when a LEFT item is placed, add `j`, the right items already placed (smaller and later) | Count of Smaller Numbers After Self (315): for each item, how many later items are smaller |
+| *Second pass:* **Count, then merge** | the condition is not the merge order (`a > 2b`), so first sweep a second pointer over the two sorted halves to count, then merge | Reverse Pairs (493): the pairs i < j with `nums[i] > 2 · nums[j]` |
 
-**Three-way partition** (Dutch national flag): keep `< pivot` at the front, `> pivot` at the back, and let equal items collect in the middle. Sort Colors is exactly this with pivot 1:
+The first row is the template itself. K Closest Points to Origin is quickselect on squared distances with target index k − 1: once the pivot lands there, the k points up to it are the answer, in any order. [Heaps](#s13) solves it with a size-k max-heap instead, which also works on a stream.
+
+The next variation repairs Lomuto's weakness with equal items. A **three-way partition** keeps `< pivot` at the front, `> pivot` at the back, and lets the items equal to the pivot collect in the middle, so a run of duplicates is finished in one pass. Sort Colors, which sorts an array of 0s, 1s and 2s in place, is exactly this with pivot 1: `[2, 0, 2, 1, 1, 0]` → `[0, 0, 1, 1, 2, 2]`. It is the Dutch flag loop of [Two Pointers](#s05), run around any pivot value.
 
 ```python
 def three_way_partition(a, pivot):
@@ -280,11 +275,56 @@ print(three_way_partition(colors, 1), colors, three_way_partition([1, 3], 2))   
 ```
 
 **Try it**
-- Add `i += 1` to the `> pivot` branch and run it on `[1, 2, 0]`: the result is `[1, 0, 2]`. The 0 swapped in from the back was never examined.
-- Change `while i <= gt` to `while i < gt` and run it on `[1, 0]`: nothing moves. The last unseen item is never looked at.
-- `three_way_partition([5, 5, 5], 5)` returns `(0, 2)`: everything is in the middle block, so a quicksort built on it is done in one pass.
+- Call it with a pivot that is in no item, `three_way_partition([3, 1, 2], 5)`: every item is < pivot, it returns `(3, 2)` (lt > gt, an empty middle block) and the list keeps its order, `[3, 1, 2]`.
+- Change `while i <= gt` to `while i < gt` and run `three_way_partition([1, 0], 1)`: nothing moves, and the list stays `[1, 0]`. The last unseen item is never looked at.
+- Run `three_way_partition([5, 5, 5], 5)`: `(0, 2)`. Everything is in the middle block, so a quicksort built on it is done in one pass.
 
-**Hoare partition** (Hard stretch): two pointers walk towards each other, each stopping at an item on the wrong side, and swap them. On equal items both pointers stop at every step and meet in the middle, so the split stays balanced:
+**Sort as preprocessing** needs no new code. One O(n log n) sort often turns an O(n²) search into a linear sweep: two pointers squeeze a sorted array, as in 3Sum in [Two Pointers](#s05), and intervals sorted by start can only overlap their neighbours, as in Merge Intervals in [Intervals & Sweep Line](#s14). Meeting Rooms II sorts by start and keeps a heap of end times; Non-overlapping Intervals sorts by end and greedily keeps the earliest finisher.
+
+A **custom order** comes next. A `key` works whenever each item has a rank of its own, as [Python Toolkit](#s02) shows, and tuples compare field by field, so a tuple key sorts by several levels and negating a number flips just that level. Sort Array by Increasing Frequency asks to sort values by how often they occur, rarer first, with ties broken by the bigger value first: `[1, 1, 2, 2, 2, 3]` → `[3, 1, 1, 2, 2, 2]`. The rank of x is the tuple `(freq[x], -x)`.
+
+```python
+def frequency_sort(nums):                    # LeetCode 1636: rarer values first, ties -> bigger value first
+    freq = Counter(nums)
+    return sorted(nums, key=lambda x: (freq[x], -x))
+
+
+print(frequency_sort([1, 1, 2, 2, 2, 3]), frequency_sort([2, 3, 1, 3, 2]))   # [3, 1, 1, 2, 2, 2] [1, 3, 3, 2, 2]
+```
+
+**Try it**
+- Change the key to `(freq[x], x)`: in the second list, ties now put the smaller value first, `[1, 2, 2, 3, 3]`.
+- Use `key=lambda x: -freq[x]` alone: the second list becomes `[2, 3, 3, 2, 1]`, most frequent first with ties in input order (stability).
+- Predict `frequency_sort([4, 4, 6, 6, 5])` before running it: `[5, 6, 6, 4, 4]`.
+
+Largest Number asks to arrange non-negative integers so that their concatenation is the largest number, returned as a string: `[3, 30, 34, 5, 9]` → `"9534330"`, `[10, 2]` → `"210"`, `[0, 0]` → `"0"`. No number has a rank of its own here, because the order depends on the pair: x goes before y when `x + y > y + x` as strings, so `"3"` goes before `"30"`, since 330 beats 303.
+
+When the order depends on the pair, you need `cmp_to_key`: the comparator returns a negative number for "x first", a positive one for "y first", and 0 otherwise. Sort the numbers as strings with it and join them. Then guard the all-zeros case, which would otherwise come out as `"00"`.
+
+```python
+def largest_number(nums):                    # 179: the order depends on the PAIR, x + y vs y + x
+    def cmp(x, y):
+        if x + y > y + x:
+            return -1                        # negative: x goes first
+        if x + y < y + x:
+            return 1                         # positive: y goes first
+        return 0
+    s = "".join(sorted(map(str, nums), key=cmp_to_key(cmp)))
+    return "0" if s[0] == "0" else s         # [0, 0] -> "0", not "00"
+
+
+print(largest_number([3, 30, 34, 5, 9]), largest_number([10, 2]), largest_number([0, 0]))   # 9534330 210 0
+```
+
+**Try it**
+- Replace the body of `cmp` with `return x + y > y + x` and run `largest_number([10, 2])`: `"102"` instead of `"210"`, and no error. A bool is never negative, so no item ever goes first and the sort keeps the input order (trap 9).
+- Delete the zeros guard and run `largest_number([0, 0])`: `"00"`.
+- Try plain reverse string order, `"".join(sorted(map(str, [3, 30, 34, 5, 9]), reverse=True))`: `"9534303"` instead of `"9534330"`. As strings `"30"` beats `"3"`, so 30 goes first, yet 303 loses to 330.
+- Swap `-1` and `1` in `cmp`: `largest_number([3, 30, 34, 5, 9])` becomes the *smallest* arrangement, `"3033459"`.
+
+The rest of this section is a second pass: Hard problems that reuse the same moves. Skip them until the main path is automatic.
+
+Hoare's partition comes first, because it repairs what Lomuto gets wrong on equal items: `quick_sort([5] * 3000)` needs 3000 levels of recursion, since every 5 joins the small side, and raises `RecursionError`. Two pointers walk towards each other, each stopping at an item on the wrong side, and swap the pair. On equal items both pointers stop at every step and meet in the middle, so the split stays balanced. The function returns a split point, not the pivot's final slot.
 
 ```python
 def hoare_partition(a, lo, hi):
@@ -323,7 +363,7 @@ print(quick_sort_hoare([5, 2, 4, 6, 1, 3]), quick_sort_hoare([2] * 6))   # [1, 2
 - Recurse on `sort_range(lo, p - 1)` as if `p` were final: `quick_sort_hoare([5, 2, 4, 6, 1, 3])` returns `[2, 3, 1, 4, 5, 6]`. Hoare's `p` is a boundary, and `a[p]` still needs sorting with its side.
 - Use `pivot = a[hi]` instead of the middle and rerun the cell: `RecursionError`. The smallest case is `[1, 2]`: the split comes back as `[0..1]` and `[2..1]`, so the left call repeats forever.
 
-**Count while merging** (Hard stretch; inversions = pairs `i < j` with `nums[i] > nums[j]`). When the right pile wins, its item jumps ahead of every item still waiting in the left pile, and each of those is an inversion:
+Counting inversions is the second. An inversion is a pair i < j with `nums[i] > nums[j]`: `[2, 4, 1, 3, 5]` has 3, the pairs (2, 1), (4, 1) and (4, 3). Merge sort finds them all while it merges. When the right pile wins, its item jumps ahead of every item still waiting in the left pile, and each of those is an inversion:
 
 ```text
 left = [2, 4]     right = [1, 3, 5]
@@ -361,29 +401,15 @@ print(count_inversions([2, 4, 1, 3, 5]), count_inversions([5, 4, 3, 2, 1]), coun
 **Try it**
 - Replace `cross += len(left) - i` with `cross += 1`: `[2, 4, 1, 3, 5]` gives 2 instead of 3. The 1 jumps over two items but was counted once.
 - Change `<=` to `<` and run `count_inversions([1, 1])`: 1, but equal items are not out of order.
-- Turn it into Count of Smaller Numbers After Self (315): sort `(value, index)` pairs, keep `counts = [0] * n`, and when a LEFT pair is placed, add `j` (the right pairs already placed: smaller and later) to `counts[its index]`; left-overs from the left pile get `j` too. `[5, 2, 6, 1]` gives `[2, 1, 1, 0]`.
+- Turn it into Count of Smaller Numbers After Self (315): sort `(value, index)` pairs, keep `counts = [0] * n`, and when a LEFT pair is placed, add `j`, the right pairs already placed, which are smaller and later, to `counts[its index]`; left-overs from the left pile get `j` too. `[5, 2, 6, 1]` gives `[2, 1, 1, 0]`; the Fenwick version is in [Arrays & Hashing](#s03).
 
-**Sort as preprocessing.** One O(n log n) sort often turns an O(n²) search into a linear sweep: two pointers squeeze a sorted array (3Sum, in [Two Pointers](#s05)), and intervals sorted by start can only overlap their neighbours (Merge Intervals, in [Intervals](#s14)).
+Reverse Pairs asks for the number of pairs i < j with `nums[i] > 2 · nums[j]`: `[1, 3, 2, 3, 1]` → 2. That condition is not the order the merge uses, so count before merging. With both halves sorted, a pointer into the right half only ever moves forward as the left item grows, and each left item adds the right items the pointer has passed. Then merge as usual.
 
-**Custom order**: a `key` works whenever each item has a rank of its own. When the order depends on the *pair*, as in Largest Number, you need `cmp_to_key` ([Python Toolkit](#s02)).
-
-```python
-def frequency_sort(nums):                    # LeetCode 1636: rarer values first, ties -> bigger value first
-    freq = Counter(nums)
-    return sorted(nums, key=lambda x: (freq[x], -x))
-
-
-print(frequency_sort([1, 1, 2, 2, 2, 3]), frequency_sort([2, 3, 1, 3, 2]))   # [3, 1, 1, 2, 2, 2] [1, 3, 3, 2, 2]
-```
-
-**Try it**
-- Change the key to `(freq[x], x)`: in the second list, ties now put the smaller value first, `[1, 2, 2, 3, 3]`.
-- Use `key=lambda x: -freq[x]` alone: the second list becomes `[2, 3, 3, 2, 1]`, most frequent first with ties in input order (stability).
-- Predict `frequency_sort([4, 4, 6, 6, 5])` before running it: `[5, 6, 6, 4, 4]`.
+<!-- cell -->
 
 ### The rest of the family
 
-You will rarely type these in an interview, but each has a "why" worth knowing:
+This part is a reference, not a second pass. You will rarely type these sorts in an interview, but each has a "why" an interviewer may ask about, and the table answers it at a glance:
 
 | Sort | The idea | Time (average / worst) | Extra space | Stable? | Use it when |
 |---|---|---|---|---|---|
@@ -395,7 +421,7 @@ You will rarely type these in an interview, but each has a "why" worth knowing:
 | Bucket | spread values over buckets by range, sort each, concatenate | O(n) expected / O(n²) | O(n) | if the inner sort is | evenly spread values; "bucket by frequency" ([Arrays & Hashing](#s03)) |
 | Python `sorted` | Timsort: a merge sort that first finds the runs already sorted in the data | O(n log n); O(n) if already sorted | O(n) | yes | always, unless asked to implement one |
 
-**Insertion sort** works like sorting playing cards in your hand; **heap sort** is "repeatedly take the max", with the heap living inside the array itself (children of `i` at `2i+1`, `2i+2`):
+Insertion sort works like sorting playing cards in your hand: it grows a sorted prefix and slides each new item left into place, so `[5, 2, 4]` becomes `[2, 5, 4]` and then `[2, 4, 5]`. Heap sort repeatedly takes the max. It builds a max-heap inside the array itself, with the children of `i` at `2i + 1` and `2i + 2`, swaps the max to the end, and shrinks the heap by one.
 
 ```python
 def insertion_sort(nums):
@@ -438,7 +464,7 @@ print(insertion_sort([5, 2, 4, 6, 1, 3]), heap_sort([5, 2, 4, 6, 1, 3]))   # [1,
 - In `heap_sort`, print `a` right after the build loop: `[6, 5, 4, 2, 1, 3]`. The max is on top; the rest is only "heap ordered", not sorted.
 - Delete the two lines that pick the bigger child (always use the left one): `heap_sort([1, 2, 3])` returns `[1, 3, 2]`. Sifting down must swap with the *bigger* child, or the smaller child ends up above a bigger one.
 
-**Counting sort** uses each value as an address instead of comparing:
+Counting sort uses each value as an address instead of comparing. `[3, -1, 2, -1, 0, 3]` holds values from −1 to 3, so five counters, one per possible value, are enough, and walking them in order emits `[-1, -1, 0, 2, 3, 3]`. Shifting each value by the minimum gives the negative values a slot, and the cell checks all three sorts against `sorted` on 200 random lists.
 
 ```python
 def counting_sort(nums):                     # small integer range: count instead of compare
@@ -464,7 +490,7 @@ print(counting_sort([3, -1, 2, -1, 0, 3]))   # [-1, -1, 0, 2, 3, 3]
 **Try it**
 - Drop the shift (use `counts[x]` and `out += [offset] * c`) and rerun: the random check stops with `IndexError`, because a value larger than the range indexes past the end of `counts`. Worse, `counting_sort([3, -1, 2])` raises nothing and returns `[2, 3, 4]`: the negative index `counts[-1]` quietly counted the -1 in the last slot.
 - Run `counting_sort([1_000_000, 0])`: correct, but it allocates a million counters for two numbers. The cost is the value range, not the length.
-- `counting_sort([1.5, 2])` raises `TypeError`: counting sort needs integer keys, because a value becomes a list index.
+- Run `counting_sort([1.5, 2])`: `TypeError`. Counting sort needs integer keys, because a value becomes a list index.
 
 ### Say it in the interview
 
@@ -474,7 +500,7 @@ While coding, point at the partition's region comments (`a[lo..i] <= pivot`) and
 
 ### Where sorting shows up in this repo
 
-Sorting has no topic folder, so this section adds no rows to the A-Z problem finder. These problems are mapped (and taught) in the sections of their main technique, but sorting or selection is the step that cracks them:
+Sorting has no topic folder, so this section adds no rows to the A-Z problem finder. The problems below are mapped and taught in the sections of their main technique, [Heaps](#s13), [Two Pointers](#s05), [Arrays & Hashing](#s03) and [Intervals & Sweep Line](#s14), but sorting or selection is the step that cracks them:
 
 | Problem | Where | The sorting step |
 |---|---|---|
@@ -496,7 +522,7 @@ Sorting has no topic folder, so this section adds no rows to the A-Z problem fin
 <details><summary>Answer</summary>Both partition in linear time, but quicksort recurses into both sides (n work on each of about log n levels), while quickselect continues into one side only, whose size halves on average: n + n/2 + n/4 + ... is less than 2n.</details>
 
 2. What does Lomuto partition do with `[7, 7, 7, 7]`, and what is the fix?
-<details><summary>Answer</summary>Every item is ≤ the pivot, so all of them join the "small" region and the pivot lands at the end: one side is empty, the next call has n − 1 items, and the whole sort is O(n²) (and n levels deep). A three-way partition puts all the 7s in the middle block in one pass; Hoare's partition also splits equal items evenly.</details>
+<details><summary>Answer</summary>Every item is ≤ the pivot, so all of them join the "small" region and the pivot lands at the end: one side is empty, the next call has n − 1 items, and the whole sort is O(n²) and n levels deep. A three-way partition puts all the 7s in the middle block in one pass; Hoare's partition also splits equal items evenly.</details>
 
 3. You need the top 10 of a million scores that keep arriving. Which of the four top-k approaches, and why not quickselect?
 <details><summary>Answer</summary>A size-10 min-heap: O(log 10) per new score and O(10) memory, and its root is always the 10th best so far. Quickselect needs the whole array in memory and rearranges it; it answers one query on a fixed array, not a stream.</details>

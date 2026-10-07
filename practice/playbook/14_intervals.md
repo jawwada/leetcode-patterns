@@ -2,9 +2,11 @@
 
 > Lay the intervals on a number line and sweep a vertical line from left to right. Sort once, and every decision only needs what the line is touching right now: the block being merged, the room that frees up first, or a running count of open intervals.
 
+The heap handed you the cheapest item next. Intervals add a second habit, sorting once: after one sort by start, a single left-to-right sweep answers most interval questions, and a heap of end times returns when you must know which meeting finishes first.
+
 **Reach for it when** the input is pairs `[start, end]` (meetings, bookings, ranges, buildings, rectangles) and the question is about overlap: merge them, insert one, intersect two lists of them, keep the most / remove the fewest so that none overlap, find how many are open at once (rooms), find the free gaps, or answer "which intervals contain point q?".
 
-**In this repo:** `intervals/` (8 problems) · bank: `practice/simple/48_merge_intervals.py`, `practice/simple/49_meeting_rooms_ii.py` · basics: `practice/simple/basics/sorting/06_python_sort_keys_and_stability.py` (sort keys such as `(end, -start)`), `practice/simple/basics/heaps/` (the min-heap behind meeting rooms) · sweeps that need a heap live in the Heaps section (skyline, Meeting Rooms III); covering a range and "two points per interval" live in the Greedy section; [Two Pointers](#s05) walks two sorted lists the way Interval List Intersections does below.
+**In this repo:** `intervals/` (8 problems) · bank: `practice/simple/48_merge_intervals.py`, `practice/simple/49_meeting_rooms_ii.py` · basics: `practice/simple/basics/sorting/06_python_sort_keys_and_stability.py` (sort keys such as `(end, -start)`), `practice/simple/basics/heaps/` (the min-heap behind meeting rooms) · sweeps that need a heap live in [Heaps](#s13): The Skyline Problem and Meeting Rooms III; covering a range with the fewest taps and "two points per interval" live in [Greedy](#s15); [Two Pointers](#s05) walks two sorted lists the way Interval List Intersections does below.
 
 ### The picture
 
@@ -18,7 +20,7 @@
   [=========]   [=======]     [=====]       merged:  [1,6] [8,12] [15,18]
 ```
 
-**Why it is fast:** the brute force compares every pair, O(n²), and merging until nothing changes is O(n³). After sorting by start, an interval can only overlap the block you are building *right now*: every later interval starts even later, so once one starts past the block's end, that block is final and never looked at again. One sort and one sweep: O(n log n).
+Compare every pair and you pay O(n²); merge until nothing changes and it is O(n³). After sorting by start, an interval can only overlap the block you are building *right now*: every later interval starts even later, so once one starts past the block's end, that block is final and never looked at again. One sort and one sweep: O(n log n).
 
 ### Overlap in one line
 
@@ -35,50 +37,33 @@ closed    [s, e]   a.start <= b.end and b.start <= a.end     merge intervals, "t
 
 It is easier to say when two intervals do *not* overlap: one ends before the other starts. Negate that and you get the one-liner above, which handles partial, nested and identical intervals with no case analysis. When they do overlap, the common part is `[max(a.start, b.start), min(a.end, b.end)]`.
 
-The only real question is what happens at a shared endpoint, and the problem statement decides it:
+The only real question is what happens at a shared endpoint, and the problem statement decides it. Take `[1, 2]` and `[2, 3]`. Merge Intervals (56) and Insert Interval (57), which merge whatever overlaps, treat ends as closed: the two form one block `[1, 3]`, and the test is `start <= block_end`. Interval List Intersections (986), the common parts of two lists, is closed too: the two share the point 2, and a pair meets when `max(starts) <= min(ends)`.
 
-| Problem | Ends | `[1, 2]` and `[2, 3]` | So the test is |
-|---|---|---|---|
-| Merge Intervals (56), Insert Interval (57) | closed | overlap: one block `[1, 3]` | `start <= block_end` |
-| Non-overlapping Intervals (435) | treated as half-open | no overlap: keep both | keep if `start >= kept_end` |
-| Meeting Rooms II (253), My Calendar (729, 732) | half-open `[s, e)` | no overlap: one room is enough | room is free if `end <= start` |
-| Interval List Intersections (986) | closed | they share the point 2 | meet if `max(starts) <= min(ends)` |
-| Employee Free Time (759) | busy blocks | no free time between them | gap only if `start > busy_until` |
+Rooms and bookings are half-open, `[s, e)`. In Meeting Rooms II (253), the fewest rooms that hold a set of meetings, and in My Calendar I (729) and III (732), which take bookings one at a time, a meeting that ends at 2 leaves its room free for one that starts at 2, so a room is free when `end <= start`.
+
+Two more problems read touching the same way. Non-overlapping Intervals (435), which removes the fewest intervals so that none overlap, keeps `[1, 2]` and `[2, 3]` together: an interval stays when `start >= kept_end`. Employee Free Time (759), the gaps when everyone is free, finds no gap between busy blocks that touch, so a gap opens only when `start > busy_until`.
 
 ### From idea to code
 
-**The idea in one sentence:** *sort by start, then sweep: to merge, keep one "current" block that each interval either stretches or closes; to count, keep the end times of what is still running, free what has ended, then add the newcomer.*
+*Sort by start, then sweep: to merge, keep one "current" block that each interval either stretches or closes; to count, keep the end times of what is still running, free what has ended, then add the newcomer.*
 
-| Decision | Merge (56, 57) | How many at once (253) |
-|---|---|---|
-| **State / Definition** | `merged[-1]` = the block being built (the union of everything so far that chains into it); `merged[:-1]` = finished blocks | `ends` = min-heap of the end times of the meetings still running at `start` |
-| **Invariant** | `merged` is sorted and disjoint and covers exactly the intervals seen so far | after the fix, every end in the heap is `> start` |
-| **Step** | the interval stretches the block (`max` of the ends) or opens a new block | push the new meeting's end: it takes a room |
-| **Fix** | none: after sorting, only `merged[-1]` can be touched | `while ends[0] <= start: pop` (those rooms are free again) |
-| **Record** | a block is final when an interval starts after its end (or the input ends) | `rooms = max(rooms, len(ends))` after the push |
-| **Init** | sort by start; `merged = []` | sort by start; `ends = []` |
-| **Return** | `merged` (empty input gives `[]`) | `rooms` |
+For merging, as in Merge Intervals and Insert Interval, the **State** is the block being built, `merged[-1]`, whose **Definition** is the union of everything so far that chains into it; every block before it is finished. The **Invariant** is that `merged` is sorted, disjoint, and covers exactly the intervals seen so far. A **Step** stretches the block to `max(merged[-1][1], end)`, the `max` because the newcomer may be nested inside, or opens a new block when the newcomer starts past the block's end.
 
-The same idea, sentence by sentence:
+There is no **Fix**, because after the sort only `merged[-1]` can be touched. The **Record** happens when a block becomes final: the moment an interval starts after its end, or when the input ends. The **Init** is the sort by start, `sorted(intervals)`, which orders lists by start and then by end, and an empty `merged`; the **Return** is `merged`, `[]` for empty input.
 
-| In words | In code |
-|---|---|
-| "sort by start" | `sorted(intervals)` (lists compare by start, then by end) |
-| "the block I am building" | `merged[-1]` |
-| "it starts inside the block (touching counts)" | `start <= merged[-1][1]` |
-| "stretch the block" | `merged[-1][1] = max(merged[-1][1], end)` |
-| "a gap: open a new block" | `merged.append([start, end])` |
-| "do a and b overlap?" (half-open) | `a[0] < b[1] and b[0] < a[1]` |
-| "their common part" | `[max(a[0], b[0]), min(a[1], b[1])]` |
-| "the room that frees up first" | `ends[0]` of a min-heap of end times |
-| "how many are open right now" | `len(ends)`, or a running sum of +1 at each start and −1 at each end |
+For counting how many run at once, as in Meeting Rooms II, the state is `ends`, a min-heap of the end times of the meetings still running at the current start, so `ends[0]` is the room that frees up first. The invariant, after the fix, is that every end in the heap is later than `start`.
 
-**Free, then occupy, then count.** The RECORD reads how many meetings run at this instant, so it must come after both other lines: the ended meetings must be gone (move the freeing loop below the count, and the back-to-back `[1, 5]`, `[5, 9]` need 2 rooms) and the newcomer must be in (move the count above the push, and `[[1, 5], [2, 6], [3, 7]]` needs only 2 rooms, not 3). Freeing before the push reads naturally: the newcomer may take a room whose meeting ended exactly at its start.
+The fix frees every room whose meeting is over, `while ends and ends[0] <= start: heappop(ends)`. The step pushes the newcomer's end, because it takes a room, and the record is `rooms = max(rooms, len(ends))` right after the push. Init sorts by start with an empty heap; the return is `rooms`.
+
+The record reads how many meetings run at this instant, so it must come after both other lines. Move the freeing loop below the count and the back-to-back meetings `[1, 5]`, `[5, 9]` need 2 rooms; move the count above the push and `[[1, 5], [2, 6], [3, 7]]` needs only 2 rooms instead of 3. Freeing before the push also reads naturally: the newcomer may take a room whose meeting ended exactly at its start.
+
+The cell below holds both templates. Merge Intervals merges every overlapping pair, touching included: `[[1, 3], [2, 6], [8, 10], [15, 18]]` becomes `[[1, 6], [8, 10], [15, 18]]`. Meeting Rooms II asks for the fewest rooms so that no two meetings share a room at the same time, where a meeting may start exactly when another ends: `[[0, 30], [5, 10], [15, 20]]` needs 2. The `overlaps` helper is the one-liner for half-open ends.
 
 ```python
 def merge(intervals):
+    intervals = sorted(intervals)                     # INIT: by start (ties by end)
     merged = []                                       # STATE: finished blocks + the current one, merged[-1]
-    for start, end in sorted(intervals):              # INIT: sort by start (ties by end)
+    for start, end in intervals:
         if merged and start <= merged[-1][1]:         # starts inside the current block:
             merged[-1][1] = max(merged[-1][1], end)   # STEP: stretch it (max: it may be nested)
         else:
@@ -91,8 +76,9 @@ def overlaps(a, b):                                   # half-open [s, e): touchi
 
 
 def min_rooms_heap(meetings):
+    meetings = sorted(meetings)              # INIT: by start
     ends, rooms = [], 0                      # STATE: min-heap of end times of the meetings running now
-    for start, end in sorted(meetings):      # INIT: by start
+    for start, end in meetings:
         while ends and ends[0] <= start:     # FIX: free every room whose meeting is over (half-open: <=)
             heapq.heappop(ends)
         heapq.heappush(ends, end)            # STEP: this meeting takes a room
@@ -108,14 +94,14 @@ print(min_rooms_heap([[0, 30], [5, 10], [15, 20]]), min_rooms_heap([[1, 5], [5, 
 **Try it**
 - Change `max(merged[-1][1], end)` to plain `end` and run `merge([[1, 10], [2, 3], [4, 5]])`: `[[1, 3], [4, 5]]`. The nested `[2, 3]` shrank the block.
 - Change `<=` to `<` in `merge`: `merge([[1, 4], [4, 5]])` now gives `[[1, 4], [4, 5]]`. Closed or half-open is a decision you read from the problem, then write once.
-- Replace `sorted(intervals)` with `intervals` and run `merge([[8, 10], [1, 3], [2, 6]])`: `[[8, 10]]`. The test only looks at the block's end, so `[1, 3]` and `[2, 6]` were swallowed by a block they never touch.
+- Delete the INIT line, so that the loop sees the input order, and run `merge([[8, 10], [1, 3], [2, 6]])`: `[[8, 10]]`. The test only looks at the block's end, so `[1, 3]` and `[2, 6]` were swallowed by a block they never touch.
 - In `min_rooms_heap`, move the `while` loop below the RECORD line: `min_rooms_heap([[1, 5], [5, 9]])` needs 2 rooms. The room was freed one step too late.
 
-**Why the peak is the answer.** At the busiest instant that many meetings run at once, and each needs its own room, so fewer rooms is impossible. That many is also enough: hand out rooms in start order, each to a room whose meeting has ended. One is always free, because otherwise one more meeting than the peak would be running at that moment.
+The peak is the answer, and the reason is worth saying out loud. At the busiest instant that many meetings run at once, and each needs its own room, so fewer rooms is impossible. That many is also enough: hand out rooms in start order, each to a room whose meeting has ended. One is always free, because otherwise one more meeting than the peak would be running at that moment.
 
 ### Watch it work
 
-Fed in a shuffled order, the sweep still sees the intervals sorted:
+Fed in a shuffled order, the sweep still sees the intervals sorted. The trace prints, for each interval, whether it stretched the open block or closed it, and the blocks built so far.
 
 ```python
 def trace_merge(intervals):
@@ -141,18 +127,20 @@ trace_merge([[8, 10], [1, 3], [15, 18], [2, 6], [9, 12]])
 
 ### Where it goes wrong
 
+Most interval bugs are one wrong comparison, so each trap below names the comparison and the input that exposes it.
+
 1. **Sorting by the wrong key, or not at all.** Merging and rooms: sort by start. "Keep the most / remove the fewest": sort by **end**. With `[[1, 100], [2, 3], [4, 5]]`, keeping greedily in start order keeps `[1, 100]` and removes 2; end order removes only 1.
 2. **`end` instead of `max(...)`** when stretching: a nested interval shrinks the block (`[[1, 10], [2, 3], [4, 5]]` → `[[1, 3], [4, 5]]`).
 3. **Comparing with the previous interval instead of the block.** After the nested `[2, 3]`, the previous end (3) is below the block's end (10), so `[[1, 10], [2, 3], [4, 5]]` becomes `[[1, 10], [4, 5]]`. Always compare with `merged[-1]`.
 4. **`<` vs `<=` at a shared endpoint.** Closed ends (merge): `[1, 4]` and `[4, 5]` overlap. Half-open (meetings): a meeting ending at 10 frees its room for one starting at 10.
-5. **Editing the caller's lists.** `merged.append(iv)` followed by `merged[-1][1] = ...` changes the input in place. Append a fresh `[start, end]`.
-6. **Offline answers in the wrong order.** If you sort the queries to sweep them, store each answer under its original query, then rebuild the original order.
-7. **The +1/−1 order at equal times.** For half-open intervals the −1 must come before the +1 at the same time, or back-to-back meetings count as overlapping. Sorting `(time, delta)` tuples does it for free: −1 sorts first.
-8. **Adding a strip with the new set.** In a 2-D sweep, add the strip to the left of x with the *old* active set, then apply the event at x.
+5. **Editing the caller's lists.** `merged.append(iv)` followed by `merged[-1][1] = ...` changes the input in place: after `merge([[1, 3], [2, 4]])` the caller's `[1, 3]` reads `[1, 4]`. Append a fresh `[start, end]`.
+6. **Offline answers in the wrong order.** If you sort the queries to sweep them, store each answer under its original query, then rebuild the original order. Returned in sorted order, the queries `[2, 19, 5, 22]` of `min_interval` below get `[2, 4, -1, 6]` instead of `[2, -1, 4, 6]`.
+7. **The +1/−1 order at equal times.** For half-open intervals the −1 must come before the +1 at the same time, or back-to-back meetings count as overlapping: `[[1, 5], [5, 9]]` needs 2 rooms instead of 1. Sorting `(time, delta)` tuples does it for free: −1 sorts first.
+8. **Adding a strip with the new set.** In a 2-D sweep, as in Rectangle Area II, the area of a union of rectangles, add the strip to the left of x with the *old* active set, then apply the event at x. The other order loses area: on the three rectangles of the example at the end of the section, the last strip `[2, 3]` is measured after `[1, 0, 3, 1]` has switched off, and the area comes out 5 instead of 6.
 
 ### Edge cases to say out loud
 
-Empty list · one interval · touching ends (closed vs half-open) · nested intervals · identical intervals · unsorted input · zero-length intervals `[5, 5]` · negative coordinates · inserting before all, after all, or around all.
+Empty list · one interval · touching ends (closed vs half-open) · nested intervals · identical intervals · unsorted input · zero-length intervals `[5, 5]` · negative coordinates · inserting before all, after all, or around all. The cell checks the merge and rooms templates against them, and the insert cases come with Insert Interval below.
 
 ```python
 assert merge([]) == []
@@ -171,34 +159,38 @@ print("edge cases pass")
 
 **Try it**
 - Predict `merge([[1, 4], [0, 0]])` before running it: `[[0, 0], [1, 4]]` (they don't touch).
-- Rewrite the loop as `for iv in sorted(intervals):` with `merged.append(iv)` and `iv[0]`, `iv[1]` inside: the last assert fails, because the caller's `[1, 3]` became `[1, 4]`. `sorted` copies the outer list, not the inner ones.
+- Rewrite the loop as `for iv in intervals:` with `merged.append(iv)` and `iv[0]`, `iv[1]` inside: the last assert fails, because the caller's `[1, 3]` became `[1, 4]`. `sorted` copied the outer list, not the inner ones.
 - What should `min_rooms_heap([[1, 3], [1, 3], [1, 3]])` return? Write the assert first (3).
 
 ### Variations
 
+Every variation below changes one of three things: the sort key, what the sweep carries, or whether the input arrives all at once.
+
 | Variation | What changes from the template | Problems |
 |---|---|---|
-| **Merge** | the template | 56 |
-| **Insert into a sorted, disjoint list** | no sort: copy what ends before, swallow what overlaps, copy the rest | 57 |
-| **Keep the most / remove the fewest** | sort by END; keep an interval if it starts at or after the last kept end | 435, 452 |
-| **How many at once** | the rooms template, or +1/−1 events with ends first at equal times; Car Pooling compares the peak with a capacity | 253, 1094 |
-| **Intersect two sorted lists** | two pointers; the common part is `[max starts, min ends]`; advance whichever ends first | 986 |
-| **Free gaps** | merge everyone's busy time; the holes between blocks are free | 759 |
-| **Bookings one at a time** | keep accepted bookings sorted; check only the two neighbours with `bisect` | 729 |
-| **Covered intervals** | sort by `(start, -end)`; an interval is covered iff its end ≤ the largest end so far | 1288 |
-| **Cover a range with the fewest intervals** | jump-game reach (Greedy section) | 1326 |
-| **At least two points in every interval** | sort by end, place points at the right end (Greedy section) | 757 |
-| **Rooms with ids, delayed meetings** | two heaps: free ids, busy ends (Heaps section) | 2402 |
-| *Stretch:* **point queries** | sort the queries offline; push intervals that have started; lazily pop those that ended | 1851 |
-| *Stretch:* **running bookings** | difference map: +1 at start, −1 at end; sweep the sorted keys | 731, 732 |
-| *Stretch:* **area of a union** | sweep x; each strip adds width × union length of the active y-intervals | 850 |
+| **Merge** | the template | Merge Intervals (56) |
+| **Insert into a sorted, disjoint list** | no sort: copy what ends before, swallow what overlaps, copy the rest | Insert Interval (57) |
+| **Keep the most / remove the fewest** | sort by END; keep an interval if it starts at or after the last kept end | Non-overlapping Intervals (435); Minimum Number of Arrows to Burst Balloons (452): the fewest arrows that burst every balloon |
+| **How many at once** | the rooms template, or +1/−1 events with ends first at equal times; Car Pooling compares the peak with a capacity | Meeting Rooms II (253); Car Pooling (1094): whether one car of a given capacity can carry every trip |
+| **Intersect two sorted lists** | two pointers; the common part is `[max starts, min ends]`; advance whichever ends first | Interval List Intersections (986) |
+| **Free gaps** | merge everyone's busy time; the holes between blocks are free | Employee Free Time (759) |
+| **Bookings one at a time** | keep accepted bookings sorted; check only the two neighbours with `bisect` | My Calendar I (729) |
+| **Covered intervals** | sort by `(start, -end)`; an interval is covered iff its end ≤ the largest end so far | Remove Covered Intervals (1288): how many intervals no other interval contains |
+| **Cover a range with the fewest intervals** | jump-game reach, in [Greedy](#s15) | Minimum Number of Taps to Open to Water a Garden (1326): the fewest taps that water a garden `[0, n]` |
+| **At least two points in every interval** | sort by end, place points at the right end, in [Greedy](#s15) | Set Intersection Size At Least Two (757): the fewest points that hit every interval twice |
+| **Rooms with ids, delayed meetings** | two heaps, free ids and busy ends, in [Heaps](#s13) | Meeting Rooms III (2402): the room that hosts the most meetings |
+| *Second pass:* **point queries** | sort the queries offline; push intervals that have started; lazily pop those that ended | Minimum Interval to Include Each Query (1851): the smallest interval holding each query point |
+| *Second pass:* **running bookings** | difference map: +1 at start, −1 at end; sweep the sorted keys | My Calendar II (731): no triple bookings; My Calendar III (732) |
+| *Second pass:* **area of a union** | sweep x; each strip adds width × union length of the active y-intervals | Rectangle Area II (850) |
 
-**Insert into a sorted list.** The list is already sorted and disjoint, so no sort is needed: the intervals that touch the new one form a single run. Copy everything before the run, swallow the run into the new interval, copy everything after.
+The first variation drops the sort. Insert Interval is given a sorted, disjoint list and one new interval, and asks for the list with the new interval merged in: `[[1, 3], [6, 9]]` with `[2, 5]` becomes `[[1, 5], [6, 9]]`. The intervals that touch the new one form a single run.
 
 ```text
 [1,2]   [3,5]   [6,7]   [8,10]   [12,16]          new = [4,8]
 copy    swallow swallow swallow  copy             ->  [1,2] [3,10] [12,16]
 ```
+
+So the code has three phases and no sort: copy every interval that ends before the new one starts, swallow every interval that starts at or before its end, touching included, and copy the rest. Each interval is looked at once.
 
 ```python
 def insert(intervals, new):
@@ -220,16 +212,19 @@ print(insert([[1, 2], [3, 5], [6, 7], [8, 10], [12, 16]], [4, 8]))   # [[1, 2], 
 ```
 
 **Try it**
-- Insert at the very end, `insert([[1, 2]], [5, 6])`, and at the very front, `insert([[3, 4]], [1, 2])`: phase 2 is empty both times, and the `append` between the loops still lands in the right place.
+- Insert at the very end, `insert([[1, 2]], [5, 6])`, at the very front, `insert([[3, 4]], [1, 2])`, and around everything, `insert([[3, 4], [5, 6]], [1, 9])`: phase 2 is empty in the first two calls and swallows both intervals in the third, and the `append` between the loops lands in the right place every time.
 - Change phase 1's `<` to `<=` and run `insert([[1, 2]], [2, 3])`: `[[1, 2], [2, 3]]` instead of `[[1, 3]]`. The touching interval was copied instead of swallowed.
-- `insert([], [4, 8])` gives `[[4, 8]]`: both loops are skipped. This is O(n) while `merge` is O(n log n); point at the line that is missing.
+- Run `insert([], [4, 8])`: `[[4, 8]]`, with both loops skipped. This is O(n) while `merge` is O(n log n); point at the line that is missing.
 
-**Keep the most: sort by end.** To fit the most intervals, always keep the one that *ends* first: it leaves the most room for everything after it. Any best answer can swap its first interval for the earliest-ending one without creating a clash (an exchange argument), so the greedy never loses. Every interval that starts before the last kept end is a removal.
+The second variation changes the sort key. Non-overlapping Intervals asks for the fewest intervals to remove so that the rest are pairwise disjoint, touching allowed: `[[1, 2], [2, 3], [3, 4], [1, 3]]` removes 1. To fit the most intervals, always keep the one that *ends* first, because it leaves the most room for everything after it.
+
+The proof is an exchange argument, the greedy proof that [Greedy](#s15) spells out: any best answer can swap its first interval for the earliest-ending one without creating a clash, so the greedy never loses. In code, sort by end once, keep an interval when it starts at or after the last kept end, and count every other interval as a removal.
 
 ```python
 def erase_overlap_intervals(intervals):
+    intervals = sorted(intervals, key=lambda iv: iv[1])   # INIT: earliest END first
     kept_end, removed = -math.inf, 0         # STATE: kept_end = end of the last kept interval
-    for start, end in sorted(intervals, key=lambda iv: iv[1]):   # INIT: earliest END first
+    for start, end in intervals:
         if start >= kept_end:                # fits after the last kept one (touching is fine)
             kept_end = end                   # STEP: keep it
         else:
@@ -246,9 +241,9 @@ print(erase_overlap_intervals([[1, 100], [2, 3], [4, 5]]))         # 1
 - Sort by start instead (`key=lambda iv: iv[0]`) and rerun the last call: 2 instead of 1. `[1, 100]` is kept first and blocks everything.
 - Sort by length (`key=lambda iv: iv[1] - iv[0]`) and run `erase_overlap_intervals([[1, 5], [4, 6], [5, 10]])`: 2 instead of 1. The short `[4, 6]` clashes with both of the others.
 - Change `>=` to `>`: `erase_overlap_intervals([[1, 2], [2, 3]])` now removes 1 instead of 0, as if touching intervals overlapped.
-- The same loop counts arrows for Minimum Arrows (452), where balloons are closed intervals: sort by end and shoot a new arrow only when `start > arrow`. `[[10, 16], [2, 8], [1, 6], [7, 12]]` needs 2 arrows, and so does `[[1, 2], [2, 3], [3, 4], [4, 5]]`.
+- Adapt the loop to Minimum Number of Arrows to Burst Balloons (452), where each balloon is a closed interval and one arrow bursts every balloon it passes through: sort by end and shoot a new arrow only when `start > arrow`. `[[10, 16], [2, 8], [1, 6], [7, 12]]` needs 2 arrows, and so does `[[1, 2], [2, 3], [3, 4], [4, 5]]`.
 
-**How many at once, as a +1/−1 sweep.** The room count is the largest number of meetings running at the same instant, so you can also turn each meeting into two events, +1 at its start and −1 at its end, and keep a running total. The heap version knows *which* room frees up next (Meeting Rooms III builds on it); the sweep is shorter and also works when bookings arrive one at a time (My Calendar III, below). LeetCode 253 promises `start < end`; with zero-length meetings the two disagree (`[[5, 5], [5, 5]]`: heap 1, sweep 0).
+The rooms count has a second form, with no heap at all. The room count is the largest number of meetings running at the same instant, so turn each meeting into two events, +1 at its start and −1 at its end, and keep a running total: `[[0, 30], [5, 10], [15, 20]]` peaks at 2.
 
 ```text
 meetings [0,30) [5,10) [15,20)
@@ -256,6 +251,8 @@ time      0    5   10   15   20   30
 event    +1   +1   -1   +1   -1   -1
 open      1    2    1    2    1    0          peak = 2 rooms
 ```
+
+Sort the events as `(time, delta)` tuples, so that at equal times the −1 comes first and a room freed at 5 is free for a meeting that starts at 5. The running total after each event is the number of meetings open, and its peak is the answer.
 
 ```python
 def min_rooms_sweep(meetings):
@@ -275,7 +272,11 @@ print(min_rooms_sweep([[0, 30], [5, 10], [15, 20]]), min_rooms_sweep([[1, 5], [5
 - Print `events` for the first call and run the totals by hand: 1, 2, 1, 2, 1, 0.
 - Compare with the heap on random meetings (`start < end`): the two always agree, because both measure the largest number of meetings open at once.
 
-**Intersect two sorted lists (Interval List Intersections).** Both lists are sorted and disjoint, so walk them with two pointers. The current pair meets on `[max of the starts, min of the ends]` when that is non-empty. Then drop the interval that ends first: it can't meet anything later in the other list, because everything there starts even later.
+The two forms answer different follow-ups. The heap knows *which* room frees up next, which Meeting Rooms III needs when it hands each meeting the lowest free room; the sweep is shorter and also works when bookings arrive one at a time, as in My Calendar III below. Car Pooling asks whether a car with a given capacity can serve trips `[passengers, from, to]`, and it is this sweep with the peak compared against the capacity.
+
+Meeting Rooms II promises `start < end`, and the promise matters: with zero-length meetings the two forms disagree, `[[5, 5], [5, 5]]` being 1 for the heap and 0 for the sweep.
+
+Two sorted lists need no sweep line at all, only two fingers. Interval List Intersections asks for the common parts of two sorted, disjoint lists of closed intervals: `[[0, 2], [5, 10]]` and `[[1, 5], [8, 12]]` share `[[1, 2], [5, 5], [8, 10]]`. The current pair meets on `[max of the starts, min of the ends]` when that is non-empty. Then drop the interval that ends first: it can't meet anything later in the other list, because everything there starts even later.
 
 ```python
 def interval_intersection(A, B):             # 986: both sorted and disjoint, closed ends
@@ -302,7 +303,7 @@ print(interval_intersection([[0, 2], [5, 10], [13, 23], [24, 25]], [[1, 5], [8, 
 - Advance the pointer that ends *later* (swap `i += 1` and `j += 1`): only `[[1, 2]]` is found. You threw away the interval that could still meet the next one.
 - Print `i, j` at the top of the loop: each step moves exactly one pointer, so the loop runs at most `len(A) + len(B)` times.
 
-**Free gaps (Employee Free Time).** Free time for everyone is what is left after the union of everyone's busy time. Merge all the busy intervals; the holes between consecutive blocks are the answer.
+The merge template also answers questions about what is *not* covered. Employee Free Time gives each employee's sorted busy intervals and asks for the finite gaps when *everyone* is free: `[[[1, 2], [5, 6]], [[1, 3]], [[4, 10]]]` gives `[[3, 4]]`. Free time for everyone is what is left after the union of everyone's busy time, so merge all the busy intervals; the holes between consecutive blocks are the answer.
 
 ```python
 def employee_free_time(schedules):
@@ -317,9 +318,9 @@ print(employee_free_time([[[1, 3], [6, 7]], [[2, 4]], [[2, 5], [9, 12]]]))  # [[
 **Try it**
 - Add a person who works `[[3, 4]]` to the first call: the answer becomes `[]`. Touching blocks merge (`<=`), so no zero-length gap can appear.
 - Print `busy` for the second call: `[[1, 5], [6, 7], [9, 12]]`, and read the gaps straight off it.
-- Each employee's list is already sorted, so rewrite it as a heap k-way merge (one head per employee, like `merge_sorted` in the Heaps section): pop the earliest start, record a gap if it starts after the latest end so far, push that employee's next interval. It prints the same answers in O(N log k) instead of O(N log N). (LeetCode 759 passes `Interval` objects: read `.start` and `.end`.)
+- Each employee's list is already sorted, so rewrite it as a heap k-way merge, one head per employee like `merge_sorted` in [Heaps](#s13): pop the earliest start, record a gap if it starts after the latest end so far, push that employee's next interval. It prints the same answers in O(N log k) instead of O(N log N). On LeetCode the intervals arrive as `Interval` objects, so read `.start` and `.end` there.
 
-**Bookings one at a time (My Calendar I).** A class-shaped question, like those in [Design](#s24): each booking must not overlap any accepted one. Keep the accepted bookings sorted; then only the two neighbours of the new booking can overlap it: the one just before (does it end after `start`?) and the one just after (does it start before `end`?).
+When bookings arrive one at a time, the sweep gives way to a sorted list. My Calendar I is a class-shaped question, like those in [Design Problems](#s24): `book(start, end)` accepts a half-open booking and returns `True` only if it overlaps no accepted booking, so `(10, 20)` is accepted, `(15, 25)` refused and `(20, 30)` accepted. Keep the accepted bookings sorted; then only the two neighbours of the new booking can overlap it, the one just before, if it ends after `start`, and the one just after, if it starts before `end`.
 
 ```python
 class MyCalendar:                                # 729
@@ -344,11 +345,9 @@ print([cal1.book(s, e) for s, e in [(10, 20), (15, 25), (20, 30)]])   # [True, F
 - Change `self.ends[i - 1] > start` to `>=`: the third booking `(20, 30)` is now rejected (`[True, False, False]`). Touching bookings clash.
 - Check only the booking before (drop the second condition): on a fresh calendar holding `(20, 30)`, `book(15, 25)` is accepted, although they overlap.
 
-#### Stretch: hard interval patterns
+The rest of this section is a second pass: Hard problems that reuse the same moves. Skip them until the main path is automatic. They are offline queries, a difference map and a sweep over rectangles, built from the sweep and the heap of the core.
 
-The three patterns below are Hard problems: offline queries, a difference map, and a 2-D sweep. They reuse the sweep and the heap from the core; learn those first.
-
-**Point queries (Minimum Interval to Include Each Query).** Answer the queries *offline*, in increasing order. As the query point moves right, intervals that have *started* (`left <= q`) join a min-heap keyed by size; intervals that have *ended* (`right < q`) are dead for this and every later query, so pop them lazily when they reach the top.
+Minimum Interval to Include Each Query gives intervals `[left, right]` and query points, and asks for the size, `right − left + 1`, of the smallest interval containing each query, or −1: intervals `[[1, 4], [2, 4], [3, 6], [4, 4]]` with queries `[2, 3, 4, 5]` give `[3, 3, 1, 4]`. Answer the queries *offline*, which means all of them are known up front and may be answered in whatever order is convenient, here increasing.
 
 ```text
 intervals sorted by left: [1,4] [2,4] [3,6] [4,4]          (sizes 4, 3, 4, 1)
@@ -357,6 +356,8 @@ q = 3: push [3,6]                                top [2,4]  -> 3
 q = 4: push [4,4]                                top [4,4]  -> 1
 q = 5: pop [4,4], [2,4], [1,4] (they ended)      top [3,6]  -> 4
 ```
+
+As the query point moves right, intervals that have *started* join a min-heap keyed by size. Intervals that have *ended* are dead for this and every later query, so they are popped lazily, only when they reach the top. A dict keeps each query's answer, which puts the answers back in the original order at the end.
 
 ```python
 def min_interval(intervals, queries):
@@ -382,7 +383,11 @@ print(min_interval([[2, 3], [2, 5], [1, 8], [20, 25]], [2, 19, 5, 22]))  # [2, -
 - Return `[best[q] for q in sorted(queries)]` instead: the second call gives `[2, 4, -1, 6]`, right numbers in the wrong order.
 - Print `heap` after the expiry loop for each query of the second call: at q = 19 everything has ended, the heap is empty, and the answer is −1.
 
-**Running bookings (My Calendar III).** The number of events open at time t is (starts ≤ t) − (ends ≤ t). Store only the changes, +1 at each start and −1 at each end; sweeping the keys in sorted order and summing rebuilds the count everywhere, and its peak is the answer. It is a difference array on a sparse, unbounded timeline. Each `book` below sorts the keys, O(n log n); keeping them in a sorted list with `bisect.insort` makes it O(n), and a lazy segment tree over the coordinate range C makes it O(log C).
+The +1/−1 sweep also works online, one booking at a time. My Calendar III accepts every booking and, after each one, reports the largest number of bookings that overlap at some instant: after `(10, 20)`, `(50, 60)` and `(10, 40)` the answer is 2, and `(5, 15)` makes it 3. The number of events open at time t is the starts at or before t minus the ends at or before t.
+
+So store only the changes, +1 at each start and −1 at each end; sweeping the keys in sorted order and summing rebuilds the count everywhere, and its peak is the answer. That is a difference array from [Prefix Sums](#s04), a list of changes rather than of values, here on a sparse, unbounded timeline.
+
+Each `book` below sorts the keys, O(n log n). A key list kept sorted with `bisect.insort` makes it O(n), and a lazy segment tree over the coordinate range C makes it O(log C).
 
 ```python
 class MyCalendarThree:
@@ -407,61 +412,21 @@ print([cal.book(s, e) for s, e in [(10, 20), (50, 60), (10, 40), (5, 15), (5, 10
 **Try it**
 - On a fresh calendar, book `(1, 5)` and then `(5, 9)`: both return 1. At time 5 the −1 and the +1 land on the same key and cancel, which is the half-open rule.
 - Print `sorted(cal.delta.items())` after the six bookings and add the values up by hand: the running sum goes 2, 3, 2, 1, 2, 1, 2, 1, 0, so the peak is 3.
-- My Calendar II (731) rejects a booking that would make a triple booking: add its two deltas, sweep, and if the peak reaches 3, take the two deltas back and return `False`.
+- Turn the class into My Calendar II (731), which rejects a booking that would make a triple booking: add the two deltas, sweep, and if the peak reaches 3, take them back and return `False`. The six bookings above now give `[True, True, True, False, True, True]`.
 
-**Area of a union (Rectangle Area II).** Area is a sum of thin strips. Sweep a vertical line through the rectangles' x-edges; between two consecutive edges the set of rectangles cut by the line does not change, so that strip adds (its width) × (the length of the union of their y-intervals). That length is the merge template again, in one dimension.
+The last pattern turns the sweep sideways and runs the merge inside it. Rectangle Area II asks for the area covered by the union of axis-aligned rectangles `[x1, y1, x2, y2]`, modulo 10⁹ + 7, with overlaps counted once: `[[0, 0, 2, 2], [1, 0, 2, 3], [1, 0, 3, 1]]` covers 6. Python's integers never overflow, so a single modulo at the end is enough.
 
-```text
-  y
-  3        +-----+                  rectangles [0,0,2,2] [1,0,2,3] [1,0,3,1]
-  2  +-----+     |                  (x1, y1, x2, y2); the union's outline:
-  1  |     |     +-----+
-  0  +-----+-----+-----+--> x       strip      [0,1]  [1,2]  [2,3]
-     0     1     2     3            covered y:   2      3      1      area = 2 + 3 + 1 = 6
-```
-
-```python
-def covered_length(spans):                       # total length of a union of [lo, hi] spans
-    total, reach = 0, -math.inf
-    for lo, hi in sorted(spans):
-        lo = max(lo, reach)                      # skip the part already counted
-        if hi > lo:
-            total += hi - lo
-            reach = hi
-    return total
-
-
-def rectangle_area(rects):
-    rects = [r for r in rects if r[0] < r[2] and r[1] < r[3]]    # a flat rectangle has no area
-    if not rects:
-        return 0
-    events = sorted([(x1, 1, y1, y2) for x1, y1, x2, y2 in rects] +    # INIT: switch on at x1 ...
-                    [(x2, -1, y1, y2) for x1, y1, x2, y2 in rects])    # ... and off at x2
-    active, area, prev_x = [], 0, events[0][0]   # STATE: y-spans of the rectangles the line cuts
-    for x, kind, y1, y2 in events:
-        area += (x - prev_x) * covered_length(active)   # RECORD: the strip [prev_x, x] uses the OLD set
-        prev_x = x
-        if kind == 1:                            # STEP: then the event changes the set
-            active.append((y1, y2))
-        else:
-            active.remove((y1, y2))
-    return area % (10**9 + 7)                    # RETURN
-
-
-print(rectangle_area([[0, 0, 2, 2], [1, 0, 2, 3], [1, 0, 3, 1]]))   # 6
-print(rectangle_area([[0, 0, 1000000000, 1000000000]]))             # 49
-```
-
-**Try it**
-- Apply the event *before* measuring the strip (move the `area += ...` and `prev_x = x` lines below the `if`/`else`): the first call gives 5 instead of 6. The last strip `[2, 3]` is now measured after `[1, 0, 3, 1]` has switched off, so it counts 0 instead of 1.
-- Delete the filter line and run `rectangle_area([[0, 0, 1, 1], [1, 0, 1, 1]])`: `ValueError: list.remove(x): x not in list`. The flat rectangle's "off" event `(1, -1, ...)` sorts before its own "on" event.
-- Why 49? The area is (10⁹)² = 10¹⁸, and 10¹⁸ mod (10⁹ + 7) = 49. Python integers don't overflow, so one modulo at the end is enough.
+Area is a sum of thin strips. Sweep a vertical line through the x-edges: between two consecutive edges the set of rectangles the line cuts does not change, so that strip adds its width times the union length of their y-intervals, the merge template in one dimension. In the example the strips `[0, 1]`, `[1, 2]` and `[2, 3]` cover heights 2, 3 and 1, so the area is 6. Measure each strip with the old set, before the event at its right edge switches a rectangle on or off; that is trap 8.
 
 ### Say it in the interview
 
-> "Comparing every pair is O(n²). If I sort by start, an interval can only overlap the block I'm currently building, because everything after it starts even later. So I sort once and sweep once, keeping `merged[-1]` as the open block: O(n log n) time, O(n) for the output. For 'how many rooms', I keep a min-heap of the end times of running meetings: free the ended ones, add the newcomer, and the largest heap size is the answer. Fewer rooms is impossible, because at that moment that many meetings run at once; and it is enough, because a newcomer always finds a room whose meeting has ended."
+> "Comparing every pair is O(n²). If I sort by start, an interval can only overlap the block I'm currently building, because everything after it starts even later. So I sort once and sweep once, keeping `merged[-1]` as the open block: O(n log n) time, O(n) for the output.
+>
+> For 'how many rooms', I keep a min-heap of the end times of running meetings: free the ended ones, add the newcomer, and the largest heap size is the answer. Fewer rooms is impossible, because at that moment that many meetings run at once; and it is enough, because a newcomer always finds a room whose meeting has ended."
 
-Say which ends are closed *before* you write the comparison ("touching intervals merge, so `<=`"), and point at the `max` when you stretch: "max, because the next interval may be nested inside the block". Likely follow-ups and your answers:
+Say which ends are closed *before* you write the comparison ("touching intervals merge, so `<=`"), and point at the `max` when you stretch: "max, because the next interval may be nested inside the block".
+
+Likely follow-ups and your answers:
 
 - *Do touching intervals overlap?* → ask. Closed ends mean `<=`, half-open ends mean `<`.
 - *The list is already sorted, insert one interval?* → three phases, O(n), no sort.
@@ -486,7 +451,7 @@ Say which ends are closed *before* you write the comparison ("touching intervals
 ### Self-check
 
 1. To keep the most non-overlapping intervals, why sort by *end*, and not by start or by length?
-<details><summary>Answer</summary>The interval that ends first leaves the most room for everything after it, and any best answer can swap its first interval for that one without a clash. Start order can grab a long interval that blocks many (<code>[1, 100]</code>); length order fails too: in <code>[[1, 5], [4, 6], [5, 10]]</code> the shortest, <code>[4, 6]</code>, clashes with both others, while keeping <code>[1, 5]</code> and <code>[5, 10]</code> is better.</details>
+<details><summary>Answer</summary>The interval that ends first leaves the most room for everything after it, and any best answer can swap its first interval for that one without a clash. Start order can grab a long blocker such as <code>[1, 100]</code>. Length order fails too: in <code>[[1, 5], [4, 6], [5, 10]]</code> the shortest, <code>[4, 6]</code>, clashes with both others, while <code>[1, 5]</code> and <code>[5, 10]</code> fit together.</details>
 
 2. In the rooms loop, why must `rooms = max(...)` come after both the freeing loop and the push?
 <details><summary>Answer</summary>It reads how many meetings run at this instant. Before the freeing loop, meetings that already ended are still counted (<code>[1, 5]</code>, <code>[5, 9]</code> would need 2 rooms). Before the push, the newcomer is missing (<code>[[1, 5], [2, 6], [3, 7]]</code> would say 2 instead of 3).</details>
