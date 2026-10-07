@@ -2,7 +2,7 @@
 
 Every technique is taught the same way: the picture, then the **seven decisions** that turn the idea into lines of code, then the traps, the edge cases and the variations, and finally a map of every problem in this repo that uses it.
 
-The playbook has one notebook per topic. Use the [topic index](00_Topic_Index.ipynb#notebooks) to choose a lesson. [From Idea to Code](02_Idea_to_Code.ipynb) and [Python Toolkit](03_Python_Toolkit.ipynb) are separate notebooks, as are each graph technique and tracker API. [Interview Checklists](66_Interview_Checklists.ipynb) and the [A–Z finder](67_Problem_Finder.ipynb#finder) are reference notebooks.
+The playbook has one notebook per topic. Use the [topic index](00_Topic_Index.ipynb#notebooks) to choose a lesson. [From Idea to Code](02_Idea_to_Code.ipynb) and [Python Toolkit](03_Python_Toolkit.ipynb) are separate notebooks, as are each graph technique and tracker API. [Interview Checklists](67_Interview_Checklists.ipynb) and the [A–Z finder](68_Problem_Finder.ipynb#finder) are reference notebooks.
 
 <!-- cell -->
 
@@ -74,20 +74,20 @@ The second half of Match is the wording: the words of a statement point at a tec
 | linked list rewiring, middle, cycle, k-th from the end | dummy head, fast/slow pointers | [Linked Lists](12_Linked_Lists.ipynb#topic-linked-lists) |
 | hierarchy, recursion on children, BST, levels | DFS (return vs record) / BFS | [Trees](13_Trees.ipynb#topic-trees) |
 | prefixes, autocomplete, many words against one board | trie | [Tries](14_Tries.ipynb#topic-tries) |
-| top k, k-th largest, merge k sorted, running median, "always the cheapest next" | heap | [Heaps](15_Heaps.ipynb#topic-heaps) |
-| overlapping ranges, meetings, rooms, coverage | sort + sweep | [Intervals & Sweep Line](16_Intervals_and_Sweep_Line.ipynb#topic-intervals-and-sweep-line) |
-| a choice you can argue is never worse (earliest end first, farthest reach so far); "minimum jumps" along a line | greedy | [Greedy](17_Greedy.ipynb#topic-greedy) |
-| all combinations / permutations / partitions / placements | backtracking | [Backtracking](18_Backtracking.ipynb#topic-backtracking) |
+| top k, k-th largest, merge k sorted, running median, "always the cheapest next" | heap | [Heaps](16_Heaps.ipynb#topic-heaps) |
+| overlapping ranges, meetings, rooms, coverage | sort + sweep | [Intervals & Sweep Line](17_Intervals_and_Sweep_Line.ipynb#topic-intervals-and-sweep-line) |
+| a choice you can argue is never worse (earliest end first, farthest reach so far); "minimum jumps" along a line | greedy | [Greedy](18_Greedy.ipynb#topic-greedy) |
+| all combinations / permutations / partitions / placements | backtracking | [Backtracking](19_Backtracking.ipynb#topic-backtracking) |
 | grid regions, spreading, "minimum number of steps / moves" in an unweighted world | BFS / DFS | [Graphs I](00_Topic_Index.ipynb#s17) |
 | fewest moves when the state is more than the position (keys held, obstacles you may still remove, a board layout) | BFS over (position, extra) states | [Graphs I](00_Topic_Index.ipynb#s17) |
 | prerequisites, ordering, "are these connected", merging groups | topological sort / union-find | [Graphs II](00_Topic_Index.ipynb#s18) |
 | weighted shortest path, cheapest network, "minimise the maximum effort on a path" | Dijkstra / MST (or binary search + BFS) | [Graphs III](00_Topic_Index.ipynb#s19) |
 | parsing, palindromes, pattern matching | string toolbox | [Strings](00_Topic_Index.ipynb#s20) |
-| rotate, spiral, in-place grid updates | index arithmetic | [Matrices](36_Matrices.ipynb#topic-matrices) |
+| rotate, spiral, in-place grid updates | index arithmetic | [Matrices](37_Matrices.ipynb#topic-matrices) |
 | parity, powers of two, subsets as bits, gcd, primes, digits and bases, slopes, a random pick from a stream | bits and math | [Math, Bits & Geometry](00_Topic_Index.ipynb#s22) |
 | a custom order, "arrange to form the largest", k-th smallest without sorting everything | sort with `key=` / `cmp_to_key`, quickselect | [Sorting & Selection](00_Topic_Index.ipynb#s23) |
 | "design a class that supports …", "implement a tracker" | operations → data structures | [Design Problems](00_Topic_Index.ipynb#s24) |
-| "in how many ways", "the best total", where the same sub-question keeps coming back (stairs, robbers, coins, two strings) | dynamic programming, outside this interview: recognise it and say so | [Dynamic Programming](19_Dynamic_Programming.ipynb#topic-dynamic-programming) |
+| "in how many ways", "the best total", where the same sub-question keeps coming back (stairs, robbers, coins, two strings) | dynamic programming, outside this interview: recognise it and say so | [Dynamic Programming](20_Dynamic_Programming.ipynb#topic-dynamic-programming) |
 
 ### When no clue fits
 

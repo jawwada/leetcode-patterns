@@ -120,251 +120,259 @@
     "topic_anchor": "topic-tries"
   },
   {
+    "slug": "Segment_Trees",
+    "title": "Segment Trees",
+    "section": "11",
+    "file": "15_Segment_Trees.ipynb",
+    "source": "15_Segment_Trees.md",
+    "topic_anchor": "topic-segment-trees"
+  },
+  {
     "slug": "Heaps",
     "title": "Heaps",
     "section": "13",
-    "file": "15_Heaps.ipynb",
-    "source": "15_Heaps.md",
+    "file": "16_Heaps.ipynb",
+    "source": "16_Heaps.md",
     "topic_anchor": "topic-heaps"
   },
   {
     "slug": "Intervals_and_Sweep_Line",
     "title": "Intervals and Sweep Line",
     "section": "14",
-    "file": "16_Intervals_and_Sweep_Line.ipynb",
-    "source": "16_Intervals_and_Sweep_Line.md",
+    "file": "17_Intervals_and_Sweep_Line.ipynb",
+    "source": "17_Intervals_and_Sweep_Line.md",
     "topic_anchor": "topic-intervals-and-sweep-line"
   },
   {
     "slug": "Greedy",
     "title": "Greedy",
     "section": "15",
-    "file": "17_Greedy.ipynb",
-    "source": "17_Greedy.md",
+    "file": "18_Greedy.ipynb",
+    "source": "18_Greedy.md",
     "topic_anchor": "topic-greedy"
   },
   {
     "slug": "Backtracking",
     "title": "Backtracking",
     "section": "16",
-    "file": "18_Backtracking.ipynb",
-    "source": "18_Backtracking.md",
+    "file": "19_Backtracking.ipynb",
+    "source": "19_Backtracking.md",
     "topic_anchor": "topic-backtracking"
   },
   {
     "slug": "Dynamic_Programming",
     "title": "Dynamic Programming",
     "section": "25",
-    "file": "19_Dynamic_Programming.ipynb",
-    "source": "19_Dynamic_Programming.md",
+    "file": "20_Dynamic_Programming.ipynb",
+    "source": "20_Dynamic_Programming.md",
     "topic_anchor": "topic-dynamic-programming"
   },
   {
     "slug": "Graph_Concepts",
     "title": "Graph Representation and Algorithm Selection",
     "section": "17",
-    "file": "20_Graph_Concepts.ipynb",
-    "source": "20_Graph_Concepts.md",
+    "file": "21_Graph_Concepts.ipynb",
+    "source": "21_Graph_Concepts.md",
     "topic_anchor": "topic-graph-concepts"
   },
   {
     "slug": "BFS",
     "title": "Breadth-First Search (BFS)",
     "section": "17",
-    "file": "21_BFS.ipynb",
-    "source": "21_BFS.md",
+    "file": "22_BFS.ipynb",
+    "source": "22_BFS.md",
     "topic_anchor": "topic-bfs"
   },
   {
     "slug": "DFS",
     "title": "Depth-First Search (DFS)",
     "section": "17",
-    "file": "22_DFS.ipynb",
-    "source": "22_DFS.md",
+    "file": "23_DFS.ipynb",
+    "source": "23_DFS.md",
     "topic_anchor": "topic-dfs"
   },
   {
     "slug": "Topological_Sort",
     "title": "Topological Sort",
     "section": "18",
-    "file": "23_Topological_Sort.ipynb",
-    "source": "23_Topological_Sort.md",
+    "file": "24_Topological_Sort.ipynb",
+    "source": "24_Topological_Sort.md",
     "topic_anchor": "topic-topological-sort"
   },
   {
     "slug": "Union_Find",
     "title": "Union-Find (Disjoint Set Union)",
     "section": "18",
-    "file": "24_Union_Find.ipynb",
-    "source": "24_Union_Find.md",
+    "file": "25_Union_Find.ipynb",
+    "source": "25_Union_Find.md",
     "topic_anchor": "topic-union-find"
   },
   {
     "slug": "Graph_Degrees",
     "title": "Graph Degrees",
     "section": "18",
-    "file": "25_Graph_Degrees.ipynb",
-    "source": "25_Graph_Degrees.md",
+    "file": "26_Graph_Degrees.ipynb",
+    "source": "26_Graph_Degrees.md",
     "topic_anchor": "topic-graph-degrees"
   },
   {
     "slug": "Bridges",
     "title": "Bridges and Low-Link DFS",
     "section": "18",
-    "file": "26_Bridges.ipynb",
-    "source": "26_Bridges.md",
+    "file": "27_Bridges.ipynb",
+    "source": "27_Bridges.md",
     "topic_anchor": "topic-bridges"
   },
   {
     "slug": "Eulerian_Paths",
     "title": "Eulerian Paths",
     "section": "18",
-    "file": "27_Eulerian_Paths.ipynb",
-    "source": "27_Eulerian_Paths.md",
+    "file": "28_Eulerian_Paths.ipynb",
+    "source": "28_Eulerian_Paths.md",
     "topic_anchor": "topic-eulerian-paths"
   },
   {
     "slug": "Dijkstra",
     "title": "Dijkstra's Algorithm",
     "section": "19",
-    "file": "28_Dijkstra.ipynb",
-    "source": "28_Dijkstra.md",
+    "file": "29_Dijkstra.ipynb",
+    "source": "29_Dijkstra.md",
     "topic_anchor": "topic-dijkstra"
   },
   {
     "slug": "Prim",
     "title": "Prim's Minimum Spanning Tree Algorithm",
     "section": "19",
-    "file": "29_Prim.ipynb",
-    "source": "29_Prim.md",
+    "file": "30_Prim.ipynb",
+    "source": "30_Prim.md",
     "topic_anchor": "topic-prim"
   },
   {
     "slug": "Kruskal",
     "title": "Kruskal's Minimum Spanning Tree Algorithm",
     "section": "19",
-    "file": "30_Kruskal.ipynb",
-    "source": "30_Kruskal.md",
+    "file": "31_Kruskal.ipynb",
+    "source": "31_Kruskal.md",
     "topic_anchor": "topic-kruskal"
   },
   {
     "slug": "Zero_One_BFS",
-    "title": "0\u20131 BFS",
+    "title": "0–1 BFS",
     "section": "19",
-    "file": "31_Zero_One_BFS.ipynb",
-    "source": "31_Zero_One_BFS.md",
+    "file": "32_Zero_One_BFS.ipynb",
+    "source": "32_Zero_One_BFS.md",
     "topic_anchor": "topic-zero-one-bfs"
   },
   {
     "slug": "Bellman_Ford",
-    "title": "Bellman\u2013Ford",
+    "title": "Bellman–Ford",
     "section": "19",
-    "file": "32_Bellman_Ford.ipynb",
-    "source": "32_Bellman_Ford.md",
+    "file": "33_Bellman_Ford.ipynb",
+    "source": "33_Bellman_Ford.md",
     "topic_anchor": "topic-bellman-ford"
   },
   {
     "slug": "String_Processing",
     "title": "String Processing",
     "section": "20",
-    "file": "33_String_Processing.ipynb",
-    "source": "33_String_Processing.md",
+    "file": "34_String_Processing.ipynb",
+    "source": "34_String_Processing.md",
     "topic_anchor": "topic-string-processing"
   },
   {
     "slug": "Palindromes",
     "title": "Palindrome Techniques",
     "section": "20",
-    "file": "34_Palindromes.ipynb",
-    "source": "34_Palindromes.md",
+    "file": "35_Palindromes.ipynb",
+    "source": "35_Palindromes.md",
     "topic_anchor": "topic-palindromes"
   },
   {
     "slug": "KMP_and_LPS",
     "title": "KMP and the LPS Array",
     "section": "20",
-    "file": "35_KMP_and_LPS.ipynb",
-    "source": "35_KMP_and_LPS.md",
+    "file": "36_KMP_and_LPS.ipynb",
+    "source": "36_KMP_and_LPS.md",
     "topic_anchor": "topic-kmp-and-lps"
   },
   {
     "slug": "Matrices",
     "title": "Matrices",
     "section": "21",
-    "file": "36_Matrices.ipynb",
-    "source": "36_Matrices.md",
+    "file": "37_Matrices.ipynb",
+    "source": "37_Matrices.md",
     "topic_anchor": "topic-matrices"
   },
   {
     "slug": "Bit_Manipulation",
     "title": "Bit Manipulation",
     "section": "22",
-    "file": "37_Bit_Manipulation.ipynb",
-    "source": "37_Bit_Manipulation.md",
+    "file": "38_Bit_Manipulation.ipynb",
+    "source": "38_Bit_Manipulation.md",
     "topic_anchor": "topic-bit-manipulation"
   },
   {
     "slug": "Number_Theory",
     "title": "Number Theory",
     "section": "22",
-    "file": "38_Number_Theory.ipynb",
-    "source": "38_Number_Theory.md",
+    "file": "39_Number_Theory.ipynb",
+    "source": "39_Number_Theory.md",
     "topic_anchor": "topic-number-theory"
   },
   {
     "slug": "Digits_and_Bases",
     "title": "Digits and Number Bases",
     "section": "22",
-    "file": "39_Digits_and_Bases.ipynb",
-    "source": "39_Digits_and_Bases.md",
+    "file": "40_Digits_and_Bases.ipynb",
+    "source": "40_Digits_and_Bases.md",
     "topic_anchor": "topic-digits-and-bases"
   },
   {
     "slug": "Reservoir_Sampling",
     "title": "Reservoir Sampling",
     "section": "22",
-    "file": "40_Reservoir_Sampling.ipynb",
-    "source": "40_Reservoir_Sampling.md",
+    "file": "41_Reservoir_Sampling.ipynb",
+    "source": "41_Reservoir_Sampling.md",
     "topic_anchor": "topic-reservoir-sampling"
   },
   {
     "slug": "Geometry",
     "title": "Geometry with Exact Arithmetic",
     "section": "22",
-    "file": "41_Geometry.ipynb",
-    "source": "41_Geometry.md",
+    "file": "42_Geometry.ipynb",
+    "source": "42_Geometry.md",
     "topic_anchor": "topic-geometry"
   },
   {
     "slug": "Math_Problem_Selection",
     "title": "Choosing a Mathematical Representation",
     "section": "22",
-    "file": "42_Math_Problem_Selection.ipynb",
-    "source": "42_Math_Problem_Selection.md",
+    "file": "43_Math_Problem_Selection.ipynb",
+    "source": "43_Math_Problem_Selection.md",
     "topic_anchor": "topic-math-problem-selection"
   },
   {
     "slug": "Sorting",
     "title": "Sorting",
     "section": "23",
-    "file": "43_Sorting.ipynb",
-    "source": "43_Sorting.md",
+    "file": "44_Sorting.ipynb",
+    "source": "44_Sorting.md",
     "topic_anchor": "topic-sorting"
   },
   {
     "slug": "Quickselect",
     "title": "Quickselect",
     "section": "23",
-    "file": "44_Quickselect.ipynb",
-    "source": "44_Quickselect.md",
+    "file": "45_Quickselect.ipynb",
+    "source": "45_Quickselect.md",
     "topic_anchor": "topic-quickselect"
   },
   {
     "slug": "Stateful_API_Design",
     "title": "Stateful API Design",
     "section": "24",
-    "file": "45_Stateful_API_Design.ipynb",
-    "source": "45_Stateful_API_Design.md",
+    "file": "46_Stateful_API_Design.ipynb",
+    "source": "46_Stateful_API_Design.md",
     "topic_anchor": "topic-stateful-api-design"
   },
   {
@@ -372,8 +380,8 @@
     "title": "Logger Rate Limiter",
     "section": "24",
     "anchor": "logger",
-    "file": "46_Logger_Rate_Limiter.ipynb",
-    "source": "46_Logger_Rate_Limiter.md",
+    "file": "47_Logger_Rate_Limiter.ipynb",
+    "source": "47_Logger_Rate_Limiter.md",
     "topic_anchor": "topic-logger-rate-limiter"
   },
   {
@@ -381,8 +389,8 @@
     "title": "Recent Counter",
     "section": "24",
     "anchor": "recent",
-    "file": "47_Recent_Counter.ipynb",
-    "source": "47_Recent_Counter.md",
+    "file": "48_Recent_Counter.ipynb",
+    "source": "48_Recent_Counter.md",
     "topic_anchor": "topic-recent-counter"
   },
   {
@@ -390,8 +398,8 @@
     "title": "Hit Counter",
     "section": "24",
     "anchor": "hits",
-    "file": "48_Hit_Counter.ipynb",
-    "source": "48_Hit_Counter.md",
+    "file": "49_Hit_Counter.ipynb",
+    "source": "49_Hit_Counter.md",
     "topic_anchor": "topic-hit-counter"
   },
   {
@@ -399,8 +407,8 @@
     "title": "Sliding-Window API Rate Limiter",
     "section": "24",
     "anchor": "limiter",
-    "file": "49_API_Rate_Limiter.ipynb",
-    "source": "49_API_Rate_Limiter.md",
+    "file": "50_API_Rate_Limiter.ipynb",
+    "source": "50_API_Rate_Limiter.md",
     "topic_anchor": "topic-api-rate-limiter"
   },
   {
@@ -408,8 +416,8 @@
     "title": "Log Storage System",
     "section": "24",
     "anchor": "logs",
-    "file": "50_Log_Storage.ipynb",
-    "source": "50_Log_Storage.md",
+    "file": "51_Log_Storage.ipynb",
+    "source": "51_Log_Storage.md",
     "topic_anchor": "topic-log-storage"
   },
   {
@@ -417,8 +425,8 @@
     "title": "Moving Average",
     "section": "24",
     "anchor": "average",
-    "file": "51_Moving_Average.ipynb",
-    "source": "51_Moving_Average.md",
+    "file": "52_Moving_Average.ipynb",
+    "source": "52_Moving_Average.md",
     "topic_anchor": "topic-moving-average"
   },
   {
@@ -426,8 +434,8 @@
     "title": "Underground System",
     "section": "24",
     "anchor": "trips",
-    "file": "52_Underground_System.ipynb",
-    "source": "52_Underground_System.md",
+    "file": "53_Underground_System.ipynb",
+    "source": "53_Underground_System.md",
     "topic_anchor": "topic-underground-system"
   },
   {
@@ -435,8 +443,8 @@
     "title": "Time-Based Key-Value Store",
     "section": "24",
     "anchor": "history",
-    "file": "53_Time_Map.ipynb",
-    "source": "53_Time_Map.md",
+    "file": "54_Time_Map.ipynb",
+    "source": "54_Time_Map.md",
     "topic_anchor": "topic-time-map"
   },
   {
@@ -444,8 +452,8 @@
     "title": "Stock Price Tracker",
     "section": "24",
     "anchor": "prices",
-    "file": "54_Stock_Price.ipynb",
-    "source": "54_Stock_Price.md",
+    "file": "55_Stock_Price.ipynb",
+    "source": "55_Stock_Price.md",
     "topic_anchor": "topic-stock-price"
   },
   {
@@ -453,104 +461,104 @@
     "title": "Token Bucket Rate Limiter",
     "section": "24",
     "anchor": "tokens",
-    "file": "55_Token_Bucket.ipynb",
-    "source": "55_Token_Bucket.md",
+    "file": "56_Token_Bucket.ipynb",
+    "source": "56_Token_Bucket.md",
     "topic_anchor": "topic-token-bucket"
   },
   {
     "slug": "Error_Count_Tracker",
-    "title": "Error Count Tracker \u2014 Practice",
+    "title": "Error Count Tracker — Practice",
     "section": "24",
-    "file": "56_Error_Count_Tracker.ipynb",
-    "source": "56_Error_Count_Tracker.md",
+    "file": "57_Error_Count_Tracker.ipynb",
+    "source": "57_Error_Count_Tracker.md",
     "topic_anchor": "topic-error-count-tracker"
   },
   {
     "slug": "LRU_Cache",
     "title": "LRU Cache",
     "section": "24",
-    "file": "57_LRU_Cache.ipynb",
-    "source": "57_LRU_Cache.md",
+    "file": "58_LRU_Cache.ipynb",
+    "source": "58_LRU_Cache.md",
     "topic_anchor": "topic-lru-cache"
   },
   {
     "slug": "LFU_Cache",
     "title": "LFU Cache",
     "section": "24",
-    "file": "58_LFU_Cache.ipynb",
-    "source": "58_LFU_Cache.md",
+    "file": "59_LFU_Cache.ipynb",
+    "source": "59_LFU_Cache.md",
     "topic_anchor": "topic-lfu-cache"
   },
   {
     "slug": "Randomized_Set",
     "title": "Insert, Delete, and GetRandom",
     "section": "24",
-    "file": "59_Randomized_Set.ipynb",
-    "source": "59_Randomized_Set.md",
+    "file": "60_Randomized_Set.ipynb",
+    "source": "60_Randomized_Set.md",
     "topic_anchor": "topic-randomized-set"
   },
   {
     "slug": "Snapshot_Array",
     "title": "Snapshot Array",
     "section": "24",
-    "file": "60_Snapshot_Array.ipynb",
-    "source": "60_Snapshot_Array.md",
+    "file": "61_Snapshot_Array.ipynb",
+    "source": "61_Snapshot_Array.md",
     "topic_anchor": "topic-snapshot-array"
   },
   {
     "slug": "Browser_History",
     "title": "Browser History",
     "section": "24",
-    "file": "61_Browser_History.ipynb",
-    "source": "61_Browser_History.md",
+    "file": "62_Browser_History.ipynb",
+    "source": "62_Browser_History.md",
     "topic_anchor": "topic-browser-history"
   },
   {
     "slug": "Bitset_Design",
     "title": "Bitset API Design",
     "section": "24",
-    "file": "62_Bitset_Design.ipynb",
-    "source": "62_Bitset_Design.md",
+    "file": "63_Bitset_Design.ipynb",
+    "source": "63_Bitset_Design.md",
     "topic_anchor": "topic-bitset-design"
   },
   {
     "slug": "Peeking_Iterator",
     "title": "Peeking Iterator",
     "section": "24",
-    "file": "63_Peeking_Iterator.ipynb",
-    "source": "63_Peeking_Iterator.md",
+    "file": "64_Peeking_Iterator.ipynb",
+    "source": "64_Peeking_Iterator.md",
     "topic_anchor": "topic-peeking-iterator"
   },
   {
     "slug": "Frequency_Stack",
     "title": "Maximum Frequency Stack",
     "section": "24",
-    "file": "64_Frequency_Stack.ipynb",
-    "source": "64_Frequency_Stack.md",
+    "file": "65_Frequency_Stack.ipynb",
+    "source": "65_Frequency_Stack.md",
     "topic_anchor": "topic-frequency-stack"
   },
   {
     "slug": "Range_Module",
     "title": "Range Module",
     "section": "24",
-    "file": "65_Range_Module.ipynb",
-    "source": "65_Range_Module.md",
+    "file": "66_Range_Module.ipynb",
+    "source": "66_Range_Module.md",
     "topic_anchor": "topic-range-module"
   },
   {
     "slug": "Interview_Checklists",
     "title": "Interview Checklists",
     "section": "26",
-    "file": "66_Interview_Checklists.ipynb",
-    "source": "66_Interview_Checklists.md",
+    "file": "67_Interview_Checklists.ipynb",
+    "source": "67_Interview_Checklists.md",
     "topic_anchor": "topic-interview-checklists"
   },
   {
     "slug": "Problem_Finder",
     "title": "Problem Finder",
     "section": "finder",
-    "file": "67_Problem_Finder.ipynb",
-    "source": "67_Problem_Finder.md",
+    "file": "68_Problem_Finder.ipynb",
+    "source": "68_Problem_Finder.md",
     "topic_anchor": "finder"
   }
 ]

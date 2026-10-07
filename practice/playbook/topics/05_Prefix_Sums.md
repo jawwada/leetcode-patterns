@@ -6,7 +6,7 @@
 
 **Reach for it when** a problem asks about sums, products, counts or parities (odd or even) of *contiguous* stretches: many range-sum queries on one array, "count or longest subarrays with sum k", especially with negatives, where a [Sliding Window](07_Sliding_Window.ipynb#topic-sliding-window) fails, "product of everything except me", "equal number of 0s and 1s", "add v to every element in [l, r]" over and over, the sum of a rectangle in a grid, or a random pick weighted by sizes.
 
-**In this repo:** `arrays_hashing/subarray_sum_equals_k.py`, `arrays_hashing/product_of_array_except_self.py`, `arrays_hashing/max_consecutive_ones.py` · bank: `practice/simple/05_subarray_sum_equals_k.py`, `practice/simple/03_product_of_array_except_self.py` · basics: `practice/simple/basics/bits/03_xor_tricks_single_number_missing_number.py` (why xor can be "subtracted") · the same idea elsewhere: `intervals/my_calendar_iii.py` (difference array, [Intervals & Sweep Line](16_Intervals_and_Sweep_Line.ipynb#topic-intervals-and-sweep-line)), `bit_manipulation/find_longest_awesome_substring.py` (prefix parity mask, taught below), `greedy/super_washing_machines.py` (prefix-sum flow), `greedy/maximum_subarray.py` (running sum, [Greedy](17_Greedy.ipynb#topic-greedy)), `design/range_sum_query_2d_mutable.py` (2D range sums with updates, [Design Problems](00_Topic_Index.ipynb#s24))
+**In this repo:** `arrays_hashing/subarray_sum_equals_k.py`, `arrays_hashing/product_of_array_except_self.py`, `arrays_hashing/max_consecutive_ones.py` · bank: `practice/simple/05_subarray_sum_equals_k.py`, `practice/simple/03_product_of_array_except_self.py` · basics: `practice/simple/basics/bits/03_xor_tricks_single_number_missing_number.py` (why xor can be "subtracted") · the same idea elsewhere: `intervals/my_calendar_iii.py` (difference array, [Intervals & Sweep Line](17_Intervals_and_Sweep_Line.ipynb#topic-intervals-and-sweep-line)), `bit_manipulation/find_longest_awesome_substring.py` (prefix parity mask, taught below), `greedy/super_washing_machines.py` (prefix-sum flow), `greedy/maximum_subarray.py` (running sum, [Greedy](18_Greedy.ipynb#topic-greedy)), `design/range_sum_query_2d_mutable.py` (2D range sums with updates, [Design Problems](00_Topic_Index.ipynb#s24))
 
 ### The picture
 
@@ -327,7 +327,7 @@ print(rect_sum(P2, 0, 0, 2, 2))   # 21  (the whole grid)
 
 **Difference array.** The reverse trick comes next: instead of reading range sums, apply range updates. Range Addition (370) applies many updates "add v to every index in l..r" and asks for the final array. Record only where a change *starts*, `+v` at l, and where it *stops*, `-v` at r + 1; one prefix sum at the end rebuilds every value. Corporate Flight Bookings (1109), bookings of seats on the flights first..last, is the same with flights as indices.
 
-Car Pooling (1094) has trips `(passengers, from, to)` and asks whether the car's capacity ever overflows; My Calendar III (732, in [Intervals & Sweep Line](16_Intervals_and_Sweep_Line.ipynb#topic-intervals-and-sweep-line)) asks for the largest number of bookings that overlap at one moment. Both put the trick on a timeline of half-open ranges `[start, end)`: +p at each start, −p at each end itself, with p = 1 for a booking, and the running sum is the load at that moment.
+Car Pooling (1094) has trips `(passengers, from, to)` and asks whether the car's capacity ever overflows; My Calendar III (732, in [Intervals & Sweep Line](17_Intervals_and_Sweep_Line.ipynb#topic-intervals-and-sweep-line)) asks for the largest number of bookings that overlap at one moment. Both put the trick on a timeline of half-open ranges `[start, end)`: +p at each start, −p at each end itself, with p = 1 for a booking, and the running sum is the load at that moment.
 
 ```text
 add +2 on 1..3:    diff   0  +2   0   0  -2   0        running sum ->   0  2  2  2  0
@@ -439,10 +439,10 @@ print(sorted(Counter(picker.pick() for _ in range(10000)).items()))   # [(0, 101
 
 Then point at the seed ("the empty prefix, for subarrays that start at index 0") and at the order of the two dict lines: query first, then store. Follow-ups to have ready:
 
-- *Values change between queries?* A Fenwick tree keeps prefix sums with O(log n) updates ([Arrays & Hashing](04_Hash_Maps_and_Sets.ipynb#topic-hash-maps-and-sets) builds one over values, [Design Problems](00_Topic_Index.ipynb#s24) one in 2D).
+- *Values change between queries?* A Fenwick tree or a [segment tree](15_Segment_Trees.ipynb#topic-segment-trees) keeps range sums with O(log n) updates ([Arrays & Hashing](04_Hash_Maps_and_Sets.ipynb#topic-hash-maps-and-sets) builds one over values, [Design Problems](00_Topic_Index.ipynb#s24) one in 2D).
 - *Longest instead of how many? Return the subarray itself?* Store the first index of each total; the stretch is `first[total - k] + 1 .. j`.
 - *Number of Submatrices That Sum to Target (1074)?* Fix a pair of rows, collapse the columns between them into one array, and run this dict: O(R²·C).
-- *Maximum subarray?* The largest `P[j] − (smallest earlier P)`: the buy-and-sell loop of [From Idea to Code](02_Idea_to_Code.ipynb#topic-idea-to-code) run on the totals, which [Greedy](17_Greedy.ipynb#topic-greedy) writes as Kadane.
+- *Maximum subarray?* The largest `P[j] − (smallest earlier P)`: the buy-and-sell loop of [From Idea to Code](02_Idea_to_Code.ipynb#topic-idea-to-code) run on the totals, which [Greedy](18_Greedy.ipynb#topic-greedy) writes as Kadane.
 - *Path Sum III (437), downward paths in a tree that sum to k?* The same dict over root-to-node totals, with `posts[total] -= 1` as the DFS leaves a node.
 
 ### Problem map

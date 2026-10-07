@@ -353,7 +353,7 @@ Word Search II (212) matches many words at once against one board. It asks which
 
 Instead, walk the board once and the trie in lockstep: a step to a neighbouring cell is allowed only if its letter is a child of the current trie node, so a dead prefix is dropped after one wrong letter, for every word at once. The worst case is O(R·C·4·3^(L−1)) for words of length L, with 4 directions at the start and 3 after, since a path can't step back onto itself, and the pruning cuts most of it in practice.
 
-This is [Backtracking](18_Backtracking.ipynb#topic-backtracking) with a trie as the guide. Pick one representation for the interview: the class is clearer, and dict-of-dicts with `"$"` is shorter. This section uses both, and here `"$"` stores the whole word, so a match can read it directly.
+This is [Backtracking](19_Backtracking.ipynb#topic-backtracking) with a trie as the guide. Pick one representation for the interview: the class is clearer, and dict-of-dicts with `"$"` is shorter. This section uses both, and here `"$"` stores the whole word, so a match can read it directly.
 
 <!-- cell -->
 

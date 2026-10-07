@@ -410,7 +410,7 @@ print(shortest_sum_at_least_k([2, -1, 2], 3), shortest_sum_at_least_k([1, 2], 4)
 
 <!-- cell -->
 
-Sliding Window Median asks for the median of every window of size k: `[1, 3, -1, -3, 5, 3, 6, 7]` with k = 3 gives `[1, -1, -1, 3, 5, 6]`. Keep the window in the two heaps of the median finder from [Heaps](15_Heaps.ipynb#topic-heaps), a max-heap for the lower half and a min-heap for the upper half. A heap cannot delete from its middle, so a leaving item is only noted in a dict of pending deletions and popped once it reaches a top: lazy deletion. Balance the halves by their live counts, never by their lengths.
+Sliding Window Median asks for the median of every window of size k: `[1, 3, -1, -3, 5, 3, 6, 7]` with k = 3 gives `[1, -1, -1, 3, 5, 6]`. Keep the window in the two heaps of the median finder from [Heaps](16_Heaps.ipynb#topic-heaps), a max-heap for the lower half and a min-heap for the upper half. A heap cannot delete from its middle, so a leaving item is only noted in a dict of pending deletions and popped once it reaches a top: lazy deletion. Balance the halves by their live counts, never by their lengths.
 
 Substring with Concatenation of All Words asks for every start of a block made of all the given words, each used once, in any order; the words share one length L. `"barfoothefoobarman"` with `["foo", "bar"]` gives `[0, 9]`. Cut `s` into chunks of length L, once for each offset 0..L−1, and slide a counting window over the chunks, as in Permutation in String. A chunk that is not a word empties the window, and a word seen too often shrinks it from the left: O(n · L) in total.
 

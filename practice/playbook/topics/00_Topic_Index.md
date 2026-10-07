@@ -36,111 +36,113 @@ Each lesson has its own setup and runs independently from a fresh kernel. Choose
 
 | 14 | [Tries](14_Tries.ipynb) |
 
-| 15 | [Heaps](15_Heaps.ipynb) |
+| 15 | [Segment Trees](15_Segment_Trees.ipynb) |
 
-| 16 | [Intervals and Sweep Line](16_Intervals_and_Sweep_Line.ipynb) |
+| 16 | [Heaps](16_Heaps.ipynb) |
 
-| 17 | [Greedy](17_Greedy.ipynb) |
+| 17 | [Intervals and Sweep Line](17_Intervals_and_Sweep_Line.ipynb) |
 
-| 18 | [Backtracking](18_Backtracking.ipynb) |
+| 18 | [Greedy](18_Greedy.ipynb) |
 
-| 19 | [Dynamic Programming](19_Dynamic_Programming.ipynb) |
+| 19 | [Backtracking](19_Backtracking.ipynb) |
 
-| 20 | [Graph Representation and Algorithm Selection](20_Graph_Concepts.ipynb) |
+| 20 | [Dynamic Programming](20_Dynamic_Programming.ipynb) |
 
-| 21 | [Breadth-First Search (BFS)](21_BFS.ipynb) |
+| 21 | [Graph Representation and Algorithm Selection](21_Graph_Concepts.ipynb) |
 
-| 22 | [Depth-First Search (DFS)](22_DFS.ipynb) |
+| 22 | [Breadth-First Search (BFS)](22_BFS.ipynb) |
 
-| 23 | [Topological Sort](23_Topological_Sort.ipynb) |
+| 23 | [Depth-First Search (DFS)](23_DFS.ipynb) |
 
-| 24 | [Union-Find (Disjoint Set Union)](24_Union_Find.ipynb) |
+| 24 | [Topological Sort](24_Topological_Sort.ipynb) |
 
-| 25 | [Graph Degrees](25_Graph_Degrees.ipynb) |
+| 25 | [Union-Find (Disjoint Set Union)](25_Union_Find.ipynb) |
 
-| 26 | [Bridges and Low-Link DFS](26_Bridges.ipynb) |
+| 26 | [Graph Degrees](26_Graph_Degrees.ipynb) |
 
-| 27 | [Eulerian Paths](27_Eulerian_Paths.ipynb) |
+| 27 | [Bridges and Low-Link DFS](27_Bridges.ipynb) |
 
-| 28 | [Dijkstra's Algorithm](28_Dijkstra.ipynb) |
+| 28 | [Eulerian Paths](28_Eulerian_Paths.ipynb) |
 
-| 29 | [Prim's Minimum Spanning Tree Algorithm](29_Prim.ipynb) |
+| 29 | [Dijkstra's Algorithm](29_Dijkstra.ipynb) |
 
-| 30 | [Kruskal's Minimum Spanning Tree Algorithm](30_Kruskal.ipynb) |
+| 30 | [Prim's Minimum Spanning Tree Algorithm](30_Prim.ipynb) |
 
-| 31 | [0–1 BFS](31_Zero_One_BFS.ipynb) |
+| 31 | [Kruskal's Minimum Spanning Tree Algorithm](31_Kruskal.ipynb) |
 
-| 32 | [Bellman–Ford](32_Bellman_Ford.ipynb) |
+| 32 | [0–1 BFS](32_Zero_One_BFS.ipynb) |
 
-| 33 | [String Processing](33_String_Processing.ipynb) |
+| 33 | [Bellman–Ford](33_Bellman_Ford.ipynb) |
 
-| 34 | [Palindrome Techniques](34_Palindromes.ipynb) |
+| 34 | [String Processing](34_String_Processing.ipynb) |
 
-| 35 | [KMP and the LPS Array](35_KMP_and_LPS.ipynb) |
+| 35 | [Palindrome Techniques](35_Palindromes.ipynb) |
 
-| 36 | [Matrices](36_Matrices.ipynb) |
+| 36 | [KMP and the LPS Array](36_KMP_and_LPS.ipynb) |
 
-| 37 | [Bit Manipulation](37_Bit_Manipulation.ipynb) |
+| 37 | [Matrices](37_Matrices.ipynb) |
 
-| 38 | [Number Theory](38_Number_Theory.ipynb) |
+| 38 | [Bit Manipulation](38_Bit_Manipulation.ipynb) |
 
-| 39 | [Digits and Number Bases](39_Digits_and_Bases.ipynb) |
+| 39 | [Number Theory](39_Number_Theory.ipynb) |
 
-| 40 | [Reservoir Sampling](40_Reservoir_Sampling.ipynb) |
+| 40 | [Digits and Number Bases](40_Digits_and_Bases.ipynb) |
 
-| 41 | [Geometry with Exact Arithmetic](41_Geometry.ipynb) |
+| 41 | [Reservoir Sampling](41_Reservoir_Sampling.ipynb) |
 
-| 42 | [Choosing a Mathematical Representation](42_Math_Problem_Selection.ipynb) |
+| 42 | [Geometry with Exact Arithmetic](42_Geometry.ipynb) |
 
-| 43 | [Sorting](43_Sorting.ipynb) |
+| 43 | [Choosing a Mathematical Representation](43_Math_Problem_Selection.ipynb) |
 
-| 44 | [Quickselect](44_Quickselect.ipynb) |
+| 44 | [Sorting](44_Sorting.ipynb) |
 
-| 45 | [Stateful API Design](45_Stateful_API_Design.ipynb) |
+| 45 | [Quickselect](45_Quickselect.ipynb) |
 
-| 46 | [Logger Rate Limiter](46_Logger_Rate_Limiter.ipynb) |
+| 46 | [Stateful API Design](46_Stateful_API_Design.ipynb) |
 
-| 47 | [Recent Counter](47_Recent_Counter.ipynb) |
+| 47 | [Logger Rate Limiter](47_Logger_Rate_Limiter.ipynb) |
 
-| 48 | [Hit Counter](48_Hit_Counter.ipynb) |
+| 48 | [Recent Counter](48_Recent_Counter.ipynb) |
 
-| 49 | [Sliding-Window API Rate Limiter](49_API_Rate_Limiter.ipynb) |
+| 49 | [Hit Counter](49_Hit_Counter.ipynb) |
 
-| 50 | [Log Storage System](50_Log_Storage.ipynb) |
+| 50 | [Sliding-Window API Rate Limiter](50_API_Rate_Limiter.ipynb) |
 
-| 51 | [Moving Average](51_Moving_Average.ipynb) |
+| 51 | [Log Storage System](51_Log_Storage.ipynb) |
 
-| 52 | [Underground System](52_Underground_System.ipynb) |
+| 52 | [Moving Average](52_Moving_Average.ipynb) |
 
-| 53 | [Time-Based Key-Value Store](53_Time_Map.ipynb) |
+| 53 | [Underground System](53_Underground_System.ipynb) |
 
-| 54 | [Stock Price Tracker](54_Stock_Price.ipynb) |
+| 54 | [Time-Based Key-Value Store](54_Time_Map.ipynb) |
 
-| 55 | [Token Bucket Rate Limiter](55_Token_Bucket.ipynb) |
+| 55 | [Stock Price Tracker](55_Stock_Price.ipynb) |
 
-| 56 | [Error Count Tracker — Practice](56_Error_Count_Tracker.ipynb) |
+| 56 | [Token Bucket Rate Limiter](56_Token_Bucket.ipynb) |
 
-| 57 | [LRU Cache](57_LRU_Cache.ipynb) |
+| 57 | [Error Count Tracker — Practice](57_Error_Count_Tracker.ipynb) |
 
-| 58 | [LFU Cache](58_LFU_Cache.ipynb) |
+| 58 | [LRU Cache](58_LRU_Cache.ipynb) |
 
-| 59 | [Insert, Delete, and GetRandom](59_Randomized_Set.ipynb) |
+| 59 | [LFU Cache](59_LFU_Cache.ipynb) |
 
-| 60 | [Snapshot Array](60_Snapshot_Array.ipynb) |
+| 60 | [Insert, Delete, and GetRandom](60_Randomized_Set.ipynb) |
 
-| 61 | [Browser History](61_Browser_History.ipynb) |
+| 61 | [Snapshot Array](61_Snapshot_Array.ipynb) |
 
-| 62 | [Bitset API Design](62_Bitset_Design.ipynb) |
+| 62 | [Browser History](62_Browser_History.ipynb) |
 
-| 63 | [Peeking Iterator](63_Peeking_Iterator.ipynb) |
+| 63 | [Bitset API Design](63_Bitset_Design.ipynb) |
 
-| 64 | [Maximum Frequency Stack](64_Frequency_Stack.ipynb) |
+| 64 | [Peeking Iterator](64_Peeking_Iterator.ipynb) |
 
-| 65 | [Range Module](65_Range_Module.ipynb) |
+| 65 | [Maximum Frequency Stack](65_Frequency_Stack.ipynb) |
 
-| 66 | [Interview Checklists](66_Interview_Checklists.ipynb) |
+| 66 | [Range Module](66_Range_Module.ipynb) |
 
-| A–Z | [Problem finder](67_Problem_Finder.ipynb#finder) |
+| 67 | [Interview Checklists](67_Interview_Checklists.ipynb) |
+
+| A–Z | [Problem finder](68_Problem_Finder.ipynb#finder) |
 
 
 ## Topic groups
@@ -219,6 +221,7 @@ Use these links when a lesson refers to a broader family.
 ### Trees
 
 - [Trees](13_Trees.ipynb)
+- [Segment Trees](15_Segment_Trees.ipynb)
 
 <a id="s12"></a>
 
@@ -230,120 +233,120 @@ Use these links when a lesson refers to a broader family.
 
 ### Heaps
 
-- [Heaps](15_Heaps.ipynb)
+- [Heaps](16_Heaps.ipynb)
 
 <a id="s14"></a>
 
 ### Intervals & Sweep Line
 
-- [Intervals and Sweep Line](16_Intervals_and_Sweep_Line.ipynb)
+- [Intervals and Sweep Line](17_Intervals_and_Sweep_Line.ipynb)
 
 <a id="s15"></a>
 
 ### Greedy
 
-- [Greedy](17_Greedy.ipynb)
+- [Greedy](18_Greedy.ipynb)
 
 <a id="s16"></a>
 
 ### Backtracking
 
-- [Backtracking](18_Backtracking.ipynb)
+- [Backtracking](19_Backtracking.ipynb)
 
 <a id="s17"></a>
 
 ### Graphs I: BFS & DFS
 
-- [Graph Representation and Algorithm Selection](20_Graph_Concepts.ipynb)
-- [Breadth-First Search (BFS)](21_BFS.ipynb)
-- [Depth-First Search (DFS)](22_DFS.ipynb)
+- [Graph Representation and Algorithm Selection](21_Graph_Concepts.ipynb)
+- [Breadth-First Search (BFS)](22_BFS.ipynb)
+- [Depth-First Search (DFS)](23_DFS.ipynb)
 
 <a id="s18"></a>
 
 ### Graphs II: Ordering & Connectivity
 
-- [Topological Sort](23_Topological_Sort.ipynb)
-- [Union-Find (Disjoint Set Union)](24_Union_Find.ipynb)
-- [Graph Degrees](25_Graph_Degrees.ipynb)
-- [Bridges and Low-Link DFS](26_Bridges.ipynb)
-- [Eulerian Paths](27_Eulerian_Paths.ipynb)
+- [Topological Sort](24_Topological_Sort.ipynb)
+- [Union-Find (Disjoint Set Union)](25_Union_Find.ipynb)
+- [Graph Degrees](26_Graph_Degrees.ipynb)
+- [Bridges and Low-Link DFS](27_Bridges.ipynb)
+- [Eulerian Paths](28_Eulerian_Paths.ipynb)
 
 <a id="s19"></a>
 
 ### Graphs III: Weighted Paths & MST
 
-- [Dijkstra's Algorithm](28_Dijkstra.ipynb)
-- [Prim's Minimum Spanning Tree Algorithm](29_Prim.ipynb)
-- [Kruskal's Minimum Spanning Tree Algorithm](30_Kruskal.ipynb)
-- [0–1 BFS](31_Zero_One_BFS.ipynb)
-- [Bellman–Ford](32_Bellman_Ford.ipynb)
+- [Dijkstra's Algorithm](29_Dijkstra.ipynb)
+- [Prim's Minimum Spanning Tree Algorithm](30_Prim.ipynb)
+- [Kruskal's Minimum Spanning Tree Algorithm](31_Kruskal.ipynb)
+- [0–1 BFS](32_Zero_One_BFS.ipynb)
+- [Bellman–Ford](33_Bellman_Ford.ipynb)
 
 <a id="s20"></a>
 
 ### Strings
 
-- [String Processing](33_String_Processing.ipynb)
-- [Palindrome Techniques](34_Palindromes.ipynb)
-- [KMP and the LPS Array](35_KMP_and_LPS.ipynb)
+- [String Processing](34_String_Processing.ipynb)
+- [Palindrome Techniques](35_Palindromes.ipynb)
+- [KMP and the LPS Array](36_KMP_and_LPS.ipynb)
 
 <a id="s21"></a>
 
 ### Matrices
 
-- [Matrices](36_Matrices.ipynb)
+- [Matrices](37_Matrices.ipynb)
 
 <a id="s22"></a>
 
 ### Math, Bits & Geometry
 
-- [Bit Manipulation](37_Bit_Manipulation.ipynb)
-- [Number Theory](38_Number_Theory.ipynb)
-- [Digits and Number Bases](39_Digits_and_Bases.ipynb)
-- [Reservoir Sampling](40_Reservoir_Sampling.ipynb)
-- [Geometry with Exact Arithmetic](41_Geometry.ipynb)
-- [Choosing a Mathematical Representation](42_Math_Problem_Selection.ipynb)
+- [Bit Manipulation](38_Bit_Manipulation.ipynb)
+- [Number Theory](39_Number_Theory.ipynb)
+- [Digits and Number Bases](40_Digits_and_Bases.ipynb)
+- [Reservoir Sampling](41_Reservoir_Sampling.ipynb)
+- [Geometry with Exact Arithmetic](42_Geometry.ipynb)
+- [Choosing a Mathematical Representation](43_Math_Problem_Selection.ipynb)
 
 <a id="s23"></a>
 
 ### Sorting & Selection
 
-- [Sorting](43_Sorting.ipynb)
-- [Quickselect](44_Quickselect.ipynb)
+- [Sorting](44_Sorting.ipynb)
+- [Quickselect](45_Quickselect.ipynb)
 
 <a id="s24"></a>
 
 ### Design Problems: From Requirements to Classes
 
-- [Stateful API Design](45_Stateful_API_Design.ipynb)
-- [Logger Rate Limiter](46_Logger_Rate_Limiter.ipynb)
-- [Recent Counter](47_Recent_Counter.ipynb)
-- [Hit Counter](48_Hit_Counter.ipynb)
-- [Sliding-Window API Rate Limiter](49_API_Rate_Limiter.ipynb)
-- [Log Storage System](50_Log_Storage.ipynb)
-- [Moving Average](51_Moving_Average.ipynb)
-- [Underground System](52_Underground_System.ipynb)
-- [Time-Based Key-Value Store](53_Time_Map.ipynb)
-- [Stock Price Tracker](54_Stock_Price.ipynb)
-- [Token Bucket Rate Limiter](55_Token_Bucket.ipynb)
-- [Error Count Tracker — Practice](56_Error_Count_Tracker.ipynb)
-- [LRU Cache](57_LRU_Cache.ipynb)
-- [LFU Cache](58_LFU_Cache.ipynb)
-- [Insert, Delete, and GetRandom](59_Randomized_Set.ipynb)
-- [Snapshot Array](60_Snapshot_Array.ipynb)
-- [Browser History](61_Browser_History.ipynb)
-- [Bitset API Design](62_Bitset_Design.ipynb)
-- [Peeking Iterator](63_Peeking_Iterator.ipynb)
-- [Maximum Frequency Stack](64_Frequency_Stack.ipynb)
-- [Range Module](65_Range_Module.ipynb)
+- [Stateful API Design](46_Stateful_API_Design.ipynb)
+- [Logger Rate Limiter](47_Logger_Rate_Limiter.ipynb)
+- [Recent Counter](48_Recent_Counter.ipynb)
+- [Hit Counter](49_Hit_Counter.ipynb)
+- [Sliding-Window API Rate Limiter](50_API_Rate_Limiter.ipynb)
+- [Log Storage System](51_Log_Storage.ipynb)
+- [Moving Average](52_Moving_Average.ipynb)
+- [Underground System](53_Underground_System.ipynb)
+- [Time-Based Key-Value Store](54_Time_Map.ipynb)
+- [Stock Price Tracker](55_Stock_Price.ipynb)
+- [Token Bucket Rate Limiter](56_Token_Bucket.ipynb)
+- [Error Count Tracker — Practice](57_Error_Count_Tracker.ipynb)
+- [LRU Cache](58_LRU_Cache.ipynb)
+- [LFU Cache](59_LFU_Cache.ipynb)
+- [Insert, Delete, and GetRandom](60_Randomized_Set.ipynb)
+- [Snapshot Array](61_Snapshot_Array.ipynb)
+- [Browser History](62_Browser_History.ipynb)
+- [Bitset API Design](63_Bitset_Design.ipynb)
+- [Peeking Iterator](64_Peeking_Iterator.ipynb)
+- [Maximum Frequency Stack](65_Frequency_Stack.ipynb)
+- [Range Module](66_Range_Module.ipynb)
 
 <a id="s25"></a>
 
 ### Dynamic Programming: A Short Map (outside this interview's scope)
 
-- [Dynamic Programming](19_Dynamic_Programming.ipynb)
+- [Dynamic Programming](20_Dynamic_Programming.ipynb)
 
 <a id="s26"></a>
 
 ### Final Checklists
 
-- [Interview Checklists](66_Interview_Checklists.ipynb)
+- [Interview Checklists](67_Interview_Checklists.ipynb)

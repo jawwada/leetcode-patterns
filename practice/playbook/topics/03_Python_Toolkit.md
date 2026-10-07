@@ -509,7 +509,7 @@ print(arr)                                                # [1, 2, 1]   arr[arr[
 
 `@lru_cache(maxsize=None)` on a recursive function is a memo dict you didn't have to write, `arguments -> result`. The arguments become dict keys, so they must be hashable: pass a tuple, not a list. The cache also outlives the call, so when the function reads outside data, define it inside the solving function or call `f.cache_clear()`.
 
-Be ready to write the dict yourself: `if args in memo: return memo[args]`, compute, store, return. Memoised recursion is the bridge to dynamic programming, which [Dynamic Programming](19_Dynamic_Programming.ipynb#topic-dynamic-programming) maps.
+Be ready to write the dict yourself: `if args in memo: return memo[args]`, compute, store, return. Memoised recursion is the bridge to dynamic programming, which [Dynamic Programming](20_Dynamic_Programming.ipynb#topic-dynamic-programming) maps.
 
 ### Self-check
 
