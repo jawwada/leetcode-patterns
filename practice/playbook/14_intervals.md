@@ -6,8 +6,6 @@ The heap handed you the cheapest item next. Intervals add a second habit, sortin
 
 **Reach for it when** the input is pairs `[start, end]` (meetings, bookings, ranges, buildings, rectangles) and the question is about overlap: merge them, insert one, intersect two lists of them, keep the most / remove the fewest so that none overlap, find how many are open at once (rooms), find the free gaps, or answer "which intervals contain point q?".
 
-**In this repo:** `intervals/` (8 problems) · bank: `practice/simple/48_merge_intervals.py`, `practice/simple/49_meeting_rooms_ii.py` · basics: `practice/simple/basics/sorting/06_python_sort_keys_and_stability.py` (sort keys such as `(end, -start)`), `practice/simple/basics/heaps/` (the min-heap behind meeting rooms) · sweeps that need a heap live in [Heaps](#s13): The Skyline Problem and Meeting Rooms III; covering a range with the fewest taps and "two points per interval" live in [Greedy](#s15); [Two Pointers](#s05) walks two sorted lists the way Interval List Intersections does below.
-
 ### The picture
 
 ```text

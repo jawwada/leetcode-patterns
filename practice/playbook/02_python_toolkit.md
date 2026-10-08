@@ -6,8 +6,6 @@
 
 Read the trap list once, then come back to a container's cell when you hesitate; every cell runs, so change the inputs and run it again. Which structure an idea needs is in [From Idea to Code](#s01) and [Design Problems](#s24), and the string tools, from `split` to `ord`, `chr` and slicing, are in [Strings](#s20).
 
-**In this repo:** `practice/CHEATSHEET.md` (one page of templates) · `practice/simple/basics/sorting/06_python_sort_keys_and_stability.py` · `practice/simple/basics/heaps/04_max_heap_by_negation_and_tuples.py` · `practice/simple/basics/stacks/01_array_stack_and_queue_via_two_stacks.py`
-
 ### Read this first: the traps
 
 Each trap is one line long and costs minutes to find under pressure, which is why the list comes first. Most of them are shown in a cell or a **Try it** below.

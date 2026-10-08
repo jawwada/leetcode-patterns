@@ -8,8 +8,6 @@
 
 "Which cable, if cut, disconnects the network?" is bridges, and "use every ticket exactly once" is an Eulerian path; both come in the second pass at the end of Variations.
 
-**In this repo:** `graphs/` (19 of its 45 problems) · bank: `practice/simple/43_course_schedule.py`, `practice/simple/47_redundant_connection.py` · basics: `practice/simple/basics/graphs/02_topological_sort_kahn_and_dfs.py`, `practice/simple/basics/graphs/03_union_find.py`
-
 ### The picture
 
 ```text

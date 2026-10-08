@@ -6,8 +6,6 @@ This section continues [Stacks & Queues](#s07) with one change. There, a closer 
 
 **Reach for it when** the problem asks, for every element, about the **nearest** element to its left or right that is **bigger or smaller**: the next warmer day, the next greater element, the previous smaller one, how far a bar can stretch, a stock's span. The same stack answers questions about the minimum or maximum of **every subarray**, and it builds the **smallest or largest sequence** when digits or letters may be deleted but their order must be kept.
 
-**In this repo:** `stack/` (6 of its 16 problems: daily temperatures, next greater II, the two rectangle problems, car fleet, create maximum number) · bank: `practice/simple/16_daily_temperatures.py`, `practice/simple/17_largest_rectangle_in_histogram.py` · basics in `practice/simple/basics/monotonic_stacks/`: `01_next_greater_element.py`, `02_previous_smaller_element.py`, `03_online_stock_span.py`, `04_sum_of_subarray_minimums.py`, `05_remove_k_digits.py`
-
 ### The picture
 
 ```text

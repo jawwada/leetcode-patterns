@@ -500,24 +500,6 @@ print(counting_sort([3, -1, 2, -1, 0, 3]))   # [-1, -1, 0, 2, 3, 3]
 
 While coding, point at the partition's region comments (`a[lo..i] <= pivot`) and say why the pivot's index is final. For "sort first" problems, say the trade explicitly: "O(n log n) to sort buys me an O(n) sweep instead of O(n²) pairs."
 
-### Where sorting shows up in this repo
-
-Sorting has no topic folder, so this section adds no rows to the A-Z problem finder. The problems below are mapped and taught in the sections of their main technique, [Heaps](16_Heaps.ipynb#topic-heaps), [Two Pointers](06_Two_Pointers.ipynb#topic-two-pointers), [Arrays & Hashing](04_Hash_Maps_and_Sets.ipynb#topic-hash-maps-and-sets) and [Intervals & Sweep Line](17_Intervals_and_Sweep_Line.ipynb#topic-intervals-and-sweep-line), but sorting or selection is the step that cracks them:
-
-| Problem | Where | The sorting step |
-|---|---|---|
-| Kth Largest Element in an Array | `heap/kth_largest_element_in_an_array.py` | quickselect: partition, keep the side holding index n − k |
-| K Closest Points to Origin | `heap/k_closest_points_to_origin.py` · `practice/simple/32_k_closest_points_to_origin.py` | a size-k max-heap on distance; quickselect on distance for O(n) average |
-| Sort Colors | `two_pointers/sort_colors.py` | three-way partition around 1 |
-| Count of Smaller Numbers After Self | `arrays_hashing/count_of_smaller_numbers_after_self.py` | merge `(value, index)` pairs; a placed left item gains `j`, the right items already placed |
-| Reverse Pairs | `arrays_hashing/reverse_pairs.py` | count `a > 2b` with a second pointer over the two sorted halves, then merge |
-| Maximum Gap | `arrays_hashing/maximum_gap.py` | pigeonhole buckets: the largest gap never sits inside one bucket |
-| Top K Frequent Elements | `arrays_hashing/top_k_frequent_elements.py` | bucket sort by frequency (1..n) |
-| 3Sum | `two_pointers/three_sum.py` · `practice/simple/06_three_sum.py` | sort, fix one number, two pointers on the rest; duplicates become neighbours |
-| Merge Intervals | `intervals/merge_intervals.py` · `practice/simple/48_merge_intervals.py` | sort by start: overlapping intervals become neighbours |
-| Meeting Rooms II | `intervals/meeting_rooms_ii.py` · `practice/simple/49_meeting_rooms_ii.py` | sort by start, min-heap of end times |
-| Non-overlapping Intervals | `intervals/non_overlapping_intervals.py` | sort by end, greedily keep the earliest finisher |
-
 ### Self-check
 
 1. Why is quickselect O(n) on average while quicksort is O(n log n)?

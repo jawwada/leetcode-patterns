@@ -4,8 +4,6 @@
 
 **Reach for it when** you need the smallest or largest item *again and again* while items keep arriving or leaving: **top k, k-th largest, k closest**, **merge k sorted** lists, the **median of a stream**, "always process the cheapest / earliest / most frequent next", scheduling with deadlines or cooldowns, or growing a frontier from its lowest point, which is the shape of Dijkstra's algorithm in [Graphs III](#s19).
 
-**In this repo:** `heap/` (20 problems) · bank: `practice/simple/32_k_closest_points_to_origin.py`, `practice/simple/33_task_scheduler.py`, `practice/simple/34_find_median_from_data_stream.py`, `practice/simple/35_merge_k_sorted_lists.py` · basics: `practice/simple/basics/heaps/` (`01_heapify_by_hand.py`, `02_push_and_pop_by_hand.py`, `03_top_k_with_size_k_min_heap.py`, `04_max_heap_by_negation_and_tuples.py`, `05_kth_largest_in_a_stream.py`, `06_merge_k_sorted_arrays.py`), `practice/simple/basics/sorting/04_heap_sort.py`
-
 ### The picture
 
 ```text

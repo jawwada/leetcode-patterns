@@ -10,7 +10,7 @@ The playbook is split into twelve notebooks. This first one holds the method and
 
 ### How to read a section
 
-Every technique section has the same shape, so you always know where to look. It opens with **Reach for it when**, the words in a problem statement that should make you think of this technique, and **In this repo**, the files that use it. **The picture** then draws the data and the motion of the algorithm over it, and says why it beats brute force.
+Every technique section has the same shape, so you always know where to look. It opens with **Reach for it when**, the words in a problem statement that should make you think of this technique. **The picture** then draws the data and the motion of the algorithm over it, and says why it beats brute force.
 
 **From idea to code** is the heart of the section: the idea in one sentence, the seven decisions answered for this technique, and a template whose lines are tagged with the decision they come from. After every code cell, **Try it** gives three or four small experiments that break one line on purpose or feed a tricky input.
 

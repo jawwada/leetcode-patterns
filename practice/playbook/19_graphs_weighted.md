@@ -8,8 +8,6 @@
 
 "Connect all points or cities as cheaply as possible" is a minimum spanning tree, built by Prim or Kruskal, and "at most k stops" or negative weights call for Bellman-Ford rounds.
 
-**In this repo:** `graphs/` (7 of its 45 problems) · bank: `practice/simple/45_network_delay_time.py`, `practice/simple/46_min_cost_to_connect_all_points.py` · basics: `practice/simple/basics/graphs/06_dijkstra.py`, `practice/simple/basics/graphs/05_prim_mst.py`, `practice/simple/basics/graphs/04_kruskal_mst.py`, `practice/simple/basics/graphs/03_union_find.py`
-
 ### The picture
 
 ```text

@@ -6,8 +6,6 @@
 
 Tiny limits are the interviewer telling you that an exponential search is expected. Rough limits: 2^n is fine up to n ≈ 20, n! up to n ≈ 10. "In how many ways" with a *large* n is counting, not search: that is DP or combinatorics, and [Dynamic Programming](#s25), at the end of this notebook, shows how it grows out of backtracking.
 
-**In this repo:** `backtracking/` (15 problems) · bank: `practice/simple/36_palindrome_partitioning.py`, `practice/simple/37_combination_sum_ii.py`, `practice/simple/38_letter_combinations_of_a_phone_number.py`, `practice/simple/39_word_search.py`, `practice/simple/40_n_queens.py` · basics: `practice/simple/basics/backtracking/01_subsets.py`, `practice/simple/basics/backtracking/02_subsets_with_duplicates.py`, `practice/simple/basics/backtracking/03_combinations_n_choose_k.py`, `practice/simple/basics/backtracking/04_combination_sum.py`, `practice/simple/basics/backtracking/05_permutations.py`, `practice/simple/basics/backtracking/06_permutations_with_duplicates.py`, `practice/simple/basics/backtracking/07_generate_parentheses.py`
-
 ### The picture
 
 Subsets is the smallest complete example: every subset of `[1, 2, 3]`, eight of them. Each node of the tree below is a subset, and the walk visits every node once.

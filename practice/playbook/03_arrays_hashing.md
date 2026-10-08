@@ -4,8 +4,6 @@
 
 **Reach for it when** the brute force has an inner loop that only *searches* for a value: a partner, an earlier copy, a matching group. The problem says pairs, duplicates, frequency, anagrams or "group by", or it wants O(n) on unsorted data. The surest sign is that the brute force compares items only by value, whether they are equal, sum to a target or hold the same letters, and never by where they sit.
 
-**In this repo:** `arrays_hashing/`, 17 problems; the three about running totals, Subarray Sum Equals K, Product of Array Except Self and Max Consecutive Ones, are taught in [Prefix Sums](#s04) · bank: `practice/simple/01_two_sum.py`, `practice/simple/02_group_anagrams.py`, `practice/simple/04_longest_consecutive_sequence.py` · basics: `practice/simple/basics/strings/01_character_counting_and_anagrams.py`, `practice/simple/basics/strings/05_encode_decode_strings_and_join.py`, `practice/simple/basics/sorting/05_counting_and_bucket_sort.py` · the same tools elsewhere: `strings/valid_anagram.py`, `strings/group_shifted_strings.py`, `design/insert_delete_getrandom_o1.py`
-
 ### The picture
 
 Two Sum asks for the indices of the two numbers that add up to a target: `[3, 5, 2, 7, 11]` with target 9 gives `[2, 3]`, because 2 + 7 = 9. The walk below shows the notebook at every step.

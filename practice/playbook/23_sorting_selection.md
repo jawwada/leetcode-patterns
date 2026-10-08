@@ -6,8 +6,6 @@
 
 **Reach for it when** the problem gets easy "if only the input were sorted": pairs or triples with a target sum, merging intervals, scheduling, greedy by size or deadline. Reach for it too when the problem asks for the **k-th smallest or largest** or the **top k**, asks to count pairs that are **out of order**, as in "how many smaller numbers to my right", or has small integer values you could **count** instead of compare.
 
-**In this repo:** sorting has no topic folder. Its building blocks are `practice/simple/basics/sorting/01_insertion_sort.py`, `02_merge_sort.py`, `03_quick_sort.py`, `04_heap_sort.py`, `05_counting_and_bucket_sort.py` and `06_python_sort_keys_and_stability.py`, and the problems it cracks live in the sections of their main technique, listed at the end of this section. In an interview you call `sorted()`; you implement a sort only when asked, or when you need to change its inner loop, as quickselect and counting inversions do.
-
 ### The picture
 
 Two motions carry the whole section. Merge sort splits until every piece is trivially sorted and merges sorted halves on the way up; a partition sweeps once and drops its pivot into the slot it will have in the sorted list:
@@ -497,24 +495,6 @@ print(counting_sort([3, -1, 2, -1, 0, 3]))   # [-1, -1, 0, 2, 3, 3]
 > "Sorting everything is O(n log n) and gives me far more than I need: I only care about one position. One partition around a random pivot puts the pivot in its final slot in O(n) and tells me which side the answer is on, so I continue on that side only: n + n/2 + ... is under 2n, O(n) on average, O(n²) in the worst case if every pivot is unlucky. If they want a guaranteed bound or the data arrives as a stream, a size-k min-heap gives O(n log k)."
 
 While coding, point at the partition's region comments (`a[lo..i] <= pivot`) and say why the pivot's index is final. For "sort first" problems, say the trade explicitly: "O(n log n) to sort buys me an O(n) sweep instead of O(n²) pairs."
-
-### Where sorting shows up in this repo
-
-Sorting has no topic folder, so this section adds no rows to the A-Z problem finder. The problems below are mapped and taught in the sections of their main technique, [Heaps](#s13), [Two Pointers](#s05), [Arrays & Hashing](#s03) and [Intervals & Sweep Line](#s14), but sorting or selection is the step that cracks them:
-
-| Problem | Where | The sorting step |
-|---|---|---|
-| Kth Largest Element in an Array | `heap/kth_largest_element_in_an_array.py` | quickselect: partition, keep the side holding index n − k |
-| K Closest Points to Origin | `heap/k_closest_points_to_origin.py` · `practice/simple/32_k_closest_points_to_origin.py` | a size-k max-heap on distance; quickselect on distance for O(n) average |
-| Sort Colors | `two_pointers/sort_colors.py` | three-way partition around 1 |
-| Count of Smaller Numbers After Self | `arrays_hashing/count_of_smaller_numbers_after_self.py` | merge `(value, index)` pairs; a placed left item gains `j`, the right items already placed |
-| Reverse Pairs | `arrays_hashing/reverse_pairs.py` | count `a > 2b` with a second pointer over the two sorted halves, then merge |
-| Maximum Gap | `arrays_hashing/maximum_gap.py` | pigeonhole buckets: the largest gap never sits inside one bucket |
-| Top K Frequent Elements | `arrays_hashing/top_k_frequent_elements.py` | bucket sort by frequency (1..n) |
-| 3Sum | `two_pointers/three_sum.py` · `practice/simple/06_three_sum.py` | sort, fix one number, two pointers on the rest; duplicates become neighbours |
-| Merge Intervals | `intervals/merge_intervals.py` · `practice/simple/48_merge_intervals.py` | sort by start: overlapping intervals become neighbours |
-| Meeting Rooms II | `intervals/meeting_rooms_ii.py` · `practice/simple/49_meeting_rooms_ii.py` | sort by start, min-heap of end times |
-| Non-overlapping Intervals | `intervals/non_overlapping_intervals.py` | sort by end, greedily keep the earliest finisher |
 
 ### Self-check
 

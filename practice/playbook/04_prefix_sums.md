@@ -6,8 +6,6 @@
 
 **Reach for it when** a problem asks about sums, products, counts or parities (odd or even) of *contiguous* stretches: many range-sum queries on one array, "count or longest subarrays with sum k", especially with negatives, where a [Sliding Window](#s06) fails, "product of everything except me", "equal number of 0s and 1s", "add v to every element in [l, r]" over and over, the sum of a rectangle in a grid, or a random pick weighted by sizes.
 
-**In this repo:** `arrays_hashing/subarray_sum_equals_k.py`, `arrays_hashing/product_of_array_except_self.py`, `arrays_hashing/max_consecutive_ones.py` · bank: `practice/simple/05_subarray_sum_equals_k.py`, `practice/simple/03_product_of_array_except_self.py` · basics: `practice/simple/basics/bits/03_xor_tricks_single_number_missing_number.py` (why xor can be "subtracted") · the same idea elsewhere: `intervals/my_calendar_iii.py` (difference array, [Intervals & Sweep Line](#s14)), `bit_manipulation/find_longest_awesome_substring.py` (prefix parity mask, taught below), `greedy/super_washing_machines.py` (prefix-sum flow), `greedy/maximum_subarray.py` (running sum, [Greedy](#s15)), `design/range_sum_query_2d_mutable.py` (2D range sums with updates, [Design Problems](#s24))
-
 ### The picture
 
 Think of the totals as **fence posts between the items**: post `P[k]` stands just before item k and holds the sum of everything to its left.

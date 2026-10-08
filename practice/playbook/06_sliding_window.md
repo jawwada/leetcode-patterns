@@ -6,8 +6,6 @@
 
 **Reach for it when** the problem says *contiguous*, a substring or a subarray, and asks for the **longest**, **shortest**, or **number of** windows that satisfy a rule, and the rule is **monotone**: adding an item can never repair a broken window. Quick test: "can adding one more item make a bad window good again?" If yes, as for a sum with negative numbers, this tool does not apply; use [Prefix Sums](#s04) instead.
 
-**In this repo:** `sliding_window/` (13 problems) · bank: `practice/simple/09_longest_substring_without_repeating_characters.py`, `practice/simple/10_minimum_window_substring.py`, `practice/simple/11_sliding_window_maximum.py`, `practice/simple/12_longest_repeating_character_replacement.py`
-
 ### The picture
 
 ```text
