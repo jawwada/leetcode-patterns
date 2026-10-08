@@ -6,8 +6,6 @@
 
 **Reach for it when** the problem mentions *bits*, *XOR*, *powers of two*, *"every element appears twice except one"*, *subsets of a small set* (n ≤ 20, 26 letters, 10 digits), *parity* ("an odd number of times"), *modulo 10⁹ + 7*, *gcd, primes or digits*, *points, lines and slopes*, or when n goes up to 10⁹ so nothing can be listed one at a time.
 
-**In this repo:** `bit_manipulation/` (9 problems) · `math_geometry/` (7 here; Rotate Image, Spiral Matrix and Set Matrix Zeroes are in [Matrices](37_Matrices.ipynb#topic-matrices)) · basics: `practice/simple/basics/bits/01_get_set_clear_toggle_bits.py`, `02_count_bits_and_lowest_set_bit.py`, `03_xor_tricks_single_number_missing_number.py`, `04_bitmask_subset_enumeration.py`, `05_reverse_bits_and_shifts.py` and `practice/simple/basics/math/01_gcd_lcm_euclid.py`, `02_primes_sieve_and_primality.py`, `03_fast_power_and_modular_arithmetic.py`, `04_digits_reverse_integer_and_palindrome_number.py`, `05_base_conversion_and_excel_columns.py`, `06_random_pick_and_reservoir_sampling.py` · a bitset with a lazy global flip: `design/design_bitset.py`, in [Design Problems](00_Topic_Index.ipynb#s24)
-
 ### The picture
 
 ```text

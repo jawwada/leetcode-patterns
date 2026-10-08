@@ -6,8 +6,6 @@
 
 Reach for it above all when the problem asks for the **minimum X such that ...** or the **maximum X such that ...** and a bigger X only ever makes the condition easier, or only ever harder. That is binary search on the answer, and it needs no sorted data at all. It also finds "the k-th smallest" in something too big to list, as long as you can *count* the items ≤ v quickly.
 
-**In this repo:** `binary_search/` (16 problems) · bank: `practice/simple/18_search_in_rotated_sorted_array.py`, `practice/simple/19_koko_eating_bananas.py`, `practice/simple/20_split_array_largest_sum.py` · basics: `practice/simple/basics/searches/01_binary_search_variants.py`, `practice/simple/basics/searches/02_binary_search_on_answer.py`, `practice/simple/basics/matrices/04_search_2d_matrix_staircase.py`
-
 ### The picture
 
 Binary search does not care about the numbers themselves. It cares about the answers to one question about them, and those answers form a landscape with a single flip:

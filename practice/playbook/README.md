@@ -48,7 +48,7 @@ The playbook's purpose is **turning an idea into an implementation**. Every tech
 order, and the "From idea to code" part is the heart of it.
 
 1. `## Title`, a one-line mental model in a blockquote, **Reach for it when** (clues in the problem
-   statement), **In this repo** (topic folder + `practice/simple/...` files that use it).
+   statement).
 2. `### The picture`: an ASCII drawing of the data and the motion of the algorithm, then why it is fast
    (what work the brute force repeats and how the technique avoids it).
 3. `### From idea to code`: the idea in one sentence; then the seven decisions (**State, Definition,

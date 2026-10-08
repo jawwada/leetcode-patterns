@@ -6,8 +6,6 @@
 
 **Why this section is short:** the interview this playbook prepares for excludes DP. This map exists so nothing in `dynamic_programming/` surprises you, and so you can recognise a DP problem and say so out loud.
 
-**In this repo:** `dynamic_programming/` (8 problems)
-
 ### State and transition
 
 House Robber is the example throughout: houses in a row hold money, you may not rob two neighbours, and you want the most money; `[2, 7, 9, 3, 1]` gives 12, from houses 0, 2 and 4. Five words describe every DP solution, and each has a definite meaning here.

@@ -4,8 +4,6 @@
 
 **Reach for it when** the problem talks about cells connected up, down, left and right, islands or regions, or something spreading in rounds: rot, fire, a signal. Reach for it too when it asks for the fewest steps, moves, jumps or transformations and every move costs the same, when it asks "can I reach", when a structure with cycles must be copied, or when a situation changes one move at a time: a board, a word, a lock.
 
-**In this repo:** `graphs/` (19 of its 45 problems; Graphs II and III take the rest) · bank: `practice/simple/41_number_of_islands.py`, `practice/simple/42_clone_graph.py`, `practice/simple/44_rotting_oranges.py` · basics: `practice/simple/basics/graphs/01_adjacency_list_bfs_dfs.py`, `practice/simple/basics/searches/03_bfs_grid_shortest_path.py`, `practice/simple/basics/searches/04_dfs_recursive_and_iterative.py`, `practice/simple/basics/searches/05_connected_components.py`, `practice/simple/basics/searches/06_multi_source_bfs_01_matrix.py`
-
 ### The picture
 
 Half of every graph problem is one sentence: *what is a node, and what is an edge?* Once you can say it, the code is one of two loops.
@@ -229,8 +227,6 @@ Expect follow-ups, and have the one-line answer ready. The path itself is a pare
 
 "Which cable, if cut, disconnects the network?" is bridges, and "use every ticket exactly once" is an Eulerian path; both come in the second pass at the end of Variations.
 
-**In this repo:** `graphs/` (19 of its 45 problems) · bank: `practice/simple/43_course_schedule.py`, `practice/simple/47_redundant_connection.py` · basics: `practice/simple/basics/graphs/02_topological_sort_kahn_and_dfs.py`, `practice/simple/basics/graphs/03_union_find.py`
-
 ### The picture
 
 ```text
@@ -407,8 +403,6 @@ Point at the `indegree[v] == 0` line, the `len(order) == n` check, and the `if r
 **Reach for it when** edges have weights and the problem asks for the minimum cost, time or effort to get somewhere: that is Dijkstra. When every weight is 0 or 1, a free move or a paid move, a deque replaces the heap, the 0-1 BFS. When a route is only as hard as its *worst* step, Dijkstra runs with `max` in place of `+`.
 
 "Connect all points or cities as cheaply as possible" is a minimum spanning tree, built by Prim or Kruskal, and "at most k stops" or negative weights call for Bellman-Ford rounds.
-
-**In this repo:** `graphs/` (7 of its 45 problems) · bank: `practice/simple/45_network_delay_time.py`, `practice/simple/46_min_cost_to_connect_all_points.py` · basics: `practice/simple/basics/graphs/06_dijkstra.py`, `practice/simple/basics/graphs/05_prim_mst.py`, `practice/simple/basics/graphs/04_kruskal_mst.py`, `practice/simple/basics/graphs/03_union_find.py`
 
 ### The picture
 

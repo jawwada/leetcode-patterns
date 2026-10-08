@@ -4,8 +4,6 @@
 
 **Reach for it when** the input is sorted, or you may sort it, and the question is about pairs or triplets: "sum to target", "how many pairs", "all unique triplets". Or when you compare mirror positions, as in palindromes and reversing. Or when an array must be rewritten **in place** with O(1) extra space, which means inside the array you were given and with no second array: "remove", "move the zeros", "dedupe", "partition into groups". Or when two sorted inputs must be merged or compared. Or when the answer is the area between two walls: a container, trapped rain water.
 
-**In this repo:** `two_pointers/` (10 problems) · bank: `practice/simple/06_three_sum.py`, `practice/simple/07_container_with_most_water.py`, `practice/simple/08_trapping_rain_water.py` · basics: `practice/simple/basics/strings/02_two_pointer_palindromes_and_reverse_words.py`, `practice/simple/basics/sorting/03_quick_sort.py` (partition is a read / write pass), `practice/simple/basics/sorting/02_merge_sort.py` (merge is one finger per sorted list) · the same idea elsewhere: `linked_list/remove_nth_from_end.py` (two pointers with a fixed gap, [Linked Lists](12_Linked_Lists.ipynb#topic-linked-lists))
-
 ### The picture
 
 The brute force looks at every pair, so start by drawing every pair. Write them down as a table: one row per left item, one column per right item. The two fingers walk this table from its top-right corner, and the drawing shows why they never have to visit most of it.

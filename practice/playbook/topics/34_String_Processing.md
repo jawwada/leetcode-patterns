@@ -6,8 +6,6 @@
 
 **Reach for it when** the input is text and you must **parse** it: split it, read a number or a version. Or **reshape** it: reverse the words, compress runs, write a zigzag. Or compare **letters**, as in shifted strings and palindromes; do **arithmetic on digits** given as text; or find a **repeat**, such as a prefix that is also a suffix or the longest repeated substring. "Longest substring such that ..." is usually a [Sliding Window](07_Sliding_Window.ipynb#topic-sliding-window) instead.
 
-**In this repo:** `strings/` (17 problems) · bank: `practice/simple/50_longest_palindromic_substring.py` · basics: `practice/simple/basics/strings/01_character_counting_and_anagrams.py`, `practice/simple/basics/strings/02_two_pointer_palindromes_and_reverse_words.py`, `practice/simple/basics/strings/03_kmp_prefix_function.py`, `practice/simple/basics/strings/04_rabin_karp_rolling_hash.py`, `practice/simple/basics/strings/05_encode_decode_strings_and_join.py`
-
 ### The picture
 
 Reading: one cursor that never steps back. Here it splits a string by hand, the classic warm-up.

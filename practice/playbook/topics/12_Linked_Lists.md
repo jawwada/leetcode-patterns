@@ -6,8 +6,6 @@
 
 **Reach for it when** the input is a `ListNode`; the problem says *in place* or *O(1) extra space*; it asks for the **middle**, the **k-th from the end**, a **cycle**, a **merge** or a **reversal**; or an array's values are indices into the same array, because then the array *is* a linked list and Floyd's cycle trick applies.
 
-**In this repo:** `linked_list/` (12 problems) · bank: `practice/simple/21_reverse_linked_list.py`, `practice/simple/22_merge_two_sorted_lists.py`, `practice/simple/23_linked_list_cycle_ii.py`, `practice/simple/25_remove_nth_node_from_end.py` · basics: `practice/simple/basics/linked_lists/` (build/insert/delete, reverse iterative and recursive, middle, Floyd, merge, palindrome, k-group, add two numbers). LRU Cache (146), a fixed-size cache that evicts the least recently used key, is a dict plus a doubly linked list and lives in [Design Problems](00_Topic_Index.ipynb#s24).
-
 ### The picture
 
 ```text

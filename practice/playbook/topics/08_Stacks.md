@@ -6,8 +6,6 @@
 
 When items are handled in arrival order, because the oldest expires first, players take turns or a buffer has a fixed size, that is a **queue**, written with `collections.deque`. The most common queue of all is BFS: "nearest first", "fewest steps" or "level by level" means the frontier is a deque, and that one lives in [Graphs I](00_Topic_Index.ipynb#s17).
 
-**In this repo:** `stack/` (10 of its 16 problems; the "next greater" family is in [Monotonic Stack](10_Monotonic_Stack.ipynb#topic-monotonic-stack)) · `queues/` (6 problems) · bank: `practice/simple/13_valid_parentheses.py`, `practice/simple/14_min_stack.py`, `practice/simple/15_evaluate_reverse_polish_notation.py` · basics in `practice/simple/basics/stacks/`: `01_array_stack_and_queue_via_two_stacks.py`, `02_simplify_unix_path.py`, `03_decode_string.py`, `04_basic_calculator_ii.py`, `05_asteroid_collision.py`
-
 ### The picture
 
 ```text
