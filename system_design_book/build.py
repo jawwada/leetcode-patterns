@@ -1,13 +1,18 @@
 """Build 50 System Designs as one PDF, and the ranked list system_designs.txt.
 
-Usage: python3 system_design_book/build.py [--partial] [--md-only]
+Usage: python3 system_design_book/build.py [--partial] [--only=1,2,5] [--md-only]
   --partial   skip chapters that are not written yet (default: all 50 must exist)
-  --md-only   write the combined Markdown and diagrams but do not run pandoc
+  --only=...  build only these chapter ranks (implies --partial)
+  --md-only   write the combined Markdown and diagrams but do not compile
+
+The compile is also the validation: the LaTeX log of the one build is checked for errors,
+missing glyphs and overfull lines, so no second compile is needed.
 """
 import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -256,38 +261,63 @@ def write_list(entries, tiers):
         f.write("\n".join(lines) + "\n")
 
 
-def run_pandoc(md_path):
+def compile_pdf(md_path):
+    """pandoc -> book.tex, LuaLaTeX until references settle, then validate that same log."""
+    tex = os.path.join(BUILD, "book.tex")
     cmd = [
-        "pandoc", md_path, "-o", PDF,
+        "pandoc", md_path, "-s", "-o", tex,
         "--from", "markdown-tex_math_dollars-raw_tex",
-        "--pdf-engine=lualatex",
         "--syntax-highlighting", os.path.join(BUILD, "algo.theme"),
         "--lua-filter", os.path.join(BUILD, "sd_filters.lua"),
         "--include-in-header", os.path.join(BUILD, "header.tex"),
-        "--resource-path", BUILD,
     ]
     run = subprocess.run(cmd, capture_output=True, text=True, cwd=BUILD)
     if run.returncode != 0:
         print(run.stderr)
         raise SystemExit("pandoc failed")
-    if run.stderr.strip():
-        print(run.stderr.strip())
+    log_path = os.path.join(BUILD, "book.log")
+    for attempt in range(3):
+        run = subprocess.run(["lualatex", "-interaction=nonstopmode", "-halt-on-error", "book.tex"],
+                             capture_output=True, text=True, cwd=BUILD)
+        log = open(log_path, encoding="utf-8", errors="replace").read()
+        if run.returncode != 0:
+            errors = []
+            for line in log.split("\n"):
+                if line.startswith("!"):
+                    errors.append(line)
+            raise SystemExit("lualatex failed: " + " | ".join(errors[:3]))
+        if attempt >= 1 and "Rerun to get" not in log and "may have changed" not in log:
+            break
+    pages = re.search(r"Output written on .*?\((\d+) pages", log)
+    shutil.move(os.path.join(BUILD, "book.pdf"), PDF)
+    print("validated: %s pages, %d missing glyphs, %d overfull lines"
+          % (pages.group(1) if pages else "?", log.count("Missing character"),
+             log.count("Overfull \\hbox")))
 
 
 def main(argv):
     entries, tiers = load_manifest()
+    only = None
+    for arg in argv:
+        if arg.startswith("--only="):
+            only = set()
+            for part in arg[len("--only="):].split(","):
+                if part.strip():
+                    only.add(int(part))
     present = []
     for e in entries:
+        if only is not None and e["rank"] not in only:
+            continue
         if read_chapter(e) is not None:
             present.append(e)
-        elif "--partial" not in argv:
+        elif "--partial" not in argv and only is None:
             raise SystemExit("chapter %d %s is missing (use --partial)" % (e["rank"], e["slug"]))
     write_list(entries, tiers)
     md_path = os.path.join(BUILD, "book.md")
     with open(md_path, "w", encoding="utf-8") as f:
         f.write(build_markdown(present, tiers))
     if "--md-only" not in argv:
-        run_pandoc(md_path)
+        compile_pdf(md_path)
         print("wrote " + os.path.relpath(PDF, REPO))
     print("wrote %s; %d chapters in the book" % (os.path.relpath(LIST_TXT, REPO), len(present)))
 
