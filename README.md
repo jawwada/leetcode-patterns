@@ -2,7 +2,7 @@
 
 **📖 [Read the Intuition Journey book](https://jawwada.github.io/leetcode-patterns/site/book_index.html)** · **🧩 [Open the Pattern Board](https://jawwada.github.io/leetcode-patterns/site/index.html)**
 
-294 interview problems (127 Hard), organised by topic, each solved **brute force first, then reasoned to the optimal**, with a diagram of the data structure mid-run. Built for a Google-style loop: data structures, strings, graphs, trees, heaps, "implement a tracker" design problems; dynamic programming kept in its own chapter, outside the brief.
+295 interview problems (127 Hard), organised by topic, each solved **brute force first, then reasoned to the optimal**, with a diagram of the data structure mid-run. Built for a Google-style loop: data structures, strings, graphs, trees, heaps, "implement a tracker" design problems; dynamic programming kept in its own chapter, outside the brief.
 
 ## Two sites
 

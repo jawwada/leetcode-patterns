@@ -23,6 +23,7 @@
  {"slug": "course_schedule", "why_here": "Kahn's algorithm: repeatedly remove in-degree-0 nodes; leftovers mean a cycle."},
  {"slug": "course_schedule_ii", "why_here": "Same Kahn loop with the pop order recorded: that order is a topological sort."},
  {"slug": "alien_dictionary", "why_here": "Build the directed graph yourself from adjacent word pairs, then topo-sort it (with a prefix trap)."},
+ {"slug": "parallel_courses", "why_here": "Kahn's queue a whole layer at a time: each layer is one round, and a course's round is its longest prerequisite chain."},
  {"slug": "parallel_courses_iii", "why_here": "Topological order carries a DP: finish time is the slowest prerequisite plus own duration."},
  {"slug": "sort_items_by_groups_respecting_dependencies", "why_here": "Two-level topo sort: order the groups, then order items inside each group."},
  {"slug": "reconstruct_itinerary", "why_here": "Use every edge exactly once: Hierholzer's post-order DFS builds an Eulerian path."},

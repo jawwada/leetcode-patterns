@@ -178,7 +178,7 @@ Every course is popped because the graph is a DAG (Course Schedule's argument), 
 
 ## Variations you will meet
 
-- **Parallel Courses (LeetCode 1136).** All durations equal 1, so the answer is the number of BFS layers in Kahn's process. Same loop, process the queue a level at a time.
+- **Parallel Courses (LeetCode 1136), the previous problem.** All durations equal 1, so the answer is the number of BFS layers in Kahn's process. Same loop, process the queue a level at a time.
 - **Parallel Courses II (LeetCode 1494).** At most k courses per semester. Parallelism is now limited, the schedule is no longer forced, and topological order is not enough: it becomes bitmask DP over sets of taken courses, a different chapter.
 - **Report the critical path itself.** Store, for each course, which prerequisite produced its max, then walk back from the course with the largest finish.
 - **Longest path in a DAG with edge weights.** Same relaxation with `finish[cur] + w(cur, nxt)`. Replace max with min and you get single-source shortest paths in a DAG, linear time with negative weights allowed.

@@ -1,6 +1,6 @@
 # Graphs
 
-*45 problems · Reading time ~25 min*
+*46 problems · Reading time ~25 min*
 
 ## The chapter
 
@@ -35,27 +35,28 @@ Problems, in reading order:
 22. [Course Schedule](course_schedule.md) · Medium
 23. [Course Schedule II](course_schedule_ii.md) · Medium
 24. [Alien Dictionary](alien_dictionary.md) · Hard
-25. [Parallel Courses III](parallel_courses_iii.md) · Hard
-26. [Sort Items by Groups Respecting Dependencies](sort_items_by_groups_respecting_dependencies.md) · Hard
-27. [Reconstruct Itinerary](reconstruct_itinerary.md) · Hard
-28. [Number of Connected Components in an Undirected Graph](number_of_connected_components.md) · Medium
-29. [Graph Valid Tree](graph_valid_tree.md) · Medium
-30. [Redundant Connection](redundant_connection.md) · Medium
-31. [Redundant Connection II](redundant_connection_ii.md) · Hard
-32. [Accounts Merge](accounts_merge.md) · Medium
-33. [Number of Islands II](number_of_islands_ii.md) · Hard
-34. [Minimize Malware Spread](minimize_malware_spread.md) · Hard
-35. [Largest Component Size by Common Factor](largest_component_size_by_common_factor.md) · Hard
-36. [Find All People With Secret](find_all_people_with_secret.md) · Hard
-37. [Checking Existence of Edge Length Limited Paths](checking_existence_of_edge_length_limited_paths.md) · Hard
-38. [Remove Max Number of Edges to Keep Graph Fully Traversable](remove_max_number_of_edges_to_keep_graph_fully_traversable.md) · Hard
-39. [Network Delay Time](network_delay_time.md) · Medium
-40. [Minimum Cost to Make at Least One Valid Path in a Grid](minimum_cost_to_make_at_least_one_valid_path_in_a_grid.md) · Hard
-41. [Swim in Rising Water](swim_in_rising_water.md) · Hard
-42. [Minimum Weighted Subgraph With the Required Paths](minimum_weighted_subgraph_with_the_required_paths.md) · Hard
-43. [Min Cost to Connect All Points](min_cost_to_connect_all_points.md) · Medium
-44. [Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree](find_critical_and_pseudo_critical_edges_in_minimum_spanning_tree.md) · Hard
-45. [Critical Connections in a Network](critical_connections_in_a_network.md) · Hard
+25. [Parallel Courses](parallel_courses.md) · Medium
+26. [Parallel Courses III](parallel_courses_iii.md) · Hard
+27. [Sort Items by Groups Respecting Dependencies](sort_items_by_groups_respecting_dependencies.md) · Hard
+28. [Reconstruct Itinerary](reconstruct_itinerary.md) · Hard
+29. [Number of Connected Components in an Undirected Graph](number_of_connected_components.md) · Medium
+30. [Graph Valid Tree](graph_valid_tree.md) · Medium
+31. [Redundant Connection](redundant_connection.md) · Medium
+32. [Redundant Connection II](redundant_connection_ii.md) · Hard
+33. [Accounts Merge](accounts_merge.md) · Medium
+34. [Number of Islands II](number_of_islands_ii.md) · Hard
+35. [Minimize Malware Spread](minimize_malware_spread.md) · Hard
+36. [Largest Component Size by Common Factor](largest_component_size_by_common_factor.md) · Hard
+37. [Find All People With Secret](find_all_people_with_secret.md) · Hard
+38. [Checking Existence of Edge Length Limited Paths](checking_existence_of_edge_length_limited_paths.md) · Hard
+39. [Remove Max Number of Edges to Keep Graph Fully Traversable](remove_max_number_of_edges_to_keep_graph_fully_traversable.md) · Hard
+40. [Network Delay Time](network_delay_time.md) · Medium
+41. [Minimum Cost to Make at Least One Valid Path in a Grid](minimum_cost_to_make_at_least_one_valid_path_in_a_grid.md) · Hard
+42. [Swim in Rising Water](swim_in_rising_water.md) · Hard
+43. [Minimum Weighted Subgraph With the Required Paths](minimum_weighted_subgraph_with_the_required_paths.md) · Hard
+44. [Min Cost to Connect All Points](min_cost_to_connect_all_points.md) · Medium
+45. [Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree](find_critical_and_pseudo_critical_edges_in_minimum_spanning_tree.md) · Hard
+46. [Critical Connections in a Network](critical_connections_in_a_network.md) · Hard
 
 ## Why this chapter exists
 
@@ -77,7 +78,7 @@ The forty-five problems fall into families, and the chapter walks them in this o
 - **BFS on augmented states.** A node is "position plus what I carry": eliminations left, keys held, nodes seen, where
   the box is (obstacle elimination, all keys, visiting all nodes, box pushing).
 - **Directed graphs and ordering.** Degrees, topological sort, cycle detection, longest path in a DAG, Euler paths (town
-  judge, course schedule I and II, alien dictionary, parallel courses III, sort items by groups, itinerary).
+  judge, course schedule I and II, alien dictionary, parallel courses I and III, sort items by groups, itinerary).
 - **Union-find.** Merge components as edges arrive and ask "same component?" in near constant time (components, valid
   tree, redundant connection I and II, accounts merge, islands II, malware, common factor, secret, limited paths,
   removable edges).
@@ -567,9 +568,10 @@ both, then lay the item order out group by group.
   Kahn pops 1 2 3 4 5; answer = max finish = 12
 ```
 
-**Where you'll use it.** Parallel Courses III (finish times), Sort Items by Groups Respecting Dependencies (two-level
-sort), Alien Dictionary (building the edges is the hard part). Beyond the chapter: Longest Increasing Path in a Matrix
-(LeetCode 329), a DAG hiding in a grid.
+**Where you'll use it.** Parallel Courses (every course takes one round, so a finish time is a round number), Parallel
+Courses III (finish times), Sort Items by Groups Respecting Dependencies (two-level sort), Alien Dictionary (building
+the edges is the hard part). Beyond the chapter: Longest Increasing Path in a Matrix (LeetCode 329), a DAG hiding in a
+grid.
 
 ### 5. Union-find on a sorted sweep
 
@@ -842,6 +844,10 @@ on a cycle, so the pop count is the answer.
 
 **Alien Dictionary.** You build the edges: the first differing letter of each adjacent word pair is one edge, then
 topo-sort the letters. The trap is a word before its own prefix (`abc` before `ab`), which makes the input invalid.
+
+**Parallel Courses.** Take Kahn's queue a whole layer at a time and each layer is one round. A course lands one round
+after its last prerequisite, so its round is its longest prerequisite chain, and a visited-set BFS would place it too
+early. Sort each round so the answer is fixed.
 
 **Parallel Courses III.** Courses take time and run in parallel, so the answer is the longest weighted path in the DAG.
 Carry finish times along Kahn's order (advanced pattern 4).

@@ -42,6 +42,7 @@
     ],
     "code": "class Solution:\n    def minimumTime(self, n: int, relations: List[List[int]], time: List[int]) -> int:\n        adj = [[] for _ in range(n)]\n        indeg = [0] * n\n        for prev, nxt in relations:\n            adj[prev - 1].append(nxt - 1)\n            indeg[nxt - 1] += 1\n        finish = time[:]                        # no prerequisites -> ends at time[c]\n        queue = deque(c for c in range(n) if indeg[c] == 0)\n        while queue:\n            cur = queue.popleft()               # finish[cur] is final: every prerequisite popped\n            for nxt in adj[cur]:\n                finish[nxt] = max(finish[nxt], finish[cur] + time[nxt])\n                indeg[nxt] -= 1\n                if indeg[nxt] == 0:\n                    queue.append(nxt)\n        return max(finish)",
     "related": [
+      "parallel_courses",
       "course_schedule_ii",
       "course_schedule",
       "sort_items_by_groups_respecting_dependencies",

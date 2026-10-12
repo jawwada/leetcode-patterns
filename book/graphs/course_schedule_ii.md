@@ -157,7 +157,7 @@ Each course is appended at most once, because it is pushed exactly once: at the 
 
 - **Smallest order in lexicographic terms.** Use `heapq` instead of a deque. Time becomes O(E + V log V).
 - **Is the order unique?** It is unique iff the queue never holds more than one course at a time. Sequence Reconstruction (LeetCode 444) asks exactly this.
-- **Minimum number of semesters.** Pop the queue a whole layer at a time and count layers (Parallel Courses, LeetCode 1136). When courses have durations, you need the longest path instead; that is Parallel Courses III, two problems ahead.
+- **Minimum number of semesters.** Pop the queue a whole layer at a time and count layers (Parallel Courses, LeetCode 1136, two problems ahead). When courses have durations, you need the longest path instead; that is Parallel Courses III, right after it.
 - **Constraints hidden in data.** Sometimes nobody gives you the arrows. Alien Dictionary makes you dig them out of a sorted word list first.
 
 ## What to carry forward

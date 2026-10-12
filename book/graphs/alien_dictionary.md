@@ -193,4 +193,4 @@ Contradiction. If the arrows contain a cycle, no order can put every letter on t
 
 ## What to carry forward
 
-When order constraints are hidden in data, first mine them into arrows (one per adjacent pair, at the first difference, no duplicates), then topologically sort; the graph is the bridge between "sorted list" and "alphabet". The next problem, Parallel Courses III, keeps Kahn's queue but carries a number along each arrow: not just "may I go now" but "when is the earliest I can finish".
+When order constraints are hidden in data, first mine them into arrows (one per adjacent pair, at the first difference, no duplicates), then topologically sort; the graph is the bridge between "sorted list" and "alphabet". The next problem, Parallel Courses, goes back to arrows you are handed and asks *when* each course can run, not just in what order: take Kahn's queue a whole layer at a time, and each layer is one round.
