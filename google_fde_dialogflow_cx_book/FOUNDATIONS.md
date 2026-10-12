@@ -157,10 +157,10 @@ Record flow/playbook/tool versions, webhook revision, model configuration, promp
 
 Logs and traces connect conversation, turn, release, tool, and operation. Configure redaction, retention, and regional routing across every component rather than assuming one setting covers all systems. [Security settings](https://docs.cloud.google.com/dialogflow/cx/docs/concept/security-settings), [logging](https://docs.cloud.google.com/dialogflow/cx/docs/concept/logging)
 
-## 12. How to use the 100 answers
+## 12. How to use the retained design answers
 
 Each answer establishes scope, proposes a request path and state model, examines failure/security/scale, justifies a trade-off, and answers a follow-up. Treat it as a defensible starting point. Change the assumptions and explain how the architecture changes.
 
 For a forty-five-minute rehearsal, spend five minutes clarifying, five quantifying, eight drawing, twelve on core data/control paths, eight on failures and evaluation, and the remainder on follow-ups. Explain ownership and causality: this operation record exists because requests can be repeated; this ACL check exists because indexed permissions can lag; this degraded path exists because generation can fail.
 
-The concrete capstone and study plan at the end connect these patterns to an implementation project. Use the question index to study by topic or read the complete book in order.
+The detailed drive-through, Noctal, and market-assistant chapters connect these patterns to the requested use cases. The 30 answers completed before the scope changed are retained as an appendix; the question bank was not expanded further.

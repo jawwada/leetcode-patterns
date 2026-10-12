@@ -1,0 +1,59 @@
+50 System Designs, in order of importance
+
+Book: system_design_book/50_System_Designs.pdf
+
+Tier 1 - Must Know
+1. URL Shortener - Base62 IDs, a Read-Heavy Cache, 301 vs 302
+2. Rate Limiter - Token Buckets and Sliding Windows in Redis
+3. Distributed Key-Value Store - Dynamo-Style Partitioning, Replication and Quorums
+4. Distributed Cache - Cache-Aside, Eviction and Hot Keys
+5. News Feed (Twitter) - Fan-Out on Write, Fan-Out on Read, and the Celebrity Hybrid
+6. Chat System (WhatsApp) - WebSocket Gateways, Receipts and the Offline Inbox
+7. Messenger - Multi-Device Sync, Presence and Search
+8. Video Platform (YouTube) - Chunked Upload, Transcoding and Adaptive Bitrate
+9. Streaming Service (Netflix) - Its Own CDN, Pre-Positioned Content and DRM
+10. Cloud File Storage (Google Drive / Dropbox) - Chunking, Content-Hash Dedup and Sync Conflicts
+11. Collaborative Editor (Google Docs) - OT vs CRDT, Live Cursors and Revision History
+12. Distributed Log (Kafka) - Partitions, Offsets, Consumer Groups and In-Sync Replicas
+13. Ride Hailing (Uber) - Geospatial Index, Matching and Surge Pricing
+14. Maps and Navigation (Google Maps) - Road Graph, A*, Contraction Hierarchies, Tiles and Live ETA
+15. Content Delivery Network - Edge PoPs, GeoDNS and Anycast, Cache Keys and Invalidation
+16. Search Autocomplete - Top-K per Prefix, Log Aggregation and Caching
+17. Web Crawler - URL Frontier, Politeness, Dedup and Recrawl
+
+Tier 2 - Very Common
+18. Discussion Forum (Reddit) - Nested Comments, Votes and Hot Ranking
+19. Photo Sharing (Instagram) - Photo Storage, Feed and Stories
+20. Notification System - Push, SMS and Email with Retries and Idempotency
+21. Unique ID Generator - Snowflake, Ticket Servers and UUIDs
+22. Web Search Engine - Inverted Index, Sharding and Ranking
+23. Top-K Trending Topics - Count-Min Sketch and Windowed Aggregation
+24. Payment System - Idempotency Keys, Double-Entry Ledger and Reconciliation
+25. Ticket Booking (Ticketmaster) - Seat Holds with a TTL, a Waiting Room and No Overselling
+26. Hotel Booking (Airbnb) - Availability Calendars and No Double Bookings
+27. Proximity Search (Yelp) - Geohash, Quadtrees and Nearby Places
+28. Ad Click Aggregator - Exactly-Once Stream Counting
+29. Metrics and Monitoring - Time-Series Storage, Downsampling and Alerting
+30. Distributed Job Scheduler - Leader Election and At-Least-Once Execution
+31. Leaderboard - Sorted Sets and Sharded Ranks
+32. Live Streaming and Live Comments (Twitch) - Low-Latency Ingest and Real-Time Fan-Out
+33. Object Storage (S3) - Metadata Service, Erasure Coding and Durability
+34. E-Commerce Checkout and Inventory - Reservations and Flash Sales
+
+Tier 3 - Good to Know
+35. Music Streaming (Spotify) - Catalog, Playback and Offline Downloads
+36. Video Conferencing (Zoom) - WebRTC, SFU vs MCU
+37. Distributed File System (GFS / HDFS) - A Master, Chunkservers and Replication
+38. Globally Distributed Database (Spanner) - Paxos Groups and TrueTime
+39. Coordination Service (Chubby / ZooKeeper) - Consensus, Sessions and Leases
+40. Load Balancer and API Gateway - L4 vs L7, Health Checks and Routing
+41. Pastebin - Text Blobs, Short Keys and Expiry
+42. Email Service (Gmail) - SMTP, Mailbox Storage, Search and Spam
+43. Stock Exchange Matching Engine - Order Books and Price-Time Priority
+44. Digital Wallet - Balances, Transfers and Event Sourcing
+45. Calendar (Google Calendar) - Events, Recurrence and Free/Busy
+46. Online Judge (LeetCode) - Sandboxed Execution and Queued Submissions
+47. Recommendation System - Candidate Generation, Ranking and Feedback
+48. Distributed Logging - Collect, Ship, Index and Retain
+49. Feature Flag and Config Service - Targeting Rules, Gradual Rollouts and Fast Propagation
+50. Like and View Counter at Scale - Sharded Counters and Approximate Counts

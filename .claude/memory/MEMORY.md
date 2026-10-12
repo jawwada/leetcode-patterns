@@ -6,3 +6,5 @@
 - [Brute to Optimal companion](brute-to-optimal-companion.md) — two artifacts + Vercel sites (standard: companion/, 108 problems + 63 fundamentals; hard: companion_hard/, 127 problems), simple Python, built by site/build_companion.py
 - [LeetCode Playbook notebooks](leetcode-playbook.md) — practice/playbook/topics/*.md + manifest.json -> build.py -> 69 topic notebooks in practice/LeetCode_Playbook/; idea-to-code focus, Try-it after every cell, fused single voice
 - [Writing style: flowing prose](writing-style-flowing-prose.md) — problem stated in prose right before code, arguments as paragraphs not tables, few headings, definitive voice
+- [No image-based verification](feedback-no-image-verification.md) — never render PDFs/diagrams to PNG to check them (token cost); use text checks
+- [Algorithm + system design books](algorithm-books.md) — algorithm_books/ (150, pseudo+Python PDFs) and system_design_book/ (50 designs PDF); manifest + SPEC + check.py + build.py

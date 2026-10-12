@@ -1,0 +1,11 @@
+{
+  "page_count": 75,
+  "sha256": "42c50aacf481a2667260578581221f340faefde0e570d442336326c55cc616ea",
+  "page_bounds_issues": [],
+  "rendered_pages_reviewed": 75,
+  "visual_review": "All final pages reviewed in contact sheets; cover, concept table, code and answer pages also inspected individually. No clipping or overlapping text observed.",
+  "retained_questions": "Q001-Q030",
+  "syntax_checks": "Python excerpt parsed with ast; JSON examples parsed with json. Architectural code is not deployment-tested.",
+  "annotations": 205,
+  "scope": "Detailed CX guide; no expansion of the existing question bank."
+}

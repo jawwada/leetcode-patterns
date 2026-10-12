@@ -1,0 +1,590 @@
+{
+  "pdf": "/Users/ahmedjawad/Work/Leetcode/google_fde_dialogflow_cx_book/output/pdf/dialogflow_cx_applied_ai_field_guide.pdf",
+  "page_count": 75,
+  "word_count": 21481,
+  "retained_answer_count": 30,
+  "guide_chapters": 5,
+  "documentation_links": 50,
+  "syntax_checks": [
+    {
+      "file": "03_noctal.md",
+      "language": "json"
+    },
+    {
+      "file": "03_noctal.md",
+      "language": "json"
+    },
+    {
+      "file": "03_noctal.md",
+      "language": "python"
+    }
+  ],
+  "headings": [
+    {
+      "title": "Contents",
+      "page": 2,
+      "level": 0
+    },
+    {
+      "title": "1. Dialogflow CX: the conversational layer",
+      "page": 4,
+      "level": 0
+    },
+    {
+      "title": "What this book covers",
+      "page": 4,
+      "level": 1
+    },
+    {
+      "title": "The mental model",
+      "page": 4,
+      "level": 1
+    },
+    {
+      "title": "A vocabulary you can transfer to other systems",
+      "page": 5,
+      "level": 1
+    },
+    {
+      "title": "Why a webhook is only partly like MCP",
+      "page": 6,
+      "level": 1
+    },
+    {
+      "title": "Why a playbook is only partly like a skill",
+      "page": 6,
+      "level": 1
+    },
+    {
+      "title": "A single turn, step by step",
+      "page": 6,
+      "level": 1
+    },
+    {
+      "title": "What \"deterministic\" means here",
+      "page": 7,
+      "level": 1
+    },
+    {
+      "title": "How to read the cases",
+      "page": 7,
+      "level": 1
+    },
+    {
+      "title": "2. Drive-through voice ordering: a complete CX design",
+      "page": 8,
+      "level": 0
+    },
+    {
+      "title": "Customer journey and system boundary",
+      "page": 8,
+      "level": 1
+    },
+    {
+      "title": "The concrete CX objects",
+      "page": 9,
+      "level": 1
+    },
+    {
+      "title": "Flow: a bounded task area",
+      "page": 10,
+      "level": 1
+    },
+    {
+      "title": "Page: what the conversation is doing now",
+      "page": 10,
+      "level": 1
+    },
+    {
+      "title": "Intent: the purpose of the utterance",
+      "page": 10,
+      "level": 1
+    },
+    {
+      "title": "Entity: normalized meaning, not an authoritative catalog",
+      "page": 11,
+      "level": 1
+    },
+    {
+      "title": "Parameters and forms: collecting a valid line item",
+      "page": 11,
+      "level": 1
+    },
+    {
+      "title": "Routes: explicit choices and guards",
+      "page": 11,
+      "level": 1
+    },
+    {
+      "title": "Fulfillment and webhook: connecting the conversation to the order",
+      "page": 12,
+      "level": 1
+    },
+    {
+      "title": "Worked conversation and state trace",
+      "page": 12,
+      "level": 1
+    },
+    {
+      "title": "Corrections invalidate prior confirmation",
+      "page": 13,
+      "level": 1
+    },
+    {
+      "title": "Voice-specific behavior",
+      "page": 13,
+      "level": 1
+    },
+    {
+      "title": "Optional playbook: menu explanation",
+      "page": 13,
+      "level": 1
+    },
+    {
+      "title": "Timeout, duplicate request, and staff handoff",
+      "page": 14,
+      "level": 1
+    },
+    {
+      "title": "Evaluation and delivery plan",
+      "page": 14,
+      "level": 1
+    },
+    {
+      "title": "A concise interview answer",
+      "page": 14,
+      "level": 1
+    },
+    {
+      "title": "3. Noctal: CX chat above agentic media workflows",
+      "page": 15,
+      "level": 0
+    },
+    {
+      "title": "Project context and proposed architecture",
+      "page": 15,
+      "level": 1
+    },
+    {
+      "title": "A concept map specific to Noctal",
+      "page": 16,
+      "level": 1
+    },
+    {
+      "title": "Flow: separating the user's tasks",
+      "page": 17,
+      "level": 1
+    },
+    {
+      "title": "Page: an inspectable conversation state",
+      "page": 17,
+      "level": 1
+    },
+    {
+      "title": "Intent: asking about a job versus requesting one",
+      "page": 17,
+      "level": 1
+    },
+    {
+      "title": "Entity: identifying what kind of thing a phrase refers to",
+      "page": 17,
+      "level": 1
+    },
+    {
+      "title": "Parameters and forms: the submission schema",
+      "page": 18,
+      "level": 1
+    },
+    {
+      "title": "Route: making each action explicit",
+      "page": 18,
+      "level": 1
+    },
+    {
+      "title": "Webhook and fulfillment: FastAPI as an adapter",
+      "page": 18,
+      "level": 1
+    },
+    {
+      "title": "What the webhook code should look like",
+      "page": 19,
+      "level": 1
+    },
+    {
+      "title": "Media search: permissions before presentation",
+      "page": 20,
+      "level": 1
+    },
+    {
+      "title": "Upload and download: use the channel for bytes",
+      "page": 20,
+      "level": 1
+    },
+    {
+      "title": "Job submission questions and a confirmed job",
+      "page": 21,
+      "level": 1
+    },
+    {
+      "title": "Progress tracking: a separate read path",
+      "page": 22,
+      "level": 1
+    },
+    {
+      "title": "Result review and user-approved follow-up questions",
+      "page": 22,
+      "level": 1
+    },
+    {
+      "title": "Optional playbooks and their boundaries",
+      "page": 23,
+      "level": 1
+    },
+    {
+      "title": "The same Noctal system without CX",
+      "page": 23,
+      "level": 1
+    },
+    {
+      "title": "Operational failure paths",
+      "page": 24,
+      "level": 1
+    },
+    {
+      "title": "How to present this project in an interview",
+      "page": 24,
+      "level": 1
+    },
+    {
+      "title": "4. Kalshi and Polymarket: conversational market assistants",
+      "page": 25,
+      "level": 0
+    },
+    {
+      "title": "Use case and scope",
+      "page": 25,
+      "level": 1
+    },
+    {
+      "title": "Every CX concept in the two integrations",
+      "page": 26,
+      "level": 1
+    },
+    {
+      "title": "Market discovery and resolution criteria",
+      "page": 27,
+      "level": 1
+    },
+    {
+      "title": "Kalshi adapter: isolate the API representation",
+      "page": 27,
+      "level": 1
+    },
+    {
+      "title": "Polymarket adapter: separate discovery, quotes, and signing",
+      "page": 27,
+      "level": 1
+    },
+    {
+      "title": "Prices, probability language, and executable quotes",
+      "page": 28,
+      "level": 1
+    },
+    {
+      "title": "A worked read-only conversation",
+      "page": 28,
+      "level": 1
+    },
+    {
+      "title": "Optional user-approved order path",
+      "page": 29,
+      "level": 1
+    },
+    {
+      "title": "Streaming and evaluation",
+      "page": 29,
+      "level": 1
+    },
+    {
+      "title": "What this case teaches",
+      "page": 29,
+      "level": 1
+    },
+    {
+      "title": "5. Building, testing, and operating the conversational layer",
+      "page": 30,
+      "level": 0
+    },
+    {
+      "title": "Start with a workflow inventory",
+      "page": 30,
+      "level": 1
+    },
+    {
+      "title": "A practical CX build sequence",
+      "page": 30,
+      "level": 1
+    },
+    {
+      "title": "Playbook tools, generators, and fallback are different",
+      "page": 31,
+      "level": 1
+    },
+    {
+      "title": "Security: two identities and two checks",
+      "page": 31,
+      "level": 1
+    },
+    {
+      "title": "Durable state and consent",
+      "page": 32,
+      "level": 1
+    },
+    {
+      "title": "Retry handling and the unknown outcome",
+      "page": 32,
+      "level": 1
+    },
+    {
+      "title": "A regression set based on the named cases",
+      "page": 33,
+      "level": 1
+    },
+    {
+      "title": "Observability and release",
+      "page": 33,
+      "level": 1
+    },
+    {
+      "title": "Interview explanation framework",
+      "page": 34,
+      "level": 1
+    },
+    {
+      "title": "Appendix A. Previously written foundations",
+      "page": 35,
+      "level": 0
+    },
+    {
+      "title": "1. Start with a customer journey",
+      "page": 35,
+      "level": 1
+    },
+    {
+      "title": "2. Understand the CX building blocks",
+      "page": 35,
+      "level": 1
+    },
+    {
+      "title": "3. Assign responsibility deliberately",
+      "page": 36,
+      "level": 1
+    },
+    {
+      "title": "4. Reference architecture",
+      "page": 37,
+      "level": 1
+    },
+    {
+      "title": "5. Temporary context versus durable state",
+      "page": 37,
+      "level": 1
+    },
+    {
+      "title": "6. The running transaction: create a return",
+      "page": 38,
+      "level": 1
+    },
+    {
+      "title": "7. Webhook contracts and deadlines",
+      "page": 38,
+      "level": 1
+    },
+    {
+      "title": "8. Retrieval and generation",
+      "page": 39,
+      "level": 1
+    },
+    {
+      "title": "9. Tools, playbooks, and voice",
+      "page": 39,
+      "level": 1
+    },
+    {
+      "title": "10. Capacity and cost reasoning",
+      "page": 40,
+      "level": 1
+    },
+    {
+      "title": "11. Evaluation and release discipline",
+      "page": 40,
+      "level": 1
+    },
+    {
+      "title": "12. How to use the retained design answers",
+      "page": 40,
+      "level": 1
+    },
+    {
+      "title": "Appendix B. The 30 existing design answers",
+      "page": 42,
+      "level": 0
+    },
+    {
+      "title": "Q001. Design an enterprise RAG assistant with Dialogflow CX",
+      "page": 43,
+      "level": 1
+    },
+    {
+      "title": "Q002. Design a customer support agent connected to CRM and order APIs",
+      "page": 44,
+      "level": 1
+    },
+    {
+      "title": "Q003. Design a voice support agent that creates return requests",
+      "page": 45,
+      "level": 1
+    },
+    {
+      "title": "Q004. Design a multi-agent customer workflow coordinated through CX",
+      "page": 46,
+      "level": 1
+    },
+    {
+      "title": "Q005. Design a safe transactional assistant with confirmation",
+      "page": 47,
+      "level": 1
+    },
+    {
+      "title": "Q006. Design a CX tool gateway for enterprise APIs",
+      "page": 48,
+      "level": 1
+    },
+    {
+      "title": "Q007. Design an agent evaluation pipeline",
+      "page": 49,
+      "level": 1
+    },
+    {
+      "title": "Q008. Design conversation and tool-call tracing",
+      "page": 50,
+      "level": 1
+    },
+    {
+      "title": "Q009. Design document ingestion for policy Q&A",
+      "page": 51,
+      "level": 1
+    },
+    {
+      "title": "Q010. Design permission-aware retrieval",
+      "page": 52,
+      "level": 1
+    },
+    {
+      "title": "Q011. Design hybrid keyword and vector search",
+      "page": 53,
+      "level": 1
+    },
+    {
+      "title": "Q012. Design model routing by task, cost, and latency",
+      "page": 54,
+      "level": 1
+    },
+    {
+      "title": "Q013. Design conversation sessions and durable memory",
+      "page": 55,
+      "level": 1
+    },
+    {
+      "title": "Q014. Design low-latency streaming interactions",
+      "page": 56,
+      "level": 1
+    },
+    {
+      "title": "Q015. Design human handoff with structured context",
+      "page": 57,
+      "level": 1
+    },
+    {
+      "title": "Q016. Design prompt-injection defenses",
+      "page": 58,
+      "level": 1
+    },
+    {
+      "title": "Q017. Design enterprise SaaS connectors",
+      "page": 59,
+      "level": 1
+    },
+    {
+      "title": "Q018. Design a multi-tenant conversational platform",
+      "page": 60,
+      "level": 1
+    },
+    {
+      "title": "Q019. Design an inference gateway with fallback",
+      "page": 61,
+      "level": 1
+    },
+    {
+      "title": "Q020. Design regional recovery for a CX application",
+      "page": 62,
+      "level": 1
+    },
+    {
+      "title": "Q021. Design incremental document synchronization",
+      "page": 63,
+      "level": 1
+    },
+    {
+      "title": "Q022. Design structure-aware document chunking",
+      "page": 64,
+      "level": 1
+    },
+    {
+      "title": "Q023. Design a large-scale vector index",
+      "page": 65,
+      "level": 1
+    },
+    {
+      "title": "Q024. Design retrieval reranking",
+      "page": 66,
+      "level": 1
+    },
+    {
+      "title": "Q025. Design answer citations and source verification",
+      "page": 67,
+      "level": 1
+    },
+    {
+      "title": "Q026. Design GraphRAG for connected enterprise knowledge",
+      "page": 68,
+      "level": 1
+    },
+    {
+      "title": "Q027. Design multimodal document retrieval",
+      "page": 69,
+      "level": 1
+    },
+    {
+      "title": "Q028. Design a CX text-to-SQL analyst",
+      "page": 70,
+      "level": 1
+    },
+    {
+      "title": "Q029. Design long-running conversational tasks",
+      "page": 71,
+      "level": 1
+    },
+    {
+      "title": "Q030. Design durable agent workflow recovery",
+      "page": 72,
+      "level": 1
+    },
+    {
+      "title": "Sources and further reading",
+      "page": 73,
+      "level": 0
+    }
+  ],
+  "verification": "Text coverage and syntax checked; visual review recorded separately."
+}
